@@ -3,14 +3,13 @@ module Awestruct
     module PageDebug
 
       def add_debug(site, page)
-        
         html = ''
-
-        html += %Q(<a style="position: absolute; top: 10px; left: 10px;" href="#" onclick="$('#debug_site').toggle()">site</a>)
-        html += create(site, "debug_site")
-        html += %Q(<a style="position: absolute; top: 30px; left: 10px;" href="#" onclick="$('#debug_page').toggle()">page</a>)
-        html += create(page, "debug_page")
-
+        if (site.show_debug)
+          html += %Q(<a style="position: absolute; top: 10px; left: 10px;" href="#" onclick="$('#debug_site').toggle()">site</a>)
+          html += create(site, "debug_site")
+          html += %Q(<a style="position: absolute; top: 30px; left: 10px;" href="#" onclick="$('#debug_page').toggle()">page</a>)
+          html += create(page, "debug_page")
+        end
         return html
       end
 
