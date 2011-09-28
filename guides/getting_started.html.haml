@@ -3,7 +3,8 @@ layout: guide
 title: Getting Started
 ---
 -# TODO:
--# JBoss Nexus Repository
+-# Setup project with Forge (optional)
+-# Explain how to debug with JBoss AS managed
 #content
   :textile
     <div class="header">
@@ -24,7 +25,7 @@ title: Getting Started
 
     p(info). %Arquillian does not depend on Maven, or any other build tool for that matter. It works just as well--if not better--when used in a project with an Ant or Gradle build. Ideally, the build tool should offer dependency management as it simplifies the task of setting up the Arquillian libraries since they are distributed in the "JBoss (Nexus) software repository":http://community.jboss.org/wiki/MavenRepository.%
 
-    This guide assumes you have Maven available, either in your command shell or your IDE. If you don't, please "install it now":http://maven.apache.org/download.html.
+    This guide assumes you have Maven available, either in your command shell or your IDE(Integrated Development Environment). If you don't, please "install it now":http://maven.apache.org/download.html.
 
     h3(#create_new_project). Create a New Project
 
@@ -33,9 +34,9 @@ title: Getting Started
     bc(command).. $ mvn archetype:generate -DarchetypeGroupId=net.avh4.mvn.archetype \
     -DarchetypeArtifactId=java-1.6-archetype
 
-    p. Respond to the prompts by entering the value shown after each double colon below. Press the Enter key after each line (as indicated by @<ENTER>@).
+    p. Respond to the prompts by entering the value shown after each double colon below. Hit the Enter key after each line (as indicated by @<ENTER>@).
 
-    bc.. Define value for property 'groupId': : org.arquillian.example <ENTER>
+    pre. Define value for property 'groupId': : org.arquillian.example <ENTER>
     Define value for property 'artifactId': : arquillian-tutorial <ENTER>
     Define value for property 'version': : <ENTER>
     Define value for property 'package': : <ENTER>
@@ -152,6 +153,8 @@ title: Getting Started
     # Type "maven" in the Find input field (no quotes) and press Enter
     # Click the Install button next to Maven Integration for Eclipse
     # Complete the install wizard, then restart Eclipse if prompted
+
+    We also recommend installing JBoss Tools (Indigo), also available in the Eclipse Marketplace (search for "jboss tools").
 
     Once you have the Maven Integration plugin installed, follow these steps to open the project:
 
@@ -295,7 +298,378 @@ title: Getting Started
 
     h3(#add_container_adapter). Add Container Adapter 
 
-    p. foo
+    We've been talking a lot about testing in a container, but so far we have mentioned which one. That's because it's a runtime decision.
+
+    Arquillian selects the target container based on which container adapter is available on the test classpath. That means we'll be adding more libraries to the project.
+
+    An Arquillian test can be executed in any container that is compatible with the programming model used in the test (as long as the container has an Arquillian adapter). Our test is using the CDI programming model, so we need to use any container to supports CDI. We want fast turnaround during development, so we'll start with the Weld EE embedded container.
+
+    Open the @pom.xml@ file again and add the following group of dependencies directly below the other @<dependency>@ elements:
+
+    bc(prettify).. <dependency>
+        <groupId>org.jboss.arquillian.container</groupId>
+        <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+        <version>1.0.0.CR2</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.weld</groupId>
+        <artifactId>weld-core</artifactId>
+        <version>1.1.1.Final</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>1.5.10</version>
+        <scope>test</scope>
+    </dependency> 
+
+    p. To summarize, here are the three libraries you need to use Arquillian (with JUnit):
+
+    # Arquillian JUnit integration
+    # Arquillian container adapter for the target container
+    # Container runtime (embedded container) or container client (remote container)
+
+    We're using an embedded container in this example, so we need the container runtime, Weld.
+
+    Now back to the test.
+
+    h3(#run_arquillian_test). Run the Arquillian Test
+
+    Once you add all the necessary Arquillian libraries to the classpath, you can run an Arquillian test just like a unit test, whether you are running it from the IDE, the build script or any other test plugin. Let's run the test in Eclipse.
+
+    From the IDE window, right click on the GreeterTest.java file in the Package Explorer (or in the editor) and select Run As... > JUnit Test from the context menu.
+
+    !/images/guides/arquillian_tutorial_run_junit_test.png!
+
+    When you run the test, you should see the following lines printed to the console:
+
+    pre. 26 [main] INFO org.jboss.weld.Version - WELD-000900 1.1.1 (Final)
+    Hello, Earthling!
+
+    You should then see the JUnit view appear, revealing a green bar!
+
+    !/images/guides/arquillian_tutorial_junit_green_bar.png!
+
+    You can also run the test on the commandline using Maven:
+
+    bc(command). $ mvn test
+
+    You should see the following lines printed to the console:
+
+    pre. -------------------------------------------------------
+    T E S T S
+    -------------------------------------------------------
+    Running org.arquillian.example.GreeterTest
+    21 [main] INFO org.jboss.weld.Version - WELD-000900 1.1.1 (Final)
+    Hello, Earthling!
+    Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.858 sec
+
+    *Congratulations!* You've earned your first *{background-color: #5FBF5F; color: white; padding: 1px 3px; border: 1px inset #efefef}green bar* with Arquillian!
+
+    h3(#closer_look). A Closer Look
+
+    How do you know that CDI really worked? For all you know, Arquillian created a new instance of the @Greeter@ class and injected it into the test without any involvement from CDI. Let's prove it's there.
+
+    Create a new CDI bean named @PhraseBuilder@ in the @org.arquillian.example@ package that can create phrases from templates.
+
+    div(filename). src/main/java/org/arquillian/example/PhraseBuilder.java
+
+    bc(prettify).. package org.arquillian.example;
+
+    import java.text.MessageFormat;
+    import java.util.*;
+    import javax.annotation.PostConstruct;
+
+    public class PhraseBuilder {
+        private Map<String, String> templates;
+        
+        public String buildPhrase(String id, Object... args) {
+            return MessageFormat.format(templates.get(id), args);
+        }
+        
+        @PostConstruct
+        public void initialize() {
+            templates = new HashMap<String, String>();
+            templates.put("hello", "Hello, {0}!");
+        }
+    } 
+
+    p. Next, open up the @Greeter@ class and create a new constructor that will inject @PhraseBuilder@ using constructor injection. Then, delegate the task of creating the greeting to the injected bean.
+
+    div(filename). src/main/java/org/arquillian/example/Greeter.java
+
+    bc(prettify).. package org.arquillian.example;
+
+    import java.io.PrintStream;
+    import javax.inject.Inject;
+
+    public class Greeter {
+        
+        private PhraseBuilder phraseBuilder;
+        
+        @Inject
+        public Greeter(PhraseBuilder phraseBuilder) {
+            this.phraseBuilder = phraseBuilder;
+        }
+        
+        public void greet(PrintStream to, String name) {
+            to.println(createGreeting(name));
+        }
+        
+        public String createGreeting(String name) {
+            return phraseBuilder.buildPhrase("hello", name);
+        }
+    }
+
+    p. Now, in order for the test to work, an instance of @PhraseBuilder@ must be created, it's @@PostConstruct@ method invoked and must be injected into the constructor of @Greeter@ when an instance of @Greeter@ is created. We can be certain CDI is at work if all that comes together.
+
+    Run the test again. You should get another *{background-color: #5FBF5F; color: white; padding: 1px 3px; border: 1px inset #efefef}green bar*! Feels good, doesn't it?
+
+    h3(#debug_the_test). Debug the Test
+
+    This is going to be a short chapter. Why? Because an Arquillian test is so straightforward that you debug it exactly how you debug a unit test. Just add a breakpoint anywhere--either in the test or in the application code. Then right click on the file and select Debug As > JUnit Test. You're now debugging in the container! Have fun poking around!
+
+    !/images/guides/arquillian_tutorial_debugging_test.png!
+
+    p(important). %If you are using a remote container, Debug As does not cause breakpoints to be activated. You need to start the container in debug mode and attach the debugger. That's because the test is run in a different JVM than the original test runner.%
+
+    As you've just witnessed, Arquillian is the ideal tool for testing CDI applications. It takes care of loading the CDI environment and injecting beans directly into the test. Best of all, when using an embedded CDI container, the test runs just as quickly as a unit test. If that's all you need, then you can exit the tutorial now and start writing tests.
+
+    *But!* Is the embedded container telling the whole story? Will the component work if running inside a full container?
+    
+    One of the perks of Arquillian is that you can run the same test in different compatible containers, whether it's another embedded container or a standalone container. If you intend to use multiple containers, read on.
+
+    h3(#add_more_containers). Add More Containers
+
+    As you learned earlier, Arquillian selects the container based on which container adapter is on the classpath. To switch to another container, you just change which container adapter is on the classpath before you run the test.
+
+    p(caution). %There can only be one container adapter on the classpath at a given time.%
+
+    One way to swap the libraries on the classpath is to manually edit the dependencies defined in the @pom.xml@ each time. But that's just crazy. There's a much better way.
+
+    We can use Maven profiles to partition the dependencies into groups, one group for each container adapter and its related artifacts. When running the tests, you activate one of those groups to select the container using either a commandline flag (-P) or a preference in the IDE.
+
+    Open up the @pom.xml@ and create a new profile for Weld EE embedded by inserting the following XML directly under the @<dependencies>@ element:
+
+    bc(prettify).. <profiles>
+        <profile>
+            <id>arquillian-weld-ee-embedded</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.spec</groupId>
+                    <artifactId>jboss-javaee-web-6.0</artifactId>
+                    <version>2.0.0.Final</version>
+                    <type>pom</type>
+                    <scope>provided</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.apache.xalan</groupId>
+                            <artifactId>xalan</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+                    <version>1.0.0.CR2</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.weld</groupId>
+                    <artifactId>weld-core</artifactId>
+                    <version>1.1.1.Final</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                    <version>1.5.10</version>
+                    <scope>test</scope>
+                </dependency> 
+            </dependencies>
+        </profile>
+    </profiles>
+
+    p. Next, move the @jboss-javaee-web-6.0@ dependency and the dependencies for the Weld EE embedded container adapter into this profile. Here's how the @<dependencies>@ and @<profiles>@ sections should look when you're done:
+
+    bc(prettify).. <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.junit</groupId>
+            <artifactId>arquillian-junit-container</artifactId>
+            <version>1.0.0.CR5</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <profiles>
+        <profile>
+            <id>arquillian-weld-ee-embedded</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.spec</groupId>
+                    <artifactId>jboss-javaee-web-6.0</artifactId>
+                    <version>2.0.0.Final</version>
+                    <type>pom</type>
+                    <scope>provided</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.apache.xalan</groupId>
+                            <artifactId>xalan</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+                    <version>1.0.0.CR2</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.weld</groupId>
+                    <artifactId>weld-core</artifactId>
+                    <version>1.1.1.Final</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                    <version>1.5.10</version>
+                    <scope>test</scope>
+                </dependency> 
+            </dependencies>
+        </profile>
+    </profiles>
+
+    p(info). %The Java EE API dependency has been moved to the profile since some containers, like GlassFish embedded, already provide these libraries and would cause conflicts.%
+
+    We'll now include two additional profiles in the @pom.xml@, directly below the @<profile>@ element for Weld EE embedded, one for Glassfish embedded:
+
+    bc(prettify).. <profile>
+        <id>arquillian-glassfish-embedded</id>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-glassfish-embedded-3.1</artifactId>
+                <version>1.0.0.CR1</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.extras</groupId>
+                <artifactId>glassfish-embedded-all</artifactId>
+                <version>3.1</version>
+                <scope>provided</scope>
+            </dependency>
+        </dependencies>
+    </profile> 
+
+    p. and one for JBoss AS Managed:
+
+    bc(prettify).. <profile>
+        <id>arquillian-jbossas-managed</id>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.spec</groupId>
+                <artifactId>jboss-javaee-web-6.0</artifactId>
+                <version>2.0.0.Final</version>
+                <type>pom</type>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.xalan</groupId>
+                        <artifactId>xalan</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.as</groupId>
+                <artifactId>jboss-as-arquillian-container-managed</artifactId>
+                <version>7.0.0.Final</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </profile>
+
+    p. Now you have the choice of running the tests on one of three containers.
+
+    h3(#test_across_containers). Test Across Containers
+
+    When you refresh the project in Eclipse, you'll notice that it no longer builds. That's because you need to activate one of the container profiles. Let's activate the Weld EE embedded profile to restore the previous state.
+
+    There are two ways to activate a Maven profile in Eclipse:
+
+    # Manual configuration (standard approach)
+    # Maven profile selector (JBoss Tools)
+
+    h4. Set active Maven profile: Manual configuration
+
+    To set the active profile manually, follow these steps:
+
+    # Right click on the project and select Properties
+    # Select the Maven properties tab
+    # Enter the profile id in the Active Maven Profiles field (e.g., @arquillian-weld-ee-embedded@)
+    # Click the OK button and accept the project changes
+
+    Here's the Maven properties screen showing the profile we've activated:
+
+    !/images/guides/arquillian_tutorial_maven_properties.png!
+
+    h4. Set active Maven profile: Maven profile selector
+
+    If you have JBoss Tools installed, selecting the active profile becomes much easier:
+
+    # Right click on the project and select Maven > Select Active Profiles...
+    (alternatively, you can use the keybinding or toolbar button)
+    # Tick the box next to the profile you want to activate (e.g., @arquillian-weld-ee-embedded@)
+    # Click the OK button
+
+    Here's the Maven profile selector dialog showing the profile we've activated:
+
+    !/images/guides/arquillian_tutorial_maven_profile_selector.png!
+
+    Once you've activate the profile, you should be able to run the test again successfully.
+
+    You already know the test works in Weld EE Embedded. Let's switch to GlassFish embedded by repeating the steps above, this time activating only the @arquillian-glassfish-embedded@ profile. Run the test again. You should see GlassFish start in the console...and another *{background-color: #5FBF5F; color: white; padding: 1px 3px; border: 1px inset #efefef}green bar*!
+    
+    You've now run the same test on two different embedded containers, a CDI container (Weld) and a Java EE container (GlassFish). Both of these executions are in process. To really be sure the component works in a pure environment, we need to use a standalone container. Let's switch to using JBoss AS.
+
+    To run the test on a standalone instance of JBoss AS, you first need to set it up. Follow these steps to download and "install" it:
+
+    # "Download JBoss AS 7":http://jboss.org/as7
+    # Extract the archive
+    # Set the @JBOSS_HOME@ environment variable to the path of the extracted directory
+
+    You also need a small bit of Arquillian configuration. Create the following configuration file:
+
+    div(filename). src/test/resources/arquillian.xml
+
+    bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+            http://jboss.org/schema/arquillian
+            http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+        <container qualifier="jbossas-7-remote" default="true">
+            <protocol type="jmx-as7">
+                <property name="executionType">REMOTE</property>
+            </protocol>
+        </container>
+    </arquillian>
+
+    p. Now change the active Maven profile to @arquillian-jbossas-managed@, then run the test again. You should see JBoss AS starting in the console...and yet another *{background-color: #5FBF5F; color: white; padding: 1px 3px; border: 1px inset #efefef}green bar*!
+
+    p(info). %The message printed to System.out gets written to the server log instead of the console.%
+
+    That's the _same_ test, this time running in a standard (non-embedded) Java EE container. Arquillian packages the test, deploys to the container as a Java EE archive, executes the tests remotely, captures the results and feeds them back to the Eclipse JUnit result view (or in the Maven surefire results). You can read more about how this lifecycle works in the "Arquillian reference guide":https://docs.jboss.org/author/display/ARQ/Negotiating+test+execution.
+
+    h3(#rinse_and_repeat). Rinse and Repeat
+
+    ...slightly more advanced example that uses EJB...make point that Weld EE embedded won't stretch this far
 
 #sidebar
   %h3.chapter_header Chapters
@@ -314,3 +688,15 @@ title: Getting Started
       %a{ :href=>'#write_arquillian_test' } Write an Arquillian Test
     %li
       %a{ :href=>'#add_container_adapter' } Add Container Adapter
+    %li
+      %a{ :href=>'#run_arquillian_test' } Run the Arquillian Test
+    %li
+      %a{ :href=>'#closer_look' } A Closer Look
+    %li
+      %a{ :href=>'#debug_the_test' } Debug the Test
+    %li
+      %a{ :href=>'#add_more_containers' } Add More Containers
+    %li
+      %a{ :href=>'#test_across_containers' } Test Across Containers
+    %li
+      %a{ :href=>'#rinse_and_repeat' } Rinse and Repeat
