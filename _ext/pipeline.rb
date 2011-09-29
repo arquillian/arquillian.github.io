@@ -1,12 +1,12 @@
 require 'fork_me_ribbon'
 require 'interwiki'
-require 'githuborg'
-require 'githubrepo'
+require 'github'
 #require 'sassy-buttons'
 
 Awestruct::Extensions::Pipeline.new do
-    extension Awestruct::Extensions::GitHubOrg.new('arquillian', 'arquillian\-((core|showcase|maven|ajocado)|(container|extension|testrunner)\-.*)', 'module')
-    extension Awestruct::Extensions::GitHubRepo.new
+    extension Awestruct::Extensions::GitHub::Org.new('arquillian', 'arquillian\-((core|showcase|maven|ajocado)|(container|extension|testrunner)\-.*)', 'module', 'html.haml')
+    extension Awestruct::Extensions::GitHub::Repo.new('([0-9]+\.[0-9]+).*')
+    extension Awestruct::Extensions::GitHub::Release.new('blog', 'textile', '2011-08-14')
 
     extension Awestruct::Extensions::Posts.new('/blog')
     extension Awestruct::Extensions::Paginator.new(:posts, '/blog/index', :per_page=>5)
