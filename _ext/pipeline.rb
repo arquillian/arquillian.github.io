@@ -1,3 +1,4 @@
+require 'page_debug'
 require 'fork_me_ribbon'
 require 'interwiki'
 require 'github'
@@ -25,4 +26,5 @@ Awestruct::Extensions::Pipeline.new do
     #helper Awestruct::Extensions::GoogleAnalytics
     helper Awestruct::Extensions::ForkMeRibbon
     helper Awestruct::Extensions::Interwiki
+    helper Awestruct::Extensions::PageDebug
 end
