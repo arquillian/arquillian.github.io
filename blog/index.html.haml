@@ -1,22 +1,56 @@
 ---
-layout: base
-title: Blog
+layout: default
+title: Arquillian Blog
+body_class: blog
 ---
-#main
-  #content.container
-    %h1 Arquillian Blog
-    - for post in page.posts
-      .post
+#content
+  - for post in page.posts
+    - post.author_profile_id = site.authors.detect { |author| post.author == author.name }.jboss_profile_id
+    .post
+      .header
         %h2.title
           %a{:href=>post.url}= post.title
-        .byline{ :style=>'margin-left: 55px;' }
-          .author
-            = post.author
-          .date{ :style=>'float: left; margin-left: -55px; margin-top: -.8em;' }
-            #{post.date.strftime('<abbr>%b</abbr> %d')}
-          .tags
-            - post.tags.each do |tag|
-              = tag
-        .body{ :style=>'margin-left: 55px;' }
-          ~ post.content
-    = page.posts.links
+        .byline
+          %span.author<
+            by
+            %a{:href=>"http://community.jboss.org/people/#{post.author_profile_id}"}= post.author
+          %span.dateinline on #{post.date.strftime('%b %d, %Y')}
+          .date= post.date.strftime('<abbr>%b</abbr> %d')
+          %span.comments | 0 comments
+      .body
+        ~ post.content
+      .footer
+        %a{:href=>post.url} permalink
+        | tagged as
+        - post.tags.each do |tag|
+          %a{:href=>tag.primary_page.url}
+            #{tag}#{',' unless tag == post.tags.last} 
+  .pager
+    %span.older
+      - if page.posts.next_page
+        %a{:href=>page.posts.next_page.url} &laquo; Older
+      - if !page.posts.next_page
+        %span.none No older pages.
+    %span.current Page #{page.posts.current_page_index + 1} of #{page.posts.pages.size}
+    %span.newer
+      - if page.posts.previous_page
+        %a{:href=>page.posts.previous_page.url} Newer &raquo;
+      - if not page.posts.previous_page
+        %span.none No newer pages.
+#sidebar
+  .subscribe
+    %a{:href=>'/blog.atom'}
+      %img{:src=>'/images/feed_icon.png'}
+    %h2
+      %a{:href=>'/blog.atom'} Subscribe to the Arquillian Blog
+    %p<
+      %em Get the latest information on features, releases and events.
+  %h2 Lastest Posts
+  %ul
+    - for post in site.posts[0,4] do
+      %li
+        %h5
+          %a{ :href=>post.url }= post.title
+        = post.date.strftime('%b %d, %Y')
+  %h2 Tags
+  = site.posts_tag_cloud

@@ -14,6 +14,7 @@ module Awestruct
       def interwiki_url(url)
         return url.gsub(/^profile:\/\/(.*)/, 'http://community.jboss.org/people/\1') if (url =~ /^profile:\/\//)
         return url.gsub(/^issue:\/\/(.*)/, 'https://issues.jboss.org/browse/\1') if (url =~ /^issue:\/\//)
+        return url.gsub(/^space:\/\/(.*)/, 'http://community.jboss.org/en/\1') if (url =~ /^space:\/\//)
         url
       end
     end
