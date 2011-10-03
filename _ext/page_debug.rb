@@ -3,14 +3,33 @@ module Awestruct
     module PageDebug
 
       # Possible to make color configurable in initializer?
-      def add_debug(struct)
+      def add_debug(site, page)
         
         html = ''
-        html += %Q(<a style="position: absolute; top: 10px; left: 10px;" href="javascript:$('#debug').css('display', 'block')">debug</a>)
-        html += %Q(<div id="debug" style="position: absolute; top: 20px; left: 20px; border: 2px solid #000; width:600px, height: 500px; display:none;background-color:#fff;">)
-        html += %Q(<a href="javascript:$('#debug').css('display', 'none')">close</a>)
+
+        html += %Q(<a style="position: absolute; top: 10px; left: 10px;" href="javascript:$('#debug_site').css('display', 'block')">site</a>)
+        html += create(site, "debug_site")
+        html += %Q(<a style="position: absolute; top: 30px; left: 10px;" href="javascript:$('#debug_page').css('display', 'block')">page</a>)
+        html += create(page, "debug_page")
+
+        return html
+      end
+
+      def create(struct, id)
+        html = ''
+        html += %Q(<div id="#{id}" style="position: absolute; top: 20px; left: 20px; border: 2px solid #000; width:600px, height: 500px; display:none;background-color:#fff;">)
+        html += %Q(<a href="javascript:$('##{id}').toggle()">close</a>)
         html += %Q(<table>)
-        
+
+        html += introspect(struct)
+
+        html += %Q(</table>)
+        html += %Q(</div>)
+        return html
+      end
+
+      def introspect(struct)
+        html = ''
         table = struct.instance_variable_get("@table")
         table.sort{|a,b| a[0].to_s<=>b[0].to_s}.each do |arr| 
           key = arr[0]
@@ -18,7 +37,7 @@ module Awestruct
           #puts "#{key} -> #{value.class}"
 
           output_value = nil
-          
+
           if value.is_a?(NilClass)
             output_value = 'nil'
           elsif value.is_a?(Awestruct::FrontMatterFile)
@@ -36,15 +55,11 @@ module Awestruct
           else
             output_value = value;
           end
-          
+
           html += %Q(<tr><th style="background-color:#eee;">#{key}</th><td style="background-color:#fff;">#{output_value}&nbsp;</td></tr>)
         end
-        
-        
-        html += %Q(</table>)
-        html += %Q(</div>)
+        return html
       end
-
     end
   end
 end
