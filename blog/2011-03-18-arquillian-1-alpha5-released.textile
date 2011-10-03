@@ -1,0 +1,94 @@
+---
+layout: blog
+title: Arquillian 1.0.0 Alpha5  Released
+author: Aslak Knutsen
+tags: [ release, examples, drone ]
+---
+After a long wait we can finally give you some good news.
+ 
+*drum roll...*
+ 
+Arquillian 1.0.0.Alpha5 has been released!
+ 
+In the beginning of the cycle we came to the conclusion that the old Arquillian core just did not cut it in respect to where we were heading, so big parts of it has been rewritten...
+ 
+Some of the hightlight in this release:
+ 
+* *DeploymentException assertion* - Verify that a @@Deployment@ throws the expected deployment exception using @@ShouldThrowException(Exception.class)@
+ 
+bc(prettify). @Deployment @ShouldThrowException(WeldException.class)
+public static WebArchive createTestDeployment() { }
+ 
+* *Multiple deployments* - Define as many @@Deployment@ methods as you may need. If you need them deployed in order, use @@Deployment.order@. When dealing with multiple @@Deployments@ you have to specify which deployment context a @@Test@ method should run within by using the @@OperateOnDeployment("deploymentName")@. The deploymentName is specified using @@Deployment.name@. With this you can swap between in container testing in one deployment, @@RunAsClient@ in the context of another deployment and back incontainer in the third.
+ 
+bc(prettify).. @Deployment(order = 1, name = "dep1")
+public static WebArchive createTestDeployment() { }
+ 
+@Deployment(order = 2, name = "dep2")
+public static WebArchive createTestDeployment2() { }
+ 
+@Test @OperateOnDeployment("dep1")
+public void callActive1() throws Exception { }
+ 
+@Test @OperateOnDeployment("dep2")
+public void callActive1() throws Exception { }
+
+notextile. 
+ 
+* *Multiple containers* - Deploy multiple deployments to multiple containers in the same test class using @@TargetsContainer("containerName")@ on the @@Deployment@ methods. Combined with @@OperateOnDeployment("name")@ individual @@Test@ methods can now execute in different containers.
+ 
+bc(prettify).. @Deployment(name = "dep1") @TargetsContainer("node-1")
+public static WebArchive createTestDeployment() { }
+ 
+@Deployment(name = "dep2") @TargetsContainer("node-2")
+public static WebArchive createTestDeployment2() { }
+ 
+@Test @OperateOnDeployment("dep1")
+public void callActive1() throws Exception { }
+ 
+@Test @OperateOnDeployment("dep2")
+public void callActive1() throws Exception { }
+
+notextile. 
+ 
+* *Configurable protocol* - Previously the protocol was bound to the container you were running on. The container still has a default, but this can now be overwritten on a pr @@Deployment@ method level by using the annotation @@OverProtocol("protocolName")@.
+ 
+bc(prettify).. @Deployment(name = "dep1") @TargetsContainer("node-1") @OverProtocol("Servlet 3.0")
+public static WebArchive createTestDeployment() { }
+ 
+@Deployment(name = "dep2") @TargetsContainer("node-2") @OverProtocol("EJB 3.1")
+public static WebArchive createTestDeployment2() { }
+ 
+@Test @OperateOnDeployment("dep1") // in container text execution is done over HTTP
+public void callActive1() throws Exception { }
+ 
+@Test @OperateOnDeployment("dep2") // in container text execution is done over RMI
+public void callActive1() throws Exception { }
+
+notextile. 
+ 
+* *Descriptor deployment* - Need to deploy a JMS Queue, or a DataSource? Use the Desciptor deployment. Works the same as a Archive deployment by defining a deployment method with return type Descriptor.
+ 
+bc(prettify). @Deployment
+public static Descriptor createTestDeployment() { }
+ 
+* *Arquillian Drone* - A new extension for Web testing. Integrates Arquillian with Selenium, WebDriver and Arquillian Ajocado.
+ 
+bc(prettify).. @RunWith(Arquillian.class)
+public class AjocadoTestCase {
+   // load ajocado driver
+   @Drone
+   AjaxSelenium driver;
+}
+ 
+p. Some changes:
+ 
+* @@Run(AS_CLIENT)@ and @@Run(IN_CONTAINER)@ have been replaced by @@RunAsClient@. @RunMode is default read from @@Deployment.testable@, but you can override the run mode for a in-container deployment using @@RunAsClient@ on the @@Test@ method.
+* New Configuration XML format
+* GlassFish 3.0 support was _replaced_ with 3.1 support.
+ 
+Big thanks to the "Arquillian":space://arquillian and "ShrinkWrap":space://shrinkwrap community for helping us with this release!
+ 
+A extra goes out to, "Karel Piwko":profile://kpiwko for Arquillian Drone, "Jason Porter":profile://lightguard for the GlassFish Remote 3.1 container and "David R Allen":profile://dallen6 for other random issues.
+ 
+[ "Issues":https://issues.jboss.org/browse/ARQ | Javadoc: "API":http://docs.jboss.org/arquillian/api/1.0.0.Alpha5/, "SPI":http://docs.jboss.org/arquillian/spi/1.0.0.Alpha5/ | "Reference Guide":http://docs.jboss.org/arquillian/reference/1.0.0.Alpha5/en-US/html_single | "Release Notes":https://jira.jboss.org/jira/secure/ReleaseNote.jspa?projectId=12310885&styleName=Html&version=12316143 | "Maven artifacts":https://repository.jboss.org/nexus/content/groups/public/org/jboss/arquillian/ ]
