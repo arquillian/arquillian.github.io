@@ -109,7 +109,7 @@ title: Getting Started
 
     p. We're going to be writing Java EE 6 components. So we also need to add the Java EE 6 API to the classpath so we can compile them.
 
-    Open up the @pom.xml@ file once again and add the following XML fragment directly inside the @<dependencies>@ element. Here's how the dependencies section should look once your done:
+    Open up the @pom.xml@ file once again and add the following XML fragment directly inside the @<dependencies>@ element. Here's how the dependencies section should look once you're done:
 
     bc(prettify).. <dependencies>
         <dependency>
@@ -209,7 +209,6 @@ title: Getting Started
     bc(prettify).. <dependency>
         <groupId>org.jboss.arquillian.junit</groupId>
         <artifactId>arquillian-junit-container</artifactId>
-        <version>1.0.0.CR5</version>
         <scope>test</scope>
     </dependency>
 
@@ -217,7 +216,21 @@ title: Getting Started
 
     p(info). %If you wanted to use TestNG instead of JUnit, you would substitute this dependency with the equivalent Arquillian TestNG integration.%
 
-    You're all set to write your first Arquillian test!
+    p. We'll also need to instruct Maven which versions to use for transitive dependencies, so add the following XML fragment under the top-level element of your @pom.xml@:
+
+    bc(prettify).. <dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>org.jboss.arquillian</groupId>
+          <artifactId>arquillian-bom</artifactId>
+          <version>1.0.0.CR5</version>
+          <scope>import</scope>
+          <type>pom</type>
+        </dependency>
+      </dependencies>
+    </dependencyManagement>
+
+    p. You're all set to write your first Arquillian test!
 
     h3(#write_arquillian_test). Write an Arquillian Test
 
@@ -229,13 +242,13 @@ title: Getting Started
 
     bc(prettify).. package org.arquillian.example;
 
-    import static org.junit.Assert.*;
+    import org.junit.Assert;
     import org.junit.Test;
 
     public class GreeterTest {
         @Test
         public void test() {
-            fail("Not yet implemented");
+            Assert.fail("Not yet implemented");
         }
     }
 
@@ -416,7 +429,8 @@ title: Getting Started
     bc(prettify).. package org.arquillian.example;
 
     import java.text.MessageFormat;
-    import java.util.*;
+    import java.util.HashMap;
+    import java.util.Map;
     import javax.annotation.PostConstruct;
 
     public class PhraseBuilder {
@@ -460,9 +474,17 @@ title: Getting Started
         }
     }
 
-    p. Now, in order for the test to work, an instance of @PhraseBuilder@ must be created, it's @@PostConstruct@ method invoked and must be injected into the constructor of @Greeter@ when an instance of @Greeter@ is created. We can be certain CDI is at work if all that comes together.
+    p. Now, in order for the test to work, an instance of @PhraseBuilder@ must be created, its @@PostConstruct@ method invoked and must be injected into the constructor of @Greeter@ when an instance of @Greeter@ is created. We can be certain CDI is at work if all that comes together.
 
-    Run the test again. You should get another *{background-color: #5FBF5F; color: white; padding: 1px 3px; border: 1px inset #efefef}green bar*! Feels good, doesn't it?
+    p. One last step.  Because we created a new class, we must be sure that it's getting added to the archive returned by the @@Deployment@ method in the test.  Simply change the line:
+
+    bc(prettify).. .addClass(Greeter.class)
+
+    p. ...to read:
+
+    bc(prettify).. .addClasses(Greeter.class, PhraseBuilder.class)
+
+    p. Run the test again. You should get another *{background-color: #5FBF5F; color: white; padding: 1px 3px; border: 1px inset #efefef}green bar*! Feels good, doesn't it?
 
     h3(#debug_the_test). Debug the Test
 
@@ -678,7 +700,7 @@ title: Getting Started
 
     To run the test on a standalone instance of JBoss AS, you first need to set it up. Follow these steps to download and "install" it:
 
-    # "Download JBoss AS 7":http://jboss.org/as7
+    # "Download JBoss AS 7":http://jboss.org/as7; be sure the version you select matches the version you've defined in your @pom.xml@ for @<artifactId>jboss-as-arquillian-container-managed</artifactId>@
     # Extract the archive
     # Set the @JBOSS_HOME@ environment variable to the path of the extracted directory
 
@@ -687,15 +709,15 @@ title: Getting Started
     div(filename). src/test/resources/arquillian.xml
 
     bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="
-            http://jboss.org/schema/arquillian
-            http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
-        <container qualifier="jbossas-7-remote" default="true">
-            <protocol type="jmx-as7">
-                <property name="executionType">REMOTE</property>
-            </protocol>
-        </container>
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+      <container qualifier="jbossas-7-remote" default="true">
+        <configuration>
+          <property name="jbossHome">/path/to/jboss_home</property>
+        </configuration>
+      </container>
     </arquillian>
 
     p. Now change the active Maven profile to @arquillian-jbossas-managed@, then run the test again. You should see JBoss AS starting in the console...and yet another *{background-color: #5FBF5F; color: white; padding: 1px 3px; border: 1px inset #efefef}green bar*!
@@ -703,10 +725,6 @@ title: Getting Started
     p(info). %The message printed to System.out gets written to the server log instead of the console.%
 
     That's the _same_ test, this time running in a standard (non-embedded) Java EE container. Arquillian packages the test, deploys to the container as a Java EE archive, executes the tests remotely, captures the results and feeds them back to the Eclipse JUnit result view (or in the Maven surefire results). You can read more about how this lifecycle works in the "Arquillian reference guide":https://docs.jboss.org/author/display/ARQ/Negotiating+test+execution.
-
-    h3(#rinse_and_repeat). Rinse and Repeat
-
-    ...slightly more advanced example that uses EJB...make point that Weld EE embedded won't stretch this far
 
 #sidebar
   %h3.chapter_header Chapters
@@ -735,5 +753,3 @@ title: Getting Started
       %a{ :href=>'#add_more_containers' } Add More Containers
     %li
       %a{ :href=>'#test_across_containers' } Test Across Containers
-    %li
-      %a{ :href=>'#rinse_and_repeat' } Rinse and Repeat
