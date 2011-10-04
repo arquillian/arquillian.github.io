@@ -24,7 +24,7 @@ Awestruct::Extensions::Pipeline.new do
     extension Awestruct::Extensions::GitHub::Contributor.new
     extension Awestruct::Extensions::GitHub::Repo.new('([0-9]+\.[0-9]+).*')
     extension Awestruct::Extensions::Jira::ReleaseNotes.new('ARQ', '12310885')
-    extension Awestruct::Extensions::GitHub::Release.new('blog', 'textile', '2011-08-14')
+    extension Awestruct::Extensions::GitHub::Release.new('blog', 'textile', '2010-09-14')
     extension Awestruct::Extensions::Arquillian::JiraVersionPrefix.new
 
     extension Awestruct::Extensions::Arquillian::TagInfo.new
