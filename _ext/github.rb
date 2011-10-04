@@ -198,8 +198,20 @@ module Awestruct
                   release_page.title = "#{page.title} - #{tag.name} Released" unless release_page.title
                   release_page.author = commit.author.name unless release_page.author
                   release_page.version = tag.name unless release_page.version
+
+                  page.github_repo =~ /arquillian\-(.*)/
+                  module_qualifier = $1
+
                   release_page.tags = Array[] unless release_page.tags
-                  release_page.tags << Array[page.github_repo, page.github_user, "announcement", "release"]
+                  release_page.tags << module_qualifier << "release"
+
+                  module_qualifiers = module_qualifier.split('-')
+                  if module_qualifiers.length > 1
+                    module_qualifiers.each do |x|
+                      release_page.tags << x
+                    end
+                  end
+
                   release_page.date = Time.utc(release_date.year, release_date.month, release_date.day) unless release_page.date
 
                 end
