@@ -11,7 +11,9 @@ require 'posts2'
 Awestruct::Extensions::Pipeline.new do
     extension Awestruct::Extensions::GitHub::Org.new(
         'arquillian',
-        'arquillian\-((core|showcase|maven|ajocado)|(container|extension|testrunner)\-.*)',
+        #'arquillian\-((core|showcase|maven|ajocado)|(container|extension|testrunner)\-.*)',
+        #'arquillian\-((core|showcase|maven)|(container|extension|testrunner)\-[^reloaded].*)',
+        'arquillian\-((core)|(extension-drone))',
         'module',
         'html.haml',
         # Reg Exp mapping between repo_name and type of module layout
