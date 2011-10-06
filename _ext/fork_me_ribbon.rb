@@ -3,9 +3,13 @@ module Awestruct
     module ForkMeRibbon
 
       # Possible to make color configurable in initializer?
-      def fork_me_ribbon()
+      def fork_me_ribbon(site, page)
         html = ''
-        html += %Q(<a class="forkme" href="#{site.source_repo}">)
+        if page.github_user and page.github_repo
+          html += %Q(<a class="forkme" href="http://github.com/#{page.github_user}/#{page.github_repo}">)
+        else
+          html += %Q(<a class="forkme" href="http://github.com/#{site.github_organization}">)
+        end
         html += %Q(<img style="position: absolute; top: 0; right: 0; border: 0;" src="/images/forkme_green_skewed.png" alt="Fork me on github"/>)
         html += %Q(</a>)
       end
