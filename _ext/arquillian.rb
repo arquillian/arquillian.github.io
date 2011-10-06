@@ -31,7 +31,6 @@ module Awestruct
                 end
                 tags_info[tag.name] = tag_info                  
               end
-              
               page.arq_tags_info = tags_info
             end
           end
@@ -43,7 +42,6 @@ module Awestruct
         def execute(site)
           site.pages.each do |page|
             if page.github_repo
-              
               version_prefix = page.github_repo
               version_prefix = version_prefix.split('-').last
               if version_prefix.eql? 'core'
@@ -52,12 +50,11 @@ module Awestruct
                 version_prefix = "#{version_prefix}_"
               end
             end
-            
             page.jira_version_prefix = version_prefix
           end
         end
-      
       end
+
     end
   end
 end
