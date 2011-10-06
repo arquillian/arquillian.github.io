@@ -90,7 +90,7 @@ module Awestruct
                 contributor['user'] = user_json
 
                 site.contributors = Hash.new unless site.contributors
-                site.contributors[contributor['login']] = contributor
+                site.contributors[contributor['login'].downcase] = contributor
               end
 
               page.github_repo_contributors = contributor_json

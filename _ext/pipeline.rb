@@ -5,6 +5,7 @@ require 'interwiki'
 require 'github'
 require 'jira'
 require 'arquillian'
+require 'arquillian_model'
 require 'posts2'
 #require 'sassy-buttons'
 
@@ -30,6 +31,7 @@ Awestruct::Extensions::Pipeline.new do
     extension Awestruct::Extensions::Arquillian::JiraVersionPrefix.new
 
     extension Awestruct::Extensions::Arquillian::TagInfo.new
+    extension Arquillian::Model::Bind.new
 
     # Posts2 is a 'patched' version of Posts to support generating the date layout from page.date as well as filename
     # GitHub:Release will generate synth pages with name 'repo'-'tag'.textile, the date is based on the tag commit date
