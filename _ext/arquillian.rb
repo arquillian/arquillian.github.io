@@ -49,8 +49,8 @@ module Awestruct
               else
                 version_prefix = "#{version_prefix}_"
               end
+              page.jira_version_prefix = version_prefix
             end
-            page.jira_version_prefix = version_prefix
           end
         end
       end
@@ -58,3 +58,4 @@ module Awestruct
     end
   end
 end
+

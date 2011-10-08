@@ -7,6 +7,7 @@ require 'jira'
 require 'arquillian'
 require 'arquillian_model'
 require 'posts2'
+require 'guide'
 #require 'sassy-buttons'
 
 Awestruct::Extensions::Pipeline.new do
@@ -45,9 +46,14 @@ Awestruct::Extensions::Pipeline.new do
     # Indexifier moves HTML files to their own directory to achieve "pretty" URLs (e.g., features.html -> /features/index.html)
     extension Awestruct::Extensions::Indexifier.new
 
+    # Needs to be after Indexifier to get the linking correct
+    extension Awestruct::Extensions::Guide::Index.new('/guides')
+
     helper Awestruct::Extensions::Partial
     #helper Awestruct::Extensions::GoogleAnalytics
     helper Awestruct::Extensions::ForkMeRibbon
     helper Awestruct::Extensions::Interwiki
     helper Awestruct::Extensions::PageDebug
+
+    transformer Awestruct::Extensions::Guide::AddIds.new
 end
