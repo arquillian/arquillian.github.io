@@ -7,9 +7,9 @@ module Awestruct
         
         html = ''
 
-        html += %Q(<a style="position: absolute; top: 10px; left: 10px;" href="javascript:$('#debug_site').css('display', 'block')">site</a>)
+        html += %Q(<a style="position: absolute; top: 10px; left: 10px;" href="#" onclick="$('#debug_site').toggle()">site</a>)
         html += create(site, "debug_site")
-        html += %Q(<a style="position: absolute; top: 30px; left: 10px;" href="javascript:$('#debug_page').css('display', 'block')">page</a>)
+        html += %Q(<a style="position: absolute; top: 30px; left: 10px;" href="#" onclick="$('#debug_page').toggle()">page</a>)
         html += create(page, "debug_page")
 
         return html
@@ -18,7 +18,7 @@ module Awestruct
       def create(struct, id)
         html = ''
         html += %Q(<div id="#{id}" style="position: absolute; top: 20px; left: 20px; border: 2px solid #000; width:600px, height: 500px; display:none;background-color:#fff;">)
-        html += %Q(<a href="javascript:$('##{id}').toggle()">close</a>)
+        html += %Q(<a href="#" onclick="$('##{id}').toggle()">close</a>)
         html += %Q(<table>)
 
         html += introspect(struct)
