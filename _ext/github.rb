@@ -197,6 +197,7 @@ module Awestruct
                   # Update page properties if not defined in template
                   release_page.title = "#{page.title} #{tag.name} Released" unless release_page.title
                   release_page.author = commit.author.name unless release_page.author
+                  release_page.module = page.title
                   release_page.version = tag.name unless release_page.version
                   release_page.layout = 'release' unless release_page.layout
 
