@@ -2,7 +2,6 @@ module Awestruct
   module Extensions
     module PageDebug
 
-      # Possible to make color configurable in initializer?
       def add_debug(site, page)
         
         html = ''
@@ -19,7 +18,7 @@ module Awestruct
         html = ''
         html += %Q(<div id="#{id}" style="position: absolute; top: 20px; left: 20px; border: 2px solid #000; width:600px, height: 500px; display:none;background-color:#fff;">)
         html += %Q(<a href="#" onclick="$('##{id}').toggle()">close</a>)
-        html += %Q(<table>)
+        html += %Q(<table class="data">)
 
         html += introspect(struct)
 
