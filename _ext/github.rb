@@ -204,7 +204,7 @@ module Awestruct
                   module_qualifier = $1
 
                   release_page.tags = Array[] unless release_page.tags
-                  release_page.tags << module_qualifier << "release"
+                  release_page.tags << "release" << module_qualifier
 
                   module_qualifiers = module_qualifier.split('-')
                   if module_qualifiers.length > 1
