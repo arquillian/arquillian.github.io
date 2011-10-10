@@ -1,8 +1,7 @@
 ---
 layout: guide-index
-javascripts: [ http://apis.google.com/js/plusone.js ]
 ---
-- page.javascripts = [ 'http://apis.google.com/js/plusone.js' ]
+- page.javascripts = [ '/javascripts/jquery-scroll.js', 'http://apis.google.com/js/plusone.js' ]
 #content
   ~ content
 
@@ -17,49 +16,74 @@ javascripts: [ http://apis.google.com/js/plusone.js ]
               =chapter.text
 
   :javascript
-    $(document).ready(function() {
-      var toc = $('#toc');
-      var tocTop = toc.position().top;
-      var sidebar = $('#sidebar');
-      var sidebarBottom = sidebar.position().top + sidebar.outerHeight();
-      var contentBottom = $('#guide').outerHeight() + $('#guide').position().top;
-      var sections = [
-        #{page.guide.chapters.map{|x| '\'' + x.link_id + '\''}.join(',')}
-      ];
+    $(window).load(function() {
+      var $toc = $('#toc');
+      $toc.localScroll();
+      var sections = [ #{page.guide.chapters.map{|x| '\'' + x.link_id + '\''}.join(',')} ];
+      var currentSection = false;
       var sectionOffsets = {};
-      for (var i = 0, len = sections.length; i < len; i++) {
-        var s = sections[i];
-        sectionOffsets[s] = $('#' + s).position().top;
-      }
-      var linkColor = $('#' + sections[0]+ "_link").css('color');
-      var lastSection = false;
-      $(window).scroll(function() {
+      $.each(sections, function(idx, section) {
+        sectionOffsets[section] = $('#' + section).position().top;
+      });
+      
+      var tocMetrics = {
+        top: $toc.position().top,
+        height: $toc.outerHeight()
+      };
+      var bottomBumper = $('#guide .two-col').outerHeight() + $('#guide .two-col').offset().top - 25;
+      var linkColor = $('#toc a:first').css('color');
+
+      var updateToc = function() {
         var scrollY = $(window).scrollTop();
-        console.log("avail: " + (contentBottom - scrollY) + "; need:" + toc.height());
-        if (scrollY > tocTop) {
-          if (contentBottom - scrollY < (toc.outerHeight() + 25)) {
-            toc.css({position: 'fixed', top: -15 - (toc.outerHeight() - (contentBottom - scrollY))});
+        positionToc(scrollY);
+        highlightSectionInToc(scrollY);
+      }
+
+      var positionToc = function(scrollY) {
+        if (scrollY > tocMetrics.top) {
+          if ($toc.css('position') != 'fixed') {
+            $toc.css('position', 'fixed');
+          }
+          var remainingHeight = bottomBumper - scrollY;
+          if (remainingHeight < tocMetrics.height) {
+            $toc.css('top', 0 - (tocMetrics.height - remainingHeight));
           }
           else {
-            toc.css({position: 'fixed', top: 5});
+            $toc.css('top', 5);
           }
         }
         else {
-          toc.css({position: ''});
-        }
-
-        for (var i = 0, len = sections.length; i < len; i++) {
-          var s = sections[i];
-          if (scrollY > sectionOffsets[s] && (i == len - 1 || scrollY < sectionOffsets[sections[i + 1]])) {
-            if (lastSection != s) {
-              if (lastSection) {
-                $('#' + lastSection + '_link').css({fontWeight: 'normal', color: linkColor});
-              }
-              $('#' + s + '_link').css({fontWeight: 'bold', color: '#333333'});
-              lastSection = s;
-              break;
-            }
+          if ($toc.css('position') != 'static') {
+            $toc.css({position: 'static', top: 0});
           }
         }
-      });
+      };
+
+      var highlightSectionInToc = function(scrollY) {
+        var numSections = sections.length;
+        $.each(sections, function(idx, section) {
+          if (scrollY > sectionOffsets[section] && (idx == numSections - 1 || scrollY < sectionOffsets[sections[idx + 1]])) {
+            if (currentSection != section) {
+              if (currentSection) {
+                toggleSelection(currentSection, false);
+              }
+              currentSection = section;
+              toggleSelection(currentSection, true);
+              return false;
+            }
+          }
+        });
+      }
+
+      var toggleSelection = function(section, active) {
+        if (active) {
+          $('#' + section + '_link').css({fontWeight: 'bold', color: '#333333'});
+        }
+        else {
+          $('#' + currentSection + '_link').css({fontWeight: 'normal', color: linkColor});
+        }
+      }
+
+      updateToc();
+      $(window).scroll(updateToc);
     });
