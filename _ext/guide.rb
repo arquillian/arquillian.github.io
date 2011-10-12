@@ -53,7 +53,7 @@ module Awestruct
                 end
               end
             end
-            return page_content.to_html
+            return page_content.to_html.gsub('DOCTYPE  SYSTEM', 'DOCTYPE html')
           end
           return rendered
         end
