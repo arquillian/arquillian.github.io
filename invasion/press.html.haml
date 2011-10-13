@@ -2,31 +2,43 @@
 layout: invasion
 title: Community Press
 ---
-%script{ :type=>'text/javascript', :src=>'/javascripts/jquery.tmpl.js' }
-%script{ :type=>'text/javascript', :src=>'/javascripts/jquery.jgfeed.js' }
-%script{ :id=> 'diigo-tmpl', :type=>'text/x-jquery-tmpl'}    
-  %tr
-    %td
-      %a{ :href=> "${link}"} 
-        ${title}
-    %td ${publishedDate}
-    %td {{html content}}
-
+%script{:type=>'text/javascript', :src=>'/javascripts/jquery-tmpl.js'}
+%script{:type=>'text/javascript', :src=>'/javascripts/jquery-jgfeed.js'}
+%script#diigo_tmpl{:type=>'text/x-jquery-tmpl'}
+  .entry
+    .header
+      %h3.title
+        %a{:href=>'${link}'} ${title}
+      .byline
+        .date<
+          %abbr ${publishedDateMonth}
+          ${publishedDateOfMonth}
+    .body
+      {{html content}}
 #diigo.feed
-  %table#diigo_feed.data
-    %tr
-      %th Title
-      %th Date
-      %th Description
-
 %div
   %a{:href=>'http://diigo.com/user/jbosstesting/arquillian'} See all Arquillian community press on diigo.com &raquo;
 
 :javascript
+  Date.prototype.monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
+  Date.prototype.getUTCMonthName = function() {
+    return this.monthNames[this.getUTCMonth()];
+  };
+  Date.prototype.getUTCShortMonthName = function() {
+    return this.getUTCMonthName().substr(0, 3);
+  };
   $.jGFeed('http://www.diigo.com/rss/user/jbosstesting',
-    function(feeds){
-      if(!feeds){
+    function(feeds) {
+      if (!feeds) {
         return false;
       }
-      $('#diigo-tmpl').tmpl(feeds.entries).appendTo('#diigo_feed');
-    }, 10);
+      $.each(feeds.entries, function(idx, entry) {
+        var d = new Date(entry.publishedDate);
+        entry.publishedDateMonth = d.getUTCShortMonthName();
+        entry.publishedDateOfMonth = d.getUTCDate();
+        if (entry.publishedDateOfMonth < 10) {
+          entry.publishedDateOfMonth = '0' + entry.publishedDateOfMonth;
+        }
+      });
+      $('#diigo_tmpl').tmpl(feeds.entries).appendTo('#diigo');
+    }, 15);
