@@ -5,8 +5,8 @@ module Awestruct
       # Possible to make color configurable in initializer?
       def fork_me_ribbon(site, page)
         html = ''
-        if page.github_user and page.github_repo
-          html += %Q(<a class="forkme" href="http://github.com/#{page.github_user}/#{page.github_repo}">)
+        if page.github_repo_owner and page.github_repo
+          html += %Q(<a class="forkme" href="http://github.com/#{page.github_repo_owner}/#{page.github_repo}">)
         else
           html += %Q(<a class="forkme" href="http://github.com/#{site.github_organization}">)
         end

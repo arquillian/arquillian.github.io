@@ -12,20 +12,21 @@ require 'guide'
 
 Awestruct::Extensions::Pipeline.new do
     # The GitHub::Org extension is development page refreshes to break (requires double save)
-#    extension Awestruct::Extensions::GitHub::Org.new(
-#        'arquillian',
-#        #'arquillian\-((core|showcase|maven|ajocado)|(container|extension|testrunner)\-.*)',
-#        'arquillian\-((core|showcase|maven)|(container|extension|testrunner)\-[^reloaded].*)',
-#        #'arquillian\-((core)|(extension-drone))',
-#        'module',
-#        'html.haml',
-#        # Reg Exp mapping between repo_name and type of module layout
-#        [
-#          [/.*\-container\-.*/, 'container-module'],
-#          [/.*\-testrunner\-.*/, 'testrunner-module'],
-#          [/.*\-extension\-.*/, 'extension-module']
-#        ]
-#    )
+    extension Awestruct::Extensions::GitHub::Org.new(
+        'arquillian',
+        #'arquillian\-((core|showcase|maven|ajocado)|(container|extension|testrunner)\-.*)',
+        'arquillian\-((core|showcase|maven)|(container|extension|testrunner)\-(?!reloaded).+)',
+        #'arquillian\-((core)|(extension-drone))',
+        'module',
+        'html.haml',
+        # Reg Exp mapping between repo_name and type of module layout
+        [
+          [/.*\-core/, 'core-module'],
+          [/.*\-container\-.*/, 'container-module'],
+          [/.*\-testrunner\-.*/, 'testrunner-module'],
+          [/.*\-extension\-.*/, 'extension-module']
+        ]
+    )
     extension Awestruct::Extensions::GitHub::Contributor.new
     extension Awestruct::Extensions::GitHub::Repo.new('([0-9]+\.[0-9]+).*')
     extension Awestruct::Extensions::Jira::ReleaseNotes.new('ARQ', '12310885')

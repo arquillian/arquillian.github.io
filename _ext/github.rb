@@ -26,17 +26,13 @@ module Awestruct
 
           # Create Synthetic Pages if needed
           org_repo_json.each do |repo|
-            if repo["name"] =~ Regexp.new("#{@repo_filter}")
+            if repo['name'] =~ Regexp.new("#{@repo_filter}")
 
               module_page = nil
               module_path = File.join(@resource_folder, "#{repo['name']}.#{@file_extension}")
               # Find existing page if any
               if File.exists?module_path
-                site.pages.each do |page|
-                  if page.relative_source_path =~ Regexp.new("/#{@resource_folder}/#{repo["name"]}.#{@file_extension}")
-                    module_page = page
-                  end
-                end
+                module_page = site.pages.detect {|page| page.relative_source_path == "/#{@resource_folder}/#{repo['name']}.#{@file_extension}"}
               # Create a new page
               else
                 module_page = site.engine.load_site_page("#{@resource_folder}/_github-module-template.#{@file_extension}")
@@ -50,17 +46,17 @@ module Awestruct
                 module_page.layout = x[1] if repo['name'] =~ x[0]
               end
 
-              # Update page properties if not defined in template
+              ## Update page properties if not defined in template
               if !module_page.github_repo
-                module_page.github_repo = repo["name"].clone
+                module_page.github_repo = repo['name'].clone
               end
-              if !module_page.github_user
-                module_page.github_user = @org_name
+              if !module_page.github_repo_owner
+                module_page.github_repo_owner = @org_name
               end
 
               # Swap name arquillian-core with Camel Case v Arquillian Core
               if !module_page.title
-                module_page.title = repo["name"].clone.gsub!(/\-/, ' ').gsub!(/^[a-z]|\s+[a-z]/) { |a| a.upcase }
+                module_page.title = repo['name'].clone.gsub!(/\-/, ' ').gsub!(/^[a-z]|\s+[a-z]/) { |a| a.upcase }
               end
 
               module_page.github_org_repo= repo
@@ -74,11 +70,11 @@ module Awestruct
       class Contributor
 
         def execute(site)
-          github_tmp = tmp(site.tmp_dir, "github")
+          github_tmp = tmp(site.tmp_dir, 'github')
 
           site.pages.each do |page|
-            if page.github_user and page.github_repo
-              contributor_url = "https://api.github.com/repos/#{page.github_user}/#{page.github_repo}/contributors"
+            if page.github_repo_owner and page.github_repo
+              contributor_url = "https://api.github.com/repos/#{page.github_repo_owner}/#{page.github_repo}/contributors"
 
               # Get Repository Contributors (sort)
               contributor_json = getOrCacheJSON(File.join(github_tmp, "contributors-#{page.github_repo}.json"), contributor_url)
@@ -89,6 +85,16 @@ module Awestruct
                 user_json = getOrCacheJSON(File.join(github_tmp, "user-#{contributor['login']}.json"), contributor['url'])
                 contributor['user'] = user_json
 
+                gravatar_json = getOrCacheJSON(File.join(github_tmp, "gravatar-#{contributor['login']}.json"), "http://en.gravatar.com/#{contributor['user']['gravatar_id']}.json")
+                if (gravatar_json['entry'])
+                  accounts = gravatar_json['entry'][0]['accounts']
+                  if (accounts)
+                    twitter_account = accounts.detect {|account| account['domain'] == 'twitter.com'}
+                    if (twitter_account)
+                      contributor['user']['twitter_id'] = twitter_account['username']
+                    end 
+                  end
+                end
                 site.contributors = Hash.new unless site.contributors
                 site.contributors[contributor['login'].downcase] = contributor
               end
@@ -108,7 +114,7 @@ module Awestruct
           github_tmp = tmp(site.tmp_dir, 'github')
 
           site.pages.each do |page|
-            if page.is_a?(Awestruct::FrontMatterFile) and page.github_user and page.github_repo
+            if page.is_a?(Awestruct::FrontMatterFile) and page.github_repo_owner and page.github_repo
               # Clone the repo
               github_repo_tmp = File.join(github_tmp, 'repo')
               if !File.exist?github_repo_tmp
@@ -118,7 +124,7 @@ module Awestruct
               g = nil
               github_repo_dir = File.join(github_repo_tmp, page.github_repo)
               if !File.exist?github_repo_dir
-                repo_url = "https://github.com/#{page.github_user}/#{page.github_repo}.git"
+                repo_url = "https://github.com/#{page.github_repo_owner}/#{page.github_repo}.git"
                 puts "#{repo_url}"
                 g = Git.clone(repo_url, github_repo_dir)
               else
@@ -155,7 +161,7 @@ module Awestruct
 
           # Create Synthetic Release Pages if needed
           site.pages.each do |page|
-            if page.is_a?(Awestruct::FrontMatterFile) and page.github_user and page.github_repo and page.git_tags and page.git_repo
+            if page.is_a?(Awestruct::FrontMatterFile) and page.github_repo_owner and page.github_repo and page.git_tags and page.git_repo
               page.git_tags.each do |tag|
                 commit = page.git_repo.gcommit(tag.sha)
 
@@ -189,7 +195,7 @@ module Awestruct
                   end
 
                   release_page.github_repo = page.github_repo
-                  release_page.github_user = page.github_user 
+                  release_page.github_repo_owner = page.github_repo_owner 
                   release_page.github_org_repo = page.github_org_repo
                   release_page.git_tag = tag
                   release_page.git_repo = page.git_repo
