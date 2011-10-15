@@ -56,7 +56,21 @@ module Awestruct
 
               # Swap name arquillian-core with Camel Case v Arquillian Core
               if !module_page.title
-                module_page.title = repo['name'].clone.gsub!(/\-/, ' ').gsub!(/^[a-z]|\s+[a-z]/) { |a| a.upcase }
+                repo_name = repo['name'].clone
+
+                repo_name.gsub!(/\-/, ' ').gsub!(/ [a-z]+/) {|segment|
+                    # HACK abstract me out somehow
+                    segment = ' JBoss AS' if segment == ' jbossas'
+                    segment = ' GlassFish' if segment == ' glassfish'
+                    segment = ' OpenEJB' if segment == ' openejb'
+                    segment = ' OpenWebBeans' if segment == ' openwebbeans'
+                    segment = ' OSGi' if segment == ' osgi'
+                    segment = ' OpenShift' if segment == ' openshift'
+                    segment = ' GAE' if segment == ' gae'
+                    segment = ' WAS' if segment == ' was'
+                    segment
+                  }.gsub!(/^[a-z]|\s+[a-z]/) { |a| a.upcase }
+                module_page.title = repo_name
               end
 
               module_page.github_org_repo= repo
