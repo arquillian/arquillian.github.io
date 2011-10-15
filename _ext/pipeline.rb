@@ -55,7 +55,7 @@ Awestruct::Extensions::Pipeline.new do
     extension Awestruct::Extensions::Guide::Index.new('/guides')
 
     #helper Awestruct::Extensions::Partial
-    #helper Awestruct::Extensions::GoogleAnalytics
+    helper Awestruct::Extensions::GoogleAnalytics
     helper Awestruct::Extensions::ForkMeRibbon
     helper Awestruct::Extensions::Interwiki
     helper Awestruct::Extensions::PageDebug
