@@ -4,7 +4,7 @@ module Awestruct
 
       def add_debug(site, page)
         html = ''
-        if (site.show_debug)
+        if site.show_debug
           html += %Q(<a style="position: absolute; top: 10px; left: 10px;" href="#" onclick="$('#debug_site').toggle()">site</a>)
           html += create(site, "debug_site")
           html += %Q(<a style="position: absolute; top: 30px; left: 10px;" href="#" onclick="$('#debug_page').toggle()">page</a>)
