@@ -25,7 +25,7 @@ module Awestruct
               page_content.search('h3').each do |header_html|
                 chapter = OpenStruct.new
                 chapter.text = header_html.inner_html
-                chapter.link_id = chapter.text.gsub(' ', '_').downcase
+                chapter.link_id = chapter.text.gsub(' ', '_').gsub(/[\(\)]/, '').downcase
                 chapters << chapter
               end
 
@@ -53,6 +53,7 @@ module Awestruct
                 end
               end
             end
+            # FIXME bad Hpricot, what are you doing to us?
             return page_content.to_html.gsub('DOCTYPE  SYSTEM', 'DOCTYPE html')
           end
           return rendered
