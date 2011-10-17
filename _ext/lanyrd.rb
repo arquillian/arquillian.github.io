@@ -34,7 +34,7 @@ module Awestruct::Extensions::Lanyrd
   # * speaker_names (full name of all speakers, type: Array[String])
   #
   # Author:: Aslak Knutsen, Dan Allen
-  # TODO:: retrieve the detail url and image url for the speaker
+  # TODO:: retrieve the detail url and image url for the speaker, don't download detail pages of old sessions
 
   class Search
     
@@ -112,6 +112,8 @@ module Awestruct::Extensions::Lanyrd
 
           session.description = session_detail.search('div[@class*=abstract]').inner_html
           session.detail_url = session_detail_url
+
+          session.event_location = session_detail.at('p[@class=location]').inner_text.split(/\//).map{|l| l.strip}.reverse.join(', ')
           
           raw.search('p[@class*=meta]').each do |meta|
             type = meta.search('strong').inner_html
