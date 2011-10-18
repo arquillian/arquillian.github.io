@@ -10,7 +10,7 @@ module Awestruct
         else
           html += %Q(<a class="forkme" href="http://github.com/#{site.github_organization}">)
         end
-        html += %Q(<img style="position: absolute; top: 0; right: 0; border: 0;" src="/images/forkme_green_skewed.png" alt="Fork me on github"/>)
+        html += %Q(<img id="forkme" style="position: fixed; top: 0; right: 0; border: 0; z-index: 1001;" src="/images/forkme_green_skewed.png" alt="Fork me on github"/>)
         html += %Q(</a>)
       end
 
