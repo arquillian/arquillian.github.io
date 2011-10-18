@@ -85,6 +85,7 @@ module Awestruct
 
         def execute(site)
           github_tmp = tmp(site.tmp_dir, 'github')
+          site.contributors = Hash.new unless site.contributors
 
           site.pages.each do |page|
             if page.github_repo_owner and page.github_repo
@@ -96,6 +97,7 @@ module Awestruct
 
               # Get Contributors User info
               contributor_json.each do |contributor|
+
                 user_json = getOrCacheJSON(File.join(github_tmp, "user-#{contributor['login']}.json"), contributor['url'])
                 contributor['user'] = user_json
 
@@ -109,8 +111,13 @@ module Awestruct
                     end 
                   end
                 end
-                site.contributors = Hash.new unless site.contributors
-                site.contributors[contributor['login'].downcase] = contributor
+                # Contributor allready stored in site, summarize contributions
+                if site.contributors[contributor['login'].downcase]
+                  stored_contrib = site.contributors[contributor['login'].downcase]
+                  stored_contrib['contributions'] = stored_contrib['contributions'] + contributor['contributions'] 
+                elsif
+                  site.contributors[contributor['login'].downcase] = contributor
+                end
               end
 
               page.github_repo_contributors = contributor_json
