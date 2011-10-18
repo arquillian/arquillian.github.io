@@ -9,7 +9,7 @@ require 'arquillian_model'
 require 'posts2'
 require 'guide'
 require 'lanyrd'
-require 'susy'
+#require 'susy'
 require 'sassy-buttons'
 
 Awestruct::Extensions::Pipeline.new do
