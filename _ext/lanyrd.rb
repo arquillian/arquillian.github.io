@@ -1,3 +1,5 @@
+require 'vpim/icalendar'
+
 ##
 # Lanyrd is an Awestruct extension module for interacting with lanyrd.com
 # to retrieve conference session listings, speakers and related info.
@@ -135,6 +137,71 @@ module Awestruct::Extensions::Lanyrd
         end
       end
     end
-    
+  end
+
+  ##
+  # Awestruct::Extensions::Lanyrd::Export exports sessions retrived by the Search extension
+  # as a ical stream.
+  #
+  # This class is loaded as an extension in the Awestruct pipeline. The
+  # constructor accepts a output_path to where the ical stream should be exported.
+  #
+  #   extension Awestruct::Extensions::Lanyrd::Export.new('/invation/events/ical.ics')
+  #
+  # This extension performs the following work:
+  #
+  # * read all site.sessions
+  # * write out a ical using the vpim library
+  #
+  # Author:: Aslak Knutsen
+  class Export
+
+    def initialize(output_path)
+      @output_path = output_path
+    end
+
+    def execute(site)
+      if site.sessions
+
+        cal = Vpim::Icalendar.create2
+        site.sessions.each do |session|
+
+          cal.add_event do |e|
+            e.dtstart       Time.parse session.start_datetime.to_s
+            e.dtend         Time.parse session.end_datetime.to_s
+            e.summary       session.title
+            e.description session.description
+            e.categories    [ 'SESSION' ]
+            e.url           session.detail_url
+            e.set_text('LOCATION', session.event)
+            e.sequence      0
+            e.access_class  "PUBLIC"
+
+            now = Time.now
+            e.created       now
+            e.lastmod       now
+
+            e.organizer do |o|
+              o.cn = session.event
+              o.uri = session.event_url
+            end
+
+            session.speaker_names do |speaker|
+              attendee = Vpim::Icalendar::Address.create(speaker)
+              attendee.rsvp = true
+              e.add_attendee attendee
+            end
+          end
+        end
+
+        input_page = File.join( File.dirname(__FILE__), 'lanyrd.export.haml' )
+        page = site.engine.load_page( input_page )
+        page.date = page.timestamp unless page.timestamp.nil?
+        page.output_path = @output_path
+        page.session_ical = cal.encode
+        site.pages << page
+
+      end
+    end
   end
 end
