@@ -9,10 +9,12 @@ require 'arquillian_model'
 require 'posts2'
 require 'guide'
 require 'lanyrd'
-#require 'susy'
 require 'sassy-buttons'
 
 Awestruct::Extensions::Pipeline.new do
+    # fix awestruct breaking the compass image path
+    Compass.configuration.images_dir = 'images'
+
     # The GitHub::Org extension is development page refreshes to break (requires double save)
     extension Awestruct::Extensions::GitHub::Org.new(
         'arquillian',
