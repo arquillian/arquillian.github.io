@@ -6,7 +6,7 @@ module Awestruct
       def interwiki_urls(text)
         doc = Hpricot(text)
         doc.search('//a').each do |a|
-          a['href'] = interwiki_url(a['href'])
+          a['href'] = interwiki_url(a['href']) if not a['href'].nil?
         end
         doc
       end
