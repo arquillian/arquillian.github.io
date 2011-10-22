@@ -29,24 +29,25 @@ h3. Create a Project
 Before we can get started with Arquillian we need a project. If you did not create one yet, use the following Forge commands to create a simple Java EE 6 project that includes JPA.
 
 bc(command).. $ new-project --named arquillian-demo --topLevelPackage demo
+ ? Use [/Users/paul/arquillian-demo] as project directory? [Y/n]  [true] 
+***SUCCESS*** Created project [arquillian-demo] in new working directory [/Users/paul/arquillian-demo]
+Wrote /Users/paul/arquillian-demo
+Wrote /Users/paul/arquillian-demo/pom.xml
+Wrote /Users/paul/arquillian-demo/src/main/java
+Wrote /Users/paul/arquillian-demo/src/test/java
+Wrote /Users/paul/arquillian-demo/src/main/resources
+Wrote /Users/paul/arquillian-demo/src/test/resources
+Wrote /Users/paul/arquillian-demo/src/main/resources/META-INF/forge.xml
 
 p. The new project is created. Next, we need to have some code to test. Let's use Forge to create a new CDI bean.
 
 bc(command).. $ beans new-bean --type demo.MySimpleBean --scoped DEPENDENT
+Picked up type <JavaResource>: demo.MySimpleBean
+Wrote /Users/paul/arquillian-demo/src/main/java/demo/MySimpleBean.java
 
-p. Now configure JPA, an Entity and a simple Data Access Object.
+p. Your project is set up now. It's time for testing!
 
-bc(command). $ persistence setup --provider HIBERNATE --container JBOSS_AS7
-
-bc(command). $ entity --named Language --package demo.entities
-
-bc(command). $ field string --named name
-
-bc(command). $ beans new-bean --type demo.dao.LanguageDao --scoped REQUEST
-
-p. Your project is set up now. It's time for some testing!
-
-h3. Getting Started 
+h3. Getting started 
 
 Setting up Arquillian is easy, as you might have seen in the "general getting started guide":../getting_started. It is a lot of copy/paste work however to configure a new container for Arquillian in the pom.xml. Forge can do that for you with a single command!
 
@@ -67,6 +68,8 @@ h3. Writing a Test
 Now let's write a test. Forge can help you get started again.
 
 bc(command).. $ arquillian create-test --class demo.MySimpleBean.java
+Picked up type <JavaResource>: demo.MySimpleBeanTest
+Wrote /Users/paul/arquillian-demo/src/test/java/demo/MySimpleBeanTest.java
 
 p. A new test class with a deployment and test method is added to the project. It injects the class under test using CDI, so this will immediately prove if the test really runs in a container. If your IDE can't find imports, make sure you enable the Maven profile that was created earlier. You can run the test from your IDE, directly from Maven or from Forge.
 
@@ -78,7 +81,25 @@ Now let's try to test some JPA code.
 
 h3. Test Persistence
 
-First add some JPA code to your project to test. Add a class @demo.dao.LanguageDao@ in your IDE and populate it with the content shown below:
+Before we can start wrting tests we need to configure JPA, an Entity and a simple Data Access Object.
+
+bc(command).. $ persistence setup --provider HIBERNATE --container JBOSS_AS7
+***SUCCESS*** Installed [forge.spec.jpa] successfully.
+***INFO*** Setting transaction-type="JTA"
+***INFO*** Using example data source [java:jboss/datasources/ExampleDS]
+Warning:  The encoding 'UTF-8' is not supported by the Java runtime.
+ ? The JPA provider [HIBERNATE], also supplies extended APIs. Install these as well? [y/N]  [false] 
+Wrote /Users/paul/arquillian-demo/pom.xml
+Wrote /Users/paul/arquillian-demo/src/main/resources/META-INF/persistence.xml
+
+$ entity --named Language --package demo.entities
+Created @Entity [demo.entities.Language]
+Picked up type <JavaResource>: demo.entities.Language
+Wrote /Users/paul/arquillian-demo/src/main/java/demo/entities/Language.java
+
+$ field string --named name
+Added field to demo.entities.Language: @Column private String name;
+Wrote /Users/paul/arquillian-demo/src/main/java/demo/entities/Language.java
 
 div(filename). src/main/java/demo/dao/LanguageDao.java
 
@@ -118,9 +139,11 @@ public class LanguageDao {
     }
 }
 
-p. Now create a test class for this bean using Forge.
+p. Now create a test.
 
 bc(command).. $ arquillian create-test --class demo.dao.LanguageDao.java --enableJPA
+Picked up type <JavaResource>: demo.dao.LanguageDemoTest
+Wrote /Users/paul/arquillian-demo/src/test/java/demo/dao/LanguageDemoTest.java
 
 p. This again creates a new test, but also adds your persistence.xml to the deployment. Open the test in your IDE and add the @Language@ entity to the deployment.
 
@@ -128,14 +151,12 @@ Now write a test assertion:
 
 div(filename). src/test/java/demo/dao/LanguageDaoTest.java
 
-bc(prettify).. // clip
-@Test
+bc(prettify).. @Test
 public void testListLanguages() {
-    Assert.assertEquals(3, languagedao.listLanguages().size());
+	Assert.assertEquals(3, languagedao.listLanguages().size());
 }
-// clip
  
-p. *Congratulations!* Another *(greenbar)green bar* with Arquillian and Forge!
+p. *Congratulations!* Another *(greenbar)green bar* with Arquillian!
 
 h3. Add More Containers
 
