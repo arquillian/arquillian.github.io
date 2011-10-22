@@ -9,7 +9,7 @@ require 'arquillian_model'
 require 'posts2'
 require 'guide'
 require 'lanyrd'
-#require 'sassy-buttons'
+require 'sassy-buttons'
 
 Awestruct::Extensions::Pipeline.new do
     # The GitHub::Org extension is development page refreshes to break (requires double save)
