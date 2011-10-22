@@ -17,11 +17,143 @@ This guide gets you acquainted with the Arquillian Forge plugin. After reading t
 * Generate a component and cooresponding Arquillian test
 * Execute the Arquillian test on multiple containers without manual configuration
 
-You'll be performing many of the same steps described in the "Getting Started":getting_started guide, only you'll be letting Forge handle the dirty work. We've designed this guide to be a fast read to get you started even quicker than ever before.
+You'll be performing many of the same steps described in the "Getting Started":../getting_started guide, only you'll be letting Forge handle the dirty work. We've designed this guide to be a fast read to get you started even quicker than ever before.
 </div>
 
 h3. Assumptions
 
-write me
+* You have JBoss Forge installed. ("download":https://docs.jboss.org/author/display/FORGE/Home)
 
-h3. Share the Knowledge 
+h3. Create example project (optional)
+
+Before we can get started with Arquillian we need a project. If you did not create one yet, use the following Forge commands to create a simple Java EE 6 project including JPA.
+
+bc(prettify).. $ new-project --named arquillian-demo --topLevelPackage demo
+
+p. The new project is created, now we need to have some code to test.
+
+bc(prettify).. $ beans new-bean --type demo.MySimpleBean --scoped DEPENDENT
+
+p. Now configure JPA, an Entity and a simple Data Access Object.
+
+bc(prettify).. $ persistence setup --provider HIBERNATE --container JBOSS_AS7
+$ entity --named Language --package demo.entities
+$ field string --named name
+
+$ beans new-bean --type demo.dao.LanguageDao --scoped REQUEST
+
+p. Your project is set up now. It's time for testing!
+
+h3. Getting started 
+
+Setting up Arquillian is easy, as you might have seen in the "general getting started guide":../getting_started. It is a lot of copy/paste work however to configure a new container for Arquillian in the pom.xml. Forge can do that for you with a single command!
+
+First you will need to install the Arquillian plugin.
+
+bc(prettify).. $ forge install-plugin arquillian
+
+p. Now we need to set up Arquillian and a container configuration. Let's first try JBoss AS7
+
+bc(prettify).. $ arquillian setup --container JBOSS_AS_7_MANAGED
+
+p. Forge will prompt you which version of JUnit, Arquillian and JBoss AS7 to use. Use the latest final versions for each. Forge can even download JBoss AS7 automatically if you haven't done so yet.
+
+That's it! Arquillian is configured. You can take a look at your pom.xml to see the dependencies and profile that is added. Forge also created the arquillian.xml file in test/resources.
+
+h3. Writing a test
+
+Now let's write a test. Forge can help you get started again.
+
+bc(prettify).. $ arquillian create-test --class demo.MySimpleBean.java
+
+p. A new test class with a deployment and test method is added to the project. It injects the class under test using CDI, so this will immediately prove if the test really runs in a container. If your IDE can't find imports, make sure you enable the Maven profile that was created earlier. You can run the test from your IDE, directly from Maven or from Forge.
+
+bc(prettify).. $ build --profile arq-jbossas-7-managed
+
+p. *Congratulations!* You've earned your first *(greenbar)green bar* with Arquillian!
+
+Now let's try to test some JPA code.
+
+
+h3. Test JPA
+
+First add some JPA code to your project to test. Add a class demo.dao.LanguageDao in your IDE
+
+div(filename). src/main/java/demo/dao/LanguageDao.java
+
+bc(prettify).. package demo.dao;
+
+import demo.entities.Language;
+import javax.annotation.PostConstruct;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.util.List;
+
+@Singleton
+@Startup
+public class LanguageDao {
+    @PersistenceContext
+    EntityManager em;
+
+    public List<Language> listLanguages() {
+        return em.createQuery("select l from Language l").getResultList();
+    }
+
+    @PostConstruct
+    public void insertTestData() {
+        Language java = new Language();
+        java.setName("Java");
+        em.persist(java);
+
+        Language ruby = new Language();
+        ruby.setName("Ruby");
+        em.persist(ruby);
+
+        Language groovy = new Language();
+        groovy.setName("Groovy");
+        em.persist(groovy);
+    }
+}
+
+p. Now create a test.
+
+bc(prettify).. $ arquillian create-test --class demo.dao.LanguageDao.java --enableJPA
+
+p. This again creates a new test, but now also adds your persistence.xml to the deployment. Open the test in your IDE and add the Language entity to the deployment.
+
+Now write a test:
+
+div(filename). src/test/java/demo/dao/LanguageDaoTest.java
+
+bc(prettify).. @Test
+public void testListLanguages() {
+	Assert.assertEquals(3, languagedao.listLanguages().size());
+}
+ 
+p. *Congratulations!* Another *(greenbar)green bar* with Arquillian!
+
+h3. Add More Containers
+
+Adding more containers is as easy as executing the setup command again. For example, add Glassfish.
+
+bc(prettify).. $ arquillian setup --container GLASSFISH_3_1_REMOTE
+
+p. Simply switch between containers by switching the Maven profile. For example in Forge:
+
+bc(prettify).. $ build test --profile glassfish-remote-3
+
+h3. Export deployment packages
+
+For debugging purposes it can be useful to export your deployment to a file. You can do so using Forge.
+
+First navigate to an Arquillian test
+
+bc(prettify).. $ cd src/test/java/demo/MySimpleBeanTest.java
+
+p. Then export the deployment.
+
+bc(prettify).. $ arquillian export
+
+h3. Share the Knowledge
