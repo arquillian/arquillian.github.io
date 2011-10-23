@@ -29,7 +29,7 @@ def getOrCacheJSON(tmp_file, json_url)
         response.return!(request, result, &block)
       end
     }.body;
-    if (response_body.match(/^\{/))
+    if (response_body.match(/^(\{|\[)/))
       json = JSON.parse response_body
     end
     File.open(tmp_file, 'w').write JSON.pretty_generate json
