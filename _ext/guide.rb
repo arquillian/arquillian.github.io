@@ -18,6 +18,7 @@ module Awestruct
               guide.output_path = page.output_path
               guide.summary = page.guide_summary
               guide.group = page.guide_group
+              guide.order = if page.guide_order then page.guide_order else 100 end
               
               page_content = Hpricot(page.content)
               chapters = []
