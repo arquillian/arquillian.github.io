@@ -6,7 +6,6 @@ require 'github'
 require 'jira'
 require 'arquillian'
 require 'arquillian_model'
-require 'posts2'
 require 'guide'
 require 'lanyrd'
 require 'sassy-buttons'
@@ -39,9 +38,7 @@ Awestruct::Extensions::Pipeline.new do
     extension Awestruct::Extensions::Arquillian::TagInfo.new
     extension Arquillian::Model::Bind.new
 
-    # Posts2 is a 'patched' version of Posts to support generating the date layout from page.date as well as filename
-    # GitHub:Release will generate synth pages with name 'repo'-'tag'.textile, the date is based on the tag commit date
-    extension Awestruct::Extensions::Posts2.new('/blog')
+    extension Awestruct::Extensions::Posts.new('/blog')
     extension Awestruct::Extensions::Paginator.new(:posts, '/blog/index', :per_page=>5)
     extension Awestruct::Extensions::Atomizer.new(:posts, '/blog.atom')
     extension Awestruct::Extensions::Tagger.new(:posts, '/blog/index', '/blog/tags', :per_page=>5)
