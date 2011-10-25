@@ -7,6 +7,10 @@ module Awestruct
           @path_prefix = path_prefix
         end
 
+        def transform(transformers)
+          transformers << AddIds.new
+        end
+
         def execute(site)
           guides = []
           

@@ -56,6 +56,4 @@ Awestruct::Extensions::Pipeline.new do
     helper Awestruct::Extensions::ForkMeRibbon
     helper Awestruct::Extensions::Interwiki
     helper Awestruct::Extensions::PageDebug
-
-    transformer Awestruct::Extensions::Guide::AddIds.new
 end
