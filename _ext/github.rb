@@ -99,6 +99,9 @@ module Awestruct
               contributor_json.each do |contributor|
 
                 user_json = getOrCacheJSON(File.join(github_tmp, "user-#{contributor['login']}.json"), contributor['url'])
+                if user_json['blog'] and not user_json['blog'] =~ /^http:\/\//
+                  user_json['blog'] = 'http://' + user_json['blog']
+                end
                 contributor['user'] = user_json
 
                 gravatar_json = getOrCacheJSON(File.join(github_tmp, "gravatar-#{contributor['login']}.json"), "http://en.gravatar.com/#{contributor['user']['gravatar_id']}.json")
