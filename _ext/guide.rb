@@ -8,7 +8,7 @@ module Awestruct
         end
 
         def transform(transformers)
-          transformers << AddIds.new
+          transformers << WrapHeaderAndAssignHeadingIds.new
         end
 
         def execute(site)
@@ -50,7 +50,7 @@ module Awestruct
         end
       end
 
-      class AddIds
+      class WrapHeaderAndAssignHeadingIds
       
         def transform(site, page, rendered)
           if page.guide
