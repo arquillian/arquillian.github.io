@@ -3,6 +3,7 @@ require 'page_debug'
 require 'fork_me_ribbon'
 require 'interwiki'
 require 'github'
+require 'git_helper'
 require 'jira'
 require 'arquillian'
 require 'arquillian_model'
@@ -56,4 +57,6 @@ Awestruct::Extensions::Pipeline.new do
     helper Awestruct::Extensions::ForkMeRibbon
     helper Awestruct::Extensions::Interwiki
     helper Awestruct::Extensions::PageDebug
+
+    helper Awestruct::Extensions::GitHelper
 end
