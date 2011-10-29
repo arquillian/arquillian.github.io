@@ -9,10 +9,12 @@ require 'arquillian_model'
 require 'guide'
 require 'lanyrd'
 require 'sassy-buttons'
-require 'custom_textile'
+require 'textile_plus'
 
 Awestruct::Extensions::Pipeline.new do
-    # The GitHub::Org extension is development page refreshes to break (requires double save)
+    # Custom tags and syntax for textile markup
+    extension Awestruct::Extensions::TextilePlus.new()
+
     extension Awestruct::Extensions::GitHub::Org.new(
         'arquillian',
         #'arquillian\-((core|showcase|maven|ajocado)|(container|extension|testrunner)\-.*)',
@@ -44,7 +46,7 @@ Awestruct::Extensions::Pipeline.new do
     extension Awestruct::Extensions::Atomizer.new(:posts, '/blog.atom')
     extension Awestruct::Extensions::Tagger.new(:posts, '/blog/index', '/blog/tags', :per_page=>5)
     extension Awestruct::Extensions::TagCloud.new(:posts, '/blog/tags/index.html')
-    #extension Awestruct::Extensions::IntenseDebate.new()
+    extension Awestruct::Extensions::IntenseDebate.new()
 
     # Indexifier moves HTML files to their own directory to achieve "pretty" URLs (e.g., features.html -> /features/index.html)
     extension Awestruct::Extensions::Indexifier.new
