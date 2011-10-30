@@ -52,6 +52,9 @@ module RedCloth::Formatters::HTML
       html = "<iframe#{pba(opts)}#{dim_attrs} src=\"http://player.vimeo.com/video/#{clip_id}?title=0&amp;byline=0&amp;portrait=0\" frameborder=\"0\" webkitallowfullscreen=\"webkitallowfullscreen\" mozallowfullscreen=\"mozallowfullscreen\" allowfullscreen=\"allowfullscreen\"></iframe>"
     elsif source == "youtube"
       html = "<iframe#{pba(opts)}#{dim_attrs} type=\"text/html\" src=\"http://www.youtube.com/embed/#{clip_id}\" frameborder=\"0\"></iframe>"
+    elsif source == "slideshare"
+      # 575x470
+      html = "<iframe#{pba(opts)}#{dim_attrs} src=\"http://www.slideshare.net/slideshow/embed_code/#{clip_id}\" frameborder=\"0\" marginwidth=\"0\" marginheight=\"0\" scrolling=\"no\"></iframe>"
     end
     html
   end
