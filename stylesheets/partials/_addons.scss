@@ -34,6 +34,53 @@
   }
 }
 
+// ex. @include heading-sizes(3em, .4em, .5em, -.25em);
+@mixin heading-sizes($start-font-size, $font-size-delta, $start-margin, $margin-delta) {
+  @for $i from 1 through 5 {
+    h#{$i} {
+      font-size: $start-font-size - $font-size-delta * ($i - 1);
+      margin-bottom: $start-margin - $margin-delta * ($i - 1);
+    }
+  }
+}
+
+// ex. @include article-callouts((info yellow) (important red));
+@mixin article-callouts($callouts, $extension: "png") {
+  @each $callout in $callouts {
+    $len: length($callout);
+    @if $len < 1 {
+      @warn "Must provide at least a name for callout."
+    }
+    $name: nth($callout, 1);
+    $bgcolor: #FFFFFF;
+    @if length($callout) >= 2 {
+      $bgcolor: nth($callout, 2);
+    }
+    p.#{$name} {
+      margin-bottom: 1em;
+      z-index: 100;
+      // & > span is required since redcloth adds <span class="caps"> around a
+      // sequence of three uppercase characters
+      & > span {
+        z-index: 1;
+        display: block;
+        padding: 1em 24px;
+        margin-left: 22px;
+      }
+      background: image-url("#{$name}.#{$extension}") no-repeat 0 2px; 
+      & > span {
+        background: $bgcolor image-url("#{$name}.#{$extension}") no-repeat -22px 2px;
+      }
+    }
+
+    ul.legend {
+      li.#{$name} {
+        background-image: image-url("#{$name}.#{$extension}");
+      }
+    }
+  }
+}
+
 @mixin box-reflect($direction, $offset, $stop) {
   -webkit-box-reflect: $direction $offset -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop($stop, transparent), to(white));
 }
