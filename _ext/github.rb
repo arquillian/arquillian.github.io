@@ -110,7 +110,7 @@ module Awestruct
                   if (accounts)
                     twitter_account = accounts.detect {|account| account['domain'] == 'twitter.com'}
                     if (twitter_account)
-                      contributor['user']['twitter_id'] = twitter_account['username']
+                      contributor['user']['twitter_id'] = twitter_account['username'].downcase
                     end 
                   end
                 end
@@ -149,7 +149,7 @@ module Awestruct
               github_repo_dir = File.join(github_repo_tmp, page.github_repo)
               if !File.exist?github_repo_dir
                 repo_url = "https://github.com/#{page.github_repo_owner}/#{page.github_repo}.git"
-                puts "#{repo_url}"
+                #puts "#{repo_url}"
                 g = Git.clone(repo_url, github_repo_dir)
               else
                 g = Git.open(github_repo_dir)
