@@ -39,7 +39,7 @@ Awestruct::Extensions::Pipeline.new do
     extension Awestruct::Extensions::Arquillian::JiraVersionPrefix.new
 
     extension Awestruct::Extensions::Lanyrd::Search.new('arquillian')
-    extension Awestruct::Extensions::Lanyrd::Export.new('/invasion/events/arquillian.ical')
+    extension Awestruct::Extensions::Lanyrd::Export.new('/invasion/events/arquillian.ics')
 
     extension Awestruct::Extensions::Arquillian::TagInfo.new
     extension Arquillian::Model::Bind.new
