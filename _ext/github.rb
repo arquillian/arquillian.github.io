@@ -67,7 +67,8 @@ module Awestruct
                     segment = ' OSGi' if segment == ' osgi'
                     segment = ' OpenShift' if segment == ' openshift'
                     segment = ' GAE' if segment == ' gae'
-                    segment = ' WAS' if segment == ' was'
+                    segment = ' WebSphere' if segment == ' was'
+                    segment = ' WebLogic' if segment == ' wls'
                     segment
                   }.gsub!(/^[a-z]|\s+[a-z]/) { |a| a.upcase }
                 module_page.title = repo_name
