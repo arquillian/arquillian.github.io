@@ -110,7 +110,7 @@ module Awestruct
                 github_repo_contributors << {'contributor'=>identity, 'contributions'=>contributions}
 
                 # if already loaded as contributor, just add contributions to running total
-                if identity.contributor
+                if identity.contributor?.eql? true
                   identity.github.contributions += contributions
                 else
                   identity.username = username
