@@ -146,7 +146,6 @@ module Awestruct
 
       def page_changes(page, since)
         changes = []
-        puts since
         g = Git.open(page.site.dir)
         Git::Log.new(g, 50).path(page.relative_source_path[1..-1]).since(since).each do |c|
           changes << Change.new(c.sha, c.author.name, c.author.date, c.message.to_a[0].chomp)  
