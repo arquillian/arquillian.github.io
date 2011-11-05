@@ -226,6 +226,7 @@ module Awestruct
         end
       end
       
+      # If you touch the file _tmp/repos/.dopull, this extension will do a 'git pull' in each repo
       class Repo
         def initialize(tag_filter)
           @tag_filter = tag_filter
@@ -233,23 +234,28 @@ module Awestruct
 
         def execute(site)
           github_tmp = tmp(site.tmp_dir, 'github')
+          repos_tmp = tmp(site.tmp_dir, 'repos')
+          dopull_directive = File.join(repos_tmp, '.dopull')
+          dopull = false
+          if File.exist? dopull_directive
+            dopull = true
+            File.unlink dopull_directive
+          end
 
           site.pages.each do |page|
             if page.is_a?(Awestruct::FrontMatterFile) and page.github_repo_owner and page.github_repo
-              # Clone the repo
-              github_repo_tmp = File.join(github_tmp, 'repo')
-              if !File.exist?github_repo_tmp
-                Dir.mkdir(github_repo_tmp)
-              end
-
               g = nil
-              github_repo_dir = File.join(github_repo_tmp, page.github_repo)
+              github_repo_dir = File.join(repos_tmp, page.github_repo)
               if !File.exist?github_repo_dir
-                repo_url = "https://github.com/#{page.github_repo_owner}/#{page.github_repo}.git"
-                #puts "#{repo_url}"
+                repo_url = "git://github.com/#{page.github_repo_owner}/#{page.github_repo}.git"
+                puts "Cloning repo from #{repo_url}..."
                 g = Git.clone(repo_url, github_repo_dir)
               else
                 g = Git.open(github_repo_dir)
+                if dopull
+                  puts "Updating repo #{page.github_repo}..."
+                  g.pull('origin', 'origin/master')
+                end
               end
 
               tags = g.tags
