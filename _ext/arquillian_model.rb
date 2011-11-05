@@ -21,6 +21,10 @@ module Arquillian
       def execute(site)
         @identities = site.identities
         site.speakers = site.identities.reject {|login, identity| not identity.speaker? }
+        # QUESTION is this the best place?
+        site.speakers.each_pair do |login, identity|
+          identity.lanryd.url = "http://lanryd.com/profile/#{identity.twitter_username}"
+        end
         site.extend(SiteExtras)
       end
     end

@@ -131,6 +131,7 @@ module Awestruct::Extensions::Lanyrd
               meta.search('a').each do |speaker_node|
                 name = speaker_node.inner_text.strip
                 username = speaker_node.attributes['href'].match(/\/profile\/([^\/]*)/)[1]
+                # QUESTION add identities for speakers if not exist?
                 session.speakers << {'name' => name, 'username' => username }
               end
             end
