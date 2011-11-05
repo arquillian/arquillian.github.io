@@ -34,6 +34,7 @@ module Awestruct::Extensions::Lanyrd
   # * event (conference name, type: String)
   # * event_url (conference URL, type: URL (absolute))
   # * speaker_names (full name of all speakers, type: Array[String])
+  # * speakers (username and name of all speakers, type: Hash[username, name])
   #
   # Author:: Aslak Knutsen, Dan Allen
   # TODO:: retrieve the detail url and image url for the speaker, don't download detail pages of old sessions
@@ -123,12 +124,15 @@ module Awestruct::Extensions::Lanyrd
             session.event = meta.inner_text.strip if type.eql? 'Event'
             session.event_url = "#{@base}#{meta.at('a').attributes['href']}" if type.eql? 'Event'
             session.speaker_names = []
+            session.speakers = []
             
             if type.eql? 'Speakers'
               session.speaker_names = meta.inner_text.strip.split(', ')
-              #meta.search('a').each do |speaker_node|
-              #  session.speaker_names << speaker_node.inner_text.strip
-              #end
+              meta.search('a').each do |speaker_node|
+                name = speaker_node.inner_text.strip
+                username = speaker_node.attributes['href'].match(/\/profile\/([^\/]*)/)[1]
+                session.speakers << {'name' => name, 'username' => username }
+              end
             end
             
           end

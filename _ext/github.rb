@@ -83,48 +83,145 @@ module Awestruct
 
       class Contributor
 
+        def initialize()
+          @github_tmp = nil
+          @gravatar_tmp = nil
+        end
+
         def execute(site)
-          github_tmp = tmp(site.tmp_dir, 'github')
-          site.contributors = Hash.new unless site.contributors
+          @github_tmp = tmp(site.tmp_dir, 'github')
+          @gravatar_tmp = tmp(site.tmp_dir, 'gravatar')
+          site.contributors ||= OpenCascade.new
+          site.identities ||= OpenCascade.new
 
           site.pages.each do |page|
             if page.github_repo_owner and page.github_repo
+              github_repo_contributors = []
               contributor_url = "https://api.github.com/repos/#{page.github_repo_owner}/#{page.github_repo}/contributors"
 
               # Get Repository Contributors (sort)
-              contributor_json = getOrCacheJSON(File.join(github_tmp, "contributors-#{page.github_repo}.json"), contributor_url)
-              contributor_json.sort{|x,y| x["login"] <=> y["login"] }
+              contributor_json = getOrCacheJSON(File.join(@github_tmp, "contributors-#{page.github_repo}.json"), contributor_url)
 
               # Get Contributors User info
               contributor_json.each do |contributor|
+                username = contributor['login'].downcase
+                contributions = contributor['contributions']
+                identity = get_identity(username, site)
+                github_repo_contributors << {'contributor'=>identity, 'contributions'=>contributions}
 
-                user_json = getOrCacheJSON(File.join(github_tmp, "user-#{contributor['login']}.json"), contributor['url'])
-                if user_json['blog'] and not user_json['blog'] =~ /^http:\/\//
-                  user_json['blog'] = 'http://' + user_json['blog']
-                end
-                contributor['user'] = user_json
-
-                gravatar_json = getOrCacheJSON(File.join(github_tmp, "gravatar-#{contributor['login']}.json"), "http://en.gravatar.com/#{contributor['user']['gravatar_id']}.json")
-                if (gravatar_json['entry'])
-                  accounts = gravatar_json['entry'][0]['accounts']
-                  if (accounts)
-                    twitter_account = accounts.detect {|account| account['domain'] == 'twitter.com'}
-                    if (twitter_account)
-                      contributor['user']['twitter_id'] = twitter_account['username'].downcase
-                    end 
-                  end
-                end
-                # Contributor allready stored in site, summarize contributions
-                if site.contributors[contributor['login'].downcase]
-                  stored_contrib = site.contributors[contributor['login'].downcase]
-                  stored_contrib['contributions'] = stored_contrib['contributions'] + contributor['contributions'] 
-                elsif
-                  site.contributors[contributor['login'].downcase] = contributor
+                # if already loaded as contributor, just add contributions to running total
+                if identity.contributor
+                  identity.github.contributions += contributions
+                else
+                  identity.username = username
+                  identity.contributor = true
+                  identity.github.contributions = contributions
+                  load_github_profile(username, identity, contributor['url'])
+                  load_gravatar_profile(username, identity)
+                  site.contributors[username.to_sym] = identity
                 end
               end
 
-              page.github_repo_contributors = contributor_json
+              page.github_repo_contributors = github_repo_contributors
             end
+          end
+
+          # load identities that are found in identities.yml but aren't detected as contributors
+          site.identities.each_pair do |username, identity|
+            if identity.username?.nil?
+              identity.username = username
+              load_github_profile(username, identity)
+              load_gravatar_profile(username, identity)
+            end
+          end
+
+          #puts site.identities.to_yaml
+        end
+
+        def get_identity(username, site)
+          identity = site.identities[username.to_sym]
+          if not identity
+            identity = site.identities[username.to_sym] = OpenCascade.new
+          end
+          identity
+        end
+
+        def load_github_profile(username, identity, data_url = nil)
+          if data_url.nil?
+            data_url = "https://api.github.com/users/#{username}"
+          end
+          user_json = getOrCacheJSON(File.join(@github_tmp, "user-#{username}.json"), data_url)
+          if user_json['blog'].nil? || user_json['blog'].empty?
+            user_json['blog'] = nil
+          elsif not user_json['blog'] =~ /^http:\/\//
+            user_json['blog'] = 'http://' + user_json['blog']
+          end
+          user_json['created_at'] = Time.parse user_json['created_at']
+
+          user_json.each_pair do |k, v|
+            identity.github[k.to_sym] = v
+          end
+
+          # NOTE can't assign from one key to another, gotta use a tmp
+          tmp_url = identity.github.delete(:url)
+          identity.github.api_url = tmp_url
+          tmp_url = identity.github.delete(:html_url)
+          identity.github.url = tmp_url
+
+          [:company, :name, :location, :bio, :email, :blog].each do |s|
+            identity[s] = identity.github.delete(s)
+          end
+
+          identity.gravatar_hash = identity.gravatar.request_hash = identity.github.delete(:gravatar_id)
+          identity.github.delete(:avatar_url)
+
+          if not identity.gravatar_hash?.nil? || identity.gravatar_hash?.empty?
+            # in templates, just add ?s=n to url to set the size of the image to nxn
+            identity.avatar_url = identity.gravatar.avatar_url = "http://gravatar.com/avatar/#{identity.gravatar_hash}"
+          end
+        end
+
+        def load_gravatar_profile(username, identity)
+          gravatar_json = getOrCacheJSON(File.join(@gravatar_tmp, "user-#{username}.json"), "http://en.gravatar.com/#{identity.gravatar_hash}.json")
+          if gravatar_json['entry']
+            entry = gravatar_json['entry'].first
+            identity.gravatar.id = entry['id']
+            identity.gravatar.url = entry['profileUrl']
+            if identity.name?.nil? || identity.name?.empty? and entry['name'].is_a?(Hash)
+              identity.name = entry['name']['formatted']
+            end
+            if identity.location?.nil? || identity.location?.empty?
+              identity.location = entry['currentLocation']
+            end
+            if identity.bio?.nil? || identity.bio?.empty?
+              identity.bio = entry['aboutMe']
+            end
+            if entry['accounts']
+              twitter_account = entry['accounts'].detect {|account| account['shortname'] == 'twitter'}
+              if twitter_account
+                identity.twitter.url = twitter_account['url'].downcase
+                identity.twitter_username = identity.twitter.username = twitter_account['username'].downcase
+              end 
+            end
+            if entry['urls']
+              entry['urls'].each do |url|
+                if url['value'] =~ /community\.jboss\.org\/people\//
+                  identity.jboss_username = identity.jboss.username = url['value'].match(/community\.jboss\.org\/people\/(.*)/)[1]
+                  identity.jboss.url = url['value']
+                elsif identity.blog?.nil?
+                  identity.blog = url['value'] 
+                end
+              end
+            end
+          end
+
+          if identity.name.nil? || identity.name.empty?
+            identity.name = identity.username.to_s
+          end
+
+          if identity.jboss_username? and not identity.jboss?
+            identity.jboss.username = identity.jboss_username
+            identity.jboss.url = 'http://community.jboss.org/people/' + identity.jboss_username
           end
         end
       end
@@ -225,16 +322,16 @@ module Awestruct
                   release_page.git_repo = page.git_repo
 
                   # Update page properties if not defined in template
-                  release_page.title = "#{page.title} #{tag.name} Released" unless release_page.title
-                  release_page.author = commit.author.name unless release_page.author
+                  release_page.title ||= "#{page.title} #{tag.name} Released"
+                  release_page.author ||= commit.author.name
                   release_page.module = page.title
-                  release_page.version = tag.name unless release_page.version
-                  release_page.layout = 'release' unless release_page.layout
+                  release_page.version ||= tag.name
+                  release_page.layout ||= 'release'
 
                   page.github_repo =~ /arquillian\-(.*)/
                   module_qualifier = $1
 
-                  release_page.tags = Array[] unless release_page.tags
+                  release_page.tags ||= []
                   release_page.tags << "release" << module_qualifier
 
                   module_qualifiers = module_qualifier.split('-')
@@ -244,7 +341,7 @@ module Awestruct
                     end
                   end
 
-                  release_page.date = Time.utc(release_date.year, release_date.month, release_date.day) unless release_page.date
+                  release_page.date ||= Time.utc(release_date.year, release_date.month, release_date.day)
 
                 end
               end
