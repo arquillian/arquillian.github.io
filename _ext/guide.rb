@@ -54,11 +54,46 @@ module Awestruct
 
               guide.chapters = chapters
               page.guide = guide
-              guides << guide
+
+              page_languages = findLanguages(page)
+              page.languages = page_languages if page_languages.size > 0
+
+              guide.languages = page.languages
+
+              # only add the 'main' (en) guide to the guide index
+              is_main_guide = !(page.relative_source_path =~ /.*_([a-z]{2})\..*/)
+              if is_main_guide
+                # default guide language is english
+                guide.language = site.languages.send('en')
+                guides << guide
+              end
             end
           end
           
           site.guides = guides
+        end
+
+        def findLanguages(page)
+          languages = []
+          base_page = page.source_path.gsub('.textile', '').gsub(@path_prefix, '').gsub(/\/.*\//, '')
+          #puts "Current Base Page #{base_page}"
+          Dir.entries(@path_prefix[1..-1]).each do |x|
+            if x =~ /(#{base_page})_([a-z]{2})\.(.*)/
+
+              trans_base_name = $1
+              trans_lang = $2
+              trans_postfix = $3
+              #puts "#{trans_base_name} #{trans_lang} #{trans_postfix}"
+
+              trans_page = page.site.pages.find{|e| e.source_path =~ /.*#{trans_base_name}_#{trans_lang}.#{trans_postfix}/}
+
+              trans_page.language_parent = page
+              trans_page.language = page.site.languages.send(trans_lang)
+
+              languages << trans_page
+            end
+          end
+          return languages
         end
       end
 
@@ -149,6 +184,9 @@ module Awestruct
         g = Git.open(page.site.dir)
         Git::Log.new(g, 50).path(page.relative_source_path[1..-1]).since(since).each do |c|
           changes << Change.new(c.sha, c.author.name, c.author.date, c.message.to_a[0].chomp)  
+        end
+        if changes.length == 0
+          changes << Change.new('XXXXXX', 'unknown', Time.now, 'Work in progress')
         end
         changes
       end
