@@ -1,11 +1,12 @@
 ---
 layout: guide
 title: Testing Java Persistence
-authors: ['Dan Allen']
+authors: ['Dan Allen', 'Bartosz Majsak']
 tags: [jpa, database, persistence, transactions]
 guide_summary: Test your data! Learn how to test Java Persistence (JPA) queries against multiple providers in an Arquillian test.
 guide_group: 2
-TODO: ["use before event for insertion?", "use utility EJB to handle transaction boundaries?"]
+guide_order: 1
+TODO: ["use utility EJB to handle transaction boundaries?"]
 ---
 This guide teaches you how to use Arquillian to test Java Persistence (JPA). After reading this guide, you'll be able to:
 
@@ -180,28 +181,57 @@ p. Let's work from top to bottom to understand what's going on here before we ge
 - PersistenceContext EntityManager := Injects the persistence context (@EntityManager@) directly into the test, just as though the test were a "managed bean":http://download.oracle.com/javaee/6/api/javax/annotation/ManagedBean.html.
 - @Inject UserTransaction := Injects a JTA transaction directly into the test, a service provided to the managed bean by CDI (JSR-299).
 
-Let's add a before method (called before each test method is executed) that enters sample records into the database.
+To not clutter test's logic with persistence-related setup let's introduce intercepting methods which will be triggered before and after each test's execution. Let's have a look at this cross-cutting code.
+
+Method invoked before test should have following responsibilites:
+
+* Clean database state to avoid leftovers from previous test execution.
+* Insert test data used by the test itself.
+* Start the transaction. 
 
 bc(prettify).. @Before
-public void insertSampleRecords() throws Exception {
-    // clear database
-    utx.begin();
-    em.joinTransaction();
- 
-    System.out.println("Clearing the database...");
-    em.createQuery("delete from Game").executeUpdate();
- 
-    // insert records
-    System.out.println("Inserting records...");
-    for (String title : GAME_TITLES) {
-        Game game = new Game(title);
-        em.persist(game);
-    }
- 
-    utx.commit();
+public void preparePersistenceTest() throws Exception
+{
+  clearDatabase();
+  insertData();
+  startTransaction();
 }
 
-p. Arquillian executes the @@Before@ method in-container after the injections have occurred but still before each test method is executed.
+private void clearDatabase() throws Exception
+{
+  utx.begin();
+  em.joinTransaction();
+  em.createQuery("delete from Game").executeUpdate();
+  utx.commit();
+}
+
+private void insertData() throws Exception
+{
+  utx.begin();
+  em.joinTransaction();
+  for (String title : GAME_TITLES)
+  {
+	 Game game = new Game(title);
+	 em.persist(game);
+  }
+  utx.commit();
+}
+
+private void startTransaction() throws Exception
+{
+  utx.begin();
+  em.joinTransaction();
+}
+
+p. What we need to add after each test is to simply commit the transaction.
+
+bc(prettify).. @After
+public void commitTransaction() throws Exception
+{
+  utx.commit();
+}
+
+p. Arquillian executes the @@Before@ and @@After@ methods in-container after the injections have occurred but still before/after each test method is executed.
 
 p(important). %When using TestNG, the @@Before@ method _does not_ get executed in-container by Arquillian. This feature only works with JUnit. See issue "ARQ-56":issue://ARQ-56.%
 
@@ -210,53 +240,54 @@ Notice we have to explicitly enlist the @EntityManager@ in the JTA transaction. 
 Here's the test that verifies we can select the sample records using JPQL.  We'll print some logging statements so you can watch what's going on.
 
 bc(prettify).. @Test
-public void should_be_able_to_select_games_using_jpql() throws Exception {
-    utx.begin();
-    em.joinTransaction();
- 
-    System.out.println("Selecting (using JPQL)...");
-    List<Game> games = em.createQuery("select g from Game g order by g.id",
-       Game.class).getResultList();
-    System.out.println("Found " + games.size() + " games (using JPQL)");
-    Assert.assertEquals(GAME_TITLES.length, games.size());
- 
-    for (int i = 0; i < GAME_TITLES.length; i++) {
-        Assert.assertEquals(GAME_TITLES[i], games.get(i).getTitle());
-        System.out.println(games.get(i));
-    }
- 
-    utx.commit();
+public void shouldFindAllGamesUsingJpqlQuery() throws Exception {
+  // given
+  String fetchingAllGamesInJpql = "select g from Game g order by g.id";
+
+  // when
+  System.out.println("Selecting (using JPQL)...");
+  List<Game> games = em.createQuery(fetchingAllGamesInJpql, Game.class).getResultList();
+
+  // then
+  System.out.println("Found " + games.size() + " games (using JPQL)");
+  assertContainsAllGames(games);
 }
+
+p. You might have noticed @assertContainsAllGames@ method which is a custom assertion verifying that returned collection contains all titles stored in the database. It gives two benefits for our testing logic - it clearly explains what we are expecting and it can be reused in other tests.
+
+bc(prettify).. private static void assertContainsAllGames(Collection<Game> retrievedGames)
+{
+  assertEquals(GAME_TITLES.length, retrievedGames.size());
+  final Set<String> retrievedGameTitles = new HashSet<String>();
+  for (Game game : retrievedGames)
+  {
+	 retrievedGameTitles.add(game.getTitle());
+  }
+  assertTrue(retrievedGameTitles.containsAll(Arrays.asList(GAME_TITLES)));
+}
+
 
 p. Now for the new JPA 2 stuff! Here's the same test that uses the Criteria API. Note that this test depends on the JPA 2 annotation processor generating the @Game_@ metamodel class during the build compilation step.
 
 bc(prettify).. @Test
-public void should_be_able_to_select_games_using_criteria_api()
-        throws Exception {
-    utx.begin();
-    em.joinTransaction();
- 
-    CriteriaBuilder builder = em.getCriteriaBuilder();
-    CriteriaQuery<Game> criteria = builder.createQuery(Game.class);
-    // FROM clause
-    Root<Game> game = criteria.from(Game.class);
-    // SELECT clause
-    criteria.select(game);
-    // ORDER BY clause
-    criteria.orderBy(builder.asc(game.get(Game_.id)));
-    // No WHERE clause, select all
- 
-    System.out.println("Selecting (using Criteria)...");
-    List<Game> games = em.createQuery(criteria).getResultList();
-    System.out.println("Found " + games.size() + " games (using Criteria)");
-    Assert.assertEquals(GAME_TITLES.length, games.size());
- 
-    for (int i = 0; i < GAME_TITLES.length; i++) {
-        Assert.assertEquals(GAME_TITLES[i], games.get(i).getTitle());
-        System.out.println(games.get(i));
-    }
- 
-    utx.commit();
+public void shouldFindAllGamesUsingCriteriaApi() throws Exception
+{
+  // given
+  CriteriaBuilder builder = em.getCriteriaBuilder();
+  CriteriaQuery<Game> criteria = builder.createQuery(Game.class);
+  		
+  Root<Game> game = criteria.from(Game.class);
+  criteria.select(game);
+  criteria.orderBy(builder.asc(game.get("id")));
+  // No WHERE clause, which implies select all
+
+  // when
+  System.out.println("Selecting (using Criteria)...");
+  List<Game> games = em.createQuery(criteria).getResultList();
+
+  // then
+  System.out.println("Found " + games.size() + " games (using Criteria)");
+  assertContainsAllGames(games);
 }
 
 p. In order for JPA to work, it needs a Persistence Unit. We define the Persistence Unit in the test-persistence.xml that's associated with the target container.
