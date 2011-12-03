@@ -58,7 +58,7 @@ To get you acclimated, here's the directory structure of the project:
 *** resources/
 **** arquillian.xml
 *** resources-glassfish-embedded/
-**** sun-resources.xml
+**** glassfish-resources.xml
 **** test-persistence.xml
 *** resources-jbossas-remote/
 **** test-persistence.xml
@@ -190,45 +190,39 @@ Method invoked before test should have following responsibilites:
 * Start the transaction. 
 
 bc(prettify).. @Before
-public void preparePersistenceTest() throws Exception
-{
-  clearDatabase();
-  insertData();
-  startTransaction();
+public void preparePersistenceTest() throws Exception {
+    clearDatabase();
+    insertData();
+    startTransaction();
 }
 
-private void clearDatabase() throws Exception
-{
-  utx.begin();
-  em.joinTransaction();
-  em.createQuery("delete from Game").executeUpdate();
-  utx.commit();
+private void clearDatabase() throws Exception {
+    utx.begin();
+    em.joinTransaction();
+    em.createQuery("delete from Game").executeUpdate();
+    utx.commit();
 }
 
-private void insertData() throws Exception
-{
-  utx.begin();
-  em.joinTransaction();
-  for (String title : GAME_TITLES)
-  {
-	 Game game = new Game(title);
-	 em.persist(game);
-  }
-  utx.commit();
+private void insertData() throws Exception {
+    utx.begin();
+    em.joinTransaction();
+    for (String title : GAME_TITLES) {
+        Game game = new Game(title);
+        em.persist(game);
+    }
+    utx.commit();
 }
 
-private void startTransaction() throws Exception
-{
-  utx.begin();
-  em.joinTransaction();
+private void startTransaction() throws Exception {
+    utx.begin();
+    em.joinTransaction();
 }
 
 p. What we need to add after each test is to simply commit the transaction.
 
 bc(prettify).. @After
-public void commitTransaction() throws Exception
-{
-  utx.commit();
+public void commitTransaction() throws Exception {
+    utx.commit();
 }
 
 p. Arquillian executes the @@Before@ and @@After@ methods in-container after the injections have occurred but still before/after each test method is executed.
@@ -241,53 +235,50 @@ Here's the test that verifies we can select the sample records using JPQL.  We'l
 
 bc(prettify).. @Test
 public void shouldFindAllGamesUsingJpqlQuery() throws Exception {
-  // given
-  String fetchingAllGamesInJpql = "select g from Game g order by g.id";
+    // given
+    String fetchingAllGamesInJpql = "select g from Game g order by g.id";
 
-  // when
-  System.out.println("Selecting (using JPQL)...");
-  List<Game> games = em.createQuery(fetchingAllGamesInJpql, Game.class).getResultList();
+    // when
+    System.out.println("Selecting (using JPQL)...");
+    List<Game> games = em.createQuery(fetchingAllGamesInJpql, Game.class).getResultList();
 
-  // then
-  System.out.println("Found " + games.size() + " games (using JPQL)");
-  assertContainsAllGames(games);
+    // then
+    System.out.println("Found " + games.size() + " games (using JPQL)");
+    assertContainsAllGames(games);
 }
 
 p. You might have noticed @assertContainsAllGames@ method which is a custom assertion verifying that returned collection contains all titles stored in the database. It gives two benefits for our testing logic - it clearly explains what we are expecting and it can be reused in other tests.
 
-bc(prettify).. private static void assertContainsAllGames(Collection<Game> retrievedGames)
-{
-  assertEquals(GAME_TITLES.length, retrievedGames.size());
-  final Set<String> retrievedGameTitles = new HashSet<String>();
-  for (Game game : retrievedGames)
-  {
-	 retrievedGameTitles.add(game.getTitle());
-  }
-  assertTrue(retrievedGameTitles.containsAll(Arrays.asList(GAME_TITLES)));
+bc(prettify).. private static void assertContainsAllGames(Collection<Game> retrievedGames) {
+    assertEquals(GAME_TITLES.length, retrievedGames.size());
+    final Set<String> retrievedGameTitles = new HashSet<String>();
+    for (Game game : retrievedGames) {
+        retrievedGameTitles.add(game.getTitle());
+    }
+    assertTrue(retrievedGameTitles.containsAll(Arrays.asList(GAME_TITLES)));
 }
 
 
 p. Now for the new JPA 2 stuff! Here's the same test that uses the Criteria API. Note that this test depends on the JPA 2 annotation processor generating the @Game_@ metamodel class during the build compilation step.
 
 bc(prettify).. @Test
-public void shouldFindAllGamesUsingCriteriaApi() throws Exception
-{
-  // given
-  CriteriaBuilder builder = em.getCriteriaBuilder();
-  CriteriaQuery<Game> criteria = builder.createQuery(Game.class);
-  		
-  Root<Game> game = criteria.from(Game.class);
-  criteria.select(game);
-  criteria.orderBy(builder.asc(game.get("id")));
-  // No WHERE clause, which implies select all
+public void shouldFindAllGamesUsingCriteriaApi() throws Exception {
+    // given
+    CriteriaBuilder builder = em.getCriteriaBuilder();
+    CriteriaQuery<Game> criteria = builder.createQuery(Game.class);
+    		
+    Root<Game> game = criteria.from(Game.class);
+    criteria.select(game);
+    criteria.orderBy(builder.asc(game.get("id")));
+    // No WHERE clause, which implies select all
 
-  // when
-  System.out.println("Selecting (using Criteria)...");
-  List<Game> games = em.createQuery(criteria).getResultList();
+    // when
+    System.out.println("Selecting (using Criteria)...");
+    List<Game> games = em.createQuery(criteria).getResultList();
 
-  // then
-  System.out.println("Found " + games.size() + " games (using Criteria)");
-  assertContainsAllGames(games);
+    // then
+    System.out.println("Found " + games.size() + " games (using Criteria)");
+    assertContainsAllGames(games);
 }
 
 p. In order for JPA to work, it needs a Persistence Unit. We define the Persistence Unit in the test-persistence.xml that's associated with the target container.
@@ -340,14 +331,14 @@ We set two vendor-specific properties to activate features of the built-in provi
 
 The Persistence Unit is referring to the JTA DataSource named jdbc/arquillian.  Where's that defined? Ah, that's something the Arquillian container adapter needs to setup. As in Arun's recipe, we want to use the GlassFish APIs to create a JDBC Connection Pool and associated Resource. But we don't want to have to code it. We just want to declare it.
 
-First, we create a sun-resources.xml file containing the resource definitions, which GlassFish knows how to consume.
+First, we create a glassfish-resources.xml file containing the resource definitions, which GlassFish knows how to consume.
 
-div(filename). src/test/resources-glassfish-embedded/sun-resources.xml
+div(filename). src/test/resources-glassfish-embedded/glassfish-resources.xml
 
 bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE resources PUBLIC
-   -//Sun Microsystems, Inc.//DTD Application Server 9.0 Resource Definitions //EN
-   http://www.sun.com/software/appserver/dtds/sun-resources_1_4.dtd>
+    "-//GlassFish.org//DTD GlassFish Application Server 3.1 Resource Definitions//EN"
+    "http://glassfish.org/dtds/glassfish-resources_1_5.dtd">
 <resources>
     <jdbc-resource pool-name="ArquillianEmbeddedDerbyPool"
         jndi-name="jdbc/arquillian"/>
@@ -374,7 +365,7 @@ bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
     <container qualifier="glassfish-embedded" default="true">
         <configuration>
             <property name="sunResourcesXml">
-                src/test/resources-glassfish-embedded/sun-resources.xml
+                src/test/resources-glassfish-embedded/glassfish-resources.xml
             </property>
         </configuration>
     </container>
