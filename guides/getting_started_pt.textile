@@ -21,15 +21,15 @@ TODO: ["Explicar como debugar usando um JBoss AS gerenciado"]
 
 Esse guia introduzirá você ao Arquillian, depois de lê-lo você será capaz de:
 
-* Adicionar a infra-estrutura do Arquillian a um projeto Java baseado em Maven
-* Escrever um caso de teste com arquillian para garantir um comportamento de um Bean CDI
-* Executar o caso de teste em múltiplos componentes
+* Adicionar a infra-estrutura necessária para usar o Arquillian em projeto Java baseado em Maven
+* Escrever um caso de teste com arquillian para garantir um comportamento de um bean CDI
+* Executar o caso de teste em múltiplos containers
 
-Você ganhará essas habilidades ao incorporar o Arquillian à suite de testes de sua aplicação Java EE com um build Mven. Nós estruturamos esse guia para que seja uma leitura rápida, assim você poderá começar imediatamente!
+Você ganhará essas habilidades ao incorporar o Arquillian à suite de testes de sua aplicação Java EE com uma build (construção) Maven. Nós estruturamos esse guia para que seja uma leitura rápida, para que você comece imediatamente!
 
 h3. Considerações
 
-A maneira mais fácil de começar com o Arquillian, é incorporá-lo em uma suite de testes de um projeto que funcione com uma ferramenta de build que gerencie suas dependências. Atualmente, a ferramenta mais usada nessa categoria é o "Apache Maven":maven_home. Se você não está habituado, esse guia te levará ao seu primeiro *(greenbar)green bar* projeto Maven.
+A maneira mais fácil de começar com o Arquillian é incorporá-lo em uma suite de testes de um projeto que funcione com uma ferramenta de build que gerencie suas dependências. Atualmente, a ferramenta mais usada nessa categoria é o "Apache Maven":maven_home. Se você não está habituado, esse guia te ensinará como chegar à sua primeira *(greenbar)barrinha verde* em um projeto Maven.
 
 p(info). %O Arquillian não depende do maven, ou de nenhuma outra ferramenta de build específica. Funciona tão bem quanto, talvez melhor, quando usado com projetos Ant ou Gradle. Idealmente, a ferramenta de build deve fornecer gerência de dependências, o que simplifica o processo de inclusão das bibliotecas do Arquillian, que estão disponíveis no "Maven Central repository":maven_search%
 
@@ -42,18 +42,18 @@ Há duas maneiras que recomendamos para criar um novo projeto Maven:
 # "Gerar um projeto através de arquétipos Maven":#generate_project_from_archetype
 # "Criar e customizar um projeto através do JBoss Forge":#create_project_using_forge
 
-p(info). %Se você já possui um projeto maven, você pode usar essa sessão para assegurar que você tem as dependências necessárias para seguir com o tutorial.%
+p(info). %Se você já possui um projeto maven, você pode usar essa sessão para assegurar que você tem as dependências necessárias para seguir com esse tutorial.%
 
-Sem dúvida, "JBoss Forge":forge_home é a maneira mais simples, no entanto, caso você não se sinta comfortável ou preparado para a adoção do Forge, esse texto oferece guia para ambas opções. Selecione uma delas abaixo para seguir com as instruções.
+Sem dúvida, "JBoss Forge":forge_home é a maneira mais simples, no entanto, caso você ainda não se sinta comfortável ou preparado para a adoção do Forge, esse texto oferece guia para ambas opções. Selecione uma delas abaixo para seguir com as instruções.
 
-h4(#generate_project_from_archetype). Gerar um projeto com o Arquétipos Maven
+h4(#generate_project_from_archetype). Gerar um projeto a partir de arquétipos Maven
 
 Primeiramente, crie um projeto maven usando o seguinte comando: _Copie o texto a partir de @$@ e cole-o no seu terminal de comando._
 
 bc(command).. $ mvn archetype:generate -DarchetypeGroupId=net.avh4.mvn.archetype \
 -DarchetypeArtifactId=java-1.6-archetype
 
-p. Responda às perguntas com os valores propostos após os dois pontos de cada linha. Então Aperte a tecla ENTER (como indicado por @<ENTER>@).
+p. Responda às perguntas com os valores propostos após os dois pontos de cada uma das linhas. Então Aperte a tecla ENTER (como indicado por @<ENTER>@).
 
 bc(output). Define value for property 'groupId': : org.arquillian.example <ENTER>
 Define value for property 'artifactId': : arquillian-tutorial <ENTER>
@@ -66,24 +66,24 @@ version: 1.0-SNAPSHOT
 package: org.arquillian.example
 Y: : <ENTER>
 
-p. Esse comando gera um projeto java dentro de uma pasta chamada @arquillian-tutorial@ dentro do diretório atual (corrente). Segue abaixo a estrutura de diretórios criados:
+p. Esse comando gera um projeto java dentro de uma pasta chamada @arquillian-tutorial@ dentro do diretório atual (corrente). Veja abaixo a estrutura de diretórios criada:
 
 (filetree)* src/
 ** main/
-*** java/ - Coloque aqui todos os arquivos java referentes à sua aplicação (em um pacote Java)
+*** java/ - Coloque aqui todos os arquivos com código fonte em java referentes à sua aplicação (dentro de um pacote)
 *** resources/ - Coloque aqui todos os arquivos de configuração de sua aplicação
 ** test/
-*** java/ - Aqui todos os arquivos java referentes ao seus testes (em um pacote Java)
-*** resources/ - Coloque aqui todos os arquivos de configuração para seus testes (por exemplo, arquillian.xml)
-* pom.xml - O arquivo com a configuração do projeto, contém instruções de como o Maven deve construir seu projeto.
+*** java/ - Aqui todos os arquivos com código fonte em java referentes ao seus testes (dentro de um pacote)
+*** resources/ - Coloque aqui todos os arquivos de configuração para seus testes (arquillian.xml por exemplo)
+* pom.xml - Esse é o arquivo com a configuração do projeto, contém instruções de como o Maven deve construí-lo.
 
-p(info). %O projeto está pre pre-configurado para usar Java6 e JUnit 4.8, as versões mínimas requeridas para usar o Arquillian.%
+p(info). %O projeto está pre pre-configurado para usar Java 6 e JUnit 4.8, as versões mínimas necessárias para usar o Arquillian.%
 
-O gerador também criou um pacote java chamado @org.arquillian.example@ dentro dos das duas pastas @java@ em @src/main@ e @src/test@. Você deve colocar seus arquivos java nesse pacote ao invés de usar a raiz, @java@.
+O gerador também criou um pacote java chamado @org.arquillian.example@ dentro das duas pastas @java@ em @src/main@ e @src/test@. Você deve colocar seus arquivos java nesse pacote ao invés de usar a raiz.
 
-p(warning). %O Arquillian também suporta TestNG 5. No entanto, escolhemos utilizar o JUnit no decorrer desse guia.%
+p(warning). %O Arquillian também suporta TestNG 5. O uso do JUnit para esse guia foi uma opção.%
 
-Abra o @pom.xml@ em seu editor. Você verá um arquivo XML, contendo informações básicas do projeto, uma sessão com instruções de construção e uma sessão com declarações das dependências do projeto. *Você pode remover todos os elementos <dependency> com exceção da dependência com o JUnit, elas não são obrigatórias para nosso guia.*
+Abra o @pom.xml@ em seu editor. Você verá um arquivo XML contendo informações básicas do projeto, uma sessão com instruções de construção (build) e uma sessão com declarações das dependências do projeto. *Você pode remover todos os elementos <dependency> com exceção da dependência com o JUnit, elas não são obrigatórias para nosso tutorial.*
 
 Após essa alteração, seu arquivo estará assim:
 
@@ -123,9 +123,9 @@ bc(prettify).. <project xmlns="http://maven.apache.org/POM/4.0.0"
     </dependencies>
 </project>
 
-p. Vamos escrever componentes Java EE 6, portanto, devemos adicionar também a sua API ao nosso classpath para que possamos compilar nossos componentes.
+p. Vamos escrever componentes Java EE 6, portanto para que possamos compilar nossos componentes, devemos adicionar também a sua API ao nosso classpath.
 
-Abra novamente o arquivo @pom.xml@ e adicione as seguintes dependências dentro do elemento @<dependencies>@. Sua sessão de dependências deverá ser semelhante a isso:
+Abra novamente o arquivo @pom.xml@ e adicione as seguintes dependências dentro do elemento @<dependencies>@. Sua sessão de dependências deverá ficar assim:
 
 div(filename). pom.xml
 
@@ -147,9 +147,9 @@ bc(prettify).. <!-- clip -->
 </dependencies>
 <!-- clip -->
 
-p(important). %Recomendamos que você *não use* os artefatos Java EE com grupo @javax:javaee-api@. Esse pacote contém classes com métodos vazios o que poderá fazer com que sua aplicação lance exceções estranhas relacionadas à ausência de código, se forem deixadas no seu classpath em tempo de execução(mesmo quando rodar testes). "Leia esse FAQ":http://community.jboss.org/wiki/WhatsTheCauseOfThisExceptionJavalangClassFormatErrorAbsentCode se você quiser se aprofundar nesse assunto.%
+p(important). %Recomendamos que você *não use* os artefatos Java EE do grupo @javax:javaee-api@. Esse pacote contém classes com métodos vazios o que poderá fazer com que sua aplicação lance exceções estranhas relacionadas à ausência de código, se forem deixadas no seu classpath em tempo de execução(mesmo quando rodar testes). "Leia esse FAQ":http://community.jboss.org/wiki/WhatsTheCauseOfThisExceptionJavalangClassFormatErrorAbsentCode se você quiser se aprofundar nesse assunto.%
 
-p. A fundação do seu projeto está pronta! Pule para a próxima sessão "Abra seu projeto no Eclipse":#open_project_in_eclipse assim poderemos começar a escrever código!
+p. A fundação do seu projeto está pronta! Pule para a próxima sessão "Abra seu projeto no Eclipse":#open_project_in_eclipse para que possamos começar a escrever código!
 
 h4(#create_project_using_forge). Criando um projeto usando Forge
 
@@ -166,7 +166,7 @@ Em sistemas operacionais baseados em Unix, adicionar o Forge ao seu PATH signifi
 bc(command). $ export FORGE_HOME=$HOME/forge/
 $ export PATH=$PATH:$FORGE_HOME/bin
 
-p(info). %No Windows, clique com o botão direito em "Painel de Controle", clique então em "Propriedades de Sistema", abra a aba de configuração "Avançada", clique em "Variáveis de ambiente" e adicione através do editor visual as mesmas duas entradas. Recomendamos setar essas variáveis a menos que você tenha descompactado o Forge em uma pasta aonde todo o sistema tem acesso.%
+p(info). %No Windows, clique com o botão direito em "Painel de Controle", clique então em "Propriedades de Sistema", abra a aba de configuração "Avançada", clique em "Variáveis de ambiente" e adicione através do editor visual as mesmas duas entradas. Recomendamos setar essas variáveis a menos que você tenha descompactado o Forge em uma pasta aonde todo o sistema tenha acesso.%
 
 Agora que o Forge está instalado(isto é, descompactado), abra seu terminal de comando e execute o comando @forge@:
 
@@ -182,39 +182,36 @@ bc(command).. $ forge
 
 p. Pronto, você tem o Forge rodando em seu sistema. Agora precisamos criar um projeto.
 
-Com o Forge rodando, execute crie um projeto em branco, (bem parecido com quando criamos um projeto usando arquétipos maven acima):
+Com o Forge rodando, crie um projeto em branco (bem parecido com quando criamos um projeto usando arquétipos maven acima) com o comando:
 
 bc(command). $ new-project --named arquillian-tutorial --topLevelPackage org.example.arquillian
 
-p. Esse comando gera um projeto Java baseado em Maven dentro de uma nova pasta chamada @arquillian-tutorial@ dentro do diretório corrente.
+p. Esse comando gera um projeto Java baseado em Maven, dentro de uma nova pasta chamada @arquillian-tutorial@, dentro do diretório corrente.
 
-Abaixo você poderá ver a estrutura de diretórios criados:
+Abaixo você poderá ver a estrutura de diretórios criada:
 
 (filetree)* src/
 ** main/
-*** java/ - Coloque aqui todos os arquivos java referentes à sua aplicação (em um pacote Java)
+*** java/ - Coloque aqui todos os arquivos com código fonte em java referentes à sua aplicação (dentro de um pacote)
 *** resources/ - Coloque aqui todos os arquivos de configuração de sua aplicação
 **** META-INF/
 ***** forge.xml - Um arquivo vazio para configurações do Forge
 ** test/
-*** java/ - Aqui todos os arquivos java referentes ao seus testes (em um pacote Java)
-*** resources/ - Coloque aqui todos os arquivos de configuração para seus testes (por exemplo, arquillian.xml)
-* pom.xml - O arquivo com a configuração do projeto, contém instruções de como o Maven deve construir seu projeto.
-** main/
-*** java/ - Place all application Java source files here (under Java package)
-*** resources/ - Place all application configuration files here
+*** java/ - Aqui todos os arquivos com código fonte em java referentes ao seus testes (dentro de um pacote)
+*** resources/ - Coloque aqui todos os arquivos de configuração para seus testes (arquillian.xml por exemplo)
+* pom.xml - Esse é o arquivo com a configuração do projeto, contém instruções de como o Maven deve construí-lo.
 
-O Forge também faz com que o diretório recém criado para seu projeto se transforme em seu diretório corrente de trabalho dentro do Forge.
+O Forge também faz com que o diretório recém criado para seu projeto se transforme em seu diretório corrente de trabalho (dentro do Forge).
 
 bc(command). [arquillian-tutorial] arquillian-tutorial $ 
 
-Por padrão, O Forge seta o projeto para usar Java 1.6, convenientemente, a versão mínima necessária para usar o Arquillian.
+Por padrão, o Forge seta o projeto para usar Java 1.6, convenientemente, a versão mínima necessária para usar o Arquillian.
 
 Precisamos agora adicionar as API's do Java EE 6. Isso pode ser feito usando o comando @project add-dependency@ como mostrado abaixo:
 
 bc(command). $ project add-dependency org.jboss.spec:jboss-javaee-6.0:1.0.0.Final:pom:provided
 
-Você também precisará adicionar uma dependência com o JUnit 4.8, versão mínima necessária para usar o Arquillian, com escopo de testes:
+Você também precisará adicionar uma dependência com o JUnit 4.8 em escopo de testes:
 
 bc(command). $ project add-dependency junit:junit:4.8.1:test
 
@@ -268,43 +265,43 @@ bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
     </build>
 </project>
 
-p(info). %O Arquillian é agora distribuído também através do repositório central do maven, então não é mais necessário declarar o repositório público da Jboss em seu pom.xml, você pode removê-lo se quiser. Só tenha em mente que você possa precisar de outros softwares da Jboss que não estão no repositório central.%
+p(info). %Arquillian agora é distribuído também através do repositório central do maven, então não é mais necessário declarar o repositório público da Jboss em seu pom.xml, você pode removê-lo se quiser. Só tenha em mente que você pode, no decorrer de seu projeto, precisar de outros softwares da Jboss que não estão no repositório central.%
 
 p(warning). %Se você é do grupo que considera que declarar repositórios explícitamente no pom.xml seja uma má prática, então leia "essas instruções":http://community.jboss.org/wiki/MavenGettingStarted-Users para habilitar o repositório globalmente no seu settings.xml.%
 
-p. A fundação do seu projeto está pronta! Vamos agora abri-lo no Eclipse e começar a escrever código!
+p. A fundação do seu projeto está pronta! Vamos agora abrí-lo no Eclipse e começar a escrever código!
 
 h3. Abrindo seu projeto no Eclipse
 
-p(info). %Quando você trabalha com Java, normalmente você usa uma IDE como o Eclipse, é por isso que o Arquillian foi desenhado para ser facilmente integrado à IDE's. Isso quer dizer que você pode rodar testes Arquillian através de sua IDE sem precisar fazer mudanças não convencioanis no seu projeto. Então vamos começar a aproveitar dessa vantagem imediatamente.%
+p(info). %Quando você trabalha com Java, normalmente você usa uma IDE como o Eclipse para acelerar seu desenvolvimento, é por isso que o Arquillian foi desenhado para ser facilmente integrado à IDE's. Isso quer dizer que você pode rodar testes Arquillian através de sua IDE sem precisar fazer mudanças incovenientes em seu projeto. Então vamos começar a aproveitar dessa vantagem imediatamente.%
 
-Comece abrindo o Eclipse. Agora, como esse é um projeto maven, você precisará do plugin "Maven Integration for Eclipse":m2e_home (m2e) instalado para abrir seu projeto. Se você não o tem instalado ainda, a maneira mais simles de obtê-lo é instalar o "JBoss Tools":tools_home. Siga os seguintes passos para instalar-lo através do Eclipse Marketplace (algo parecido a uma app store para o Eclipse).
+Comece abrindo o Eclipse. Agora, como esse é um projeto maven, você precisará do plugin "Maven Integration for Eclipse":m2e_home (m2e) instalado para abrir seu projeto. Se você ainda não o tem instalado, a maneira mais simles de obtê-lo é instalando o "JBoss Tools":tools_home. Siga os seguintes passos para instalá-lo através do Eclipse Marketplace (algo parecido a uma app store para o Eclipse).
 
 # Selecione @Help > Eclipse Marketplace...@ desde o menu principal
 # Escreva "jboss tools" no campo de busca(sem aspas) e aperte ENTER
-# Clique em Install (Indigo)
-# Complete os passos no wizard de instalação e depois reinicie o Eclipse.
+# Clique no botão 'Install' logo depois de Jboss Tools (Indigo)
+# Complete os passos no wizard de instalação e então reinicie o Eclipse.
 
-JBoss Tools fornece um ambiente amigável para desenvolvimento de aplicações Java EE, incluindo um suporte excelente ao CDI. Não se preocupe, não é um plugin pesado.
+JBoss Tools fornece um ambiente amigável para desenvolvimento de aplicações Java EE, incluindo um suporte excelente ao CDI. Não se preocupe, ele não é um plugin pesado.
 
 Mas se por acaso você quiser somente a integração com o Maven sem nenhum extra fornecido pelo JBTools, siga os seguintes passos:
 
 # Selecione @Help > Eclipse Marketplace...@ desde o menu principal
 # Escreva "maven" no campo de busca(sem aspas) e aperte ENTER
-# Clique em Install (Indigo)
-# Complete os passos no wizard de instalação e depois reinicie o Eclipse.
-# Repita os passos para instalar também o "Maven Integration for Eclipse WTP"
+# Clique no botão 'Install' logo depois de 'Maven Integration for Eclipse'
+# Complete os passos no wizard de instalação e então reinicie o Eclipse.
+# Repita os passos para instalar também o 'Maven Integration for Eclipse WTP'
 
-Uma vez que tenha o m2e instalado, siga os seguintes passos para abrir seu projeto:
+Uma vez que o m2e esteja instalado, siga os seguintes passos para abrir seu projeto:
 
 # Selecione @File > Import...@ desde o menu principal
 # Escreva "existing maven" no campo de 'import source'
-# Seleccione a opção 'Existing Maven Projects', e clique em Next
+# Selecione a opção 'Existing Maven Projects', e clique em Next
 # Clique no botão 'Browse...'
-# Navegue até a pasta do seu projeto e clique em 'OK'
+# Navegue até a pasta do seu projeto no seu sistema operacional e clique em 'OK'
 # Clique em 'Finish' para abrir seu projeto
 
-O Eclipse reconhecerá o projeto e o abrirá na visão 'Project Navigator'. Se você expandir o projeto, ficará semelhante ao que temos na imagem abaixo::
+O Eclipse reconhecerá o projeto e o abrirá na visão 'Project Navigator'. Se você expandir o projeto, ficará semelhante ao que temos na imagem abaixo:
 
 !/images/guides/arquillian_tutorial_eclipse_project.png!
 
@@ -314,7 +311,7 @@ h3. Criando um componente
 
 Para escrever um teste Arquillian, precisamos primeiro de um componente para ser testado. Vamos começar criando um componente básico para que você aprenda como executar um teste sem outras distrações. Logo depois, vamos gradualmente aumentando a complexidade dos cenários.
 
-Em sua IDE, crie uma classe Java chamada @Greeter@ dentro do pacote @org.arquillian.example@. Substitua o conteudo do arquivo por:
+Em sua IDE, crie uma classe Java chamada @Greeter@ dentro do pacote @org.arquillian.example@. Substitua o conteúdo do arquivo por:
 
 div(filename). src/main/java/org/arquillian/example/Greeter.java
 
@@ -335,13 +332,13 @@ public class Greeter {
     }
 }
 
-p. Queremos verificar que essa classe se comporta corretamente quando invocada como um CDI(Contexts and Dependency Injection) bean. É claro que poderiamos para esse caso fazer um teste unitário comum, mas vamos fingir que esse bean usa outros serviços enterprise como injeção de dependência e mensagens e precisa ser executado dentro de um Java EE container. (Dessa forma também, damos espaço para que o cenário possa crescer ~;))
+p. Queremos verificar que essa classe se comporta corretamente quando invocada como um bean CDI(Contexts and Dependency Injection). É claro que poderíamos para esse caso fazer um teste unitário comum, mas vamos fingir que esse bean usa outros serviços enterprise como injeção de dependência e mensagens e precisam ser executados dentro de um container Java EE. (Dessa forma também, damos espaço para que o cenário possa crescer ~;))
 
-Para usar uma classe como bean CDI, vamos injetar-la dentro de um teste usando a anotação @@Inject@. Isso é um trabalho para um arquilliano! Isso significa que agora é a hora de adicionar a API do Arquillian ao projeto!
+Para usar uma classe como bean CDI, vamos injetá-la dentro de um teste usando a anotação @@Inject@. Isso é um trabalho para um teste arquilliano! Isso significa que agora é a hora de adicionar a API do Arquillian ao projeto!
 
 h3. Adicionando a API do Arquillian
 
-Uma vez mais, abra o arquivo @pom.xml@, localizado na raiz do projeto. Precisamos instruir o Maven quais as versões dos artefatos ele deve usar. Insira o fragmento de XML diretamente acima do elemento @<build>@ para importar o BOM do arquillian(Bill of Materials), ou uma matrix de versões, para as dependências transitivas do Arquillian.
+Uma vez mais, abra o arquivo @pom.xml@, localizado na raiz do projeto. Precisamos instruir o Maven quais as versões de artefatos ele deve usar. Insira o fragmento de XML diretamente acima do elemento @<build>@ para importar o BOM (Bill of Materials) do Arquillian, ou uma matrix de versões para as dependências transitivas de nossa ferramenta.
 
 div(filename). pom.xml
 
@@ -375,17 +372,17 @@ p. O artefato adicionado também adiciona as API's do Arquillian e do ShrinkWrap
 
 p(info). %Para usar TestNG ao invés de JUnit, substitua o artefato acima pela integração do Arquillian com TestNG.%
 
-p. Se você está tendo problemas até o momento com seu pom.xml, você pode fazer download do arquivo correto "nesse gist":https://gist.github.com/1263892.
+p. Se você está tendo problemas até o momento com seu pom.xml, você pode baixar "nesse gist":https://gist.github.com/1263892 o arquivo funcionando.
 
 *Agora está tudo preparado para você escrever seu primeiro teste Arquillian!*
 
-h3. Escrevendo um teste Arquillian
+h3. Escrevendo um teste
 
-Um teste arquillian se parece exatamente como um teste unitário qualquer, com um pouco mais de sabor. Vamos voltar à nossa IDE.
+Um teste arquillian se parece exatamente como um teste unitário qualquer, com um pouco mais de sabor. Voltemos à nossa IDE.
 
 p(warning). %Se você está obtendo a mensagem "Project configuration is out of date with pom.xml", então clique com botão direito em Project > Maven > Update Project Configuration para resincronizar o projeto.%
 
-Comece criando um novo JUnit test case, em src/test/java dentro do pacote the @org.arquillian.example@ e chame o de @GreeterTest@. Você não precisará do setup típico pois o Arquillian está fazendo todo o trabalho pesado. Portanto, até o momento temos:
+Comece criando um novo caso de teste com JUnit, em src/test/java dentro do pacote the @org.arquillian.example@. Chame-o de @GreeterTest@. Você não precisará do setup típico para começar, o Arquillian fará todo o trabalho pesado. Sendo assim, até o momento temos:
 
 div(filename). src/test/java/org/arquillian/example/GreeterTest.java
 
@@ -401,7 +398,7 @@ public class GreeterTest {
     }
 }
 
-p. Agora, sobre o sabor. Um caso de teste Arquillian deve possuir três coisas.
+p. Agora, sobre o sabor citado anteriormente. Um caso de teste Arquillian deve possuir três coisas.
 
 # Um anotação @@RunWith(Arquillian.class)@
 # Um método estático anotado com @@Deployment@ que retorna um arquivo ShrinkWrap
@@ -409,11 +406,11 @@ p. Agora, sobre o sabor. Um caso de teste Arquillian deve possuir três coisas.
 
 A anotação @@RunWith@ diz ao JUnit para usar como controlador do teste o Arquillian, que por sua vez busca pelo método estático anotado com @@Deployment@ para encontrar o arquivo de Teste - Test Archive -(micro-deployment). E como um passo de mágica cada um dos métodos anotados com @@Test@ rodam dentro de um ambiente de container.
 
-h4. O que é um Arquivo de Teste
+h4. O que é um Arquivo de Teste - Test Archuive -
 
-O propósito do arquivo de testes é de isolar no classpath, classes e recursos necessários para a execução do teste. Diferente de outras abordagens de teste, o Arquillian não mergulha dentro do classpath da aplicação, ao invés disso, você inclui somente o que o teste precisa (o que pode ser todo seu classpath, se você assim decidir). O arquivo é definido usando o "ShrinkWrap":shrinkwrap_home, que é uma API Java para criação de arquivos(jar, war, ear por exemplo) em Java. Essa estratégia de micro-deployment permite que você foque precisamente nas classes que você quer testar, como resultado, seu teste permanece mais limpo.
+O propósito do arquivo de testes é de isolar no classpath, classes e recursos necessários para a execução do teste. Diferente de outras abordagens, o Arquillian não mergulha dentro do classpath da aplicação, ao invés disso, você inclui somente o que o teste precisa (o que poderia ser todo seu classpath, se você assim decidir). O arquivo é definido usando o "ShrinkWrap":shrinkwrap_home, que é uma API Java para criação de arquivos java(jar, war, ear por exemplo) . Essa estratégia de micro-deployment permite que você foque precisamente nas classes que você quer testar, como resultado, seu teste permanece mais limpo.
 
-p(info). %ShrinkWrap também resolve artefatos (bibliotecas) e cria arquivos de configuração programaticamente para que possam ser adicionados ao arquivo de Teste. Para uma introdução mais aprofundada sobre o ShrinkWrap, acesse "ShrinkWrap introduction":/guides/shrinkwrap_introduction guide.%
+p(info). %ShrinkWrap também resolve artefatos (bibliotecas) e cria arquivos de configuração programaticamente para que possam ser adicionados ao arquivo de Teste. Para uma introdução mais aprofundada sobre essa Ferramenta, acesse "ShrinkWrap introduction":/guides/shrinkwrap_introduction guide.%
 
 Vamos agora adicionar o sabor Arquillian ao teste:
 
@@ -446,9 +443,9 @@ public class GreeterTest {
     }
 }
 
-p. Usando o ShrinkWrap, podemos definir um arquivo Java (jar) que inclui a classe @Greeter@ que o teste invocará um beans.xml vazio dentro do diretório META-INF para ativar o CDI para esse arquivo.
+p. Usando o ShrinkWrap, podemos definir um arquivo Java (jar) que inclui a classe @Greeter@ que será invocada pelo caso de teste e um beans.xml vazio dentro do diretório META-INF, utilizado para ativar o CDI para esse arquivo.
 
-Agora só precisamos injetar uma instância de @Greeter@ em uma variável e implementar o método de test para assegurarmos que o bean se comporta como desejado. Para que você se sinta aconchegado, imprimiremos no console o cumprimento gerado pela classe testada.
+Agora só precisamos injetar uma instância de @Greeter@ em uma variável e implementar o método de teste para assegurarmos que o bean se comporta como desejado. Para que você se sinta aconchegado, imprimiremos no console o cumprimento gerado pela classe testada.
 
 div(filename). src/test/java/org/arquillian/example/GreeterTest.java
 
@@ -499,15 +496,15 @@ public class GreeterTest {
     }
 }
 
-p. Você acaba de escrever seu primeiro teste Arquillian! Ah, mas você deve estar pensando: "E agora, como posso executar-lo?" ~:S Se você está pensando "Igual a um teste JUnit" acertou! No entanto, precisamos primeiro adicionar um adaptador de um container ao classpath.
+p. Você acaba de escrever seu primeiro teste Arquillian! Ah, mas você deve estar pensando: "E agora, como posso executá-lo?" ~:S Se você está pensando "Igual a um teste JUnit qualquer" acertou! No entanto, precisamos primeiro adicionar um adaptador de container ao classpath.
 
 h3. Adicionando um adaptador de Container
 
-Estivemos falando bastante sobre testar dentro do container, mas até agora não mencionamos em qual. Isso porque é uma decisão para o tempo de execução.
+Estivemos falando bastante sobre testes dentro do container, mas até agora não mencionamos em qual. Isso porque é uma decisão para o momento de execução.
 
 O Arquillian seleciona um container alvo baseado no adaptador disponível no classpath. Isso significa que teremos que adicionar mais bibliotecas ao projeto.
 
-Um teste Arquillian pode ser executado em qualquer container compatível com o modelo de programação usado em nosso teste (desde que esse container possua um adaptador Arquillian). Nosso teste está usando o modelo de programação CDI, então precisamos de usar qualquer container que suporte CDI. Como queremos respostas rápidas durante o desenvolvimento, começaremos usando o container embutido Weld EE.
+Um teste Arquillian pode ser executado em qualquer container compatível com o modelo de programação usado em nosso teste (desde que esse container possua um adaptador Arquillian). Nosso teste está usando o modelo de programação CDI, então precisamos de usar qualquer container que suporte CDI. Como queremos respostas rápidas durante o desenvolvimento, começaremos usando o container Weld EE Embedded (embutido).
 
 Abra o arquivo @pom.xml@ de novo e adicione o seguinte grupo de dependências:
 
@@ -540,15 +537,15 @@ p. Em resumo, temos agora três declarações de dependências necessárias para
 # Adaptador Arquillian para o container desejado
 # Runtime do container (container embutido) ou um cliente do container (container remoto)
 
-Usaremos um container embutido para nosso exemplo então precisaremos o Runtime de nosso container, o Weld.
+Usaremos um container embutido para nosso exemplo, portanto precisaremos também do Runtime de nosso container, o Weld.
 
 Agora de volta ao teste.
 
 h3. Executando o teste
 
-Uma vez que você adicionou todas as bibliotecas necessárias ao classpath, você poderá executar seu teste como se fosse um teste unitário comum, seja desde sua IDE, script de build (maven) ou qualquer outro plugin de teste. Então vamos executar-lo através do Eclipse.
+Uma vez que você adicionou todas as bibliotecas necessárias ao classpath, você poderá executar seu teste como se fosse um teste unitário comum, seja desde sua IDE, script de build (maven) ou qualquer outro plugin de teste. Executaremos através do Eclipse.
 
-Desde sua IDE, clique com o botão direito no arquivo GreeterTest.java (na visão do Package Explorer or in the editor) e selecione  Run As > JUnit Test desde o menu contextual.
+Desde sua IDE, clique com o botão direito no arquivo GreeterTest.java (na visão do Package Explorer ou no editor) e selecione  Run As > JUnit Test desde o menu contextual.
 
 !/images/guides/arquillian_tutorial_run_junit_test.png!
 
@@ -575,11 +572,11 @@ Running org.arquillian.example.GreeterTest
 Hello, Earthling!
 Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.858 sec
 
-*Congratulations!* You've earned your first *(greenbar)green bar* with Arquillian!
+*Parabéns!* Você conseguiu sua primeira *(greenbar)barrinha verde* com o Arquillian!
 
 h3. Olhando mais de perto.
 
-Como você sabe que o CDI funcionou? Para todos os efeitos, o Arquillian criou uma nova instância da classe @Greeter@ e a injetou dentro do teste injected sem necessariamente o envolvimento do CDI. Vamos provar que o CDI está lá.
+Como você sabe que o CDI funcionou? Para todos os efeitos, o Arquillian criou uma nova instância da classe @Greeter@ e a injetou dentro do teste injected sem necessariamente o envolvimento do CDI. Mas vamos provar que o CDI está lá.
 
 Crie um novo bean CDI chamado @PhraseBuilder@ no pacote @org.arquillian.example@ que pode criar frases a partir de templates.
 
@@ -633,9 +630,9 @@ public class Greeter {
     }
 }
 
-p. Agora, para que o teste funcione, uma instância de @PhraseBuilder@ deve ser criada, seu método @@PostConstruct@ será invocado e ela deve ser injetada em @Greeter@ quando uma instância de @Greeter@ for criada. Poderemos ter certeza então que o CDI funcionou se tudo isso acontecer.
+p. Agora, para que o teste funcione, uma instância de @PhraseBuilder@ deve ser criada, seu método @@PostConstruct@ será invocado e ela deve ser injetada em @Greeter@ quando uma instância de @Greeter@ for criada. Se tudo isso acontecer, poderemos ter certeza então que o CDI funcionou.
 
-p. Um último passo. Como adicionamos uma nova classe, devemos nos assegurar que essa classe está sendo adicionada no arquivo de Teste retornado pelo método anotado com @@Deployment@.  Simplesmente mude a linha:
+p. Falta agora um último passo. Como adicionamos uma nova classe, devemos nos assegurar que essa classe está sendo adicionada no arquivo de Teste retornado pelo método anotado com @@Deployment@.  Simplesmente mude a linha:
 
 bc(prettify).. .addClass(Greeter.class)
 
@@ -647,15 +644,15 @@ p. Execute o teste novamente. Você deverá ver mais uma *(greenbar)barra verde*
 
 h3. Debugando o test
 
-Esse vai ser um capítulo curto. Por que? Porque um Arquillian Test é tão simples que você o debuga exatamente como debugaria um teste unitário comum. Apenas adicione um breakpoint em qualquer lugar --ou no teste ou no código da aplicação. Então clique no arquivo e selecione Debug As > JUnit Test. Você está agora debugando dentro do container! Divirta-se!
+Esse vai ser um capitulo curto. Por que? Porque um Test Arquillian é tão simples que você o debuga exatamente como debugaria um teste unitário comum. Apenas adicione um breakpoint em qualquer lugar --ou no teste ou no código da aplicação. Clique então no arquivo e selecione Debug As > JUnit Test. Você está agora debugando dentro do container! Divirta-se!
 
 !/images/guides/arquillian_tutorial_debugging_test.png!
 
-p(warning). %Se você está usando um container remoto, "Debug As" não ativará os breakpoints. Você deverá ativar o container em debug mode e vincular sua IDE ao container. Isso é necessário porque os testes estão rodando em uma máquina virtual diferente do processo que executa os testes.%
+p(warning). %Se você está usando um container remoto, "Debug As" não ativará os breakpoints. Você deverá ativar o container em modo debug e vinculá-lo à sua IDE. Isso é necessário porque os testes estão rodando em uma máquina virtual diferente do processo que executa os testes.%
 
-Como você testemunhou, Arquillian é a ferramenta ideal para testar aplicações CDI. Ele carrega o ambiente e injeta os testes em seu Teste. E o melhor de tudo, quando usando um container CDI embutido, os testes são executados tão rápidos quanto um teste unitário. Se isso é tudo o que você precisa, Então você já pode deixar o tutorial e sair escrevendo os testes para a sua aplicação.
+Como você testemunhou, Arquillian é a ferramenta ideal para testar aplicações CDI. Ele carrega o ambiente e injeta os beans diretamente em seu teste. E o melhor de tudo, quando você usa um container CDI embutido, os testes são executados tão rápidos quanto um teste unitário. Se isso é tudo o que você precisa, Então você já pode deixar o tutorial e sair escrevendo os testes para a sua aplicação.
 
-*Mas!* A história foi contada na integra? Esse componente funcionrá em um container JEE real com todas as especificações?
+*Mas!* A história foi contada na integra? Esse componente funcionará em um container Java EE real com todas as especificações?
 
 Um dos privilégios do Arquillian é que você pode rodar o mesmo teste em diferentes containers (desde que sejam compatíveis com seu modelo de programação), seja um outro container embutido ou um servidor standalone. Se você tem a intenção de usar múltiplos containers, continue a leitura.
 
@@ -665,11 +662,11 @@ Como comentamos antes, o Arquillian seleciona o container baseado em qual adapta
 
 p(important). %Só pode haver um adaptador por vez no classpath.%
 
-Uma das maneiras de mudar as bibliotecas que estão no classpath é de editar manualmente as declarações no @pom.xml@ quando necessário. Mas isso é uma loucura! Há uma maneira muito melhor.
+Uma das maneiras de mudar as bibliotecas que estão no classpath é de editar manualmente quando necessário as declarações no @pom.xml@. Mas isso é uma loucura total! Há uma maneira muito melhor.
 
-Podemos usar profiles(perfis) do Maven para separar as dependências em diferentes grupos, um para cada container e suas dependências relacionadas. Ao executar os testes, você ativa um desses grupos ou através de uma flag na chamada da linha de comando (-P) ou setando uma preferência em sua IDE.
+Podemos usar profiles(perfis) do Maven para separar as dependências em diferentes grupos, um para cada container e suas dependências relacionadas. Ao executar os testes, você ativa um desses grupos ou através de uma flag (-P) na linha de comando ou setando uma preferência em sua IDE.
 
-Abra seu arquivo @pom.xml@ e crie um novo profile para nosso container WeldEE embutido. Faça isso inserindo o seguinte código abaixo do elemebto @<dependencies>@:
+Abra seu arquivo @pom.xml@ e crie um novo profile para nosso container WeldEE embedded. Faça isso inserindo o seguinte código abaixo do elemento @<dependencies>@:
 
 div(filename). pom.xml
 
@@ -708,7 +705,7 @@ bc(prettify).. <!-- clip -->
 </profiles>
 <!-- clip -->
 
-p. Agora, *remova* a dependência com @jboss-javaee-6.0@ e as dependências relacionadas ao container Weld EE da sessão principal de dependências @<dependencies>@. As suas sessões @<dependencies>@ e @<profiles>@ devem ficar assim:
+p. Agora, *remova* a dependência com @jboss-javaee-6.0@ e as dependências relacionadas ao container Weld EE da sessão principal de dependências @<dependencies>@. As suas sessões @<dependencies>@ e @<profiles>@ deverão ficar assim:
 
 div(filename). pom.xml
 
@@ -760,9 +757,9 @@ bc(prettify).. <!-- clip -->
 </profiles>
 <!-- clip -->
 
-p(info). %A API Java EE foi movida para denro do profile já que alguns containers, como o Glassfish embutido (embedded), já provêm essas bibliotecas. Com ambas no classpath, você poderia ter algum conflito entre elas. Temos que dançar a música que o classpath canmta.%
+p(info). %A API Java EE foi movida para dentro do profile já que alguns containers, como o Glassfish Embedded, já proveem essas bibliotecas. Com ambas no classpath, você poderia ter algum conflito entre elas. Temos que dançar a música que o classpath canta.%
 
-Vamos agora incluir dois profiles adicionais ao @pom.xml@ dentro de @<profiles>@, um para o "Embedded GlassFish":http://embedded-glassfish.java.net:
+Vamos agora incluir dois profiles adicionais ao @pom.xml@ dentro de @<profiles>@, um para o "GlassFish Embedded":http://embedded-glassfish.java.net:
 
 div(filename). pom.xml
 
@@ -786,7 +783,7 @@ bc(prettify).. <!-- clip -->
 </profile>
 <!-- clip -->
 
-p. e um para um JBoss AS gerenciado (Managed):
+p. e um para um JBoss AS Managed (gerenciado):
 
 div(filename). pom.xml
 
@@ -811,7 +808,7 @@ bc(prettify).. <!-- clip -->
 </profile>
 <!-- clip -->
 
-p(info). %Em um resumo rápido há 3 tipos de containers, embutido (Embedded), gerenciado (Managed) e remoto (Remote). O container embutido é iniciado na mesma JVM dos testes e seu ciclo de vida é gerenciado pelo Arquillian, isso é ele é iniciado no início do processo e finalizado após executar todos os testes. O container gerenciado (Managed) está em uma máquina virtual diferente, no entanto, seu ciclo de vida também é gerenciado. O container remoto também está em uma máquina virtual diferente, mas seu ciclo de vida não é gerenciado, ele é um servidor que deve ser iniciado e desligado manualmente, fora do ambiente de testes%
+p(info). %Em um resumo rápido há 3 tipos de containers, embutido (Embedded), gerenciado (Managed) e remoto (Remote). O container embutido é iniciado na mesma JVM dos testes e seu ciclo de vida é gerenciado pelo Arquillian, isto é, ele é iniciado junto com o processo e finalizado após a executação de todos os testes. O container gerenciado (Managed) está em uma máquina virtual diferente, no entanto, seu ciclo de vida também é gerenciado. O container remoto também está em uma máquina virtual diferente, mas seu ciclo de vida não é gerenciado, ele é um servidor que deve ser iniciado e desligado manualmente, fora do ambiente de testes%
 
 p. Agora só falta você escolher em qual dos três containers você quer executar seus testes.
 
@@ -826,13 +823,13 @@ Há duas maneiras de ativar um profile Maven no Eclipse:
 # Configuração manual (abordagem padrão)
 # Maven profile selector (JBoss Tools)
 
-h4. Setando o profile Maven ativo: Configurção manual
+h4. Setando o profile Maven ativo: Configuração manual
 
 Siga os seguintes passos para setar o profile ativo manualmente:
 
 # Clique com botão direito no projeto e selecione 'Properties'
 # Selecione 'Maven'
-# Entre o ID do profile desejeado no campo 'Active Maven Profiles' (nesse caso, @arquillian-weld-ee-embedded@)
+# Entre o ID do profile desejado no campo 'Active Maven Profiles' (nesse caso, @arquillian-weld-ee-embedded@)
 # Clique em 'OK' e logo depois em 'Yes' para aceitar as mudanças no projeto
 
 Na imagem abaixo você pode ver a tela com as propriedades do Maven e o profile que acabamos de ativar:
@@ -848,25 +845,25 @@ Se você tem o Jboss Tools instalado, selecionar o profile ativo é bem mais fá
 # Cheque o profile desejado (nesse caso, @arquillian-weld-ee-embedded@)
 # Clique em 'OK'
 
-Aqui você pode ver a tela 'Maven profile selector' mostrando o profile que acabamos de ativar checado.
+Aqui você pode ver a tela 'Maven profile selector' mostrando o profile que acabamos de ativar.
 
 !/images/guides/arquillian_tutorial_maven_profile_selector.png!
 
 Agora que você tem um profile ativo, você já pode novamente rodar seus testes.
 
-Mas você já sabe que seu teste funciona no container Weld EE embutido. Vamos agora testar no GlassFish. Repita os passos acima, dessa vez ativando o profile @arquillian-glassfish-embedded@. Após mudar o profile, execute os testes de novo. Você deve ver em seu console que o Glassfish foi iniciado... e mais uma vez a saborosa*(greenbar)barra verde*!
+Mas você já sabe que seu teste funciona no container Weld EE embutido. Vamos agora testar no GlassFish. Repita os passos acima, dessa vez ativando o profile @arquillian-glassfish-embedded@. Após mudar o profile, execute os testes de novo. Você deverá ver em seu console que o Glassfish foi iniciado... e mais uma vez, a saborosa *(greenbar)barrinha verde*!
 
-Você agora tem seu teste rodando em dois containers embutidos diferentes, um container CDI (Weld) e um Java EE container (GlassFish). Ambos funcionando bem. Mas para realmetne saber se seu componente funciona em um ambiente real, rodaremos nosso test agora em um container independente. Usaremos agora o JBoss AS.
+Você agora tem seu teste rodando em dois containers embutidos diferentes, um container CDI (Weld) e um Java EE (GlassFish). Ambos funcionando bem. Mas para realmente saber se seu componente funciona em um ambiente real, rodaremos nosso test agora em um container independente de seu ambiente. Usaremos agora o JBoss AS.
 
-Para executar os testes em uma instância independente do JBoss AS, você precisará primeiramente de setar-lo. Ou você pode:
+Para executar os testes em uma instância independente do JBoss AS, você precisará primeiramente de setá-lo. você pode escolher uma das duas opções:
 
 # baixá-lo e descompactá-lo manualmente fora de seu projeto
-# você pode usar o Maven para fazer isso durante o processo de construção do software.
+# usar o Maven para fazer isso durante o processo de build do software.
 
 Siga os seguintes passos para setar o JBoss AS 7 fora do seu projeto:
 
 # "Baixe o JBoss AS 7":as7_download
-(assegure-se que a versão que você baixou é a mesma da definida no seu @pom.xml@ em @<artifactId>jboss-as-arquillian-container-managed</artifactId>@)
+(assegure-se que a versão que você baixou é a mesma da que está definida no seu @pom.xml@ em @<artifactId>jboss-as-arquillian-container-managed</artifactId>@)
 # Descompacte o arquivo
 # (opcional) você pode setar a variável de ambiente @JBOSS_HOME@ apontando-a para o diretório usado na sua descompactação.
 
@@ -905,7 +902,7 @@ bc(prettify).. <!-- clip -->
 </build> 
 <!-- clip -->
 
-p. Para utilizar uma instância independente do JBoss, você precisará de um configurar o Arquillian um pouquinho mais. Crie o seguinte arquivo de configuração e preencha a propriedade @jbossHome@ com a localização do diretório onde você instalou o JBoss AS 7. Se você usou o maven para isso, ele está localizado em @target/jboss-as-7.0.2.Final@.
+p. Para utilizar uma instância independente do JBoss, você precisará de configurar o Arquillian um pouquinho mais. Crie o seguinte arquivo de configuração e preencha a propriedade @jbossHome@ com a localização do diretório onde você instalou o JBoss AS 7. Se você usou o maven para isso, ele está localizado em @target/jboss-as-7.0.2.Final@.
 
 div(filename). src/test/resources/arquillian.xml
 
@@ -921,8 +918,8 @@ bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
     </container>
 </arquillian>
 
-p. Agora você só precisa ativar o profile @arquillian-jbossas-managed@ e executar o teste de novo. você verá no console que o JBoss está sendo iniciado... e novamente a *(greenbar)barra verde*!
+p. Agora você só precisa ativar o profile @arquillian-jbossas-managed@ e executar o teste de novo. Você verá no console que o JBoss está sendo iniciado... e novamente a *(greenbar)barrinha verde*!
 
-p(info). %A mensagem imprimida com System.out será imprimida no log do servidor (ou no console do servidor) ao invés do console de testes.%
+p(info). %A mensagem imprimida com System.out será imprimida no log do servidor (ou no console dedicado ao servidor) ao invés do console de testes.%
 
-Esse é o _mesmo_ teste, Dessa vez executando em um container Java EE padrão (Não embutido). O Arquillian empacota o teste, faz o deploy do teste no container como um arquivo Java EE, executa os testes remotamente, captura os resultados e os retorna para a janela JUnit do Eclipe (ou ao Maven surefire plugin). Você pode ler mais sobre como o ciclo de vida do Arquillian funciona em "Arquillian reference guide":https://docs.jboss.org/author/display/ARQ/Negotiating+test+execution.
+Esse é o _mesmo_ teste, dessa vez executando em um container Java EE padrão (Não embutido). O Arquillian empacota o teste, faz o deploy do pacote no container, executa os testes remotamente, captura os resultados e os retorna para a janela JUnit do Eclipe (ou ao Maven surefire plugin). Você pode ler mais sobre como o ciclo de vida do Arquillian funciona em "Arquillian reference guide":https://docs.jboss.org/author/display/ARQ/Negotiating+test+execution.
