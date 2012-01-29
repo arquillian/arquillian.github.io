@@ -1,0 +1,443 @@
+---
+layout: guide
+title: "Getting Started: Rinse and Repeat"
+authors: ['Dan Allen']
+guide_summary: スタートガイドのパート２です。もう少し複雑な例を通じて、理解を確認し、リモートのコンテナをどのように使うか学びます。
+guide_group: 1
+guide_order: 20
+TODO: ["ポートの設定と、arquillian.launch", "予想されたデプロイエラー"]
+---
+この "Getting Started":/guides/getting_started ガイドの続編では、少し複雑な例を通じて、Arquillianについて何を学んだかを確認できます。このガイドを読むと、以下のことができるようになります：
+
+* CDI(Contexts and Dependency Injection)とEJB(Enterprise JavaBeans)を含むArquillianのテストを書く
+* Arquillianのテストをリモートのコンテナ(つまり、サーバー)で実行する
+* Arquillianのテストをリモートのコンテナ内でデバッグする
+
+読者は、追加のプロファイルを有効にした際、Arquillianがリモートのコンテナ（つまり、サーバー）でテストを実行するためのビルドに組み込むことにより、これらの技術を学びます。これは、 _本物_ でのテストを意味します。モックではありません。組み込みのランタイムではありません！読者は、最初のガイドでもっとも厳しい作業は行っており、理解するまでさほど時間はかからないでしょう。
+
+h3. 前提
+
+このガイドは、読者がArquillianインフラストラクチャをテストスイートに追加済みで、少なくとも1つのをArquillianテストを書きいたことがあることを前提としています。これらがまだであれば、Arquillianの基本に親しむために "Getting Started":/guides/getting_started を読んでください。また、そのガイド内で必須となっているソフトウェアも必要です。
+
+h3. コンポーネントを作成する
+
+このガイドでは、とても基本的なショッピングアプリケーションのバックエンドを作成します。訪問者が選んだ品物を保存するためにbasketコンポーネントを使い、確定した注文を保存し読み出すためにorder repositoryコンポーネントを使います。ここでは、それぞれをCDIとEJBを使って実装します。すでにJava EE 6 APIがクラスパス上にあるので、すぐにこれら二つのプログラミングモデルを利用して始めることができます（このAPIをプロジェクトに導入する手順は、 "Getting Started":/guides/getting_started ガイドを参照してください）。
+
+オーダーを永続的なストレージとやりとりするコンポーネントから始めましょう。よいソフトウェア設計に従い、またテストをシンプルにするために、契約を表すインターフェースの設計から始めます。IDEで、新しく @OrderRepository@ というローカルEJBインターフェースを作成し、以下のコンテンツを追加してください。
+
+div(filename). src/main/java/org/arquillian/example/OrderRepository.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.util.List;
+import javax.ejb.Local;
+
+@Local
+public interface OrderRepository {
+    void addOrder(List<String> order);
+    List<List<String>> getOrders();
+    int getOrderCount();
+}
+
+p. 実装について気にするのは、ちょっと後にして、ここでは、この契約をどのように利用するか考えましょう。
+
+訪問者がこのサイトを訪れたとき、買い物かごに品物を入れてから購入するでしょう。このシナリオをモデル化するために、訪問者のHTTPセッションに関連したCDI beanを使います。訪問者が選んだ品物を購入するときに、このコンポーネントは、 @OrderRepository@ EJBに移譲します。
+
+IDEで、 @Basket@ というクラスを作成し、次に示すように @@SessionScoped@ スコープアノテーションを追加して、セッションコンテキストに割り当ててください。
+
+div(filename). src/main/java/org/arquillian/example/Basket.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
+import javax.enterprise.context.SessionScoped;
+
+@SessionScoped
+public class Basket implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private List<String> items;
+    
+    @EJB
+    private OrderRepository repo;
+    
+    public void addItem(String item) {
+        items.add(item);
+    }
+    
+    public List<String> getItems() {
+        return Collections.unmodifiableList(items);
+    }
+    
+    public int getItemCount() {
+        return items.size();
+    }
+    
+    public void placeOrder() {
+        repo.addOrder(items);
+        items.clear();
+    }
+    
+    @PostConstruct
+    void initialize() {
+        items = new ArrayList<String>();
+    }
+}
+
+p. ご覧のようにEJBをCDI beanに接合しました。まさにテストしたいと考えている結合です！
+
+h3. 段階的に実装する
+
+まだまだテストを書く準備ができていません。それは @OrderRepository@ の実装がないからです。この例の目的のために、 @OrderRepository@ は、他のチーム（または別のイテレーション）の実装があると仮定しましょう。ここが、Arquillianのマイクロデプロイメント機能が本当に引き立つところです。EJBシングルトンとして、インメモリ実装を作成し、テストアーカイブにまとめて、動作するアプリケーションを短期間で手に入れることができます（この実装を、この境界でのテストのために残すと決めてしまうかもしれません）。
+
+@SingletonOrderRepository@ クラスをテストクラスパス内に作成し、以下のコードを追加してください。
+
+div(filename). src/test/java/org/arquillian/example/SingletonOrderRepository.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
+import javax.ejb.Singleton;
+
+@Singleton
+@Lock(LockType.READ)
+public class SingletonOrderRepository implements OrderRepository {
+    private List<List<String>> orders;
+    
+    @Override
+    @Lock(LockType.WRITE)
+    public void addOrder(List<String> order) {
+        orders.add(order);
+    }
+    
+    @Override
+    public List<List<String>> getOrders() {
+        return Collections.unmodifiableList(orders);
+    }
+    
+    @Override
+    public int getOrderCount() {
+        return orders.size();
+    }
+    
+    @PostConstruct
+    void initialize() {
+        orders = new ArrayList<List<String>>();
+    }
+}
+
+p. この実装にはおまけが追加されており、それはArquillianのサンドボックスの中で、EJB 3.1の新しいシングルトン機能で遊んでみる機会です。そんなわけで、筆者は、Arquillianはテストツールに加えて学習環境である、と言っています。
+
+Arquillianテストを書く準備ができました。
+
+h3. テストを書く
+
+ここでは、 @Basket@ インスタンスへのアイテム追加を模倣し、そのインスタンスをあるオーダーに入れ、そのオーダーが処理され、一つの @OrderRepository@ インスタンスにストアされることを検証する テストを書こうとしています。
+
+p(info). %いうまでもなく、ここでは、ただメモリ上での実装をテストします。データベースを使うテストをどのように書くかは、 "Testing Java Persistence":/guides/testing_java_persistence ガイドで学びます。%
+
+@BasketTest@ クラスを作成し、Arquillianテストケースとして初期化します：
+
+div(filename). src/test/java/org/arquillian/example/BasketTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import org.jboss.arquillian.junit.Arquillian;
+
+@RunWith(Arquillian.class)
+public class BasketTest {
+}
+
+p. 次に、basket、order repositoryインターフェースとそのシングルトン実装を含むテストアーカイブを定義します。また、CDIを有効にするため、空のbeans.xmlが必要です（EJBは自動的に有効化されます）。アーカイブに何を入れるかを厳密に定義することにより、いかにクラスパス以上に完全なコントールができているか、ということに注目してください。
+
+div(filename). src/test/java/org/arquillian/example/BasketTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+
+@RunWith(Arquillian.class)
+public class BasketTest {
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap.create(JavaArchive.class, "test.jar")
+            .addClasses(Basket.class, OrderRepository.class, SingletonOrderRepository.class)
+            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+}
+
+p. 残りは、basketとorder repositoryを注入することと、それらのインタラクションをテストすることです。EJBは、実装ではなくインターフェースを注入します。EJBコンテナは、自動的にそのインターフェースで使用するEJB実装を見つけます。
+
+div(filename). src/test/java/org/arquillian/example/BasketTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import javax.ejb.EJB;
+import javax.inject.Inject;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(Arquillian.class)
+public class BasketTest {
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap.create(JavaArchive.class, "test.jar")
+            .addClasses(Basket.class, OrderRepository.class, SingletonOrderRepository.class)
+            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+    
+    @Inject
+    Basket basket;
+    
+    @EJB
+    OrderRepository repo;
+    
+    @Test
+    public void place_order_should_add_order() {
+        basket.addItem("sunglasses");
+        basket.addItem("suit");
+        basket.placeOrder();
+        Assert.assertEquals(1, repo.getOrderCount());
+        Assert.assertEquals(0, basket.getItemCount());
+        
+        basket.addItem("raygun");
+        basket.addItem("spaceship");
+        basket.placeOrder();
+        Assert.assertEquals(2, repo.getOrderCount());
+        Assert.assertEquals(0, basket.getItemCount());
+    }
+    
+    @Test
+    public void order_should_be_persistent() {
+        Assert.assertEquals(2, repo.getOrderCount());
+    }
+}
+
+p. テストを書きました。次に実行するためにセットアップしなければなりません。
+
+h3. リモートコンテナを追加する
+
+このテストでは、CDIとEJBの両方を使用します。この組み合わせは、組み込みランタイム（たとえばWeld EmbeddedやOpenEJB Embedded）の限界を押し上げます。可能であったとしても、単純にJava EEコンテナを利用する方がシンプルです。それに加えて、より正確なテスト結果を得られます。それで、この後はWeld Embeddedコンテナから離れましょう。
+
+前のガイドで、embeddedとmanagedの両方のコンテナを使いました。両方のケースで、Arquillianは、テストスイート開始時にコンテナをスタートし、テストが終了すると停止しなければなりません。コンテナをすでにスタートしていた場合（あるいはテストのために起動したい場合）はどうでしょう？ これは、明らかにテストの実行には最速です。コンテナの起動が非常に速いとしても、セットアップが不要な場合にはかないません。これがリモートコンテナの目的です。
+
+リモートコンテナは、統合テストにおいて理想的な開発環境を提供します。また、とても直感的にデバッグができることに気づくでしょう。そして、テストにおいてコンテナへの参照がないので、開発時にリモートコンテナを使うと、継続的結合においてマネージドコンテナを利用する際に邪魔になりません。
+
+p(warning). %リモートという用語は、異なるプロセスを意味します。他のマシンでも設定できますが、必ずしもその必要はありません。%
+
+リモートコンテナは独立したプロセスで、Arquillianは、そのコンテナのクライアントのデプロイメントAPIを使用します。従って必要なライブラリは：
+
+* プログラミングモデルのAPI（コンテナが提供しない場合に限り、パッケージ化するために必要です）
+* Arquillianリモートコンテナアダプター
+* コンテナプロセスと通信するためのクライアントデプロイメントAPI
+
+Mavenのpom.xmlファイルの @<profiles>@ 要素の下に、新しいプロファイルを2つ加えてください。最初のプロファイルは、リモートのJBoss AS 7コンテナを使用します：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<profile>
+    <id>arquillian-jbossas-remote</id>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <version>1.0.0.Final</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-arquillian-container-remote</artifactId>
+            <version>7.0.2.Final</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</profile>
+<!-- clip -->
+
+p. 二番目のプロファイルは、リモートのGlassFish 3.1コンテナを使用します：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<profile>
+    <id>arquillian-glassfish-remote</id>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <version>1.0.0.Final</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-api</artifactId>
+            <version>1.0-SP1</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.enterprise</groupId>
+                    <artifactId>cdi-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-bundle</artifactId>
+            <version>1.6</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>jsr311-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.jersey.contribs</groupId>
+            <artifactId>jersey-multipart</artifactId>
+            <version>1.6</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-glassfish-remote-3.1</artifactId>
+            <version>1.0.0.CR2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</profile>
+<!-- clip -->
+
+p(info). %リモートGlassFishアダプタは、コンテナとのJAX-RS(REST)を介した通信にJerseyを使っているため、追加のライブラリが必要になります。Weld APIは、コンテナプロセスから返される例外のアンマーシャリングが必要です。%
+
+pom.xmlにプロファイルを追加してしまえば、Eclipseでプロジェクトを右クリックして、Maven > Update Project Configrationを選択します。もしプロジェクトでコンパイルエラーが表示されたら、プロファイルのどれかを有効化してください。
+
+EclipseでMavenプロファイルを有効化する方法は2つあることを思い出してください：
+
+# 手動で設定（標準的なやり方）
+# Maven profile selector (JBoss Tools)
+
+プロファイルを有効化する方法は、 "Getting Started":/guides/getting_started#test_across_containers を参照してください。一度有効化すれば、プロジェクトはきれいにコンパイルできるはずです。
+
+Arquillianは、コンテナが起動していると期待しています。従って、テストを実行する前に便利なIDEから起動できるように設定しましょう。
+
+h3. サーバーを制御する
+
+リモートコンテナを管理する簡単な方法は、IDEで設定することです。もし読者がコマンドライン好きであれば、このステップは飛ばして、適当な起動スクリプトで起動することもできます。
+
+ここではEclipseに、サーバー（コンテナ）の設定の追加方法を説明します。このプロセスは、他のIDEでも同様です。Eclipseでは、 "JBoss Tools":http://jboss.org/tools とGlassFish Java EE Application Server Pluginが必要で、両方ともEclipse MarketPlaceから入手できます。
+
+Eclipseでは、メニューバーからWindow > Show View > Serversを選択してください。ビューを開いたら、右クリックして、New > Serverを選択してください。一つはJBoss AS 7、もう一つはGlassFish 3.1を設定したいでしょう。JBoss AS 7については、ウィザードは読者がすでにダウンロード、展開したJBoss AS 7ランタイムが必要です。GlassFish 3.1ウィザードでは、ディストリビューションの自動ダウンロードも選択できます。
+
+!/images/guides/arquillian_tutorial_2_new_jbossas_server.png!
+
+!/images/guides/arquillian_tutorial_2_new_glassfish_server.png!
+
+それぞれのコンテナについてウィザードが完了したら、サーバービューに表示されます。
+
+!/images/guides/arquillian_tutorial_2_servers_view.png!
+
+サーバーの起動は、（上の図に示すように）エントリを選択して、緑のプレイアイコンをクリックしてください。
+
+p(info). %Arquillianは、コンテナがデフォルトポートでの実行を仮定しています。もし、ポートを変更していたら、arquillain.xmlにそれぞれのコンテナのポートを指定できます。%
+
+さて、コンテナの準備ができたので、それらに向けてテストを実行するときです。
+
+h3. Arquillianテストの実行
+
+Arquillianテストを実行させるには、3つのステップを実行してください。
+
+# リモートコンテナを起動する
+# Mavenプロファイルを有効化し、対応するコンテナアダプタをクラスパスに追加する
+# テスト実行
+
+JBoss AS 7で実行してみましょう
+
+h4. JBoss AS上でテストを実行する
+
+JBoss AS上でテストを実行するには、まずJBoss ASコンテナを起動します。サーバービューを開き、JBoss AS 7を選択し、緑のプレイボタンをクリックして、開始を待ちます（さほどかからないはずです）。
+
+起動したら、Mavenプロパティタブか、JBoss Tools Maven profile selectorで、 @arquillian-jbossas-remote@ Mavenプロファイルを有効化します。下のプロファイルエディタは正しいプロファイルを選択したところです。
+
+!/images/guides/arquillian_tutorial_2_jbossas_profile_selection.png!
+
+最後に、 @BasketTest@ を右クリックし、Run As > JUnit Testを選択します。コンソールビューでは、実行状況が流れ、成功との結果が、JUnitビューに表示されます。
+
+コマンドラインから、Mavenでテストを実行することもできます：
+
+bc(command). $ mvn test -Parquillian-jbossas-remote -Dtest=BasketTest
+
+コンソールに以下のように表示されるでしょう：
+
+bc(output). -------------------------------------------------------
+T E S T S
+-------------------------------------------------------
+Running org.arquillian.example.BasketTest
+...
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.464 sec
+
+*おめでとう！* リモートコンテナを使ったArquillianの最初の *(greenbar)グリーンバー* が表示されました。
+
+p(info). %EJBを @@EJB@ ではなく、 @@Inject@ でインジェクトすることもできます。試してみましょう！%
+
+もし、シングルトンが実際に仕事をしているか検証したい場合は、 @SingletonOrderRepository@ クラスから、 @@Singleton@ アノテーションを削除して実行してください。テストでは、アサーションエラーが表示されるでしょう。元に戻すと、グリーンに戻ります。
+
+GlassFish 3.1上で、全く同じテストをしましょう。JBoss ASでのテストは済んだので、サーバービューでサーバーを終了します。
+
+h4. GlassFish上でテストを実行する
+
+GlassFish上でテストを実効するには、GlassFishコンテナの起動から始めます。サーバービューを開き、GlassFish 3.1を選択し、緑のプレイアイコンをクリックして、開始を待ちます。
+
+起動したら、Mavenプロパティタブか、JBoss Tools Maven profile selectorで、 @arquillian-glassfish-remote@ Mavenプロファイルを有効化します。 @arquillian-jbossas-remote@ プロファイルの無効化を忘れないでください。以下のプロファイルエディタは正しいプロファイルを選択したところです。
+
+!/images/guides/arquillian_tutorial_2_glassfish_profile_selection.png!
+
+最後に、 @BasketTest@ を右クリックし、Run As > JUnit Testを選択します。コンソールビューでは、実行状況が流れ、成功との結果が、JUnitビューに表示されます。
+
+*おめでとう！* 二つめの *(greenbar)グリーンバー* です！
+
+h3. Arquillianテストのデバッグ
+
+リモートコンテナでテストをデバッグする？それは難しそうだ。そんなことはありません！上のステップを一つ変更し、一つ追加するだけです：
+
+# リモートコンテナを *デバッグ* する
+# Mavenプロファイルを有効化し、対応するコンテナアダプタをクラスパスに追加する
+# *ブレークポイントを設定する*
+# テスト実行
+
+サーバービューには、緑のプレイボタンの左にデバッグアイコンがあります。このボタンをクリックすると、デバッグモードでサーバーが起動します。Eclipseは自動的にそのコンテナにデバッガを接続します。
+
+@SingletonOrderRepository@ beanの @addOrder()@ メソッドにブレークポイントを設定します。ここでまた右クリックとRun As > JUnit Testを選択し、テストを実行します。
+
+p(warning). %Debug As > JUnitテストを使用する必要はありません。すべてのテストは、コンテナ上で実行されていて、すでにデバッグされているからです。%
+
+テストは、ブレークポイントで中断されます。JBoss ASであれば、管理コンソールを開き、テストアプリケーションがサーバーにデプロイされていることを確認できます。Eclipseのデバッグビューでスタックトレースを見れば、サーバーはリモートプロトコル（JMXやサーブレット）から制御されていて、JUnitはコンテナ内で実行されていることがわかるでしょう。
+
+!/images/guides/arquillian_tutorial_2_debug_remote_test.png!
+
+これで、サーバーを快適なIDEから操作できるようになりました。
