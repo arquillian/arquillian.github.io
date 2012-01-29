@@ -42,7 +42,7 @@ module Awestruct
               page_content.search('h3').each do |header_html|
                 chapter = OpenStruct.new
                 chapter.text = header_html.inner_html
-                chapter.link_id = chapter.text.gsub(' ', '_').gsub(/[\(\)]/, '').downcase
+                chapter.link_id = chapter.text.gsub(' ', '_').gsub(/[\(\)\.]/, '').downcase
                 chapters << chapter
               end
 
