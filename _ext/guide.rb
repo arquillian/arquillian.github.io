@@ -95,7 +95,7 @@ module Awestruct
               languages << trans_page
             end
           end
-          return languages
+          return languages.sort{|a,b| a.language.code <=> b.language.code }
         end
       end
 
