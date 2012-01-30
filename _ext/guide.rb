@@ -89,7 +89,7 @@ module Awestruct
 
               trans_page.language_parent = page
               trans_page.language = page.site.languages.send(trans_lang)
-              trans_page.language.key = trans_lang
+              trans_page.language.code = trans_lang
 
               languages << trans_page
             end
