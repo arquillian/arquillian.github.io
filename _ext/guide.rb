@@ -61,7 +61,7 @@ module Awestruct
               guide.languages = page.languages
 
               # only add the 'main' (en) guide to the guide index
-              is_main_guide = !(page.relative_source_path =~ /.*_([a-z]{2})\..*/)
+              is_main_guide = !(page.relative_source_path =~ /.*_[a-z]{2}(_[a-z]{2})?\..*/)
               if is_main_guide
                 # default guide language is english
                 guide.language = site.languages.send('en')
@@ -78,11 +78,11 @@ module Awestruct
           base_page = page.source_path.gsub('.textile', '').gsub(@path_prefix, '').gsub(/\/.*\//, '')
           #puts "Current Base Page #{base_page}"
           Dir.entries(@path_prefix[1..-1]).each do |x|
-            if x =~ /(#{base_page})_([a-z]{2})\.(.*)/
+            if x =~ /(#{base_page})_([a-z]{2}(_[a-z]{2})?)\.(.*)/
 
               trans_base_name = $1
               trans_lang = $2
-              trans_postfix = $3
+              trans_postfix = $4
               #puts "#{trans_base_name} #{trans_lang} #{trans_postfix}"
 
               trans_page = page.site.pages.find{|e| e.source_path =~ /.*#{trans_base_name}_#{trans_lang}.#{trans_postfix}/}
