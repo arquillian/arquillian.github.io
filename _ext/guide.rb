@@ -25,6 +25,8 @@ module Awestruct
               guide.title = page.title
               guide.output_path = page.output_path
               guide.summary = page.guide_summary
+              # TODO switch this around so that "description" is the metadata property in the source file
+              page.description = guide.summary
               guide.group = page.guide_group
               guide.order = if page.guide_order then page.guide_order else 100 end
               
