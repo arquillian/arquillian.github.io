@@ -25,6 +25,8 @@ module Awestruct
               guide.title = page.title
               guide.output_path = page.output_path
               guide.summary = page.guide_summary
+              # TODO switch this around so that "description" is the metadata property in the source file
+              page.description = guide.summary
               guide.group = page.guide_group
               guide.order = if page.guide_order then page.guide_order else 100 end
               
@@ -42,7 +44,8 @@ module Awestruct
               page_content.search('h3').each do |header_html|
                 chapter = OpenStruct.new
                 chapter.text = header_html.inner_html
-                chapter.link_id = chapter.text.gsub(' ', '_').gsub(/[\(\)\.]/, '').downcase
+                # FIXME we need a better way to generate link ids
+                chapter.link_id = chapter.text.gsub(' ', '_').gsub('&#8217;', '_').gsub(/[\(\)\.]/, '').downcase
                 chapters << chapter
               end
 
@@ -61,7 +64,7 @@ module Awestruct
               guide.languages = page.languages
 
               # only add the 'main' (en) guide to the guide index
-              is_main_guide = !(page.relative_source_path =~ /.*_([a-z]{2})\..*/)
+              is_main_guide = !(page.relative_source_path =~ /.*_[a-z]{2}(_[a-z]{2})?\..*/)
               if is_main_guide
                 # default guide language is english
                 guide.language = site.languages.send('en')
@@ -78,23 +81,23 @@ module Awestruct
           base_page = page.source_path.gsub('.textile', '').gsub(@path_prefix, '').gsub(/\/.*\//, '')
           #puts "Current Base Page #{base_page}"
           Dir.entries(@path_prefix[1..-1]).each do |x|
-            if x =~ /(#{base_page})_([a-z]{2})\.(.*)/
+            if x =~ /(#{base_page})_([a-z]{2}(_[a-z]{2})?)\.(.*)/
 
               trans_base_name = $1
               trans_lang = $2
-              trans_postfix = $3
+              trans_postfix = $4
               #puts "#{trans_base_name} #{trans_lang} #{trans_postfix}"
 
               trans_page = page.site.pages.find{|e| e.source_path =~ /.*#{trans_base_name}_#{trans_lang}.#{trans_postfix}/}
 
               trans_page.language_parent = page
               trans_page.language = page.site.languages.send(trans_lang)
-              trans_page.language.key = trans_lang
+              trans_page.language.code = trans_lang
 
               languages << trans_page
             end
           end
-          return languages
+          return languages.sort{|a,b| a.language.code <=> b.language.code }
         end
       end
 
@@ -184,10 +187,10 @@ module Awestruct
         changes = []
         g = Git.open(page.site.dir)
         Git::Log.new(g, 50).path(page.relative_source_path[1..-1]).since(since).each do |c|
-          changes << Change.new(c.sha, c.author.name, c.author.date, c.message.to_a[0].chomp)  
+          changes << Change.new(c.sha, c.author.name, c.author.date, c.message.to_a[0].chomp.chomp('.'))
         end
         if changes.length == 0
-          changes << Change.new('XXXXXX', 'unknown', Time.now, 'Work in progress')
+          changes << Change.new('UNTRACKED', 'You', Time.now, 'Not yet committed')
         end
         changes
       end

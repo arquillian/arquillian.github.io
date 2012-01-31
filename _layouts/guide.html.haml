@@ -3,23 +3,30 @@ layout: guide-base
 ---
 - page.javascripts = [ '/javascripts/jquery-scroll.js', 'http://apis.google.com/js/plusone.js' ]
 - groups = [['beg', 'First Steps'], ['int', 'More Coverage'], ['adv', 'Enhance']]
-#content
+#content{:lang=>page.language ? page.language.code : nil}
   %h2= page.title
   - if page.authors
     .authors<
-      %strong Authors:
+      %strong= "Author#{page.authors.size > 1 ? 's' : ''}:"
       = ' '.concat(page.authors.join(', '))
-      - if page.guide.group
-        %strong{:style=>'padding-left: 10px;'} Level:
-        = ' '.concat(groups[page.guide.group - 1][1])
-      %strong{:style=>'padding-left: 10px;'} Last Update:
-      = ' '.concat(page.changes[0].date.strftime('%b %d, %Y'))
+      - if page.translators
+        %strong{:style=>'padding-left: 10px;'}= "Translator#{page.translators.size > 1 ? 's' : ''}:"
+        = ' '.concat(page.translators.join(', '))
       - if page.languages
         %strong{:style=>'padding-left: 10px;'} Translations:
         - for translation in page.languages
           - if translation.language != page.guide.language
             %a{ :href=>translation.output_path }
-              %img.flag{:src=>translation.language.flag_icon, :title=>"#{translation.language.display_name_local} (#{translation.language.key})"}
+              %img.flag{:src=>translation.language.flag_icon, :title=>"#{translation.language.display_name_local} (#{translation.language.code})"}
+      %br
+      - if page.guide.group
+        %strong Level:
+        = ' '.concat(groups[page.guide.group - 1][1])
+      - if page.tags
+        %strong{:style=>"padding-left: #{page.guide.group ? 10 : 0}px;"} Tags:
+        = ' '.concat(page.tags.join(', '))
+      %strong{:style=>"padding-left: #{page.guide.group || page.tags ? 10 : 0}px;"} Last Update:
+      = ' '.concat(page.changes[0].date.strftime('%b %d, %Y'))
 
   ~ content
   :textile
@@ -44,7 +51,7 @@ layout: guide-base
         %li
           #{change.date.strftime('%b %d, %Y')}:
           &= change.message
-          by #{change.author} 
+          %em by #{change.author} 
 - if page.guide
   #sidebar
     #toc
@@ -111,9 +118,13 @@ layout: guide-base
           toggleSelection(false);
         }
         // if last section is in view, highlight it
-        else if (scrollY + $(window).height() > sectionOffsets[sections[numSections - 1]]) {
-          var section = sections[numSections - 1];
-          toggleSelection(section);
+        // tweak to get last section to be highlighted in toc when scrolled to bottom of page
+        //else if (scrollY + $(window).height() > sectionOffsets[sections[numSections - 1]] &&
+        //    scrollY - 100 > sectionOffsets[sections[numSections - 2]]) {
+        //  toggleSelection(sections[numSections - 1]);
+        //}
+        else if (scrollY + $(window).height() == $(document).height()) {
+          toggleSelection(sections[numSections - 1]);
         }
         // highlight visible section
         else {
