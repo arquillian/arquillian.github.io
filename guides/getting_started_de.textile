@@ -412,12 +412,11 @@ Die @@RunWith@ Annotation sagt JUnit, dass es den Arquillian Test Controller ver
 
 h4. Was genau ist ein Test Archiv?
 
+Der Zweck eines Test Archivs ist die Isolation von Klassen und Resourcen welche für den Test benötigt werden von dem Rest des Classpath. Im Gegensatz zu einem normalen Unit Testfall, bindet sich Arquillian nicht einfach in den kompletten Classpath ein. Im Gegenteil, Du fügst lediglich die Teile hinzu, welche auch vom Test benötigt werden (Das kann der komplette Classpath sein, aber das entscheidest nud Du). Das Archiv wird per "ShrinkWrap":shrinkwrap_home definiert. Das ist eine Java API zur Erzeugung von Archiven (beispielsweise jar, war, ear). Die micro-deployment Strategie erlaubt es Dir Dich auf die eigentlichen Testklassen zu fokussieren. Im Ergebnis führt das zu sehr schlanken Testklassen.
 
-The purpose of the test archive is to isolate the classes and resources which are needed by the test from the remainder of the classpath. Unlike a normal unit test, Arquillian does not simply dip into the entire classpath. Instead, you include only what the test needs (which may be the entire classpath, if that's what you decide). The archive is defined using "ShrinkWrap":shrinkwrap_home, which is a Java API for creating archives (e.g., jar, war, ear) in Java. The micro-deployment strategy let's you focus on precisely the classes you want to test and, as a result, the test remains very lean.
+p(info). %ShrinkWrap unterstützt auch das auffinden von Artefakten (Bibliotheken) und das programmatische Erstellen von Konfigurationsdateien, welche ebenfalls im Test Archiv verpackt werden können. Für eine gründlichere Einführung in ShrinkWrap empfiehlt sich der "ShrinkWrap introduction":/guides/shrinkwrap_introduction guide.%
 
-p(info). %ShrinkWrap also supports resolving artifacts (libraries) and create configuration files programmatically, which can then be added to the test archive. For a more thorough introduction to ShrinkWrap, see the "ShrinkWrap introduction":/guides/shrinkwrap_introduction guide.%
-
-Let's add that Arquillian flair to the test:
+Fügen wir das Arquillian Flair dem Test hinzu:
 
 div(filename). src/test/java/org/arquillian/example/GreeterTest.java
 
@@ -448,9 +447,10 @@ public class GreeterTest {
     }
 }
 
-p. Using ShrinkWrap, we've defined a Java archive (jar) as the deployment that includes the @Greeter@ class that the test will invoke and an empty beans.xml in the META-INF directory to activate CDI in this archive.
+p. Mithilfe von ShrinkWrap haben wir ein Java Archiv (jar) als Deployment definiert. Es enthält die zu testende @Greeter@ Klasse und eine leere beans.xml Datei welche als Resource im META-INF Verzeichnis liegen soll. Mit diesem Trick aktivieren wir die CDI Funktionen für dieses Archiv.
 
-Now all we need to do is inject the @Greeter@ instance into a field directly above the test method and replace the unimplemented test method with one that asserts the behavior of the bean. To give you that warm fuzzy feeling, we'll also print the greeting to the console.
+Alles was nun noch zu tun bleibt ist, die @Greeter@ Instanz in ein Feld direkt oberhalb der Test Methode zu injizieren und die bisher nicht implementierte Test Methode mit einem Assert auf das Verhalten des beans auszuprogrammieren. 
+Um Dir ein warmes und wohliges Gefühl zu vermitteln, werden wir auch die Begrüßung auf der Konsole ausgeben.
 
 div(filename). src/test/java/org/arquillian/example/GreeterTest.java
 
@@ -465,7 +465,7 @@ public void should_create_greeting() {
     greeter.greet(System.out, "Earthling");
 }
 
-p. Here's how the test should look when you're done:
+p. Und so sieht der Test aus, wenn Du fertig bist:
 
 div(filename). src/test/java/org/arquillian/example/GreeterTest.java
 
@@ -501,17 +501,17 @@ public class GreeterTest {
     }
 }
 
-p. You've written your first Arquillian test! Ah, but you're probably wondering how to run it ~:S If you're thinking, "Just like a unit test" you're correct! However, we first need to add a container adapter to the classpath.
+p. Damit hast Du Deinen ersten Arquillian Test geschrieben! Ahhh. Aber Du wunderst Dich vielleicht darüber, wie Du Ihn ausführen sollst? ~:S Wenn Du denkst, "Einfach wie einen JUnit test", liegst Du genau richtig! Dennoch müssen wir zuerst einen Container Adapter zum Classpath hinzufügen.
 
-h3. Add a Container Adapter
+h3. Einen Container Adapter hinzufügen
 
-We've been talking a lot about testing in a container, but so far we have mentioned which one. That's because it's a runtime decision.
+Wir haben eine menge über Tests im Container gesprochen. Bisher aber nicht gesagt, welchen. Das liegt daran, dass es eine Laufzeit Entscheidung ist.
 
-Arquillian selects the target container based on which container adapter is available on the test classpath. That means we'll be adding more libraries to the project.
+Arquillian wählt den Ziel-Container auf der Grundlage des im Classpath verfügbaren Container Adapters aus. Das bedeutet, dass wir weitere Bibliotheken zum Projekt hinzufügen werden.
 
-An Arquillian test can be executed in any container that is compatible with the programming model used in the test (as long as the container has an Arquillian adapter). Our test is using the CDI programming model, so we need to use any container to supports CDI. We want fast turnaround during development, so we'll start with the Weld EE embedded container.
+Ein Arquillian Test kann in allen Containern ausgeführt werden, welche mti dem Programmiermodell des Tests kompatibel sind und Arquillian einen entsprechenden Container Adapter bereitstellt. Der bisherige Test verwendet das CDI Programmiermodell; wir benötigen also einen Container, welcher dieses unterstützt. Wir wollen einen schnellen Roundtrip und starten daher mit dem Weld EE embedded Container.
 
-Open the @pom.xml@ file again and add the following group of dependencies directly below the other @<dependency>@ elements:
+Öffne wieder die Projektkonfiguration @pom.xml@ und füge die folgende Gruppe von Abhängigkeiten unterhalb des letzten, schließenden @<dependency>@ Elements hinzu:
 
 div(filename). pom.xml
 
@@ -536,7 +536,7 @@ bc(prettify).. <!-- clip -->
 </dependency>
 <!-- clip -->
 
-p. To summarize, here are the three libraries you need to use Arquillian (with JUnit):
+p. Zusammenfassend benötigst Du diese drei Bibliothken um Arquillian mit JUnit zu verwenden:
 
 # Arquillian JUnit integration
 # Arquillian container adapter for the target container
