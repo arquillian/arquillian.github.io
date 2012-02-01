@@ -1,6 +1,6 @@
 ---
 layout: guide
-title: "快速入门: 清理和重现"
+title: "快速入门: 温故而知新"
 authors: ['Dan Allen']
 guide_summary: 快速入门的第二部分。通过探讨一个稍复杂的例子来重温测试过程，学习如何使用远程容器。
 guide_group: 1
@@ -91,11 +91,11 @@ public class Basket implements Serializable {
 
 p. 正如你所见，我们将 EJB 注入到一个 CDI Bean中，更准确的说，准备好了我们要进行测试的集成环境!
 
-h3. Implement in Phases
+h3. 分阶段实现
 
-We aren't quite ready to write a test because we don't have an implementation of the @OrderRepository@. For the purpose of this example, let's assume that the @OrderRepository@ is being implemented by another team (or in another iteration). Here's where the micro-deployment feature of Arquillian really stands out. We can create an in-memory implementation as an EJB singleton and bundle it in the test archive to get a working application in the short term. (We may even decide to keep this implementation for the purpose of testing this boundary).
+我们还没有准备好写一个测试，因为还没有一个 @OrderRepository@ 实现。出于本例的需要，我们假定 @OrderRepository@ 由另一个团队（或在另一次迭代中）实现。这时 Arquillian 的微部署功能就派上用场了。我们创建一个基于内存 EJB 单态类实现，添加到测试的归档文件中，这样很快就可以得到一个可以运行的程序（我们甚至可以用它来测试边界）。
 
-Create the class @SingletonOrderRepository@ in your test classpath and populate it with the code shown below:
+创建测试类 @SingletonOrderRepository@ ，填充以下内容：
 
 div(filename). src/test/java/org/arquillian/example/SingletonOrderRepository.java
 
@@ -137,17 +137,17 @@ public class SingletonOrderRepository implements OrderRepository {
     }
 }
 
-p. The added bonus of this implementation is that we get a chance to play around with the new singleton feature of EJB 3.1 in an Arquillian sandbox. That's why we like to say that Arquillian is a learning environment in addition to being a testing tool.
+p. 这个实现的另外一个好处就是在 Arquillian 沙箱能够体验 EJB 3.1 中新引入的单态特性。这就是为什么我们情愿说 Arquillian 是一个学习环境，而不仅仅是测试工具。 
 
-Now we are ready to write the Arquillian test.
+现在我们开始写 Arquillian 测试。
 
-h3. Write a Test
+h3. 编写测试
 
-We are now going to write a test that simulates adding items to an instance of @Basket@, uses that instance to place an order and then validates that the order is processed and stored into the single @OrderRepository@ instance.
+下面我写一个测试模拟添加商品到 @Basket@ 实例中，并使用这个实现来下定单，并验证订单经过处理，保存到唯一的 @OrderRepository@ 实例中。
 
-p(info). %Of course, we will only be testing the in-memory implementation. You'll learn how to write a test that uses a database in the "Testing Java Persistence":/guides/testing_java_persistence guide.%
+p(info). %当然，我们仅测试这个基于内存的实现。你将在 "Testing Java Persistence":/guides/testing_java_persistence 教程中学习如何在一个测试中使用数据库。%
 
-Create the class @BasketTest@ and initialize it as an Arquillian test case:
+创建测试类 @BasketTest@ ，初始化为 Arquillian 测试用例：
 
 div(filename). src/test/java/org/arquillian/example/BasketTest.java
 
@@ -159,7 +159,7 @@ import org.jboss.arquillian.junit.Arquillian;
 public class BasketTest {
 }
 
-p. Next, we'll define a test archive that includes the basket, the order repository interface and its singleton implementation. We also need an empty beans.xml file to active CDI (EJB is automatically activated). Notice how we have complete control over the classpath by explicitly defining what goes into the archive.
+p. 接下来，我们定义一个测试归档文件，包含 basket，order repository 接口及它的单态实现。我们还需要一个空的 beans.xml 文件，来激活 CDI （EJB 是自动激活的）。注意我们通过显式的添加归档文件要包含哪些内容来完全掌控 classpath 。
 
 div(filename). src/test/java/org/arquillian/example/BasketTest.java
 
@@ -181,7 +181,7 @@ public class BasketTest {
     }
 }
 
-p. All that's left is to inject the basket and order repository into the test case and test their interaction. We'll be injecting the EJB interface, not the implementation. The EJB container will automatically find the implementation of the interface to use.
+p. 剩下要做的是将 basket 和 order repository 注入到测试用例中，测试它们之间的交互。我们将注入 EJB 接口，而不是实现类。EJB 容器会自动查找所用接口的实现。
 
 div(filename). src/test/java/org/arquillian/example/BasketTest.java
 
@@ -235,25 +235,25 @@ public class BasketTest {
     }
 }
 
-p. The test is written. Now we need to get setup to run it.
+p. 测试写好了，现在要设置运行它。
 
-h3. Add the Remote Containers
+h3. 添加远程容器
 
-The test we've written uses both CDI and EJB. That combination pushes the boundaries of what an embedded runtime (like Weld Embedded or OpenEJB Embedded) can provide. While possible, it's just simpler to use a compliant Java EE container. Plus, it gives us more accurate test results. So we'll leave the Weld Embedded container behind for now.
+我们前面写过的测试也使用了 CDI 和 EJB。 两者混合可以使用嵌入式运行环境（像 Weld Embedded 或 OpenEJB Embedded）提供的边界。如果允许，我们还是使用一个 Java EE 兼容的容器。此外，它提供了更为准确的测试结果。所以，现在先将  Weld Embedded 容器放到一边。
 
-In the previous guide, we used both embedded and managed containers. In both cases, Arquillian must start the container when the test suite begins and stop it when the tests are finished. What if you already have a container started (or you are willing to start one for the purpose of testing)? That's obviously going to be the fastest way to run the tests. Even if the container starts very fast, nothing beats no startup at all. That's the purpose of the remote containers.
+在前面的教程中，我们使用过了嵌入式和托管的容器。在这两种环境中，Arquillian 必须在测试套件运行前启动容器，在测试完成时停止容器。如果你已经有一个启动的容器呢（或者说你想测试时仅启动一次）？毫无疑问，这是最快的测试途径。即使容器启动非常快，也不能说服“零启动”的需求。这就是远程容器的目的。
 
-Remote containers provide an ideal development environment for integration testing. You'll also discover that they also make debugging the test very straightforward. And since there is no reference to the container in the test, using a remote container during development does not prevent you from using a managed container for continous integration.
+远程容器提供一个集成测试的理想环境。你也会发现调试一个测试更直接。没有明文规定要求你在测试中使用哪种容器，在开发阶段使用远程容器，并不排斥你在持续集成时使用托管式的容器。
 
-p(warning). %The term remote refers to a separate process, not necessarily a separate machine, though it can accomodate that setup.%
+p(warning). %术语远程是指的一个单独的进程，而不单独的机器，虽然也可以按那样配置%
 
-A remote container is a standalone process to which Arquillian deploys using the container's client deployment APIs. Therefore, the libraries you need are:
+远程容器是一个独立的进程，Arquillian 使用容器客户端部署 API 进行部署。那么，你要添加的类库包含：
 
-* APIs of the programming model (only need to be packaged if the container does not provide them)
-* The Arquillian remote container adapter
-* The client deployment APIs for communicating with the container process
+* 编程模型的 API （如果容器没有提供仅需要打进包）
+* Arquillian 远程容器适配器
+* 客户端部署 API ，用于与容器进程交互
 
-In your Maven pom.xml file, add two new profiles under the @<profiles>@ element. The first profile uses a remote JBoss AS 7 container:
+在你的 Maven pom.xml 文件中，在  @<profiles>@ 下添加以下两个 Profile。第一个 Profile 使用远程 JBoss AS 7 容器：
 
 div(filename). pom.xml
 
@@ -278,7 +278,7 @@ bc(prettify).. <!-- clip -->
 </profile>
 <!-- clip -->
 
-p. The second profile uses a remote GlassFish 3.1 container:
+p. 第二个 Profile 使用远程 GlassFish 3.1 容器：
 
 div(filename). pom.xml
 
@@ -333,66 +333,66 @@ bc(prettify).. <!-- clip -->
 </profile>
 <!-- clip -->
 
-p(info). %The remote GlassFish adapter uses Jersey to communicate with the container via JAX-RS (REST) and thus requires these additional libraries. The Weld API is required for unmarshalling exceptions returned by the container process.%
+p(info). % 远程 GlassFish 适配器通过 JAX-RS (REST) 使用 Jersey 与容器交互，这样你就需要这些额外的库文件。Weld API 用来处理容器进程返回的异常。%
 
-Once you've added the profiles to the pom.xml, right click on the project in Eclipse and select Maven > Update Project Configuration. If the project is showing compiler errors, you need to activate one of the profiles.
+一旦你在 pom.xml 中添加了这些 profiles，在 Eclipse 中右键点击项目，选择 Maven > Update Project Configuration。如果项目显示了一些编译错误，你必须激活其中一个 Profiles。
 
-Recall that there are two ways to activate a Maven profile in Eclipse:
+回想一下在 Eclipse 中激活 Maven Profile 的两种方法：
 
-# Manual configuration (standard approach)
-# Maven profile selector (JBoss Tools)
+# 手动配置（标准方法）
+# Maven profile selector （使用 JBoss Tools）
 
-Refer to the "Getting Started":/guides/getting_started#test_across_containers for instructions on how to activate a profile. Once you've activate the profile, the project should compile cleanly.
+参考 "快速入门":/guides/getting_started#test_across_containers 中有关如何激活 Profile 的介绍。一旦你激活了 Profile，项目可以编译通过。
 
-Arquillian is expecting the container to be running. Therefore, let's get them setup so that we can start them from the comfort of the IDE right before we run the test.
+Arquillian 需要容器处于运行状态。因此，我们要对容器进行配置，这样在运行测试之前能够方便的从 IDE 中启动它们。
 
-h3. Control the Servers
+h3. 控制服务器
 
-The easiest way to manage the remote containers is to set them up in your IDE. If you're a more of a commandline person, you can skip this step and start the servers using the appropriate startup scripts.
+管理服务器最简单的方法就是在 IDE 中进行操作。如果你更多时候是一个惯用命令行的极客，可以跳过这一步，使用相应脚本来启动服务器。 
 
-We'll show you how to add the server (container) controls in Eclipse. The process is similar for other IDEs. For Eclipse, you'll need both "JBoss Tools":http://jboss.org/tools and the GlassFish Java EE Application Server Plugin, both of which are available in the Eclipse MarketPlace.
+我们将向你演示如何添加服务器到 Eclipse 中。这处过程与其他 IDE 非常类似。在 Eclipse 中，你需要安装 "JBoss Tools":http://jboss.org/tools 和 GlassFish Java EE Application Server 插件，两者均可以在 Eclipse MarketPlace 中找到。
 
-In Eclipse, select Window > Show View > Servers from the main menubar. Once the view opens, right click and select New > Server. You'll want to define one server for JBoss AS 7 and one for GlassFish 3.1. For JBoss AS 7, the wizard requires that you have already downloaded and extracted the JBoss AS 7 runtime. The GlassFish 3.1 wizard gives you the option of downloading the distribution automatically.
+在 Eclipse 中，从主菜单中选择 Window > Show View > Servers 。当视图打开后，右击空白处并选择 New > Server 。你将要定义一个 JBoss AS 7 服务器，一个GlassFish 3.1 服务器。对于 JBoss AS 7，创建向导面板要求你事先已经下载好了一份 JBoss AS 并解压到硬盘。 GlassFish 3.1 向导面板则提供一个选项，可以自动帮你下载。
 
 !/images/guides/arquillian_tutorial_2_new_jbossas_server.png!
 
 !/images/guides/arquillian_tutorial_2_new_glassfish_server.png!
 
-Once you have completed the wizard for each container, you should see them appear in the server view.
+一旦你完成每个向导中的步骤，你应该可以看到他们显示在服务器视图。
 
 !/images/guides/arquillian_tutorial_2_servers_view.png!
 
-To start a server, select the entry (as shown in the graphic above) and click the green play icon.
+要启动一个服务器，选择服务器条目（如上图所示），点绿色的播放图标。
 
-p(info). %Arquillian assumes the containers are running on their default ports. If you have changed the ports, you can use arquillian.xml to specify the ports you are using for each container.%
+p(info). %Arquillian 假定容器运行时使用默认端口。如果你修改了端口，你可以在 arquillian.xml 中指定你所用的容器的端口。%
 
-Now that you've got the containers ready and waiting, it's time to fire the test off to them.
+现在容器已经准备就绪，现在要做的是在服务器上运行测试。
 
-h3. Run the Arquillian Test
+h3. 运行 Arquillian 测试
 
-To run the Arquillian test, you need to perform three steps:
+要运行 Arquillian 测试，你必须完成下面三个步骤：
 
-# Start the remote container
-# Activate the Maven profile that adds the cooresponding container adapter to the classpath
-# Run the test
+# 启动远程容器
+# 添加相应的容器适配器到 Classpath 中并激活 Maven profile
+# 运行测试
 
-Let's start by using JBoss AS 7.
+下面从使用 JBoss AS 7 开始。
 
-h4. Run the Test on JBoss AS
+h4. 在 JBoss AS 上运行测试。
 
-To run the test on JBoss AS, begin by starting the JBoss AS container. Open the Servers view, select JBoss AS 7, then click the green play button. Wait for it to start (it shouldn't take long).
+要在 JBoss AS 上运行测试，第一步是启动 JBoss AS 容器。打开 Servers 视图，选择 JBoss AS 7，点击绿色的播放按钮。等待它启动（应该不需要太久）。
 
-Once that's up and running, activate the @arquillian-jbossas-remote@ Maven profile using either the Maven properties tab or the JBoss Tools Maven profile selector. The profile editor below shows the correct selection.
+一旦服务器已经启动并处于运行状态，可以在 Maven properties 标签中或 JBoss Tools Maven profile selector 中激活 @arquillian-jbossas-remote@ Maven profile ，下面的 Profile 编辑器显示正确的选择结果。
 
 !/images/guides/arquillian_tutorial_2_jbossas_profile_selection.png!
 
-Finally, right click on the @BasketTest@ class and select Run As > JUnit Test. You should see a flurry of activity in the Console view and a successful result in the JUnit view.
+最后，右击 @BasketTest@ 类，并选择 Run As > JUnit Test。你应该可以在 Console 视图中看到大量活动信息，在 JUnit 视图中显示一个成功的结果。
 
-You can also run the test on the commandline using Maven:
+你也可以使用 Maven 通过命令行的方式来运行测试。
 
 bc(command). $ mvn test -Parquillian-jbossas-remote -Dtest=BasketTest
 
-You should see the following lines printed to the console:
+你应该可以看到下面几行信息打印在控制台中：
 
 bc(output). -------------------------------------------------------
 T E S T S
@@ -401,43 +401,43 @@ Running org.arquillian.example.BasketTest
 ...
 Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.464 sec
 
-*Congratulations!* You've earned your first *(greenbar)green bar* with Arquillian using a remote container.
+*恭喜你!* 你获得了第一个使用 Arquillian 和远程容器的 *(greenbar)绿条* 。 
 
-p(info). %You can also inject the EJB using @@Inject@ rather than @@EJB@. Give it a try!%
+p(info). % 你也可以使用 @@Inject@ 替代 @@EJB@ 来流入 EJB，自行尝试一下。%
 
-If you want to verify that the singleton is actually doing its job, go ahead and remove the @@Singleton@ annotation from the @SingletonOrderRepository@ class. You should see an assertion error when you run the test. Restore it and you'll be back to green.
+如果你想验证单态是否起作用，删除 @SingletonOrderRepository@ 类中 @@Singleton@ ，运行测试，你应该可以看到一个断言错误。恢复之后，你又可以看到绿条。
 
-Now let's test the exact same test on GlassFish 3.1. Since we are done with JBoss AS for the moment, use the Servers view to stop the server.
+下面在 GlassFish 3.1 上进行同样的测试。因为我们刚刚完成了 JBoss AS 上的测试，请在 Servers 视图停止服务器。
 
-h4. Run the Test on GlassFish
+h4. 在 GlassFish 上运行测试
 
-To run the test on GlassFish, begin by starting the GlassFish container. Open the Servers view, select GlassFish 3.1, then click the green play button. Wait for it to start.
+要在 GlassFish 上运行测试，首先要启动 GlassFish 容器。打开 Servers 视图，选择 GlassFish 3.1，点击绿色的播放按钮。等待它启动。
 
-Once that's up and running, activate the @arquillian-glassfish-remote@ Maven profile using either the Maven properties tab or the JBoss Tools Maven profile selector. Remember to deactivate the @arquillian-jbossas-remote@ profile. The profile editor below shows the correct selection.
+一旦服务器已经启动并处于运行状态，可以在 Maven properties 标签中或 JBoss Tools Maven profile selector 中激活 @arquillian-glassfish-remote@ Maven profile。请记住一定解除 @arquillian-jbossas-remote@ profile。下面的 Profile 编辑器显示正确的选择结果。
 
 !/images/guides/arquillian_tutorial_2_glassfish_profile_selection.png!
 
-Finally, right click on the @BasketTest@ class and select Run As > JUnit Test. You should see a flurry of activity in the Console view and a successful result in the JUnit view.
+最后，右击 @BasketTest@ 类，并选择 Run As > JUnit Test。你应该可以在 Console 视图中看到大量活动信息，在 JUnit 视图中显示一个成功的结果。
 
-*Congratulations!* You've earned another *(greenbar)green bar*.
+*恭喜你!* 你又赚到一个 *(greenbar)绿条*。
 
-h3. Debug the Arquillian Test
+h3. 调试 Arquillian 测试
 
-Debugging a test in a remote container? That seems hard. Surprise! It's not at all. You only have to modifiy one of the step above and add one additional step:
+在远程容器上调试测试？看起来很难，其实一点也不难。只需要修改将上面的步骤中一步，并添加额外一步即可：
 
-# *Debug* the remote container
-# Activate the Maven profile that adds the cooresponding container adapter to the classpath
-# *Set a breakpoint*
-# Run the test
+# *调试* 远程容器
+# 添加相应的容器适配器到 Classpath 中并激活 Maven profile
+# *设置断点*
+# 运行测试
 
-In the Servers view, you should notice that there is a bug icon right next to the green play button. Click this button to start one of the servers in debug mode. Eclipse automatically connects its debugger to the container.
+在 Servers 视图中，你应该注意到了在绿色的播放按钮旁边有一个臭虫图标。点击这个图标以调试模式运行服务器。Eclipse 会自动将调试工具连接到容器。
 
-Set a breakpoint in the @addOrder()@ method on the @SingletonOrderRepository@ bean. Now, run the test again by right clicking and selecting Run As > JUnit Test.
+在 @SingletonOrderRepository@ 类的 @addOrder()@ 方法设置一个断点。右击选择 Run As > JUnit Test 再次运行测试。
 
-p(warning). %You don't need to use Debug As > JUnit Test since all the test code is running inside the container, which is already being debugged.%
+p(warning). %不要使用 Debug As > JUnit Test，因为所有的测试代码已经运行在容器中，而且处于调试状态。%
 
-The test should halt at the breakpoint. If you are using JBoss AS, you can open the administration console and verify that the test application is currently deployed to the server. If you browse the stack trace in the Eclipse Debug view, you'll notice that the server is being controlled over a remote protocol (either JMX or Servlet) and that JUnit is being launched from inside the container.
+测试应该会在断点暂停。如果你使用的是 JBoss AS，你可以打开管理员控制台来证实测试已经部署到了服务器上。如果在 Eclipse 的 Debug 视图中浏览堆栈跟踪信息，你应该可以看到服务器是通过一种远程协议（JMX 或 Servlet）进行控制的, JUnit 是从容器中启动的。 
 
 !/images/guides/arquillian_tutorial_2_debug_remote_test.png!
 
-You are now poking around the server from the comfort of your IDE.
+现在你可以舒适的从 IDE 中操作服务器。
