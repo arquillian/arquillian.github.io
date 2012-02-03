@@ -45,7 +45,7 @@ module Awestruct
                 chapter = OpenStruct.new
                 chapter.text = header_html.inner_html
                 # FIXME we need a better way to generate link ids
-                chapter.link_id = chapter.text.gsub(' ', '_').gsub('&#8217;', '_').gsub(/[\(\)\.]/, '').downcase
+                chapter.link_id = chapter.text.gsub( %r{</?[^>]+?>}, '' ).gsub(' ', '_').gsub('&#8217;', '_').gsub(/[\(\)\.]/, '').downcase
                 chapters << chapter
               end
 
