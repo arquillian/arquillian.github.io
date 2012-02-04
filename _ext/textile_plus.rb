@@ -34,6 +34,16 @@ module Awestruct::Extensions
   end
 end
 
+# temporary fix for https://github.com/bobmcwhirter/awestruct/issues/68
+module RedCloth
+  class TextileDoc
+    def initialize(string, restrictions = [:no_span_caps])
+      restrictions.each { |r| method("#{r}=").call(true) }
+      super(string)
+    end
+  end
+end
+
 module RedCloth::Formatters::HTML
   # video. vimeo 22696384 320x400
   def video(opts)
