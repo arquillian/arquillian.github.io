@@ -426,7 +426,7 @@ h3. Debug the Arquillian Test
 Debugging a test in a remote container? That seems hard. Surprise! It's not at all. You only have to modifiy one of the step above and add one additional step:
 
 # *Debug* the remote container
-# Activate the Maven profile that adds the cooresponding container adapter to the classpath
+# Activate the Maven profile that adds the corresponding container adapter to the classpath
 # *Set a breakpoint*
 # Run the test
 
@@ -441,3 +441,55 @@ The test should halt at the breakpoint. If you are using JBoss AS, you can open 
 !/images/guides/arquillian_tutorial_2_debug_remote_test.png!
 
 You are now poking around the server from the comfort of your IDE.
+
+h3. Debug on a Managed Server
+
+Is it possible to debug when using a managed container? You bet! We just need a little extra configuration.
+
+Since Arquillian handles starting and stopping the container, we need to instruct Arquillian to start the container in debug mode. That's a JVM hint that Arquillian needs to pass to the server, which we'll supply using a container configuration property.
+
+Before we get to that, we need to think about how we are going to connect the debugger. Unless you're super speedy with the mouse, you're going to have a hard time connecting the debugger before Arquillian starts running the tests. Fortunately, we can tell the JVM to wait for the connector to debug before executing the application, in this case JBoss AS. That gives us time to hit the debug button in the IDE to connect to the process.
+
+Here's the configuration you'll need to add to the Arquillian configuration descriptor to get Arquillian to start the server in debug mode (no whitespace allowed immediately after @<property>@ start tag):
+
+div(filename). src/test/resources/arquillian.xml
+
+bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+    <container qualifier="jbossas-7-managed" default="true">
+        <configuration>
+            <property name="jbossHome">target/jboss-as-7.0.2.Final</property>
+            <property name="javaVmArguments">-Xmx512m -XX:MaxPermSize=128m
+                -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y
+            </property>
+        </configuration>
+    </container>
+</arquillian>
+
+p. Notice the @suspend=y@ flag. That tells the process to wait for the debugger to connect. We've set the debug port to 8787, which is the port you'll supply to the debugger configuration. We'll get to that in a minute. First, let's get the test started.
+
+# Activate the Maven profile for arquillian-jbossas-managed (refer to the "Getting Started":/guides/getting_started guide)
+# Run the test
+
+In the Console view, you should notice that Arquillian has started the JBoss AS instance and it's waiting on the debugger to connect:
+
+bc(output). Listening for transport dt_socket at address: 8787
+
+All we have to do now is connect a debugger. Here's how you configure and launch the debugger in Eclipse:
+
+# Select @Run > Debug Configurations...@ from the main menu
+# Right click on Remote Java Application and select @New@
+# In the Name field, enter "Debug JBoss AS"
+# In the Port field, enter "8787"
+# Click the Debug button
+
+Here's the debug configuration screen showing the debug profile we've created:
+
+!/images/guides/arquillian_tutorial_2_eclipse_debug_configuration.png!
+
+JBoss AS should resume and stop again when it hits the breakpoint in your test. Voila! You are debugging the managed container.
+
+At this point, you've learned how to run and debug your tests in embedded, remote and managed containers. There's no holding you back now!
