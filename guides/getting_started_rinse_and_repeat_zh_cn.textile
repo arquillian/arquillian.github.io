@@ -1,0 +1,443 @@
+---
+layout: guide
+title: "快速入门: 温故而知新"
+authors: ['Dan Allen']
+guide_summary: 快速入门的第二部分。通过探讨一个稍复杂的例子来重温测试过程，学习如何使用远程容器。
+guide_group: 1
+guide_order: 20
+TODO: ["port configuration and arquillian.launch", "expected deployment error"]
+---
+在接下来这篇 "快速入门":/guides/getting_started 教程中，将通过探讨一个稍复杂的例子，你将重温你所学到 Arquillan 知识。阅读本教程后，你能够掌握：
+
+* 写一个 Arquillian 测试来演示 CDI(Contexts and Dependency Injection) 和 EJB(Enterprise JavaBeans) 协同工作
+* 在远程容器（例如，服务器）中执行 Arquillian 测试
+* 在远程容器中调试 Arquillian 测试
+
+你将学习所有这些技巧，添加额外的 profile，并激活它，这样 Arquillian 测试才能运行在远程容器中。这就意味，你将在真实的环境中测试，不是模拟的，也不是嵌入式的运行环境。既然你已经完成了第一部分中困难的部分，接下来的就是小菜一碟。
+
+h3. 预备知识
+
+本教程假定你已经添加了 Arquillian 基础设施到你的测试套件中，并编写和运行了至少一个 Arquillian 测试。如果没有，请阅读 "快速入门":/guides/getting_started 教程来熟悉 Arquillian 基础。你同样需要那篇教程中提到软件。
+
+h3. 创建组件
+
+本教程中，我们将创建一个的购物程序的后台。我们会使用 basket 组件来存放访问者选择的商品，用一个 order repository 组件来存储和读取下的订单。我们将分别使用 CDI 和 EJB 来实现。只要我们添加了  Java EE 6 API 到 classpath 中，就能立即使用这些编程模型（参考 "快速入门":/guides/getting_started 教程中的介绍添加此 API 到你的项目中）。
+
+下面我们开始创建一个组件，它能将订单保存到永久性存储设施中，并能从其中读取订单。为了遵循良好的软件设计，并简化测试，我们使用一个接口来定义这种契约。在你的 IDE 中，创建一个本地 EJB 接口，名为 @OrderRepository@ ，填充以下内容：
+
+div(filename). src/main/java/org/arquillian/example/OrderRepository.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.util.List;
+import javax.ejb.Local;
+
+@Local
+public interface OrderRepository {
+    void addOrder(List<String> order);
+    List<List<String>> getOrders();
+    int getOrderCount();
+}
+
+p. 稍后我们再来关注实现。现在我们看如何使用这一契约。
+
+当访问者浏览网站时，他们会把要买的东西放进他们的购物车（baskets）内。针对这一场景建模，我们使用一个 CDI Bean 关联访问者的 HTTP Session。当时访问者要购买选择的商品时，这一组件将操作委托给 @OrderRepository@ EJB 来处理。
+
+在你的 IDE，创建一个名为 @Basket@ 的类，添加一个 @@SessionScoped@ 标注，将它绑定到 Session 环境中，如下所示：
+
+div(filename). src/main/java/org/arquillian/example/Basket.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
+import javax.enterprise.context.SessionScoped;
+
+@SessionScoped
+public class Basket implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private List<String> items;
+    
+    @EJB
+    private OrderRepository repo;
+    
+    public void addItem(String item) {
+        items.add(item);
+    }
+    
+    public List<String> getItems() {
+        return Collections.unmodifiableList(items);
+    }
+    
+    public int getItemCount() {
+        return items.size();
+    }
+    
+    public void placeOrder() {
+        repo.addOrder(items);
+        items.clear();
+    }
+    
+    @PostConstruct
+    void initialize() {
+        items = new ArrayList<String>();
+    }
+}
+
+p. 正如你所见，我们将 EJB 注入到一个 CDI Bean 中，更准确的说，此时准备好了我们要进行测试的集成环境!
+
+h3. 分阶段实现
+
+我们还没有准备好写一个测试，因为还没有一个 @OrderRepository@ 实现类。出于本例的需要，我们假定 @OrderRepository@ 由另一个团队（或在另一次迭代中）实现。这时 Arquillian 的微部署功能就派上用场了。我们创建一个基于内存 EJB 单态类实现，添加到测试的归档文件中，这样很快就可以得到一个可以运行的程序（我们甚至可以用它来测试边界）。
+
+创建测试类 @SingletonOrderRepository@ ，填充以下内容：
+
+div(filename). src/test/java/org/arquillian/example/SingletonOrderRepository.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
+import javax.ejb.Singleton;
+
+@Singleton
+@Lock(LockType.READ)
+public class SingletonOrderRepository implements OrderRepository {
+    private List<List<String>> orders;
+    
+    @Override
+    @Lock(LockType.WRITE)
+    public void addOrder(List<String> order) {
+        orders.add(order);
+    }
+    
+    @Override
+    public List<List<String>> getOrders() {
+        return Collections.unmodifiableList(orders);
+    }
+    
+    @Override
+    public int getOrderCount() {
+        return orders.size();
+    }
+    
+    @PostConstruct
+    void initialize() {
+        orders = new ArrayList<List<String>>();
+    }
+}
+
+p. 这个实现的另外一个好处就是在 Arquillian 沙箱能够体验 EJB 3.1 中新引入的单态特性。这就是为什么我们情愿说 Arquillian 是一个学习环境，而不仅仅是测试工具。 
+
+现在我们开始写 Arquillian 测试。
+
+h3. 编写测试
+
+下面我写一个测试模拟添加商品到 @Basket@ 实例中，并使用这个实现来下定单，验证订单经过处理后保存到唯一的 @OrderRepository@ 实例中。
+
+p(info). %当然，我们仅测试这个基于内存的实现。你将在 "Testing Java Persistence":/guides/testing_java_persistence 教程中学习如何在一个测试中使用数据库。%
+
+创建测试类 @BasketTest@ ，初始化为 Arquillian 测试用例：
+
+div(filename). src/test/java/org/arquillian/example/BasketTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import org.jboss.arquillian.junit.Arquillian;
+
+@RunWith(Arquillian.class)
+public class BasketTest {
+}
+
+p. 接下来，我们定义一个测试归档文件，包含 basket，order repository 接口及它的单态实现。我们还需要一个空的 beans.xml 文件，来激活 CDI （EJB 是自动激活的）。注意我们通过显式的添加归档文件要包含哪些内容来完全掌控 classpath 。
+
+div(filename). src/test/java/org/arquillian/example/BasketTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+
+@RunWith(Arquillian.class)
+public class BasketTest {
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap.create(JavaArchive.class, "test.jar")
+            .addClasses(Basket.class, OrderRepository.class, SingletonOrderRepository.class)
+            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+}
+
+p. 剩下要做的是将 basket 和 order repository 注入到测试用例中，测试它们之间的交互。我们将注入 EJB 接口，而不是实现类。EJB 容器会自动查找所用接口的实现。
+
+div(filename). src/test/java/org/arquillian/example/BasketTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import javax.ejb.EJB;
+import javax.inject.Inject;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(Arquillian.class)
+public class BasketTest {
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap.create(JavaArchive.class, "test.jar")
+            .addClasses(Basket.class, OrderRepository.class, SingletonOrderRepository.class)
+            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+    
+    @Inject
+    Basket basket;
+    
+    @EJB
+    OrderRepository repo;
+    
+    @Test
+    public void place_order_should_add_order() {
+        basket.addItem("sunglasses");
+        basket.addItem("suit");
+        basket.placeOrder();
+        Assert.assertEquals(1, repo.getOrderCount());
+        Assert.assertEquals(0, basket.getItemCount());
+        
+        basket.addItem("raygun");
+        basket.addItem("spaceship");
+        basket.placeOrder();
+        Assert.assertEquals(2, repo.getOrderCount());
+        Assert.assertEquals(0, basket.getItemCount());
+    }
+    
+    @Test
+    public void order_should_be_persistent() {
+        Assert.assertEquals(2, repo.getOrderCount());
+    }
+}
+
+p. 测试写好了，现在要设置运行它。
+
+h3. 添加远程容器
+
+我们前面写过的测试也使用了 CDI 和 EJB。 两者混合可以使用嵌入式运行环境（像 Weld Embedded 或 OpenEJB Embedded）提供的边界。如果允许，我们还是使用一个 Java EE 兼容的容器。此外，它提供了更为准确的测试结果。所以，现在先将  Weld Embedded 容器放到一边。
+
+在前面的教程中，我们使用过了嵌入式和托管的容器。在这两种环境中，Arquillian 必须在测试套件运行前启动容器，在测试完成时停止容器。如果你已经有一个启动的容器呢（或者说你想测试时仅启动一次）？毫无疑问，这是最快的测试途径。即使容器启动非常快，也不能说服“零启动”的需求。这就是远程容器的目的。
+
+远程容器提供一个集成测试的理想环境。你也会发现调试一个测试更直接。没有明文规定要求你在测试中使用哪种容器，在开发阶段使用远程容器，并不排斥你在持续集成时使用托管式的容器。
+
+p(warning). %术语远程是指的一个单独的进程，而不是单独的机器，虽然也可以按那样配置。%
+
+远程容器是一个独立的进程，Arquillian 使用容器客户端部署 API 进行部署。那么，你要添加的类库包含：
+
+* 编程模型的 API （如果容器没有提供仅需要打进包）
+* Arquillian 远程容器适配器
+* 客户端部署 API ，用于与容器进程交互
+
+在你的 Maven pom.xml 文件中，在  @<profiles>@ 下添加以下两个 Profile。第一个 Profile 使用远程 JBoss AS 7 容器：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<profile>
+    <id>arquillian-jbossas-remote</id>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <version>1.0.0.Final</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-arquillian-container-remote</artifactId>
+            <version>7.0.2.Final</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</profile>
+<!-- clip -->
+
+p. 第二个 Profile 使用远程 GlassFish 3.1 容器：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<profile>
+    <id>arquillian-glassfish-remote</id>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <version>1.0.0.Final</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-api</artifactId>
+            <version>1.0-SP1</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.enterprise</groupId>
+                    <artifactId>cdi-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-bundle</artifactId>
+            <version>1.6</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>jsr311-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.jersey.contribs</groupId>
+            <artifactId>jersey-multipart</artifactId>
+            <version>1.6</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-glassfish-remote-3.1</artifactId>
+            <version>1.0.0.CR2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</profile>
+<!-- clip -->
+
+p(info). % 远程 GlassFish 适配器通过 JAX-RS (REST) 使用 Jersey 与容器交互，这样你就需要这些额外的库文件。Weld API 用来处理容器进程返回的异常。%
+
+一旦你在 pom.xml 中添加了这些 profiles，在 Eclipse 中右键点击项目，选择 Maven > Update Project Configuration。如果项目显示了一些编译错误，你必须激活其中一个 Profiles。
+
+回想一下在 Eclipse 中激活 Maven Profile 的两种方法：
+
+# 手动配置（标准方法）
+# Maven profile selector （使用 JBoss Tools）
+
+参考 "快速入门":/guides/getting_started#test_across_containers 中有关如何激活 Profile 的介绍。一旦你激活了 Profile，项目可以编译通过。
+
+Arquillian 需要容器处于运行状态。因此，我们要对容器进行配置，这样在运行测试之前能够方便的从 IDE 中启动它们。
+
+h3. 控制服务器
+
+管理服务器最简单的方法就是在 IDE 中进行操作。如果你更多时候是一个惯用命令行的极客，可以跳过这一步，使用相应脚本来启动服务器。 
+
+我们将向你演示如何添加服务器到 Eclipse 中。这处过程与其他 IDE 非常类似。在 Eclipse 中，你需要安装 "JBoss Tools":http://jboss.org/tools 和 GlassFish Java EE Application Server 插件，两者均可以在 Eclipse MarketPlace 中找到。
+
+在 Eclipse 中，从主菜单中选择 Window > Show View > Servers 。当视图打开后，右击空白处并选择 New > Server 。你将要定义一个 JBoss AS 7 服务器，一个GlassFish 3.1 服务器。对于 JBoss AS 7，创建向导面板要求你事先已经下载好了一份 JBoss AS 并解压到硬盘。 GlassFish 3.1 向导面板则提供一个选项，可以自动帮你下载。
+
+!/images/guides/arquillian_tutorial_2_new_jbossas_server.png!
+
+!/images/guides/arquillian_tutorial_2_new_glassfish_server.png!
+
+一旦你完成每个向导中的步骤，你应该可以看到他们显示在服务器视图。
+
+!/images/guides/arquillian_tutorial_2_servers_view.png!
+
+要启动一个服务器，选择服务器条目（如上图所示），点绿色的播放图标。
+
+p(info). %Arquillian 假定容器运行时使用默认端口。如果你修改了端口，你可以在 arquillian.xml 中指定你所用的容器的端口。%
+
+现在容器已经准备就绪，现在要做的是在服务器上运行测试。
+
+h3. 运行 Arquillian 测试
+
+要运行 Arquillian 测试，你必须完成下面三个步骤：
+
+# 启动远程容器
+# 添加相应的容器适配器到 Classpath 中并激活 Maven profile
+# 运行测试
+
+下面从使用 JBoss AS 7 开始。
+
+h4. 在 JBoss AS 上运行测试
+
+要在 JBoss AS 上运行测试，第一步是启动 JBoss AS 容器。打开 Servers 视图，选择 JBoss AS 7，点击绿色的播放按钮。等待它启动（应该不需要太久）。
+
+一旦服务器已经启动并处于运行状态，可以在 Maven properties 标签中或 JBoss Tools Maven profile selector 中激活 @arquillian-jbossas-remote@ Maven profile ，下面的 Profile 编辑器显示正确的选择结果。
+
+!/images/guides/arquillian_tutorial_2_jbossas_profile_selection.png!
+
+最后，右击 @BasketTest@ 类，并选择 Run As > JUnit Test。你应该可以在 Console 视图中看到大量活动信息，在 JUnit 视图中显示一个成功的结果。
+
+你也可以使用 Maven 通过命令行的方式来运行测试。
+
+bc(command). $ mvn test -Parquillian-jbossas-remote -Dtest=BasketTest
+
+你应该可以看到下面几行信息打印在控制台中：
+
+bc(output). -------------------------------------------------------
+T E S T S
+-------------------------------------------------------
+Running org.arquillian.example.BasketTest
+...
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.464 sec
+
+*恭喜你!* 你获得了第一个使用 Arquillian 和远程容器的 *(greenbar)绿条* 。 
+
+p(info). % 你也可以使用 @@Inject@ 替代 @@EJB@ 来流入 EJB，自行尝试一下。%
+
+如果你想验证单态是否起作用，删除 @SingletonOrderRepository@ 类中 @@Singleton@ ，运行测试，你应该可以看到一个断言错误。恢复之后，你又可以看到绿条。
+
+下面在 GlassFish 3.1 上进行同样的测试。因为我们刚刚完成了 JBoss AS 上的测试，请在 Servers 视图停止服务器。
+
+h4. 在 GlassFish 上运行测试
+
+要在 GlassFish 上运行测试，首先要启动 GlassFish 容器。打开 Servers 视图，选择 GlassFish 3.1，点击绿色的播放按钮。等待它启动。
+
+一旦服务器已经启动并处于运行状态，可以在 Maven properties 标签中或 JBoss Tools Maven profile selector 中激活 @arquillian-glassfish-remote@ Maven profile。请记住一定解除 @arquillian-jbossas-remote@ profile。下面的 Profile 编辑器显示正确的选择结果。
+
+!/images/guides/arquillian_tutorial_2_glassfish_profile_selection.png!
+
+最后，右击 @BasketTest@ 类，并选择 Run As > JUnit Test。你应该可以在 Console 视图中看到大量活动信息，在 JUnit 视图中显示一个成功的结果。
+
+*恭喜你!* 你又赚到一个 *(greenbar)绿条*。
+
+h3. 调试 Arquillian 测试
+
+在远程容器上调试测试？看起来很难，其实一点也不难。只需要修改将上面的步骤中一步，并添加额外一步即可：
+
+# *调试* 远程容器
+# 添加相应的容器适配器到 Classpath 中并激活 Maven profile
+# *设置断点*
+# 运行测试
+
+在 Servers 视图中，你应该注意到了在绿色的播放按钮旁边有一个臭虫图标。点击这个图标以调试模式运行服务器。Eclipse 会自动将调试工具连接到容器。
+
+在 @SingletonOrderRepository@ 类的 @addOrder()@ 方法设置一个断点。右击选择 Run As > JUnit Test 再次运行测试。
+
+p(warning). %不要使用 Debug As > JUnit Test，因为所有的测试代码已经运行在容器中，并处于调试状态。%
+
+测试应该会在断点暂停。如果你使用的是 JBoss AS，你可以打开管理员控制台来证实测试已经部署到了服务器上。如果在 Eclipse 的 Debug 视图中浏览堆栈跟踪信息，你应该可以看到服务器是通过一种远程协议（JMX 或 Servlet）进行控制的, JUnit 是从容器中启动的。 
+
+!/images/guides/arquillian_tutorial_2_debug_remote_test.png!
+
+现在你可以舒适的从 IDE 中操作服务器。
