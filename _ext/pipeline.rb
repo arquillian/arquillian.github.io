@@ -5,7 +5,7 @@ require 'interwiki'
 require 'github'
 require 'jira'
 require 'arquillian'
-require 'arquillian_model'
+require 'identity'
 require 'guide'
 require 'lanyrd'
 require 'sassy-buttons'
@@ -42,7 +42,7 @@ Awestruct::Extensions::Pipeline.new do
     extension Awestruct::Extensions::Lanyrd::Export.new('/invasion/events/arquillian.ics')
 
     extension Awestruct::Extensions::Arquillian::TagInfo.new
-    extension Arquillian::Model::Bind.new
+    extension Awestruct::Extensions::Identity::Bind.new
 
     extension Awestruct::Extensions::Posts.new('/blog')
     extension Awestruct::Extensions::Paginator.new(:posts, '/blog/index', :per_page=>5)
