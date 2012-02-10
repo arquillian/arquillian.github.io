@@ -170,7 +170,9 @@ module Awestruct
           identity.github.url = tmp_url
 
           [:company, :name, :location, :bio, :email, :blog].each do |s|
-            identity[s] = identity.github.delete(s)
+            if identity[s].nil?
+              identity[s] = identity.github.delete(s)
+            end
           end
 
           identity.gravatar_hash = identity.gravatar.request_hash = identity.github.delete(:gravatar_id)

@@ -31,10 +31,10 @@ module Awestruct
               guide.order = if page.guide_order then page.guide_order else 100 end
               
               # Add the Authors to Page and Guide based on Git Commit history
-              git_page_contributors = page_contributors(page, @changes_since_date)
-              if not page.authors
-                page.authors = git_page_contributors
-              end
+              #git_page_contributors = page_contributors(page, @changes_since_date)
+              #if not page.authors
+              #  page.authors = git_page_contributors
+              #end
               guide.authors = page.authors
               page.changes = page_changes(page, @changes_since_date)
               

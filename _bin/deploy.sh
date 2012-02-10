@@ -4,6 +4,7 @@ BIN_DIR=$(dirname "$0")
 ROOT_DIR="$BIN_DIR/.."
 TMP_DIR="$ROOT_DIR/_tmp"
 SITE_DIR="$ROOT_DIR/_site"
+SASS_CACHE_DIR="$ROOT_DIR/.sass-cache"
 GITHUB_DIR="$TMP_DIR/github"
 REPOS_DIR="$TMP_DIR/repos"
 LANYRD_DIR="$TMP_DIR/lanyrd"
