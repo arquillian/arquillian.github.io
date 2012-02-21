@@ -12,7 +12,7 @@ def getOrCache(tmp_file, url)
     }.body;
     File.open(tmp_file, 'w').write response_body
   else
-    response_body = File.open(tmp_file, 'r')
+    response_body = File.read(tmp_file)
   end
   return response_body
 end
@@ -35,7 +35,7 @@ def getOrCacheJSON(tmp_file, json_url)
     File.open(tmp_file, 'w').write JSON.pretty_generate json
   else
     begin
-      json = JSON.parse File.open(tmp_file, 'r').read
+      json = JSON.parse File.read(tmp_file)
     rescue => e
       puts 'Could not parse JSON file ' + tmp_file + '; ' + e
       json = {}
