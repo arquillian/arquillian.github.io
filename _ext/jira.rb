@@ -29,7 +29,7 @@ module Awestruct
             release_notes = Hpricot(jira_release_response).at('#editcopy').following_siblings
             release_notes = release_notes.search('li')
             
-            version['releaseNotes'] = "<ul>#{release_notes.to_html}</ul>"
+            version['releaseNotes'] = "<ul>#{Hpricot::uxs(release_notes.to_html)}</ul>"
           end
           
           site.jira_release = jira_json
