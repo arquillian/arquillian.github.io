@@ -22,7 +22,7 @@ module Awestruct
           org_repo_url = "https://api.github.com/orgs/#{@org_name}/repos"
 
           # Get Organisation Repositories
-          org_repo_json = getOrCacheJSON(File.join(github_tmp, "repos-#{@org_name}.json"), org_repo_url)
+          org_repo_json = getOrCacheJSON(File.join(github_tmp, "repo-#{@org_name}.json"), org_repo_url)
 
           # Create Synthetic Pages if needed
           org_repo_json.each do |repo|
@@ -133,6 +133,22 @@ module Awestruct
               identity.username = username
               load_github_profile(username, identity)
               load_gravatar_profile(username, identity)
+            end
+          end
+
+          # TODO looking for a more elegant way to est credentials for this call
+          credentials_file = File.join(ENV['HOME'], '.github-auth')
+          if File.exists? credentials_file
+            credentials = File.read(credentials_file).chomp()
+            speakers_url = "https://#{credentials}@api.github.com/teams/#{site.speakers_team_id}/members"
+            speakers_json = getOrCacheJSON(File.join(@github_tmp, "team-speakers.json"), speakers_url)
+            speakers_json.each do |speaker|
+              key = speaker['login'].downcase.to_sym
+              identity = site.identities[key]
+              if !identity.nil? and !identity.twitter_username.nil?
+                identity.speaker = true
+                identity.lanyrd.url = "http://lanyrd.com/profile/#{identity.twitter_username}"
+              end
             end
           end
 

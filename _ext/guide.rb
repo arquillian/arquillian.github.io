@@ -35,7 +35,8 @@ module Awestruct
               #if not page.authors
               #  page.authors = git_page_contributors
               #end
-              guide.authors = page.authors
+              #guide.authors = page.authors
+
               page.changes = page_changes(page, @changes_since_date)
               
               page_content = Hpricot(page.content)
@@ -93,6 +94,11 @@ module Awestruct
               trans_page.language_parent = page
               trans_page.language = page.site.languages.send(trans_lang)
               trans_page.language.code = trans_lang
+              if !trans_page.translators.nil?
+                trans_page.translators.each do |username|
+                  page.site.identities[username.to_sym].translator = true
+                end
+              end
 
               languages << trans_page
             end
