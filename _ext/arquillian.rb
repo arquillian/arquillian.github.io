@@ -24,6 +24,10 @@ module Awestruct
                     pom_content.elements.each('project/properties/version.arquillian_core') do |core_version|
                       tag_info.arquillian_core_version = core_version.text
                     end
+                    # Drone uses version.arquillian.core instead of version.arquillian_core
+                    pom_content.elements.each('project/properties/version.arquillian.core') do |core_version|
+                      tag_info.arquillian_core_version = core_version.text
+                    end
                     pom_content.elements.each('project/modules/module') do |x| 
                       tag_info.containers << x.text if x.text =~ /.*\-(managed|remote|embedded).*/
                     end
