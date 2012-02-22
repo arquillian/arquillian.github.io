@@ -35,13 +35,14 @@ popd
 
 cd $ROOT_DIR
 
-pushd $REPOS_DIR
-for repo in */; do
-  pushd "$repo"
-  git pull 
-  popd
-done
-popd
+touch $REPOS_DIR/.dopull
+#pushd $REPOS_DIR
+#for repo in */; do
+#  pushd "$repo"
+#  git pull 
+#  popd
+#done
+#popd
 
 pushd $GITHUB_DIR
 # TODO check if github repository has been updated since the contributions file was written, then nuke the contributions file
@@ -57,7 +58,12 @@ rm -rf $SASS_CACHE_DIR
 
 awestruct -g
 
-rsync -a --delete "$SITE_DIR/" "$DEPLOY_DIR/src/main/webapp/"
+pushd $DEPLOY_DIR
+git pull
+popd
+
+rsync -a "$SITE_DIR/" "$DEPLOY_DIR/src/main/webapp/"
+#rsync -a --delete "$SITE_DIR/" "$DEPLOY_DIR/src/main/webapp/"
 
 pushd $DEPLOY_DIR
 git add .
