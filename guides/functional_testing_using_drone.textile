@@ -3,18 +3,18 @@ layout: guide
 title: Functional Testing using Drone
 authors: [mojavelinux, kpiwko]
 tags: [drone, selenium, as7, cdi, solder]
-guide_summary: Discover how Arquillian Drone simplifies the use of Selenium to test the web UI of your application.
+guide_summary: Discover how Arquillian Drone simplifies the use of Selenium 2 to test the web UI of your application.
 guide_group: 2
 guide_order: 3
-TODO: ["Maven resolver (either in tutorial or as supplement"]
 ---
-This guide introduces you to the Drone extension for Arquillian. After reading this guide, you'll be able to:
+This guide introduces you to the Arquillian Drone extension. After reading this guide, you'll be able to:
 
-* Add the Drone extension to your Arquillian-based test suite so it loads Selenium
+* Add the Drone extension to your Arquillian-based test suite to activate Selenium 2
 * Package portions of your web application to test the web user interface (UI)
-* Inject the Selenium API into your test case and navigate the browser through the application
+* Inject the DefaultSelenium API into your test case
+* Control the browser using Selenium to validate the behavior of your web application
 
-You'll appreciate how much heavy lifting Arquillian is doing to simplify the task of using Selenium to perform automated functional testing!
+You'll appreciate how much heavy lifting Arquillian is doing to simplify the task of using Selenium 2 to perform automated functional testing!
 
 h3. Assumptions
 
@@ -27,9 +27,14 @@ In this guide, we'll be using the following technologies:
 * Arquillian
 * Arquillian Drone
 * ShrinkWrap Maven Resolver
-* "Selenium Server":http://seleniumhq.org/projects/remote-control (formerly Selenium Remote Control)
+* Selenium (Selenium Server and DefaultSelenium)
  
-The first three technologies are a part of JBoss testing initiative. The final technology, "Selenium Server":http://seleniumhq.org, is a test tool that allows you to write automated web application UI tests against any HTTP website using any mainstream JavaScript-enabled browser. It's integrated into Arquillian via the Arquillian Drone extension to test applications deployed by Arquillian to the target container.
+The first three technologies are a part of Arquillian test platform. The final technology, "Selenium":http://seleniumhq.org, automates browsers. Selenium integrates into Arquillian via the Arquillian Drone extension to test the frontend of Java-based web applications.
+
+We'll be using two parts of Selenium:
+
+# Selenium Server is a test tool that allows you to write automated web application UI tests against any HTTP website using any mainstream JavaScript-enabled browser.
+# DefaultSelenium is the Java client API that you use to control the browser.
 
 If you are already familiar with Selenium, you'll discover that Arquillian manages the Selenium Server life cycle in much the same way it manages the container life cycle. If Selenium is new to you, this is a great opportunity to begin using it to test the web UI of your application without having to worry about how it's setup.
 
@@ -65,7 +70,7 @@ How do you activate client mode? Quite simply. You either mark a deployment as n
 
 bc(prettify).. @RunWith(Arquillian.class)
 public class BasicClientTest {
-    @Deployment(testable=false)
+    @Deployment(testable = false)
     public static WebArchive createDeployment() {
         return ShrinkWrap.create(WebArchive.class)
             .addClasses(MyBean.class)
@@ -128,7 +133,7 @@ bc(prettify).. <!-- clip -->
         <dependency>
             <groupId>org.jboss.arquillian</groupId>
             <artifactId>arquillian-bom</artifactId>
-            <version>1.0.0.CR5</version>
+            <version>1.0.0.CR7</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -146,14 +151,14 @@ bc(prettify).. <!-- clip -->
         <dependency>
             <groupId>org.jboss.arquillian</groupId>
             <artifactId>arquillian-bom</artifactId>
-            <version>1.0.0.CR5</version>
+            <version>1.0.0.CR7</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.extension</groupId>
             <artifactId>arquillian-drone-bom</artifactId>
-            <version>1.0.0.CR2</version>
+            <version>1.0.0.CR3</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -226,7 +231,7 @@ bc(prettify).. <!-- clip -->
 
 p(info). %Feel free to select the SLF4J implementation of your choosing.%
 
-p. Finally, you have to specify the dependency on container adapter. We'll use the JBoss AS 7 managed container since it's is extremely fast to startup.
+p. Finally, you have to specify the dependency on container adapter. We'll use the JBoss AS 7 managed container since it boots extremely fast!
 
 div(filename). pom.xml
 
@@ -449,9 +454,9 @@ public class LoginScreenSeleniumTest {
     }
 }
 
-p(important). %If get java.lang.ClassNotFoundException: com.thoughtworks.selenium.DefaultSelenium later when you run the test, likely you don't have the testable = false attribute set on the @@Deployment@ annotation. So don't forget it!%
+p(important). %If get java.lang.ClassNotFoundException: com.thoughtworks.selenium.DefaultSelenium later when you run the test, likely you don't have the testable = false attribute set on the @@Deployment@ annotation. Don't forget it!%
 
-p(info). %Keep in mind that ShrinkWrap can add a package, directory and so on, so your method can be made far more consise.%
+p(info). %Keep in mind that ShrinkWrap can add a package, directory and so on, so your method can be made far more concise.%
 
 p. One way to trim this down is to move the creation of the archive to a utility class and refer to it whenever you need this particular micro application. That leaves you with a much simpler @@Deployment@ method:
 
@@ -470,11 +475,15 @@ p. Now let's get a handle on Selenium.
 
 h3. Inject the Selenium Driver
 
-Earlier, we added Selenium, Selenium Server and the cooresponding Drone integration libraries to the pom.xml. That's the only step required to setup Selenium when using Arquillian. All that's left is to inject the Selenium API into your test case.
+Earlier, we added Selenium, Selenium Server and the corresponding Drone integration libraries to the pom.xml. That's the only step required to setup Selenium when using Arquillian. All that's left is to inject the "DefaultSelenium":http://selenium.googlecode.com/svn/tags/selenium-2.13.0/docs/api/java/com/thoughtworks/selenium/DefaultSelenium.html API into your test case.
 
 div(filename). src/test/java/org/arquillian/example/LoginScreenSeleniumTest.java
 
 bc(prettify).. // clip
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import com.thoughtworks.selenium.DefaultSelenium;
+// clip
+
 @RunWith(Arquillian.class)
 public class LoginScreenSeleniumTest {
     @Deployment(testable = false)
@@ -486,17 +495,21 @@ public class LoginScreenSeleniumTest {
     DefaultSelenium browser;
 }
 
-p. *That's it!* When you declare this injection point, Drone will create an instance of the DefaultSelenium browser before the first client test is run and inject the instance into the test case.
+p. *That's it!* The @@Drone@ injection point tells Drone to create an instance of the browser controller, "DefaultSelenium":http://selenium.googlecode.com/svn/tags/selenium-2.5.0/docs/api/java/com/thoughtworks/selenium/DefaultSelenium.html, before the first client test is run, then inject that object into the test case.
 
-Here we're using @DefaultSelenium@, which requires Selenium Server running. However, because we've included the Arquillian Drone integration for Selenium Server, it will be automatically started and the browser will connect to it automatically. _Do not pollute your tests with unnecessary code. Keep them simple!_
+Here we're using @DefaultSelenium@, which requires Selenium Server running. However, because we've included the Arquillian Drone integration for Selenium Server, it will be started and the browser will connect to it automatically. _Do not pollute your tests with unnecessary code. Keep them simple!_
 
 *Oh wait!* There's one more thing. We're testing web UI, but how do we know the URL of deployed application? Well, Arquillian already has a solution. Just use @@ArquillianResource@ to inject the URL of the deployed application.
 
 div(filename). src/test/java/org/arquillian/example/LoginScreenSeleniumTest.java
 
 bc(prettify).. // clip
+import java.net.URL;
+import org.jboss.arquillian.test.api.ArquillianResource;
+// clip
+
 @RunWith(Arquillian.class)
-public class BasicClientTest {
+public class LoginScreenSeleniumTest {
     @Deployment(testable = false)
     public static WebArchive createDeployment() {
         return Deployments.createLoginScreenDeployment();
@@ -531,6 +544,8 @@ public void should_login_successfully() {
         browser.isElementPresent("xpath=//li[contains(text(), 'Welcome')]"));
 } 
 // clip
+
+p(info). %The @isElementPresent()@ method in the DefaultSelenium API accepts an XPath expression as a string. Don't confuse it with the similarly-named method from the Ajocado API that accepts an XPathLocator object.%
 
 p. Right click on the test in your IDE and select Run As > JUnit test. Arquillian will boot JBoss AS 7, kick off Selenium, which will launch Firefox (the default) and magically flip through the pages. The result of the test will appear as normal in your JUnit view.
 
@@ -570,7 +585,7 @@ If you want to see what's happening in the browser while the test is running, on
 
 !/images/guides/arquillian_drone_tutorial_debug_test.png!
 
-If you switch over to the browser, you should see the browser waiting on the login screen, as shown below:
+If you switch over to the browser, you should see the browser waiting on the login screen:
 
 !/images/guides/arquillian_drone_tutorial_login_screen.png!
 
