@@ -56,7 +56,8 @@ popd
 rm -rf $SITE_DIR
 rm -rf $SASS_CACHE_DIR
 
-awestruct -g
+awestruct -P staging -g
+#jruby ~/projects/awestruct/bin/awestruct -P staging -g
 
 pushd $DEPLOY_DIR
 git pull
