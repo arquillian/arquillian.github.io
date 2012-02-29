@@ -1,0 +1,86 @@
+---
+---
+
+We're happy to announce the first release of the Arquillian Android extension.
+
+Arquillian Android extension allows you to use Android SDK in Arquillian tests. Most notably, it allows you to start an Android Virtual device or to connect to a real device. A part of Android Extension for Arquillian is Android Drone Extension. This extension allows you to easily configure WebDriver based tests which will be executed directly in emulator device.
+
+When testing your application, you can then easily migrate between desktop and mobile UI or develop a mobile specific tests.
+
+h4. How to use it?
+
+p. First, download Android SDK from http://developer.android.com/sdk/index.html and point ANDROID_HOME system variable to directory
+where you extracted it. You should also update it via running `android` and navigating in the GUI.
+
+p. Next, add Android extension to dependencies. This depchain will add both Arquillian Android and Android Drone extensions.
+
+bc(prettify).. <dependency>
+    <groupId>org.jboss.arquillian.extension</groupId>
+    <artifactId>arquillian-android-depchain</artifactId>
+    <version>1.0.0.Alpha1</version>
+    <type>pom</type>
+    <scope>test</scope>
+</dependency>
+
+p. _Note: Make sure you have *NOT* Arquillian Drone Selenium Server on the classpath, as it will collide
+unless configured to a different port. If you can remove it from classpath, you should disable it in @arquillian.xml@_
+
+bc(prettify).. <extension qualifier="selenium-server">
+    <!-- this must be skipped, we run /wd/hub on emulator -->
+    <property name="skip">true</property>
+</extension>
+
+p. Download Android Server APK to be installed to you mobile device from http://code.google.com/p/selenium/downloads/list
+Use *android-server-2.6.0.apk* for devices including Android 2.3.4, latest version for Android 3.0 and newer. 
+
+p. Set up WebDriver in arquillian.xml
+
+bc(prettify).. <extension qualifier="webdriver">
+    <!-- this makes WebDriver connect hub on Android device -->
+    <property name="remoteAddress">http://localhost:14444/wd/hub</property>
+</extension>
+
+p. Set up Android in arquillian.xml
+
+bc(prettify).. <extension qualifier="android">
+    <!-- this is optional, can be set via ANDROID_HOME property -->
+    <property name="home">/home/kpiwko/apps/android-sdk-linux_x86</property>
+    <!-- Nexus S -->
+    <!-- <property name="serialId">3233E8EDB21700EC</property>-->
+
+    <property name="verbose">true</property>
+    <property name="apiLevel">13</property>
+    <property name="avdName">SnapshotEnabled</property>
+    <property name="emulatorBootupTimeoutInSeconds">180</property>
+</extension>
+
+p. Properties explained, required in *bold*:
+
+* *home* - Android SDK home, can be ommited if set via @ANDROID_HOME@ property
+* *avdName* - name of the Android Virtual Device. It will be either created or reused
+* apiLevel - (10) denotates API level, use @android list target@ to get more variants
+* serialId - replaces avdName if set and available, represents a real device. Use @adb devics@ to get the list
+* skip - (false) skip execution
+* verbose - (false) be verbose
+* force - (false) force emulator recreationg
+* sdSize - (128M) SD card size for emulator 
+* emulatorBootupTimeoutInSeconds - (180) maximal time to get emulator started, use Snapshot enabled device if it takes too long
+* emulatorOptions - emulator options
+
+p. Emulators are created by default in @${basedir}/${avdName}@.
+
+p. Set up Android Drone in arquillian.xml
+
+bc(prettify).. <extension qualifier="android-drone">
+    <property name="androidServerApk">android-server-2.16.apk</property>
+</extension> 
+
+p. Properties explained, required in *bold*:
+
+* *androidServerApk* - path to the Android Server APK you've downloaded
+* skip - (false) skip execution
+* verbose - (false) be verbose
+* webdriverPortHost - (14444) port on Host connected with port on device
+* webdriverPortGuest - (8080) port on Guest connected with port on Host
+
+Big thanks go to Jan Papousek (@papousek) for improving and testing this release!
