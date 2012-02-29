@@ -19,7 +19,7 @@ module Awestruct
           guides = []
           
           site.pages.each do |page|
-            if ( page.relative_source_path =~ /^#{@path_prefix}\/[^index]/)
+            if ( page.relative_source_path =~ /^#{@path_prefix}\/(?!index)/ )
               
               guide = OpenStruct.new
               guide.title = page.title
@@ -39,6 +39,7 @@ module Awestruct
 
               page.changes = page_changes(page, @changes_since_date)
               
+              # NOTE page.content forces the source path to be rendered
               page_content = Hpricot(page.content)
               chapters = []
 
@@ -123,7 +124,7 @@ module Awestruct
             header_children = []
             guide_content.each_child do |child|
               if in_header
-                if child.name == 'h3'
+                if child.name == 'h3' or (child.name == 'div' and child.attributes['class'] == 'section')
                   in_header = false
                 else
                   if child.pathname == 'text()' and child.to_s.strip.length == 0
