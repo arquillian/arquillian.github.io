@@ -40,6 +40,7 @@ div(filename). pom.xml
 
 bc(prettify).. <!-- clip -->
 <dependencies>
+
     <dependency>
         <groupId>org.jboss.arquillian.container</groupId>
         <artifactId>arquillian-container-spi</artifactId>
@@ -48,47 +49,11 @@ bc(prettify).. <!-- clip -->
         <groupId>org.jboss.arquillian.container</groupId>
         <artifactId>arquillian-container-test-spi</artifactId>
     </dependency>
+
 </dependencies>
 <!-- clip -->
 
-p. Your container adapter will specify a default protocol (see the later section on choosing the protocol). Add the project containing the protocol implementation as a Maven dependency. This will establish the protocol implementation as a transitive dependency for your container.
-
-div(filename). pom.xml
-
-bc(prettify).. <!-- clip -->
-<dependencies>
-    <dependency>
-    <dependency>
-        <groupId>org.jboss.arquillian.protocol</groupId>
-        <artifactId>arquillian-protocol-servlet</artifactId>
-    </dependency>
-</dependencies>
-<!-- clip -->
-
-p. Depending on the supported test enrichers (see the later section on Test Enrichers), add one or all of the dependencies listed below.
-
-div(filename). pom.xml
-
-bc(prettify).. <!-- clip -->
-<dependencies>
-    <dependency>
-        <groupId>org.jboss.arquillian.testenricher</groupId>
-        <artifactId>arquillian-testenricher-cdi</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.jboss.arquillian.testenricher</groupId>
-        <artifactId>arquillian-testenricher-ejb</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.jboss.arquillian.testenricher</groupId>
-        <artifactId>arquillian-testenricher-resource</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.jboss.arquillian.testenricher</groupId>
-        <artifactId>arquillian-testenricher-initialcontext</artifactId>
-    </dependency>
-</dependencies>
-<!-- clip -->
+p. Additional dependencies would be added later, as we shall see in the following sections.
 
 h3. Create the LoadableExtension
 
@@ -140,6 +105,21 @@ public ProtocolDescription getDefaultProtocol()
 //clip
 
 p. The above snippet shows how to configure the _Servlet 3.0_ protocol for the container adapter.
+
+p. One must also add the project containing the protocol implementation as a Maven dependency to your container adapter project. This will establish the protocol implementation as a transitive dependency for your container. The following snippet shows the addition of the @arquillian-protocol-servlet@ artifact, in the scenario where the Servlet protocol is the default protocol for a container adapter.
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependencies>
+
+    <dependency>
+        <groupId>org.jboss.arquillian.protocol</groupId>
+        <artifactId>arquillian-protocol-servlet</artifactId>
+    </dependency>
+
+</dependencies>
+<!-- clip -->
 
 h4. Implement the lifecycle APIs
 
@@ -193,38 +173,45 @@ The @deploy@ method allows for deployment of descriptors. Simply put, deployment
 
 The @undeploy@ method is the converse of the @deploy@ method for descriptors. It allows for undeployment of resources after test execution.
 
-h4. Package the TestEnrichers
+h4. Add the TestEnrichers
 
-Arquillian supports dependency injection in the tests executed in-container through the use of Arquillian Test enrichers. Fields in the test class, and arguments to test methods can be annotated with @@Resource@, @@EJB@, @@Inject@, @@PersistenceContext@ annotations instructing Arquillian to inject these dependencies at runtime. In order to support these annotations, one must enhance the deployed archive with the Arquillian test enrichers. Additionally, a container may support only certain test enrichers; for instance, Java EE5 containers may not support injection of @@Inject@ annotated dependencies, while a Servlet container adapter (like Tomcat) would not support injection of @@EJB@ annotated dependencies.
+Arquillian supports dependency injection in the tests executed in-container through the use of Arquillian Test enrichers. Fields in the test class, and arguments to test methods can be annotated with @@Resource@, @@EJB@, @@Inject@, @@PersistenceContext@ annotations instructing Arquillian to inject these dependencies at runtime. In order to support these annotations, the container adapter must enhance the deployed archive with the Arquillian test enrichers. Additionally, a container may support only certain test enrichers; for instance, Java EE5 containers may not support injection of @@Inject@ annotated dependencies, while a Servlet container adapter (like Tomcat) would not support injection of @@EJB@ annotated dependencies.
 
-A container adapter can enhance the deployed archive through the implementation of an @AuxiliaryArchiveAppender@ that adds an auxiliary archive to the deployment. The auxiliary archive can be created with only the necessary test enrichers.
+A container adapter can enhance the deployed archive by merely declaring a TestEnricher as a classpath dependency. The TestEnricher projects contain the necessary auxiliary archive appenders that would enhance a deployment with the required set of classes and resources. Depending on the supported test enrichers, add one or all of the dependencies listed below, to your container adapter project.
 
-bc(prettify).. public class MyDeploymentAppender implements AuxiliaryArchiveAppender
-{
+div(filename). pom.xml
 
-    /**
-     * Creates the enricher archive for the test.
-     * @return Archive containing all the valid enrichers for the server.
-     */
-    public Archive<?> createAuxiliaryArchive()
-    {
-        return ShrinkWrap.create(JavaArchive.class, "arquillian-testenrichers.jar")
-            .addPackages(
-                true,
-                EJBInjectionEnricher.class.getPackage(),
-                ResourceInjectionEnricher.class.getPackage(),
-                CDIInjectionEnricher.class.getPackage())
-            .addAsServiceProvider(
-                TestEnricher.class,
-                CDIInjectionEnricher.class,
-                EJBInjectionEnricher.class,
-                ResourceInjectionEnricher.class);
-    }
-}
+bc(prettify).. <!-- clip -->
+<dependencies>
 
-p. In the above snippet, the @EJBInjectionEnricher@, @ResourceInjectionEnricher@ and the @CDIInjectionEnricher@ classes have been added to the auxiliary archive, and also registered as service providers. This will enable the container adapter to support the @@Resource@, @@EJB@ and @@Inject@ annotations in tests.
+    <!-- For @Inject annotations -->
+    <dependency>
+        <groupId>org.jboss.arquillian.testenricher</groupId>
+        <artifactId>arquillian-testenricher-cdi</artifactId>
+    </dependency>
 
-At runtime, these @TestEnricher@ implementations will be registered as Arquillian service providers in the container. When a test class instance is to be enriched (before execution of the contained tests), these registered test enrichers (that have been deployed alongside the test) will be used to discover and inject dependencies into the instance.
+    <!-- For @EJB annotations -->
+    <dependency>
+        <groupId>org.jboss.arquillian.testenricher</groupId>
+        <artifactId>arquillian-testenricher-ejb</artifactId>
+    </dependency>
+
+    <!-- For @Resource annotations -->
+    <dependency>
+        <groupId>org.jboss.arquillian.testenricher</groupId>
+        <artifactId>arquillian-testenricher-resource</artifactId>
+    </dependency>
+
+    <!-- For @ArquillianResource annotated InitialContext injection points -->
+    <dependency>
+        <groupId>org.jboss.arquillian.testenricher</groupId>
+        <artifactId>arquillian-testenricher-initialcontext</artifactId>
+    </dependency>
+
+</dependencies>
+<!-- clip -->
+
+p. By including the dependencies as shown in the above snippet, the @CDIEnricherExtension@, @EJBEnricherExtension@, @ResourceEnricherExtension@, and @InitialContextExtension@ extensions would be discovered by Arquillian at test execution. The associated @AuxiliaryArchiveAppender@ implementations in these extensions would enhance the deployment with the TestEnrichers and associated dependencies. The @TestEnricher@ implementations in these extensions would also be registered as service providers that can be discovered in-container. When a test class instance is to be enriched (before execution of the contained tests), these registered test enrichers (that have been deployed alongside the test) will be used to discover and inject dependencies into the instance.
 
 h3. Extension registration
 
