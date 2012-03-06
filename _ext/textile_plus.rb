@@ -36,8 +36,9 @@ end
 
 # temporary fix for https://github.com/bobmcwhirter/awestruct/issues/68
 module RedCloth
-  class TextileDoc
-    def initialize(string, restrictions = [:no_span_caps])
+  class TextileDoc < String
+    def initialize(string, restrictions = [])
+      restrictions << :no_span_caps
       restrictions.each { |r| method("#{r}=").call(true) }
       super(string)
     end
