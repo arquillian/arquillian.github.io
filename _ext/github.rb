@@ -22,7 +22,7 @@ module Awestruct
           org_repo_url = "https://api.github.com/orgs/#{@org_name}/repos"
 
           # Get Organisation Repositories
-          org_repo_json = getOrCacheJSON(File.join(github_tmp, "repo-#{@org_name}.json"), org_repo_url)
+          org_repo_json = getOrCacheJSON(File.join(github_tmp, "repos-#{@org_name}.json"), org_repo_url)
 
           # Create Synthetic Pages if needed
           org_repo_json.each do |repo|
