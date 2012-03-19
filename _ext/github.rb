@@ -254,12 +254,12 @@ module Awestruct
         def execute(site)
           github_tmp = tmp(site.tmp_dir, 'github')
           repos_tmp = tmp(site.tmp_dir, 'repos')
-          dopull_directive = File.join(repos_tmp, '.dopull')
-          dopull = false
-          if File.exist? dopull_directive
-            dopull = true
-            File.unlink dopull_directive
-          end
+          #dopull_directive = File.join(repos_tmp, '.dopull')
+          #dopull = false
+          #if File.exist? dopull_directive
+          #  dopull = true
+          #  File.unlink dopull_directive
+          #end
 
           site.pages.each do |page|
             if page.is_a?(Awestruct::FrontMatterFile) and page.github_repo_owner and page.github_repo
@@ -271,10 +271,10 @@ module Awestruct
                 g = Git.clone(repo_url, github_repo_dir)
               else
                 g = Git.open(github_repo_dir)
-                if dopull
-                  puts "Updating repo #{page.github_repo}..."
+                #if dopull
+                #  puts "Updating repo #{page.github_repo}..."
                   g.pull('origin', 'origin/master')
-                end
+                #end
               end
 
               tags = g.tags
