@@ -1,61 +1,96 @@
 !!! 5
-%html{ :lang=>'en' }
+%html(lang='en')
   %head
-    %meta{ :charset=>'utf-8'}
-    %title #{site.title} | #{page.title}
-    %meta{ :name=>'description', :content=>page.description ? page.description : site.description }
-    %link{ :rel=>'stylesheet', :href=>'/stylesheets/screen.css', :media=>'screen, projection' }
+    %meta(charset='utf-8')
+    %title= [page.title, site.title].compact.join ' &#183; '
+    %meta(name='viewport' content='width=device-width, initial-scale=1.0')
+    %meta(name='description'){:content=>page.description ? page.description : site.description}
+    - if site.keywords
+      %meta(name='keywords'){:content=>site.keywords}
+    -#%meta(name='author'){:content=>page.author}
+    %link(rel='stylesheet' href='/stylesheets/screen.css')
+    - if site.url
+      %link(rel='canonical'){:href=>site.url}
+    %script(src='//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.1/jquery.min.js')
+    %script(src='//twitter.github.com/bootstrap/assets/js/bootstrap-collapse.js')
     - if page.stylesheets
       - page.stylesheets.each do |stylesheet|
-        %link{ :rel=>'stylesheet', :href=>stylesheet, :media=>'screen, projection' }
-    %link{ :rel=>'stylesheet', :href=>'/stylesheets/print.css', :media=>'print' }
-    /[if lt IE 8]
-      %link{ :rel=>'stylesheet', :href=>'/stylesheets/ie.css', :media=>'screen, projection' }
-    %script{ :src=>'//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.1/jquery.min.js' }
-    %script{ :src=>'/javascripts/prettify.js' }
+        %link(rel='stylesheet' href=stylesheet)
+    /[if lt IE 9]
+      %script(src='//html5shim.googlecode.com/svn/trunk/html5.js')
+    %script(src='/javascripts/prettify.js')
     - if page.javascripts
       - page.javascripts.each do |javascript|
-        %script{ :src=>javascript }
+        %script(src=javascript)
     :javascript
       $(function() {
         prettify();
         // stick footer to bottom
+        // TODO this needs to get run again when the window size changes
         //$('#main').css('min-height', $(window).height() - $('#footer').outerHeight() - parseInt($('#main').css('margin-top')));
       });
-  %body{ :class=> page.body_class ? page.body_class : nil }
-    #banner
-      .container
-        %h2#logo
-          %a{ :href=>'/'}>
-            %img.arquillian{ :src=>'/images/arquillian_glossy_no_shadow_icon_64.png', :alt=>'Arquillian', :title=>'Ike' }>
-            arquillian
-        #navigation
-          %ul
-            %li
-              %a{ :href=>'/invasion/', :class=>"#{page.url =~ /^\/invasion\// ? 'current' : nil}"} Invasion!
-            %li
-              %a{ :href=>'/features/', :class=>"#{page.url =~ /^\/features\// ? 'current' : nil}"} Features
-            %li
-              %a{ :href=>'/guides/', :class=>"#{page.url =~ /^\/guides\// ? 'current' : nil}"} Guides
-            %li
-              %a{ :href=>'/blog/', :class=>"#{page.url =~ /^\/blog\// ? 'current' : nil}"} Blog
-            %li
-              %a{ :href=>'/community/', :class=>"#{page.url =~ /^\/community\// ? 'current' : nil}"} Community
-            %li
-              %a{ :href=>'/code/', :class=>"#{page.url =~ /^\/(code|module)\// ? 'current' : nil}"} Code
-        %a#jbosscommunity{:href=>'http://jboss.org'}
-          %img{:src=>'/images/jboss_community_logo.png'}
+  %body{:class=>page.body_class || nil}
+    #banner.navbar.navbar-fixed-top
+      .navbar-inner
+        .container
+          %a.btn.btn-navbar{:data=>{:toggle=>'collapse', :target=>'.nav-collapse'}}
+            - (1..3).each do
+              %span.icon-bar
+          %a.brand(href='/')
+            %span.logo
+            = site.title
+          .nav-collapse.offset4
+            %ul.nav
+              %li{:class=>('active' if page.url =~ /^\/invasion\//)}
+                %a(href='/invasion/') Invasion!
+              %li{:class=>('active' if page.url =~ /^\/features\//)}
+                %a(href='/features/') Features
+              %li{:class=>('active' if page.url =~ /^\/guides\//)}
+                %a(href='/guides/') Guides
+              %li{:class=>('active' if page.url =~ /^\/blog\//)}
+                %a(href='/blog/') Blog
+              %li{:class=>('active' if page.url =~ /^\/community\//)}
+                %a(href='/community/') Community
+              %li{:class=>('active' if page.url =~ /^\/(code|module)\//)}
+                %a(href='/code/') Code
+    -##banner
+    -#  .container
+    -#    %h2#logo
+    -#      %a{ :href=>'/'}>
+    -#        %img.arquillian{ :src=>'/images/arquillian_glossy_no_shadow_icon_64.png', :alt=>'Arquillian', :title=>'Ike' }>
+    -#        arquillian
+    -#    #navigation
+    -#      %ul
+    -#        %li
+    -#          %a{ :href=>'/invasion/', :class=>"#{page.url =~ /^\/invasion\// ? 'current' : nil}"} Invasion
+    -#        %li
+    -#          %a{ :href=>'/features/', :class=>"#{page.url =~ /^\/features\// ? 'current' : nil}"} Features
+    -#        %li
+    -#          %a{ :href=>'/guides/', :class=>"#{page.url =~ /^\/guides\// ? 'current' : nil}"} Guides
+    -#        %li
+    -#          %a{ :href=>'/blog/', :class=>"#{page.url =~ /^\/blog\// ? 'current' : nil}"} Blog
+    -#        %li
+    -#          %a{ :href=>'/community/', :class=>"#{page.url =~ /^\/community\// ? 'current' : nil}"} Community
+    -#        %li
+    -#          %a{ :href=>'/code/', :class=>"#{page.url =~ /^\/(code|module)\// ? 'current' : nil}"} Code
+    -#    -#%a#jbosscommunity{:href=>'http://jboss.org'}
+    -#    -#  %img{:src=>'/images/jboss_community_logo.png'}
     ~ interwiki_urls(content)
     #footer
       .container
         .project
           %img{:src=>'/images/arquillian_logo_200px.png'}
-          %p.bottom{:style=>'margin-top: 52px;'}
-            Copyright #{DateTime.now.year} The Arquillian Project
+          %p.bottom
+            &#169;
+            Copyright #{DateTime.now.year} Red Hat, Inc.
             %br
-            Arquillian released under the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License, Version 2.0</a>.
+            %i.icon-white.icon-fire
+            Baked by <a href="http://awestruct.org">Awestruct</a>.
             %br
-            Website released under the <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0 License</a>.
+            %i.icon-white.icon-share-alt
+            Licensed under the <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>.
+            %br
+            Arquillian released under the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License, v2.0</a>.
         .footernav
           %h4 Learn
           %ul
@@ -85,10 +120,10 @@
             "!(branding)/images/jboss_redhat_branding.png!":http://jboss.org
 
             p(bottom). This website is open source! Please help us by "forking the project":http://github.com/arquillian/arquillian.github.com and hacking on it.
-    = fork_me_ribbon(site, page)
+    -#= fork_me_ribbon(site, page)
     - if site.google_analytics
       = google_analytics
     - if page.bottom_javascripts
       - page.bottom_javascripts.each do |javascript|
-        %script{ :src=>javascript }
-    = add_debug(site, page)
+        %script(src=javascript)
+    -#= add_debug(site, page)
