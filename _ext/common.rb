@@ -2,7 +2,7 @@ def getOrCache(tmp_file, url)
   response_body = ""
   if !File.exist?tmp_file
     puts url
-    response_body = RestClient.get(url) { |response, request, result, &block|
+    response_body = RestClient.get(url, :cache => false) { |response, request, result, &block|
       case response.code
       when 404
           response
@@ -21,7 +21,7 @@ def getOrCacheJSON(tmp_file, json_url)
   json = {}
   if !File.exist?tmp_file
     puts 'Grabbing ' + json_url
-    response_body = RestClient.get(json_url, :accept => 'application/json') { |response, request, result, &block|
+    response_body = RestClient.get(json_url, :cache => false, :accept => 'application/json') { |response, request, result, &block|
       case response.code
       when 404
           response

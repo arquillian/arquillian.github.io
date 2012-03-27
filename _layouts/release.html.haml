@@ -1,24 +1,64 @@
 ---
 layout: blog
 ---
-%p The Arquillian team is proud to announce the <em>#{page.version}</em> release of the <em><a href="/module/#{page.github_repo}">#{page.module}</a></em> module!
+%p The Arquillian team is proud to announce the <em>#{page.release.version}</em> release of the <em>#{page.component.name}</em> component!
 ~ content
 %h3 What is Arquillian?
 %p Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.
-%p In addition to integrating with the two most popular unit testing frameworks, Arquillian can enrich your test case with components from the container and manage test automation and metrics tools such as <em>Selenium, JSFUnit and JaCoCo</em>.
-%p We believe Arquillian is the missing link in Java middleware development.
-.releasenotes
-  %h3 Resolved Issues
-  - site.jira_release['versions'].select{|x| x['name'].eql? "#{page.jira_version_prefix}#{page.version}" }.each do |x|
-    .release=x['releaseNotes']
-.releaseinfo
-  %table
+%h3 Release details
+%table.table.table-bordered.table-striped
+  %tbody
     %tr
-      %th Module
-      %td= page.github_repo
+      %th Component
+      %td= page.component.name
+    - if page.component.modules.size > 1
+      %tr
+        %th Modules
+        %td
+          %ul.unstyled{:style => 'margin-bottom: 0'}
+            - page.component.modules.each do |m|
+              %li= m.name
     %tr
       %th Version
-      %td= page.version
+      %td
+        = page.release.version
+        %span.label.tag
+          %a{:href=>page.release.html_url} view tag
     %tr
-      %th Release Date
-      %td= page.date
+      %th Release date
+      %td= page.release.date.strftime('%Y-%m-%d')
+    %tr
+      %th Released by
+      %td= page.release.released_by.name
+    - if !page.release.compiledeps.empty?
+      %tr
+        %th Compiled against
+        %td
+          %ul.unstyled{:style => 'margin-bottom: 0;'}
+            - page.release.compiledeps.each do |dep|
+              %li= "#{dep.name} &#8211; #{dep.version}"
+- unless page.release.published_artifacts.empty?
+  %h3 Published artifacts
+  %ul
+    - page.release.published_artifacts.each do |a|
+      %li
+        = a
+        - if a.packaging.eql? 'jar'
+          ( <a href="#{a.to_url}" target="_blank">jar</a>, <a href="#{a.to_pom_url}" target="_blank">pom</a> )
+        - else
+          ( <a href="#{a.to_url}" target="_blank">pom</a> )
+- unless page.release_notes.nil?
+  %h3
+    Release notes and resolved issues
+    %small= page.release_notes.resolved_issues.values.flatten.size
+  %p= page.release_notes.comment 
+  - page.release_notes.resolved_issues.each do |type, issues|
+    %dl
+      %dt= type
+      %dd
+        %ul.unstyled
+          - issues.each do |issue|
+            %li= issue
+%p
+  Thanks to the following list of contributors:
+  = page.release.contributors.sort_by{|c| c.commits}.map{|c| c.name}.join(', ')
