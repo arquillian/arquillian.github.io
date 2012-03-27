@@ -57,7 +57,12 @@ module Awestruct::Extensions::Repository::Visitors
     include Base
 
     def visit(repository, site)
-      repos_dir = File.join(site.tmp_dir, 'repos')
+      repos_dir = nil
+      if site.repos_dir
+        repos_dir = site.repos_dir
+      else
+        repos_dir = File.join(site.tmp_dir, 'repos')
+      end
       if !File.directory? repos_dir
         FileUtils.mkdir_p(repos_dir)      
       end
