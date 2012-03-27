@@ -36,13 +36,13 @@ module Awestruct::Extensions::Releases
           else
             # Generate release page from template if not present
             inner_release_page = site.engine.find_and_load_site_page(File.join(@path_prefix, '_release'))
-            inner_release_page.output_path = File.join(@path_prefix, release_page_name) + '.html'
+            inner_release_page.output_path = File.join(@path_prefix, release_page_name + '.html')
             inner_release_page.relative_source_path = inner_release_page.output_path
           end
 
           layouts_dir = File.basename site.engine.config.layouts_dir
           release_page = site.engine.find_and_load_site_page(File.join(layouts_dir, 'release'))
-          release_page.output_path = File.join(@path_prefix, release_page_name) + '.html'
+          release_page.output_path = File.join(@path_prefix, release_page_name.tr('.', '-')) + '.html'
 
           release.page = release_page
 
@@ -64,7 +64,7 @@ module Awestruct::Extensions::Releases
 
           # Fix date calculation performed by Posts extension
           release_page.relative_source_path =
-              File.join(@path_prefix, release_page.date.strftime('%Y-%m-%d-') + release_page_name) + '.html'
+              File.join(@path_prefix, release_page.date.strftime('%Y-%m-%d-') + release_page_name.tr('.', '-')) + '.html'
 
           # pre-render the content so that the entry can be wrapped in the common release text
           release_page.rendered_content = release_page.render(site.engine.create_context(release_page, inner_release_page.content))

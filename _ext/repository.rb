@@ -179,6 +179,8 @@ module Awestruct
                 module_page = OpenStruct.new
               end
               module_page.output_path = "modules/#{module_page_basepath}.html"
+              # FIXME why is this needed here?
+              module_page.url = "/modules/#{module_page_basepath}"
               module_page.module = m
               module_page.component = m.component
               module_page.link_name = m.name.sub(/^Arquillian /, '')
