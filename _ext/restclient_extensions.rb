@@ -1,4 +1,5 @@
 require 'restclient'
+require 'time'
 require 'uri'
 require 'fileutils'
 require 'json'
@@ -85,26 +86,24 @@ class RestGetCache
   @cache_file
   @request
 
+  # NOTE configuration headers are kept to be available on redirects
   def initialize(request, cache_dir = 'restcache')
     @request = request
     @redirects = @request.headers[:redirects]
     @cache_dir = cache_dir
     if request.headers.has_key? :cache
       @cache = request.headers[:cache]
-      #request.headers.delete :cache
     else
       @cache = true
     end
     if request.headers.has_key? :cache_expiry_age
-      @cache_expiry_age = request.headers[:cache_expiry_age]
-      #request.headers.delete :cache_expiry_age
+      @cache_expiry_age = request.headers[:cache_expiry_age].to_i
     else
       @cache_expiry_age = nil
     end
     if @cache
       if request.headers.has_key? :cache_key
         @cache_file = File.join(cache_dir, request.headers[:cache_key])
-        #request.headers.delete :cache_key
       else
         uri = URI(request.url)
         path = uri.path
@@ -124,11 +123,13 @@ class RestGetCache
 
   def execute(response)
     if response.nil? and @cache and @request.method.eql? :get
+      # read cache file if it exists and either (no expiry age is specified or the cache file is newer than now - age)
       if File.exist? @cache_file and (@cache_expiry_age.nil? or File.mtime(@cache_file) >= (Time.now - @cache_expiry_age))
         body = File.read(@cache_file)
-        RestClient::Response.create(body, RestClient::MockNetHTTPResponse.new(body, 200, {}), @request.args)
+        return RestClient::Response.create(body, RestClient::MockNetHTTPResponse.new(body, 200, {}), @request.args)
       end
     end
+    response
   end
 
   def cache_miss(response) 
@@ -148,7 +149,12 @@ class RestJsonConverter
 
   def post_process(response)
     if @parse
-      RestClient::Response.create(JSON.parse(response.body), response.net_http_res, response.args)
+      content = response.body
+      # a cached response body will already be parsed
+      if content.is_a? String
+        content = JSON.parse(content)
+      end
+      RestClient::Response.create(content, response.net_http_res, response.args)
     else
       response
     end
