@@ -39,7 +39,7 @@ module Awestruct
             doc.each_element('/response/result/enlistment/repository/url') do |e|
               git_url = e.text  
               path = File.basename(git_url.split('/').last, '.git')
-              @repositories << OpenStruct.new({
+              repository = OpenStruct.new({
                 :path => path,
                 :relative_path => '',
                 :desc => nil,
@@ -50,6 +50,7 @@ module Awestruct
                 :http_url => git_url.chomp('.git').sub('git://', 'https://'),
                 :clone_url => git_url
               })
+              @repositories << repository
             end
 
             offset = doc.root.elements['first_item_position'].text.to_i
@@ -148,10 +149,14 @@ module Awestruct
           site.git_author_index.each do |email, info|
             commit_data = RestClient.get(info.sample_commit_url, :accept => 'application/json')
             github_id = commit_data['commit']['author']['login'].to_s.downcase
-            #info.delete_field('sample_commit_url')
-            rekeyed_index[github_id.empty? ? email : github_id] = info
+            # case where a person has multiple e-mail address w/ one github account
+            if !github_id.empty? and rekeyed_index.has_key? github_id
+              # FIXME also capture secondary e-mail address!!!
+              rekeyed_index[github_id].commits += info.commits
+            else
+              rekeyed_index[github_id.empty? ? email : github_id] = info
+            end
           end
-          #site.git_author_index = rekeyed_index
           @observers.each do |o|
             o.add_match_filter(rekeyed_index) if o.respond_to? 'add_match_filter'
           end

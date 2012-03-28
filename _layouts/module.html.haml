@@ -15,7 +15,7 @@ layout: default
             %li
               %i.icon-tag
               Latest version:
-              %strong.label.label-success{ :style=>'position: relative; top: -1px;' }= page.component.releases.last.version
+              %strong.label{ :style=>'position: relative; top: -1px;' }= page.component.releases.last.version
               %span.divider= "|"
             %li
               %i.icon-calendar
@@ -77,33 +77,6 @@ layout: default
           - if page.component.repository.host.eql? 'github.com'
             %iframe{:src=>"http://markdotto.github.com/github-buttons/github-btn.html?user=#{page.component.repository.owner}&repo=#{page.component.repository.path}&type=fork&count=true", :allowtransparency=>"true", :frameborder=>0, :scrolling=>0, :width=>"95px", :height=>"20px"}
           -# component.path ??
-  %section#artifacts
-    .page-header
-      %h1 Artifacts
-    - unless page.component.bom.nil?
-      %h2 Build dependency management artifact
-      %p Add the following stanza to the <code>&lt;dependencies&gt;</code> element within the <code>&lt;dependencyManagement&gt;</code> element in your pom.xml:
-      %pre.prettify&= page.component.bom.to_maven_dep :scope => :import
-    - unless page.module.artifacts.nil?
-      %h2 Build dependency artifacts
-      %p Add the appropriate stanza to the <code>&lt;dependencies&gt;</code> element in your pom.xml:
-      - page.module.artifacts.each do |a|
-        %h3= a.name
-        - if page.component.type.eql? 'container-adapter'
-          .alert
-            %strong Warning:
-            You'll likely need additional dependencies to use this artifact. Please refer to the guides for more information.
-        %pre.prettify&= a.coordinates.to_maven_dep :scope => :test
-    - unless page.component.releases.empty? || page.component.releases.last.published_artifacts.empty?
-      %h2 Published artifacts
-      %ul
-        - page.component.releases.last.published_artifacts.each do |a|
-          %li
-            = a
-            - if a.packaging.eql? :jar
-              ( <a href="#{a.to_url}" target="_blank">jar</a>, <a href="#{a.to_pom_url}" target="_blank">pom</a> )
-            - else
-              ( <a href="#{a.to_url}" target="_blank">pom</a> )
   %section#activity
     .page-header
       %h1
@@ -123,6 +96,37 @@ layout: default
             %i.icon-user 
             Authored by #{page.component.last_commit.author.name},
             committed on #{page.component.last_commit.date.strftime('%Y-%m-%d')}
+  %section#artifacts
+    .page-header
+      %h1#artifacts Artifacts
+    - unless page.component.bom.nil?
+      %h2#dependency-management Build dependency management artifact
+      %p Add the following stanza to the <code>&lt;dependencies&gt;</code> element within the <code>&lt;dependencyManagement&gt;</code> element in your pom.xml:
+      %pre.prettify&= page.component.bom.to_maven_dep :scope => :import
+    - unless page.module.artifacts.nil?
+      %h2#dependencies Build dependency artifacts
+      %p Add the appropriate stanza to the <code>&lt;dependencies&gt;</code> element in your pom.xml:
+      - page.module.artifacts.each do |a|
+        %h3= a.name
+        -#- if page.component.type.eql? 'container-adapter'
+        -#  .alert
+        -#    %strong Warning:
+        -#    You'll likely need additional dependencies to use this artifact. Please refer to the <a href="/guides">guides</a> for more information.
+        %pre.prettify&= a.coordinates.to_maven_dep :scope => :test
+      - unless page.component.type.eql? 'platform'
+        .alert
+          %strong Warning:
+          You'll also need to add the <a href="/modules/core-platform">Arquillian core platform</a> and possibly additional dependencies. Please refer to the <a href="/guides">guides</a> for more details.
+    - unless page.component.releases.empty? || page.component.releases.last.published_artifacts.empty?
+      %h2 Latest published artifacts
+      %ul
+        - page.component.releases.last.published_artifacts.each do |a|
+          %li
+            = a
+            - if a.packaging.eql? :jar
+              [ <a href="#{a.to_url}" target="_blank">jar</a> | <a href="#{a.to_pom_url}" target="_blank">pom</a> ]
+            - else
+              [ <a href="#{a.to_url}" target="_blank">pom</a> ]
   %section#releases
     .page-header
       %h1

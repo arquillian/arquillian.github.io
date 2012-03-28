@@ -6,11 +6,11 @@ require_relative 'repository'
 require_relative 'arquillian'
 require_relative 'releases'
 require_relative 'patched_atomizer'
-# existing stuff
+require_relative 'autotag'
 require_relative 'common'
 require_relative 'guide'
-require_relative 'interwiki'
 require_relative 'lanyrd'
+require_relative 'interwiki'
 require_relative 'textile_plus'
 require_relative 'disqus_more'
 require_relative 'posts_helper'
@@ -52,9 +52,8 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Lanyrd::Export.new('/invasion/events/arquillian.ics')
 
   extension Awestruct::Extensions::Posts.new('/blog')
+  extension Awestruct::Extensions::AutoTag.new(:posts)
   extension Awestruct::Extensions::Paginator.new(:posts, '/blog/index', :per_page => 5)
-  # FIXME we need a patched atomizer to carry over our custom fields (release & component)
-  extension Awestruct::Extensions::PatchedAtomizer.new(:posts, '/blog.atom')
   extension Awestruct::Extensions::Tagger.new(:posts, '/blog/index', '/blog/tags', :per_page => 5)
   extension Awestruct::Extensions::TagCloud.new(:posts, '/blog/tags/index.html')
   extension Awestruct::Extensions::Disqus.new
@@ -63,7 +62,11 @@ Awestruct::Extensions::Pipeline.new do
   # Indexifier moves HTML files to their own directory to achieve "pretty" URLs (e.g., features.html -> /features/index.html)
   extension Awestruct::Extensions::Indexifier.new
 
-  # Needs to be after Indexifier to get the linking correct (date argument caps changelog per guide)
+  # Needs to be after Indexifier to get the links correct
+  # FIXME we need a patched atomizer to carry over our custom fields (release & component)
+  extension Awestruct::Extensions::PatchedAtomizer.new(:posts, '/blog.atom')
+
+  # Needs to be after Indexifier to get the linking correct; date constructor argument caps changelog per guide
   extension Awestruct::Extensions::Guide::Index.new('/guides', '2011-10-12')
 
   # Must be after all other extensions that might populate identities
