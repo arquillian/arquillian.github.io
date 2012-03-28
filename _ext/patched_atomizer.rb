@@ -18,24 +18,15 @@ module Awestruct
         atom_pages = []
 
         entries.each do |entry|
-          feed_entry = site.engine.load_page(entry.source_path, :relative_path => entry.relative_source_path, :html_entities => false)
-
-          feed_entry.output_path = entry.output_path
-          feed_entry.date = feed_entry.timestamp.nil? ? entry.date : feed_entry.timestamp
-
-          if entry.release
-            feed_entry.release = entry.release
-            feed_entry.component = entry.component
-          end
-
-          atom_pages << feed_entry
+          atom_pages << entry
         end
 
         site.engine.set_urls(atom_pages)
 
         input_page = File.join( File.dirname(__FILE__), 'template.atom.haml' )
         page = site.engine.load_page( input_page )
-        page.date = page.timestamp unless page.timestamp.nil?
+        #page.date = page.timestamp unless page.timestamp.nil?
+        page.date = atom_pages.first.date
         page.output_path = @output_path
         page.entries = atom_pages
         page.title = site.title || site.base_url
