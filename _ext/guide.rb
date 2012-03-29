@@ -6,9 +6,9 @@ module Awestruct
       class Index
         include Guide
         
-        def initialize(path_prefix, changes_since_date = nil)
+        def initialize(path_prefix, num_changes = nil)
           @path_prefix = path_prefix
-          @changes_since_date = changes_since_date
+          @num_changes = num_changes
         end
 
         def transform(transformers)
@@ -31,13 +31,13 @@ module Awestruct
               guide.order = if page.guide_order then page.guide_order else 100 end
               
               # Add the Authors to Page and Guide based on Git Commit history
-              #git_page_contributors = page_contributors(page, @changes_since_date)
+              #git_page_contributors = page_contributors(page, @num_changes)
               #if not page.authors
               #  page.authors = git_page_contributors
               #end
               #guide.authors = page.authors
 
-              page.changes = page_changes(page, @changes_since_date)
+              page.changes = page_changes(page, @num_changes)
               
               # NOTE page.content forces the source path to be rendered
               page_content = Hpricot(page.content)
@@ -176,11 +176,11 @@ module Awestruct
       # at page.site.dir for the given page. 
       # The Array is ordered by number of commits done by the authors.
       #
-      def page_contributors(page, since)
+      def page_contributors(page, size)
         authors = Hash.new
         
         g = Git.open(page.site.dir)
-        Git::Log.new(g, 50).path(page.relative_source_path[1..-1]).since(since).each do |c|
+        g.log(size).path(page.relative_source_path[1..-1]).each do |c|
           if authors[c.author.name]
             authors[c.author.name] = authors[c.author.name] + 1
           elsif
@@ -190,10 +190,10 @@ module Awestruct
         return authors.sort{|a, b| b[1] <=> a[1]}.map{|x| x[0]}
       end
 
-      def page_changes(page, since)
+      def page_changes(page, size)
         changes = []
         g = Git.open(page.site.dir)
-        Git::Log.new(g, 50).path(page.relative_source_path[1..-1]).since(since).each do |c|
+        g.log(size).path(page.relative_source_path[1..-1]).each do |c|
           changes << Change.new(c.sha, c.author.name, c.author.date, c.message.to_a[0].chomp.chomp('.').capitalize)
         end
         if changes.length == 0

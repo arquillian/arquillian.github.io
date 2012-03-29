@@ -66,8 +66,8 @@ Awestruct::Extensions::Pipeline.new do
   # FIXME we need a patched atomizer to carry over our custom fields (release & component)
   extension Awestruct::Extensions::PatchedAtomizer.new(:posts, '/blog.atom')
 
-  # Needs to be after Indexifier to get the linking correct; date constructor argument caps changelog per guide
-  extension Awestruct::Extensions::Guide::Index.new('/guides', '2011-10-12')
+  # Needs to be after Indexifier to get the linking correct; second argument caps changelog per guide
+  extension Awestruct::Extensions::Guide::Index.new('/guides', 15)
 
   # Must be after all other extensions that might populate identities
   extension Awestruct::Extensions::Identities::Cache.new
