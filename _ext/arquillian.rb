@@ -641,9 +641,9 @@ module Awestruct::Extensions::Repository::Visitors
         artifactId = primarypom.root.text('artifactId')
         name = primarypom.root.text('name')
         packaging = primarypom.root.text('packaging')
-        groupId = pom.root.text('groupId')
+        groupId = pom.root.text('groupId') || pom.root.elements['parent'].text('groupId')
         mod.artifacts = [
-          Artifact.new(name, Artifact::Coordinates.new(groupId, artifactId, mod.component.latest_version, packaging))
+          Artifact.new(name, Artifact::Coordinates.new(groupId, artifactId, packaging, mod.component.latest_version))
         ]
       end
     end
