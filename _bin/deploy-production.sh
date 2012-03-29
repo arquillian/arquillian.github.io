@@ -10,14 +10,24 @@ GITHUB_DIR="$TMP_DIR/restcache/github"
 LANYRD_DIR="$TMP_DIR/lanyrd"
 DEPLOY_REPO='git@github.com:arquillian/arquillian.github.com.git'
 
-if [[ $# -ne 1 ]]; then
+CLEAN=0
+PUSH=0
+while getopts "cpr:" option
+do
+  case $option in
+    c) CLEAN=1 ;;
+    p) PUSH=1 ;;
+    r) DEPLOY_DIR=$OPTARG ;;
+  esac
+done
+
+if [ -z $DEPLOY_DIR ]; then
   DEPLOY_DIR="$ROOT_DIR/_deploy"
   if [[ ! -d "$DEPLOY_DIR/.git" ]]; then
     echo "Specify the path to the clone of $DEPLOY_REPO"
     exit 1
   fi
 else
-  DEPLOY_DIR="$1"
   if [[ ! -d "$DEPLOY_DIR/.git" ]]; then
     echo "Not a git repository: $DEPLOY_DIR"
     exit 1
@@ -44,7 +54,9 @@ pushd $LANYRD_DIR
 rm -f search-*.html
 popd
 
-rm -rf $DATACACHE_DIR
+if [ $CLEAN -eq 1 ]; then
+  rm -rf $DATACACHE_DIR
+fi
 rm -rf $SITE_DIR
 rm -rf $SASS_CACHE_DIR
 
@@ -55,12 +67,14 @@ git pull
 popd
 
 rsync -a "$SITE_DIR/" "$DEPLOY_DIR/"
-#rsync -a --delete "$SITE_DIR/" "$DEPLOY_DIR/src/main/webapp/"
+#rsync -a --delete "$SITE_DIR/" "$DEPLOY_DIR/"
 
 pushd $DEPLOY_DIR
 git add .
 git commit -m 'publish'
-#git push
+if [ $PUSH -eq 1 ]; then
+  git push origin master
+fi
 popd
 
 exit 0
