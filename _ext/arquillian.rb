@@ -596,7 +596,7 @@ module Awestruct::Extensions::Repository::Visitors
     include Base
 
     def handles(repository)
-      repository.path =~ /^(arquillian-extension-.+|jsfunit)$/ 
+      repository.path =~ /^(arquillian-extension-.+|jsfunit|arquillian-graphene)$/ 
     end
 
     def visit(repository, site)

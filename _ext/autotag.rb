@@ -10,7 +10,7 @@ module Awestruct::Extensions
       entries.each do |entry|
         entry.tags ||= []
         unless entry.tags.include? 'release'
-          entry.tags << 'non-release'
+          entry.tags << 'nonrelease'
         end
       end
     end
