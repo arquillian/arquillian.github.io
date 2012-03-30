@@ -15,7 +15,7 @@ class Artifact
     def initialize(groupId, artifactId, packaging = :jar, version = nil)
       @groupId = groupId
       @artifactId = artifactId
-      @packaging = packaging.to_sym
+      @packaging = packaging.nil? ? :jar : packaging.to_sym
       @version = version
     end
 
