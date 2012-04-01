@@ -46,6 +46,7 @@ module Awestruct::Extensions::Releases
             inner_release_page.relative_source_path = inner_release_page.output_path
           end
 
+          # FIXME we can use site.layouts to get the layout
           layouts_dir = File.basename site.engine.config.layouts_dir
           release_page = site.engine.find_and_load_site_page(File.join(layouts_dir, 'release'))
           release_page.output_path = File.join(@path_prefix, release_page_name.tr('.', '-')) + '.html'

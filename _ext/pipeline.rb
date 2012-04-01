@@ -14,6 +14,7 @@ require_relative 'interwiki'
 require_relative 'textile_plus'
 require_relative 'disqus_more'
 require_relative 'posts_helper'
+require_relative 'cache_evolver'
 #require_relative 'page_debug'
 #require_relative 'fork_me_ribbon'
 
@@ -75,6 +76,7 @@ Awestruct::Extensions::Pipeline.new do
   #helper Awestruct::Extensions::Partial
   helper Awestruct::Extensions::Interwiki
   helper Awestruct::Extensions::GoogleAnalytics
+  helper Awestruct::Extensions::CacheEvolver
   #helper Awestruct::Extensions::ForkMeRibbon
   #helper Awestruct::Extensions::PageDebug
 end
