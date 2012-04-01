@@ -2,7 +2,7 @@
 %html(lang='en')
   %head
     %meta(charset='utf-8')
-    %title= [page.title, site.title].uniq.join ' &#183; '
+    %title= (page.title ? [page.title, page.site_title ? page.site_title : site.title] : [site.title, site.tagline]) * ' &#183; '
     %meta(name='viewport' content='width=device-width, initial-scale=1.0')
     %meta(name='description'){:content=>page.description ? page.description : site.description}
     - if site.keywords
@@ -11,15 +11,24 @@
     %link(rel='stylesheet' href='/stylesheets/screen.css')
     - if site.url
       %link(rel='canonical'){:href=>site.url}
-    %script(src='//code.jquery.com/jquery-1.7.2.min.js')
+    %script(src='//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js')
+    :javascript
+      function footergravity() {
+        $('#main').css('min-height', $(window).height() - $('footer').outerHeight() - parseInt($('#main').css('margin-top')));
+      }
+      $(function() {
+        prettify();
+        footergravity();
+        $(window).resize(footergravity);
+      });
     - if page.stylesheets
       - page.stylesheets.each do |stylesheet|
         %link(rel='stylesheet' href=stylesheet)
     /[if lt IE 9]
-      %script(src='//html5shim.googlecode.com/svn/trunk/html5.js')
+      %script(src='//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.js')
     - if page.javascripts
       - page.javascripts.each do |javascript|
-        %script(src=javascript)
+        %script{:src=>javascript}
   %body{:class=>page.body_class || nil}
     %header#banner.navbar.navbar-fixed-top(role='banner')
       .navbar-inner
@@ -102,18 +111,11 @@
 
             p(bottom). Arquillian is a "JBoss Community":http://jboss.org project and development is sponsored by Red Hat, Inc.
     -#= fork_me_ribbon(site, page)
-    %script(src='//twitter.github.com/bootstrap/assets/js/bootstrap-collapse.js')
+    %script(src='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.2/bootstrap.min.js')
     %script(src='/javascripts/prettify.js')
-    :javascript
-      $(function() {
-        prettify();
-        // stick footer to bottom
-        // TODO this needs to get run again when the window size changes
-        //$('#main').css('min-height', $(window).height() - $('#footer').outerHeight() - parseInt($('#main').css('margin-top')));
-      });
     - if page.bottom_javascripts
       - page.bottom_javascripts.each do |javascript|
-        %script(src=javascript)
+        %script{:src=>javascript}
     - if site.google_analytics
-      = google_analytics
+      = google_analytics_async
     -#= add_debug(site, page)

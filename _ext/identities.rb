@@ -111,7 +111,7 @@ module Awestruct::Extensions::Identities
 
   module IdentityHelper
     # SEMI-HACK this should received contributions from crawlers
-    def preferred_url
+    def url
       self.jbosscommunity ? self.jbosscommunity.profile_url : self.github.profile_url 
     end
 

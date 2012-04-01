@@ -24,6 +24,8 @@ module Awestruct::Extensions::Releases
           next if !@since.nil? and release.date < @since
           inner_release_page = nil
           post_author = nil
+          post_tags = nil
+          post_title = nil
           # TODO perhaps standardize on -release suffix to make files more clear
           release_page_name = repo_path + '-' + release.version
           release_page_simple_input_path = File.join(@path_prefix, release_page_name)
@@ -33,7 +35,9 @@ module Awestruct::Extensions::Releases
             # This page should always be found since awestruct should have detected it (like any other page)
             comparison_path = '/' + release_page_input_path
             inner_release_page = site.pages.find {|candidate| candidate.relative_source_path.eql? comparison_path }
-            post_author = get_post_author(inner_release_page)
+            post_author = !inner_release_page.author.nil? ? inner_release_page.author : get_post_author(inner_release_page)
+            post_tags = inner_release_page.tags
+            post_title = inner_release_page.title
             site.pages.delete inner_release_page
           else
             # Generate release page from template if not present
@@ -50,7 +54,11 @@ module Awestruct::Extensions::Releases
 
           release_page.release = release
           release_page.component = component
-          release_page.title ||= "#{component.name} #{release.version} Released"
+          if post_title
+            release_page.title = post_title
+          else
+            release_page.title ||= "#{component.name} #{release.version} Released"
+          end
           # FIXME fragile lookup! should be lookup_by_commit_name
           release_page.author ||= !post_author.nil? ? post_author : site.identities.lookup_by_name(release.released_by.name).username
           #release_page.author ||= release.released_by.name
@@ -59,6 +67,9 @@ module Awestruct::Extensions::Releases
           release_page.date = Time.utc(release.date.year, release.date.month, release.date.day)
           #release_page.layout ||= 'release'
           release_page.tags ||= []
+          if post_tags
+            release_page.tags += post_tags
+          end
           release_page.tags << 'release' << component.type.gsub('_', '-') << component.key
           if site.release_notes and site.release_notes.has_key? release.key
             release_page.release_notes = site.release_notes[release.key]
@@ -96,9 +107,11 @@ module Awestruct::Extensions::Releases
 
     def get_post_author(page)
       rc = Git.open(page.site.dir)
-      author = rc.log(nil).path(page.relative_source_path[1..-1]).to_a.last.author
-      # FIXME fragile lookup!
-      page.site.identities.lookup_by_name(author.name).username
+      last_commit = rc.log(nil).path(page.relative_source_path[1..-1]).to_a.last
+      if !last_commit.nil?
+        # FIXME fragile lookup!
+        page.site.identities.lookup_by_name(last_commit.author.name).username
+      end
     end
   end
 end

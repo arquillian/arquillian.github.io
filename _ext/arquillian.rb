@@ -38,7 +38,7 @@ class Artifact
 
     def to_url(base_url = 'http://repo1.maven.org/maven2')
       [base_url, @groupId.gsub('.', '/'), @artifactId, @version,
-          @artifactId + '-' + @version + '.' + @packaging.to_s].join('/')
+          @artifactId + '-' + @version + '.' + @packaging.to_s] * '/'
     end
 
     def to_pom_url(base_url = 'http://repo1.maven.org/maven2')
@@ -46,8 +46,12 @@ class Artifact
           @artifactId + '-' + @version + '.' + @packaging.to_s].join('/').gsub(/\.jar$/, '.pom')
     end
 
+    def to_relative
+      [@artifactId, @packaging.to_s, @version] * ':'
+    end
+
     def to_s
-      [@groupId, @artifactId, @packaging.to_s, @version].join(':')
+      [@groupId, @artifactId, @packaging.to_s, @version] * ':'
     end
   end
 end

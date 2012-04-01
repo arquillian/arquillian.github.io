@@ -7,6 +7,7 @@ module Awestruct
         @entries_name = entries_name
         @output_path = output_path
         @num_entries = opts[:num_entries] || 50
+        @title = opts[:title] || nil
       end
 
       def execute(site)
@@ -18,18 +19,27 @@ module Awestruct
         atom_pages = []
 
         entries.each do |entry|
-          atom_pages << entry
+          atom_pages << entry.clone
+          author_id = atom_pages.last.author
+          author = site.identities.lookup(author_id)
+          atom_pages.last.author = author
         end
 
         site.engine.set_urls(atom_pages)
 
-        input_page = File.join( File.dirname(__FILE__), 'template.atom.haml' )
-        page = site.engine.load_page( input_page )
+        layouts_dir = File.basename site.engine.config.layouts_dir
+        page = site.engine.load_page(File.join(layouts_dir, 'template.atom.haml'))
         #page.date = page.timestamp unless page.timestamp.nil?
         page.date = atom_pages.first.date
         page.output_path = @output_path
         page.entries = atom_pages
-        page.title = site.title || site.base_url
+        if @title
+          page.title = @title
+        elsif site.title
+          page.title = site.title
+        else
+          page.title = site.base_url
+        end
         site.pages << page
       end
 
