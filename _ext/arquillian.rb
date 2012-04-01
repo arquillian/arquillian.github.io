@@ -89,7 +89,8 @@ module Awestruct::Extensions::Repository::Visitors
           repository.master_branch = master_branch
         end
         rc.checkout(master_branch)
-        rc.pull('origin', master_branch)
+        # nil argument required to work around bug in git library
+        rc.pull('origin', ['origin', master_branch] * '/', nil)
       end
       repository.clone_dir = clone_dir
       repository.client = rc

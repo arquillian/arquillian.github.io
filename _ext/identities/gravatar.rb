@@ -83,7 +83,10 @@ module Identities
 
         # grab twitter usernames supplied by _config/identities.yml
         if identity.twitter.nil? and !identity.twitter_username.nil?
-          identity.twitter = OpenStruct.new({:username => identity.twitter_username})
+          identity.twitter = OpenStruct.new({
+            :username => identity.twitter_username,
+            :url => 'http://twitter.com/' + identity.twitter_username
+          })
         end
 
         # QUESTION do we need the speaker flag check?
