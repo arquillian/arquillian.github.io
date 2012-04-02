@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 BIN_DIR=$(dirname "$0")
 ROOT_DIR="$BIN_DIR/.."
 TMP_DIR="$ROOT_DIR/_tmp"
