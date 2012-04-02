@@ -109,18 +109,6 @@ module Awestruct
             :clone_url => 'git://github.com/forge/plugin-arquillian.git'
           )
 
-          # FIXME add to ohloh
-          @repositories << OpenStruct.new(
-            :path => 'arquillian-graphene',
-            :desc => nil,
-            :relative_path => '',
-            :owner => 'arquillian',
-            :host => 'github.com',
-            :type => 'git',
-            :http_url => 'https://github.com/arquillian/arquillian-graphene',
-            :clone_url => 'git://github.com/arquillian/arquillian-graphene.git'
-          )
-
           @repositories.sort! {|a,b| a.path <=> b.path }
 
           # get the description for each github repository
