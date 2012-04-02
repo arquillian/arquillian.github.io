@@ -49,7 +49,7 @@ module Identities
             end
             # TODO it would be interesting to report who didn't get matched when it's all over
             if author.nil?
-              puts "Skipping non-Arquillian contributor #{github_id} in repository #{r.owner}/#{r.path} (may be mismatched email)"
+              puts "Skipping non-Arquillian contributor #{github_id} in repository #{r.owner}/#{r.path}"
               next
             end
             ## END REVIEW
