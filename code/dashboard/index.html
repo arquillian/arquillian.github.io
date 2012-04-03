@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <title>Arquillian repositories</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+        <link type="text/css" rel="stylesheet" href="/stylesheets/dashboard.css"/>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.2/bootstrap.min.js"></script>
+        <script src="/javascripts/jquery-jgfeed.js"></script>
+        <script type="text/javascript">
+function byName(a, b) {
+    var aName = a.name.toLowerCase();
+    var bName = b.name.toLowerCase(); 
+    return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+}
+
+function byDate(a, b) {
+    var aName = new Date(a.updated_at);
+    var bName = new Date(b.updated_at); 
+    return ((aName < bName) ? 1 : ((aName > bName) ? -1 : 0));
+}
+
+function loadRepos(data, textStatus, jqXHR) {
+    var container = $("#container");
+    var row = null;
+    var repositories = data.data;
+    repositories.sort(byName);
+    $.each(repositories, function(i, repo) {
+        if (repo.name == 'arquillian_deprecated' || repo.name == 'seam-forge') {
+            return;
+        }
+        if ((i % 3) == 0) {
+            if (row != null) {
+                row.appendTo(container);
+            }
+            row = $("<div class='repos row show-grid'/>");
+        }
+        addRepo(row, repo);
+    });
+    if (row != null) {
+        row.appendTo(container);
+    }
+    $("#repositories").text(plural(repositories.length, " repository", " repositories"));
+    repositories.sort(byDate);
+    var updated = $("#updated");
+    $.each(repositories.slice(0, 4), function(i, repo) {
+        var div = $("<div/>");
+        $("<a/>").attr({href: repo.html_url, title: "View project on GitHub"}).text(repo.name).appendTo(div);
+        div.append(" ");
+        repoInfo(repo).appendTo(div);
+        div.appendTo(updated);
+    });
+}
+
+function date(text) {
+    var d = new Date(text);
+    return d.getFullYear() + "/" + (d.getMonth() < 9 ? "0" : "") + (d.getMonth() + 1) + "/" + (d.getDate() < 10 ? "0" : "") + d.getDate();
+}
+
+function plural(count, text, pluralText) {
+    if (count > 1) {
+        return pluralText ? count + pluralText : count + text + "s";
+    }
+    return count + text;
+}
+
+function ellipsify(desc, max) {
+    if (desc.length > max) {
+        return desc.substring(0, max - 3) + '...'
+    }
+    return desc
+}
+
+function repoInfo(repo) {
+    var sub = $("<div class='sub'/>");
+    $("<a/>").attr({href: repo.html_url+"/issues", title: "Issue tracker"}).text(plural(repo.open_issues," issue")).appendTo(sub);
+    sub.append(" ⋅ ");
+    $("<a/>").attr({href: repo.html_url+"/watchers", title: "View watchers"}).text(plural(repo.watchers, " watcher")).appendTo(sub);
+    sub.append(" ⋅ ");
+    $("<a/>").attr({href: repo.html_url+"/network", title: "Fork list"}).text(plural(repo.forks, " fork")).appendTo(sub);
+    sub.append(" ⋅ ");
+    $("<a/>").attr({href: repo.html_url+"/commits", title: "Last commit"}).text(date(repo.updated_at)).appendTo(sub);
+    return sub;
+}
+
+function addRepo(container, repo) {
+    var span = $("<div class='span4' title='Click to view project on GitHub''/>");
+    var div = $("<div class='repo'/>").appendTo(span);
+  
+    $("<h3/>").text(repo.name).appendTo(div);
+    $("<p/>").text(ellipsify(repo.description, 80)).appendTo(div);
+
+    repoInfo(repo).appendTo(div);
+    
+    var fork = $("<a/>").attr({href: repo.html_url+"/fork_select", title: "Fork on GitHub", style: 'line-height: 2em;'}).appendTo(div);
+    fork.append("Fork ");
+    $("<i class='icon-share-alt'></i>").appendTo(fork);
+    
+    var build_status = $("<div/>").addClass('status').appendTo(div);
+    var build_status_img = $("<img/>").attr(buildStatusByName(repo.name)).appendTo(build_status);
+    
+    div.click(function() {
+        document.location = repo.html_url;
+    });
+    
+    container.append(span);
+}
+
+function loadMembers (result) {
+    var members = result.data;
+    $("#members").text(plural(members.length, " member"));
+}
+
+var iconSize = 32;
+var build_results;
+
+function buildStatusByName(repoName) {
+
+    if (build_results == null) {
+        return {src: "/images/arquillian_icon_" + iconSize + "px.png", title: "Unknown build status"};
+    }
+    
+    for (i = 0; i < build_results.entries.length; i++) {
+        var build_result = build_results.entries[i];
+        
+        var repo = build_result.title.replace(/(.*)#.*\(.*\).*/, '$1').toLowerCase().trim();
+        if (repo == repoName) {
+            var status = build_result.title.replace(/.*\((.*.*)\).*/, '$1');
+            if (status.indexOf("broken") != -1) {
+                return {src: "/images/arquillian_ui_error_" + iconSize + "px.png", title: "Broken build :("};
+            }
+            if (status.indexOf("stable") != -1 || status.indexOf("normal") != -1) {
+                return {src: "/images/arquillian_ui_success_" + iconSize + "px.png", title: "Build stable! :)"};
+            }
+            if (status.indexOf("fail") != -1) {
+                return {src: "/images/arquillian_ui_failure_" + iconSize + "px.png", title: "Test failures :/"};
+            }
+            // unknown, might be building, use normal logo
+            return {src: "/images/arquillian_icon_" + iconSize + "px.png", title: "Build in progress..."};
+        }
+    }
+    // not found ? 
+    return {src: "/images/arquillian_icon_" + iconSize + "px.png", title: "Unknown build status"};
+}
+
+$(function () {
+    $.jGFeed('https://arquillian.ci.cloudbees.com/rssLatest',
+    function(feeds) {
+        if (!feeds) {
+            return false;
+        }
+      build_results = feeds;
+    }, 50);
+
+    $.getJSON("https://api.github.com/orgs/arquillian/repos?callback=?", loadRepos);
+    $.getJSON("https://api.github.com/orgs/arquillian/members?callback=?", loadMembers);
+});
+        </script>
+    </head>
+    <body>
+        <div class="container" id="container">
+            <div class='page-header'>
+                <a href="http://arquillian.org" title="Go to Arquillian home page"><img src="/images/ike.png" alt="Arquillian Logo" class="logo" style="width: 100px;"/></a>
+                <h1>Arquillian repositories</h1>
+                <p class="lead">
+                   Arquillian is revolutionary open source testing platform for Java middleware.<br/>Forget mocks. Write <em>real</em> tests!
+                </p>
+                <p class="links">
+                    <a href="/" title="Go to Arquillian home page"><i class="icon-home"></i>Arquillian homepage</a>
+                </p>
+            </div>
+            <div class="row show-grid">
+                <div class="span4">
+                    <div class="box">
+                        <h3>Statistics</h3>
+                        <div><a href="https://github.com/arquillian/repositories" title="View all Arquillian repositories on GitHub" id="repositories"></a></div>
+                        <div><a href="https://github.com/arquillian" title="View Arquillian members on GitHub" id="members"></a></div>
+                    </div>
+                </div>
+                <div class="span8">
+                    <div class="box">
+                        <h3>Recently updated <a href="https://github.com/arquillian/repositories" title="View all Arquillian repositories on GitHub">View all</a></h3>
+                        <div id="updated"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
