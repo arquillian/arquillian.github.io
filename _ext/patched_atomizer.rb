@@ -28,7 +28,7 @@ module Awestruct
         site.engine.set_urls(atom_pages)
 
         layouts_dir = File.basename site.engine.config.layouts_dir
-        page = site.engine.load_page(File.join(layouts_dir, 'template.atom.haml'))
+        page = site.engine.load_page(File.join(layouts_dir, 'atom.xml.haml'))
         #page.date = page.timestamp unless page.timestamp.nil?
         page.date = atom_pages.first.date
         page.output_path = @output_path
