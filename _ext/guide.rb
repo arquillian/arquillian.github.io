@@ -22,14 +22,17 @@ module Awestruct
             if ( page.relative_source_path =~ /^#{@path_prefix}\/(?!index)/ )
               
               guide = OpenStruct.new
+              page.guide = guide
+              site.engine.set_urls([page])
+              guide.url = page.url
               guide.title = page.title
-              guide.output_path = page.output_path
               guide.summary = page.guide_summary
-              # TODO switch this around so that "description" is the metadata property in the source file
+              # FIXME switch this around so that "description" is the metadata property in the source file
               page.description = guide.summary
               guide.group = page.guide_group
               guide.order = if page.guide_order then page.guide_order else 100 end
               
+              # FIXME contributors should be listed somewhere on the page
               # Add the Authors to Page and Guide based on Git Commit history
               #git_page_contributors = page_contributors(page, @num_changes)
               #if not page.authors
@@ -37,7 +40,7 @@ module Awestruct
               #end
               #guide.authors = page.authors
 
-              page.changes = page_changes(page, @num_changes)
+              guide.changes = page_changes(page, @num_changes)
               
               # NOTE page.content forces the source path to be rendered
               page_content = Hpricot(page.content)
@@ -58,7 +61,6 @@ module Awestruct
               chapters << chapter
 
               guide.chapters = chapters
-              page.guide = guide
 
               page_languages = findLanguages(page)
               page.languages = page_languages if page_languages.size > 0
