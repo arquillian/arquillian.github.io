@@ -64,22 +64,22 @@ if [[ `git diff upstream/develop | wc -l` -gt 0 ]]; then
   exit 1
 fi
 
-pushdq $GITHUB_DIR
 # TODO check if github repository has been updated since the contributions file was written, then nuke the contributions file
-#rm -f contributors-*.json
-popdq
-
-pushdq $LANYRD_DIR
-rm -f search-*.html
-popdq
+#pushdq $GITHUB_DIR
+#rm -f *-contributors.json
+#popdq
 
 if [ $CLEAN -eq 1 ]; then
+  pushdq $LANYRD_DIR
+  rm -f search-*.html
+  popdq
+
   rm -rf $DATACACHE_DIR
 fi
 rm -rf $SITE_DIR
 rm -rf $SASS_CACHE_DIR
 
-awestruct -P production -g
+awestruct -P production -g > /dev/null
 
 pushdq $DEPLOY_DIR
 git pull
