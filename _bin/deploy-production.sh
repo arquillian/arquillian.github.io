@@ -84,7 +84,7 @@ if [ $KEEP -eq 0 ]; then
   rm -rf $SASS_CACHE_DIR
 fi
 
-awestruct -P production -g > /dev/null
+awestruct -P production -g
 
 pushdq $DEPLOY_DIR
 git pull
