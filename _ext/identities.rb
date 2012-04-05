@@ -115,6 +115,11 @@ module Awestruct::Extensions::Identities
       self.jbosscommunity ? self.jbosscommunity.profile_url : self.github.profile_url 
     end
 
+    # TODO support for CSS class, or just attributes in general
+    def to_link
+      "<a href=\"#{self.url}\">#{self.name}</a>"
+    end
+
     def to_s
       self.name
     end
