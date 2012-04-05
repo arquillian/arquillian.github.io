@@ -39,9 +39,11 @@ module Awestruct::Extensions::Jira
           :resolved_issues => {}
         })
         doc.search('.release-notes > ul li').each do |e|
-          type = e.parent.previous_sibling.inner_text
+          type = e.parent.previous_sibling.inner_text.strip
           release_notes.resolved_issues[type] = [] if !release_notes.resolved_issues.has_key? type
           release_notes.resolved_issues[type] << e.inner_html
+          # skip the edit/copy textarea, which gets resolved as duplicate matches
+          break if e.next_sibling.nil? and e.parent.next_sibling['name'].eql? 'editarea'
         end
         site.release_notes[v['name']] = release_notes
       end
