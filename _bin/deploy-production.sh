@@ -2,6 +2,9 @@
 
 set -e
 
+function pushdq() { pushd "$1" > /dev/null; }
+function popdq() { popd > /dev/null; }
+
 BIN_DIR=$(dirname "$0")
 ROOT_DIR="$BIN_DIR/.."
 TMP_DIR="$ROOT_DIR/_tmp"
@@ -38,12 +41,12 @@ fi
 
 set -e
 
-pushd $DEPLOY_DIR > /dev/null
+pushdq $DEPLOY_DIR
 if ! git remote -v | grep -qF "$DEPLOY_REPO"; then
   echo "Not a $DEPLOY_REPO clone: $DEPLOY_DIR"
   exit 1
 fi
-popd
+popdq
 
 cd $ROOT_DIR
 
@@ -59,14 +62,14 @@ if [[ `git diff upstream/develop | wc -l` -gt 0 ]]; then
   exit 1
 fi
 
-pushd $GITHUB_DIR > /dev/null
+pushdq $GITHUB_DIR
 # TODO check if github repository has been updated since the contributions file was written, then nuke the contributions file
 #rm -f contributors-*.json
-popd
+popdq
 
-pushd $LANYRD_DIR > /dev/null
+pushdq $LANYRD_DIR
 rm -f search-*.html
-popd
+popdq
 
 if [ $CLEAN -eq 1 ]; then
   rm -rf $DATACACHE_DIR
@@ -76,18 +79,18 @@ rm -rf $SASS_CACHE_DIR
 
 awestruct -P production -g
 
-pushd $DEPLOY_DIR > /dev/null
+pushdq $DEPLOY_DIR
 git pull
-popd
+popdq
 
 rsync -a --delete --exclude='.git' "$SITE_DIR/" "$DEPLOY_DIR/"
 
-pushd $DEPLOY_DIR > /dev/null
+pushdq $DEPLOY_DIR
 git add .
 git commit -m 'publish'
 if [ $PUSH -eq 1 ]; then
   git push origin master
 fi
-popd
+popdq
 
 exit 0
