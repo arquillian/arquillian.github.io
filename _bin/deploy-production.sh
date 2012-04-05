@@ -68,7 +68,7 @@ pushd $DEPLOY_DIR
 git pull
 popd
 
-rsync -a --delete "$SITE_DIR/" "$DEPLOY_DIR/"
+rsync -a --delete --exclude='.git' "$SITE_DIR/" "$DEPLOY_DIR/"
 
 pushd $DEPLOY_DIR
 git add .
