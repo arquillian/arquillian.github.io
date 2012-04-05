@@ -55,7 +55,7 @@ fi
 
 if [[ `git diff upstream/develop | wc -l` -gt 0 ]]; then
   echo "Please push these local changes before publishing:"
-  git diff upstream/develop
+  git log upstream/develop..
   exit 1
 fi
 
