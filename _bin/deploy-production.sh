@@ -93,7 +93,7 @@ popdq
 rsync -a --delete --exclude='.git' "$SITE_DIR/" "$DEPLOY_DIR/"
 
 pushdq $DEPLOY_DIR
-git add .
+git add -A .
 git commit -m "$MESSAGE"
 if [ $PUSH -eq 1 ]; then
   git push origin master
