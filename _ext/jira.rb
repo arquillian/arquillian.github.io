@@ -1,5 +1,3 @@
-require 'nokogiri'
-
 module Awestruct::Extensions::Jira
   DEFAULT_BASE_URL = 'https://issues.jboss.org'
 
@@ -32,7 +30,7 @@ module Awestruct::Extensions::Jira
         next if !v['released']
         url = @base_url + RELEASE_NOTES_PATH_TEMPLATE % [@project_id, v['id']]
         html = RestClient.get url, :cache_key => "jira/release-notes-#{@project_key}-#{v['id']}.html"
-        doc = Nokogiri::HTML(html)
+        doc = Hpricot(html)
         release_notes = OpenStruct.new({
           :id => v['id'],
           :comment => v['description'],
@@ -40,8 +38,8 @@ module Awestruct::Extensions::Jira
           :html_url => url,
           :resolved_issues => {}
         })
-        doc.css('.release-notes > ul li').each do |e|
-          type = e.parent.previous_element.content
+        doc.search('.release-notes > ul li').each do |e|
+          type = e.parent.previous_sibling.inner_text
           release_notes.resolved_issues[type] = [] if !release_notes.resolved_issues.has_key? type
           release_notes.resolved_issues[type] << e.inner_html
         end
