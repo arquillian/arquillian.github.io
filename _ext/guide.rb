@@ -26,9 +26,10 @@ module Awestruct
               site.engine.set_urls([page])
               guide.url = page.url
               guide.title = page.title
-              guide.summary = page.guide_summary
-              # FIXME switch this around so that "description" is the metadata property in the source file
-              page.description = guide.summary
+              if page.description.nil?
+                page.description = page.guide_summary
+              end
+              guide.summary = page.description
               guide.group = page.guide_group
               guide.order = if page.guide_order then page.guide_order else 100 end
               
