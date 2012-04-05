@@ -16,12 +16,14 @@ LANYRD_DIR="$TMP_DIR/lanyrd"
 DEPLOY_REPO='git@github.com:arquillian/arquillian.github.com.git'
 
 CLEAN=0
+KEEP=0
 PUSH=0
 MESSAGE='manual publish'
-while getopts "cpmr:" option
+while getopts "ckpmr:" option
 do
   case $option in
     c) CLEAN=1 ;;
+    k) KEEP=1 ;;
     p) PUSH=1 ;;
     m) MESSAGE=$OPTARG ;;
     r) DEPLOY_DIR=$OPTARG ;;
@@ -76,8 +78,11 @@ if [ $CLEAN -eq 1 ]; then
 
   rm -rf $DATACACHE_DIR
 fi
-rm -rf $SITE_DIR
-rm -rf $SASS_CACHE_DIR
+
+if [ $KEEP -eq 0 ]; then
+  rm -rf $SITE_DIR
+  rm -rf $SASS_CACHE_DIR
+fi
 
 awestruct -P production -g > /dev/null
 
