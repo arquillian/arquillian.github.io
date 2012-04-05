@@ -19,7 +19,7 @@ CLEAN=0
 KEEP=0
 PUSH=0
 MESSAGE='manual publish'
-while getopts "ckpmr:" option
+while getopts "ckpm:r:" option
 do
   case $option in
     c) CLEAN=1 ;;
