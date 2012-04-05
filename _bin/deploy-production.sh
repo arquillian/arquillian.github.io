@@ -47,6 +47,11 @@ popd
 
 cd $ROOT_DIR
 
+if [[ `git diff | wc -l` -gt 0 ]]; then
+  echo "Please commit local changes before publishing"
+  exit 1
+fi
+
 pushd $GITHUB_DIR
 # TODO check if github repository has been updated since the contributions file was written, then nuke the contributions file
 #rm -f contributors-*.json
