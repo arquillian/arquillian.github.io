@@ -17,11 +17,13 @@ DEPLOY_REPO='git@github.com:arquillian/arquillian.github.com.git'
 
 CLEAN=0
 PUSH=0
-while getopts "cpr:" option
+MESSAGE='manual publish'
+while getopts "cpmr:" option
 do
   case $option in
     c) CLEAN=1 ;;
     p) PUSH=1 ;;
+    m) MESSAGE=$OPTARG ;;
     r) DEPLOY_DIR=$OPTARG ;;
   esac
 done
@@ -87,7 +89,7 @@ rsync -a --delete --exclude='.git' "$SITE_DIR/" "$DEPLOY_DIR/"
 
 pushdq $DEPLOY_DIR
 git add .
-git commit -m 'publish'
+git commit -m "$MESSAGE"
 if [ $PUSH -eq 1 ]; then
   git push origin master
 fi
