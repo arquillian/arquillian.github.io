@@ -38,7 +38,7 @@ fi
 
 set -e
 
-pushd $DEPLOY_DIR
+pushd $DEPLOY_DIR > /dev/null
 if ! git remote -v | grep -qF "$DEPLOY_REPO"; then
   echo "Not a $DEPLOY_REPO clone: $DEPLOY_DIR"
   exit 1
@@ -47,17 +47,24 @@ popd
 
 cd $ROOT_DIR
 
-if [[ `git diff | wc -l` -gt 0 ]]; then
-  echo "Please commit local changes before publishing"
+if [[ `git status -s | wc -l` -gt 0 ]]; then
+  echo "Please commit these local changes before publishing:"
+  git status -s
   exit 1
 fi
 
-pushd $GITHUB_DIR
+if [[ `git diff upstream/develop | wc -l` -gt 0 ]]; then
+  echo "Please push these local changes before publishing:"
+  git diff upstream/develop
+  exit 1
+fi
+
+pushd $GITHUB_DIR > /dev/null
 # TODO check if github repository has been updated since the contributions file was written, then nuke the contributions file
 #rm -f contributors-*.json
 popd
 
-pushd $LANYRD_DIR
+pushd $LANYRD_DIR > /dev/null
 rm -f search-*.html
 popd
 
@@ -69,13 +76,13 @@ rm -rf $SASS_CACHE_DIR
 
 awestruct -P production -g
 
-pushd $DEPLOY_DIR
+pushd $DEPLOY_DIR > /dev/null
 git pull
 popd
 
 rsync -a --delete --exclude='.git' "$SITE_DIR/" "$DEPLOY_DIR/"
 
-pushd $DEPLOY_DIR
+pushd $DEPLOY_DIR > /dev/null
 git add .
 git commit -m 'publish'
 if [ $PUSH -eq 1 ]; then
