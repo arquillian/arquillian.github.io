@@ -51,6 +51,7 @@ module Awestruct::Extensions::Lanyrd
       @lanyrd_tmp = tmp(site.tmp_dir, 'lanyrd')
       
       # add &topic=#{@term} to limit sessions to those that have been tagged with the term
+      # context=future only works for conferences atm...waiting for session search support
       search_url = "#{@base}/search/?type=session&q=#{@term}"
       
       sessions = []
@@ -94,7 +95,9 @@ module Awestruct::Extensions::Lanyrd
         session.title = event_link.inner_text
         
         session_detail_url = "#{@base}#{event_link.attributes['href']}"
-        session_detail = Hpricot(getOrCache(File.join(@lanyrd_tmp, "session-#{event_link.attributes['href'].split('/').last}.html"), session_detail_url))
+        session.slug = event_link.attributes['href'].split('/').last
+        session_detail = Hpricot(getOrCache(File.join(@lanyrd_tmp, "session-#{session.slug}.html"), session_detail_url))
+        session.updated = File.mtime(File.join(@lanyrd_tmp, "session-#{session.slug}.html"))
         
         session_meta_node = session_detail.at('div[@class=session-meta]')
         timezone_node = session_detail.at('abbr[@class=timezone]')
@@ -172,19 +175,18 @@ module Awestruct::Extensions::Lanyrd
         site.sessions.each do |session|
 
           cal.add_event do |e|
-            e.dtstart       Time.parse session.start_datetime.to_s
-            e.dtend         Time.parse session.end_datetime.to_s
-            e.summary       session.title
+            e.dtstart Time.parse session.start_datetime.to_s
+            e.dtend Time.parse session.end_datetime.to_s
+            e.summary session.title
             e.description session.description
-            e.categories    [ 'SESSION' ]
-            e.url           session.detail_url
-            e.set_text('LOCATION', session.event)
-            e.sequence      0
-            e.access_class  "PUBLIC"
+            e.categories ['SESSION']
+            e.url session.detail_url
+            e.set_text 'LOCATION', session.event
+            e.sequence 0
+            e.access_class 'PUBLIC'
 
-            now = Time.now
-            e.created       now
-            e.lastmod       now
+            e.created session.updated
+            e.lastmod session.updated
 
             e.organizer do |o|
               o.cn = session.event
