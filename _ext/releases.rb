@@ -60,11 +60,9 @@ module Awestruct::Extensions::Releases
           else
             release_page.title ||= "#{component.name} #{release.version} Released"
           end
-          # FIXME fragile lookup! should be lookup_by_commit_name
-          release_page.author ||= !post_author.nil? ? post_author : site.identities.lookup_by_name(release.released_by.name).username
-          #release_page.author ||= release.released_by.name
-          #release_page.date ||= release.date
+          release_page.author ||= !post_author.nil? ? post_author : site.identities.lookup_by_contributor(release.released_by).username
           # why do we need to do Time.utc?
+          #release_page.date ||= release.date
           release_page.date = Time.utc(release.date.year, release.date.month, release.date.day)
           #release_page.layout ||= 'release'
           release_page.tags ||= []

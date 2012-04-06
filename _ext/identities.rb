@@ -57,6 +57,14 @@ module Awestruct::Extensions::Identities
         end
         identity
       end
+
+      def lookup_by_contributor(contributor)
+        identity = self.find {|e| e.contributor and contributor.email.eql? e.contributor.email }
+        if identity.nil?
+          puts "Could not find: " + contributor.inspect
+        end
+        identity
+      end
   
       def lookup_by_email(email, create = false)
         identity = self.find {|e| email.eql? e.email or !e.emails.nil? and e.emails.include? email}
