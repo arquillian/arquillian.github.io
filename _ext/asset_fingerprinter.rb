@@ -9,9 +9,11 @@ module Awestruct::Extensions::AssetFingerprinter
   # marker (query, path)
 
   def fingerprint_asset(relative_source_path)
-    if site.fingerprint_assets
-      page = site.pages.find {|p| p.relative_source_path.eql? relative_source_path }
-      if page
+    page = site.pages.find {|p| p.relative_source_path.eql? relative_source_path }
+    if page.nil?
+      relative_source_path
+    else
+      if site.fingerprint_assets
         fp = page.fingerprint
         if fp.nil?
           #fingerprinter = Md5Fingerprinter.new
