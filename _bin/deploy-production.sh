@@ -4,6 +4,7 @@ set -e
 
 function pushdq() { pushd "$1" > /dev/null; }
 function popdq() { popd > /dev/null; }
+function error() { echo "$1" >&2; }
 
 BIN_DIR=$(dirname "$0")
 ROOT_DIR="$BIN_DIR/.."
@@ -33,12 +34,12 @@ done
 if [ -z $DEPLOY_DIR ]; then
   DEPLOY_DIR="$ROOT_DIR/_deploy"
   if [[ ! -d "$DEPLOY_DIR/.git" ]]; then
-    echo "Specify the path to the clone of $DEPLOY_REPO"
+    error "Specify the path to the clone of $DEPLOY_REPO"
     exit 1
   fi
 else
   if [[ ! -d "$DEPLOY_DIR/.git" ]]; then
-    echo "Not a git repository: $DEPLOY_DIR"
+    error "Not a git repository: $DEPLOY_DIR"
     exit 1
   fi
 fi
@@ -47,7 +48,7 @@ set -e
 
 pushdq $DEPLOY_DIR
 if ! git remote -v | grep -qF "$DEPLOY_REPO"; then
-  echo "Not a $DEPLOY_REPO clone: $DEPLOY_DIR"
+  error "Not a $DEPLOY_REPO clone: $DEPLOY_DIR"
   exit 1
 fi
 popdq
@@ -55,14 +56,14 @@ popdq
 cd $ROOT_DIR
 
 if [[ `git status -s | wc -l` -gt 0 ]]; then
-  echo "Please commit these local changes before publishing:"
-  git status -s
+  error "Please commit these local changes before publishing:"
+  error `git status -s`
   exit 1
 fi
 
 if [[ `git diff upstream/develop | wc -l` -gt 0 ]]; then
-  echo "Please push these local changes before publishing:"
-  git log upstream/develop..
+  error "Please push these local changes before publishing:"
+  error `git log upstream/develop..`
   exit 1
 fi
 
