@@ -6,7 +6,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <meta content="The revolutionary integration testing platform for Java and the JVM. Open source. Highly extensible." name="description" />
     <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml" />
-    <link href="/stylesheets/screen.css?83f5f1d8cfdab7181a12a7eb508747474cf644a2" rel="stylesheet" />
+    <link href="/stylesheets/screen.css?6c10ab0e5745cf719515ea44cbaf3b62e7f96419" rel="stylesheet" />
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <script type="text/javascript">
       //<![CDATA[
@@ -23,7 +23,7 @@
     <!--[if lt IE 9]>
       <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.js"></script>
     <![endif]-->
-    <script src="/javascripts/siphon.js"></script>
+    <script src="/javascripts/siphon-20120407.js"></script>
     <link href="/favicon.ico" rel="shortcut icon" />
   </head>
   <body class="invasion">
@@ -90,24 +90,45 @@
           </div>
         </div>
         <div id="content">
-          <script id="video_tmpl" type="text/x-jquery-tmpl">
+          <script id="video_tmpl" type="text/x-jsrender">
             <div class="video">
-              <h3>{{=title}}</h3>
-              <div class="thumbnail">
-                <a href="{{=url}}" target="_blank">
-                  <img src="{{=thumbnail_medium}}" />
+              <div class="preview">
+                <a class="thumbnail" data-raw="Duration: {{:~format_duration(duration)}}+ Number of plays: {{:stats_number_of_plays}}+ Tags: {{:tags}}" href="{{:url}}" rel="popover" target="_blank" title="{{:title}}">
+                  <img src="{{:thumbnail_large}}" />
                 </a>
               </div>
-              <div class="summary">
-                {{=description!}}
+              <div class="desc">
+                <h3>{{:title}}</h3>
+                <p>{{:~truncate(description, 400)}}</p>
               </div>
             </div>
+            {{if ~not_last()}}
+            <hr class="taper" />
+            {{/if}}
           </script>
           <h2>Arquillian Videos on Vimeo</h2>
           <div id="videos"></div>
           <script type="text/javascript">
             //<![CDATA[
-              jQuery.ajax({
+              $.views.helpers({
+                truncate: function(val, len) {
+                  return val.length < len ? val : (val.substr(0, len) + '...');
+                },
+                not_last: function() {
+                  var view = this;
+                  return view.index !== view.parent.data.length - 1;
+                },
+                format_duration: function(seconds) {
+                  duration = Math.floor(seconds / 60) + 'm'
+                  remainder = seconds % 60
+                  if (remainder > 0) {
+                    duration += ' ' + remainder + 's'
+                  }
+                  return duration
+                } 
+              });
+              
+              $.ajax({
                 url: 'http://vimeo.com/api/v2/channel/arquillian/videos.json',
                 dataType: 'jsonp',
                 jsonp: 'callback',
@@ -115,7 +136,11 @@
               });
               
               function display_videos(data) {
-                $('#videos').html($.render(data, '#video_tmpl'));
+                $('#videos').html(
+                  $('#video_tmpl').render(data)
+                );
+                // may decide to put this in the paragraph rather than a popover
+                $('#videos a[rel=popover]').popover({content: function() { return $(this).attr('data-raw').replace(/\+ /g, '<br/>')}});
               }
             //]]>
           </script>
@@ -152,7 +177,10 @@
               <a href="/guides">Guides</a>
             </li>
             <li>
-              <a href="https://docs.jboss.org/author/display/ARQ/Reference+Guide">Manual</a>
+              <a href="https://docs.jboss.org/author/display/ARQ/Reference+Guide">Reference</a>
+            </li>
+            <li>
+              <a href="http://community.jboss.org/en/arquillian/faq">FAQs</a>
             </li>
           </ul>
         </div>
@@ -170,6 +198,9 @@
             </li>
             <li>
               <a href="/community/contributors">Contributors</a>
+            </li>
+            <li>
+              <a href="https://commmunity.jboss.org/groups/testing">Testing SIG</a>
             </li>
           </ul>
         </div>
