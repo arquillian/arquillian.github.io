@@ -151,46 +151,30 @@ function activateScrollingToc(sections) {
   $(window).scroll(updateToc);
 }
 
-function bindToTop() {
-  $('#toTop').click(function() {
-    $('html, body').animate({ scrollTop: 0 }, 'slow');
-    return false;
-  });
-}
-
 function activateToTopControl() {
-  bindToTop();
   var toTopLocked = true;
-  
   var bannerFixed = $('#banner').css('position') == 'fixed';
   var showOffset = (bannerFixed ? $('#banner').height() + 20 : 20) + 'px'
   var hideOffset = '-50px';
   var triggerOffset = 250;
   $(window).bind('scroll', function() {
-     var target = document.body;
-     var scrollTop = 0, scrollLeft = 0;
-     while (target != null)  {
-        scrollTop += target.scrollTop ? target.scrollTop : 0;
-        scrollLeft += target.scrollLeft ? target.scrollLeft : 0;
-        target = target.parentNode;
-     }
-
-     var ch = document.body.clientHeight;
-     var attr, offset;
-     el = $('#toTop');
-     if (scrollTop >= triggerOffset)   {
+     $toTop = $('#toTop');
+     if ($(this).scrollTop() >= triggerOffset)   {
         if (toTopLocked) {
-           //attr = el.attr('data-top');
-           //offset = attr ? attr : showOffset;
-           el.animate({top: showOffset});
+           $toTop.animate({top: showOffset});
         }
         toTopLocked = false;
      }
      else {
         if (!toTopLocked) {
-           el.animate({top: hideOffset}); 
+           $toTop.animate({top: hideOffset}); 
         }
         toTopLocked = true;
      }
+  });
+
+  $('#toTop').click(function() {
+    $('html, body').animate({ scrollTop: 0 }, 'slow');
+    return false;
   });
 }
