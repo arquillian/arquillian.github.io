@@ -134,104 +134,18 @@
           <p>In this guide, we&#8217;ll be creating a very basic backend for a shopping application. We&#8217;ll use a basket component to store the visitor&#8217;s selected items and an order repository component to store and retrieve placed orders. We&#8217;ll implement these components using CDI and EJB, respectively. We can immediately start using these two programming models since we already have the Java EE 6 API on the classpath. (Refer to the <a href="/guides/getting_started">Getting Started</a> guide for instructions on how to add this API to your project).</p>
           <p>Let&#8217;s start with the component that moves the orders to and from permanent storage. Following good software design, and to simplify testing, we&#8217;ll begin by defining an interface that defines the contract. In your IDE, create a new local EJB interface named <code>OrderRepository</code> and populate it with the following contents:</p>
           <div class="filename">src/main/java/org/arquillian/example/OrderRepository.java</div>
-          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>
-          
-          <code class="prettify">import java.util.List;
-          import javax.ejb.Local;</code>
-          
-          <code class="prettify">@Local
-          public interface OrderRepository {
-              void addOrder(List&lt;String&gt; order);
-              List&lt;List&lt;String&gt;&gt; getOrders();
-              int getOrderCount();
-          }</code></pre>
+          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>&#x000A;&#x000A;<code class="prettify">import java.util.List;&#x000A;import javax.ejb.Local;</code>&#x000A;&#x000A;<code class="prettify">@Local&#x000A;public interface OrderRepository {&#x000A;    void addOrder(List&lt;String&gt; order);&#x000A;    List&lt;List&lt;String&gt;&gt; getOrders();&#x000A;    int getOrderCount();&#x000A;}</code></pre>
           <p>Let&#8217;s worry about the implementation a bit later. Instead, let&#8217;s move on to how we are going to use this contract.</p>
           <p>As visitors browse the site, they&#8217;ll put items in their baskets to purchase. To model this scenario, we&#8217;ll use a CDI bean that is associated with the visitor&#8217;s HTTP session. This component will then delegate to the <code>OrderRepository</code> EJB when the visitor wants to purchase the selected items.</p>
           <p>In your IDE, create a class named <code>Basket</code> and assign it to the session context by adding the scope annotation <code>@SessionScoped</code>, as shown below:</p>
           <div class="filename">src/main/java/org/arquillian/example/Basket.java</div>
-          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>
-          
-          <code class="prettify">import java.io.Serializable;
-          import java.util.ArrayList;
-          import java.util.Collections;
-          import java.util.List;</code>
-          
-          <code class="prettify">import javax.annotation.PostConstruct;
-          import javax.ejb.EJB;
-          import javax.enterprise.context.SessionScoped;</code>
-          
-          <code class="prettify">@SessionScoped
-          public class Basket implements Serializable {
-              private static final long serialVersionUID = 1L;
-              private List&lt;String&gt; items;</code>
-              
-          <code class="prettify">    @EJB
-              private OrderRepository repo;</code>
-              
-          <code class="prettify">    public void addItem(String item) {
-                  items.add(item);
-              }</code>
-              
-          <code class="prettify">    public List&lt;String&gt; getItems() {
-                  return Collections.unmodifiableList(items);
-              }</code>
-              
-          <code class="prettify">    public int getItemCount() {
-                  return items.size();
-              }</code>
-              
-          <code class="prettify">    public void placeOrder() {
-                  repo.addOrder(items);
-                  items.clear();
-              }</code>
-              
-          <code class="prettify">    @PostConstruct
-              void initialize() {
-                  items = new ArrayList&lt;String&gt;();
-              }
-          }</code></pre>
+          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>&#x000A;&#x000A;<code class="prettify">import java.io.Serializable;&#x000A;import java.util.ArrayList;&#x000A;import java.util.Collections;&#x000A;import java.util.List;</code>&#x000A;&#x000A;<code class="prettify">import javax.annotation.PostConstruct;&#x000A;import javax.ejb.EJB;&#x000A;import javax.enterprise.context.SessionScoped;</code>&#x000A;&#x000A;<code class="prettify">@SessionScoped&#x000A;public class Basket implements Serializable {&#x000A;    private static final long serialVersionUID = 1L;&#x000A;    private List&lt;String&gt; items;</code>&#x000A;    &#x000A;<code class="prettify">    @EJB&#x000A;    private OrderRepository repo;</code>&#x000A;    &#x000A;<code class="prettify">    public void addItem(String item) {&#x000A;        items.add(item);&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    public List&lt;String&gt; getItems() {&#x000A;        return Collections.unmodifiableList(items);&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    public int getItemCount() {&#x000A;        return items.size();&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    public void placeOrder() {&#x000A;        repo.addOrder(items);&#x000A;        items.clear();&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    @PostConstruct&#x000A;    void initialize() {&#x000A;        items = new ArrayList&lt;String&gt;();&#x000A;    }&#x000A;}</code></pre>
           <p>As you can see, we are wiring EJB to a CDI bean, precisely the integration we want to test!</p>
           <h3 id="implement_in_phases">Implement in Phases</h3>
           <p>We aren&#8217;t quite ready to write a test because we don&#8217;t have an implementation of the <code>OrderRepository</code>. For the purpose of this example, let&#8217;s assume that the <code>OrderRepository</code> is being implemented by another team (or in another iteration). Here&#8217;s where the micro-deployment feature of Arquillian really stands out. We can create an in-memory implementation as an EJB singleton and bundle it in the test archive to get a working application in the short term. (We may even decide to keep this implementation for the purpose of testing this boundary).</p>
           <p>Create the class <code>SingletonOrderRepository</code> in your test classpath and populate it with the code shown below:</p>
           <div class="filename">src/test/java/org/arquillian/example/SingletonOrderRepository.java</div>
-          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>
-          
-          <code class="prettify">import java.util.ArrayList;
-          import java.util.Collections;
-          import java.util.List;</code>
-          
-          <code class="prettify">import javax.annotation.PostConstruct;
-          import javax.ejb.Lock;
-          import javax.ejb.LockType;
-          import javax.ejb.Singleton;</code>
-          
-          <code class="prettify">@Singleton
-          @Lock(LockType.READ)
-          public class SingletonOrderRepository implements OrderRepository {
-              private List&lt;List&lt;String&gt;&gt; orders;</code>
-              
-          <code class="prettify">    @Override
-              @Lock(LockType.WRITE)
-              public void addOrder(List&lt;String&gt; order) {
-                  orders.add(order);
-              }</code>
-              
-          <code class="prettify">    @Override
-              public List&lt;List&lt;String&gt;&gt; getOrders() {
-                  return Collections.unmodifiableList(orders);
-              }</code>
-              
-          <code class="prettify">    @Override
-              public int getOrderCount() {
-                  return orders.size();
-              }</code>
-              
-          <code class="prettify">    @PostConstruct
-              void initialize() {
-                  orders = new ArrayList&lt;List&lt;String&gt;&gt;();
-              }
-          }</code></pre>
+          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>&#x000A;&#x000A;<code class="prettify">import java.util.ArrayList;&#x000A;import java.util.Collections;&#x000A;import java.util.List;</code>&#x000A;&#x000A;<code class="prettify">import javax.annotation.PostConstruct;&#x000A;import javax.ejb.Lock;&#x000A;import javax.ejb.LockType;&#x000A;import javax.ejb.Singleton;</code>&#x000A;&#x000A;<code class="prettify">@Singleton&#x000A;@Lock(LockType.READ)&#x000A;public class SingletonOrderRepository implements OrderRepository {&#x000A;    private List&lt;List&lt;String&gt;&gt; orders;</code>&#x000A;    &#x000A;<code class="prettify">    @Override&#x000A;    @Lock(LockType.WRITE)&#x000A;    public void addOrder(List&lt;String&gt; order) {&#x000A;        orders.add(order);&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    @Override&#x000A;    public List&lt;List&lt;String&gt;&gt; getOrders() {&#x000A;        return Collections.unmodifiableList(orders);&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    @Override&#x000A;    public int getOrderCount() {&#x000A;        return orders.size();&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    @PostConstruct&#x000A;    void initialize() {&#x000A;        orders = new ArrayList&lt;List&lt;String&gt;&gt;();&#x000A;    }&#x000A;}</code></pre>
           <p>The added bonus of this implementation is that we get a chance to play around with the new singleton feature of EJB 3.1 in an Arquillian sandbox. That&#8217;s why we like to say that Arquillian is a learning environment in addition to being a testing tool.</p>
           <p>Now we are ready to write the Arquillian test.</p>
           <h3 id="write_a_test">Write a Test</h3>
@@ -239,83 +153,13 @@
           <p class="info"><span>Of course, we will only be testing the in-memory implementation. You&#8217;ll learn how to write a test that uses a database in the <a href="/guides/testing_java_persistence">Testing Java Persistence</a> guide.</span></p>
           <p>Create the class <code>BasketTest</code> and initialize it as an Arquillian test case:</p>
           <div class="filename">src/test/java/org/arquillian/example/BasketTest.java</div>
-          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>
-          
-          <code class="prettify">import org.jboss.arquillian.junit.Arquillian;</code>
-          
-          <code class="prettify">@RunWith(Arquillian.class)
-          public class BasketTest {
-          }</code></pre>
+          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>&#x000A;&#x000A;<code class="prettify">import org.jboss.arquillian.junit.Arquillian;</code>&#x000A;&#x000A;<code class="prettify">@RunWith(Arquillian.class)&#x000A;public class BasketTest {&#x000A;}</code></pre>
           <p>Next, we&#8217;ll define a test archive that includes the basket, the order repository interface and its singleton implementation. We also need an empty beans.xml file to active CDI (EJB is automatically activated). Notice how we have complete control over the classpath by explicitly defining what goes into the archive.</p>
           <div class="filename">src/test/java/org/arquillian/example/BasketTest.java</div>
-          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>
-          
-          <code class="prettify">import org.jboss.arquillian.container.test.api.Deployment;
-          import org.jboss.arquillian.junit.Arquillian;
-          import org.jboss.shrinkwrap.api.ShrinkWrap;
-          import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-          import org.jboss.shrinkwrap.api.spec.JavaArchive;</code>
-          
-          <code class="prettify">@RunWith(Arquillian.class)
-          public class BasketTest {
-              @Deployment
-              public static JavaArchive createDeployment() {
-                  return ShrinkWrap.create(JavaArchive.class, "test.jar")
-                      .addClasses(Basket.class, OrderRepository.class, SingletonOrderRepository.class)
-                      .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-              }
-          }</code></pre>
+          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>&#x000A;&#x000A;<code class="prettify">import org.jboss.arquillian.container.test.api.Deployment;&#x000A;import org.jboss.arquillian.junit.Arquillian;&#x000A;import org.jboss.shrinkwrap.api.ShrinkWrap;&#x000A;import org.jboss.shrinkwrap.api.asset.EmptyAsset;&#x000A;import org.jboss.shrinkwrap.api.spec.JavaArchive;</code>&#x000A;&#x000A;<code class="prettify">@RunWith(Arquillian.class)&#x000A;public class BasketTest {&#x000A;    @Deployment&#x000A;    public static JavaArchive createDeployment() {&#x000A;        return ShrinkWrap.create(JavaArchive.class, "test.jar")&#x000A;            .addClasses(Basket.class, OrderRepository.class, SingletonOrderRepository.class)&#x000A;            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");&#x000A;    }&#x000A;}</code></pre>
           <p>All that&#8217;s left is to inject the basket and order repository into the test case and test their interaction. We&#8217;ll be injecting the EJB interface, not the implementation. The EJB container will automatically find the implementation of the interface to use.</p>
           <div class="filename">src/test/java/org/arquillian/example/BasketTest.java</div>
-          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>
-          
-          <code class="prettify">import javax.ejb.EJB;
-          import javax.inject.Inject;</code>
-          
-          <code class="prettify">import org.jboss.arquillian.container.test.api.Deployment;
-          import org.jboss.arquillian.junit.Arquillian;
-          import org.jboss.shrinkwrap.api.ShrinkWrap;
-          import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-          import org.jboss.shrinkwrap.api.spec.JavaArchive;
-          import org.junit.Assert;
-          import org.junit.Test;
-          import org.junit.runner.RunWith;</code>
-          
-          <code class="prettify">@RunWith(Arquillian.class)
-          public class BasketTest {
-              @Deployment
-              public static JavaArchive createDeployment() {
-                  return ShrinkWrap.create(JavaArchive.class, "test.jar")
-                      .addClasses(Basket.class, OrderRepository.class, SingletonOrderRepository.class)
-                      .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-              }</code>
-              
-          <code class="prettify">    @Inject
-              Basket basket;</code>
-              
-          <code class="prettify">    @EJB
-              OrderRepository repo;</code>
-              
-          <code class="prettify">    @Test
-              public void place_order_should_add_order() {
-                  basket.addItem("sunglasses");
-                  basket.addItem("suit");
-                  basket.placeOrder();
-                  Assert.assertEquals(1, repo.getOrderCount());
-                  Assert.assertEquals(0, basket.getItemCount());</code>
-                  
-          <code class="prettify">        basket.addItem("raygun");
-                  basket.addItem("spaceship");
-                  basket.placeOrder();
-                  Assert.assertEquals(2, repo.getOrderCount());
-                  Assert.assertEquals(0, basket.getItemCount());
-              }</code>
-              
-          <code class="prettify">    @Test
-              public void order_should_be_persistent() {
-                  Assert.assertEquals(2, repo.getOrderCount());
-              }
-          }</code></pre>
+          <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>&#x000A;&#x000A;<code class="prettify">import javax.ejb.EJB;&#x000A;import javax.inject.Inject;</code>&#x000A;&#x000A;<code class="prettify">import org.jboss.arquillian.container.test.api.Deployment;&#x000A;import org.jboss.arquillian.junit.Arquillian;&#x000A;import org.jboss.shrinkwrap.api.ShrinkWrap;&#x000A;import org.jboss.shrinkwrap.api.asset.EmptyAsset;&#x000A;import org.jboss.shrinkwrap.api.spec.JavaArchive;&#x000A;import org.junit.Assert;&#x000A;import org.junit.Test;&#x000A;import org.junit.runner.RunWith;</code>&#x000A;&#x000A;<code class="prettify">@RunWith(Arquillian.class)&#x000A;public class BasketTest {&#x000A;    @Deployment&#x000A;    public static JavaArchive createDeployment() {&#x000A;        return ShrinkWrap.create(JavaArchive.class, "test.jar")&#x000A;            .addClasses(Basket.class, OrderRepository.class, SingletonOrderRepository.class)&#x000A;            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    @Inject&#x000A;    Basket basket;</code>&#x000A;    &#x000A;<code class="prettify">    @EJB&#x000A;    OrderRepository repo;</code>&#x000A;    &#x000A;<code class="prettify">    @Test&#x000A;    public void place_order_should_add_order() {&#x000A;        basket.addItem("sunglasses");&#x000A;        basket.addItem("suit");&#x000A;        basket.placeOrder();&#x000A;        Assert.assertEquals(1, repo.getOrderCount());&#x000A;        Assert.assertEquals(0, basket.getItemCount());</code>&#x000A;        &#x000A;<code class="prettify">        basket.addItem("raygun");&#x000A;        basket.addItem("spaceship");&#x000A;        basket.placeOrder();&#x000A;        Assert.assertEquals(2, repo.getOrderCount());&#x000A;        Assert.assertEquals(0, basket.getItemCount());&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    @Test&#x000A;    public void order_should_be_persistent() {&#x000A;        Assert.assertEquals(2, repo.getOrderCount());&#x000A;    }&#x000A;}</code></pre>
           <p>The test is written. Now we need to get setup to run it.</p>
           <h3 id="add_the_remote_containers">Add the Remote Containers</h3>
           <p>The test we&#8217;ve written uses both CDI and EJB. That combination pushes the boundaries of what an embedded runtime (like Weld Embedded or OpenEJB Embedded) can provide. While possible, it&#8217;s just simpler to use a compliant Java EE container. Plus, it gives us more accurate test results. So we&#8217;ll leave the Weld Embedded container behind for now.</p>
@@ -330,78 +174,10 @@
           </ul>
           <p>In your Maven pom.xml file, add two new profiles under the <code>&lt;profiles&gt;</code> element. The first profile uses a remote JBoss AS 7 container:</p>
           <div class="filename">pom.xml</div>
-          <pre class="prettify"><code class="prettify">&lt;!-- clip --&gt;
-          &lt;profile&gt;
-              &lt;id&gt;arquillian-jbossas-remote&lt;/id&gt;
-              &lt;dependencies&gt;
-                  &lt;dependency&gt;
-                      &lt;groupId&gt;org.jboss.spec&lt;/groupId&gt;
-                      &lt;artifactId&gt;jboss-javaee-6.0&lt;/artifactId&gt;
-                      &lt;version&gt;1.0.0.Final&lt;/version&gt;
-                      &lt;type&gt;pom&lt;/type&gt;
-                      &lt;scope&gt;provided&lt;/scope&gt;
-                  &lt;/dependency&gt;
-                  &lt;dependency&gt;
-                      &lt;groupId&gt;org.jboss.as&lt;/groupId&gt;
-                      &lt;artifactId&gt;jboss-as-arquillian-container-remote&lt;/artifactId&gt;
-                      &lt;version&gt;7.0.2.Final&lt;/version&gt;
-                      &lt;scope&gt;test&lt;/scope&gt;
-                  &lt;/dependency&gt;
-              &lt;/dependencies&gt;
-          &lt;/profile&gt;
-          &lt;!-- clip --&gt;</code></pre>
+          <pre class="prettify"><code class="prettify">&lt;!-- clip --&gt;&#x000A;&lt;profile&gt;&#x000A;    &lt;id&gt;arquillian-jbossas-remote&lt;/id&gt;&#x000A;    &lt;dependencies&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;org.jboss.spec&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;jboss-javaee-6.0&lt;/artifactId&gt;&#x000A;            &lt;version&gt;1.0.0.Final&lt;/version&gt;&#x000A;            &lt;type&gt;pom&lt;/type&gt;&#x000A;            &lt;scope&gt;provided&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;org.jboss.as&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;jboss-as-arquillian-container-remote&lt;/artifactId&gt;&#x000A;            &lt;version&gt;7.0.2.Final&lt;/version&gt;&#x000A;            &lt;scope&gt;test&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;    &lt;/dependencies&gt;&#x000A;&lt;/profile&gt;&#x000A;&lt;!-- clip --&gt;</code></pre>
           <p>The second profile uses a remote GlassFish 3.1 container:</p>
           <div class="filename">pom.xml</div>
-          <pre class="prettify"><code class="prettify">&lt;!-- clip --&gt;
-          &lt;profile&gt;
-              &lt;id&gt;arquillian-glassfish-remote&lt;/id&gt;
-              &lt;dependencies&gt;
-                  &lt;dependency&gt;
-                      &lt;groupId&gt;org.jboss.spec&lt;/groupId&gt;
-                      &lt;artifactId&gt;jboss-javaee-6.0&lt;/artifactId&gt;
-                      &lt;version&gt;1.0.0.Final&lt;/version&gt;
-                      &lt;type&gt;pom&lt;/type&gt;
-                      &lt;scope&gt;provided&lt;/scope&gt;
-                  &lt;/dependency&gt;
-                  &lt;dependency&gt;
-                      &lt;groupId&gt;org.jboss.weld&lt;/groupId&gt;
-                      &lt;artifactId&gt;weld-api&lt;/artifactId&gt;
-                      &lt;version&gt;1.0-SP1&lt;/version&gt;
-                      &lt;scope&gt;test&lt;/scope&gt;
-                      &lt;exclusions&gt;
-                          &lt;exclusion&gt;
-                              &lt;groupId&gt;javax.enterprise&lt;/groupId&gt;
-                              &lt;artifactId&gt;cdi-api&lt;/artifactId&gt;
-                          &lt;/exclusion&gt;
-                      &lt;/exclusions&gt;
-                  &lt;/dependency&gt;
-                  &lt;dependency&gt;
-                      &lt;groupId&gt;com.sun.jersey&lt;/groupId&gt;
-                      &lt;artifactId&gt;jersey-bundle&lt;/artifactId&gt;
-                      &lt;version&gt;1.6&lt;/version&gt;
-                      &lt;scope&gt;test&lt;/scope&gt;
-                      &lt;exclusions&gt;
-                          &lt;exclusion&gt;
-                              &lt;groupId&gt;javax.ws.rs&lt;/groupId&gt;
-                              &lt;artifactId&gt;jsr311-api&lt;/artifactId&gt;
-                          &lt;/exclusion&gt;
-                      &lt;/exclusions&gt;
-                  &lt;/dependency&gt;
-                  &lt;dependency&gt;
-                      &lt;groupId&gt;com.sun.jersey.contribs&lt;/groupId&gt;
-                      &lt;artifactId&gt;jersey-multipart&lt;/artifactId&gt;
-                      &lt;version&gt;1.6&lt;/version&gt;
-                      &lt;scope&gt;test&lt;/scope&gt;
-                  &lt;/dependency&gt;
-                  &lt;dependency&gt;
-                      &lt;groupId&gt;org.jboss.arquillian.container&lt;/groupId&gt;
-                      &lt;artifactId&gt;arquillian-glassfish-remote-3.1&lt;/artifactId&gt;
-                      &lt;version&gt;1.0.0.CR2&lt;/version&gt;
-                      &lt;scope&gt;test&lt;/scope&gt;
-                  &lt;/dependency&gt;
-              &lt;/dependencies&gt;
-          &lt;/profile&gt;
-          &lt;!-- clip --&gt;</code></pre>
+          <pre class="prettify"><code class="prettify">&lt;!-- clip --&gt;&#x000A;&lt;profile&gt;&#x000A;    &lt;id&gt;arquillian-glassfish-remote&lt;/id&gt;&#x000A;    &lt;dependencies&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;org.jboss.spec&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;jboss-javaee-6.0&lt;/artifactId&gt;&#x000A;            &lt;version&gt;1.0.0.Final&lt;/version&gt;&#x000A;            &lt;type&gt;pom&lt;/type&gt;&#x000A;            &lt;scope&gt;provided&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;org.jboss.weld&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;weld-api&lt;/artifactId&gt;&#x000A;            &lt;version&gt;1.0-SP1&lt;/version&gt;&#x000A;            &lt;scope&gt;test&lt;/scope&gt;&#x000A;            &lt;exclusions&gt;&#x000A;                &lt;exclusion&gt;&#x000A;                    &lt;groupId&gt;javax.enterprise&lt;/groupId&gt;&#x000A;                    &lt;artifactId&gt;cdi-api&lt;/artifactId&gt;&#x000A;                &lt;/exclusion&gt;&#x000A;            &lt;/exclusions&gt;&#x000A;        &lt;/dependency&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;com.sun.jersey&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;jersey-bundle&lt;/artifactId&gt;&#x000A;            &lt;version&gt;1.6&lt;/version&gt;&#x000A;            &lt;scope&gt;test&lt;/scope&gt;&#x000A;            &lt;exclusions&gt;&#x000A;                &lt;exclusion&gt;&#x000A;                    &lt;groupId&gt;javax.ws.rs&lt;/groupId&gt;&#x000A;                    &lt;artifactId&gt;jsr311-api&lt;/artifactId&gt;&#x000A;                &lt;/exclusion&gt;&#x000A;            &lt;/exclusions&gt;&#x000A;        &lt;/dependency&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;com.sun.jersey.contribs&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;jersey-multipart&lt;/artifactId&gt;&#x000A;            &lt;version&gt;1.6&lt;/version&gt;&#x000A;            &lt;scope&gt;test&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;org.jboss.arquillian.container&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;arquillian-glassfish-remote-3.1&lt;/artifactId&gt;&#x000A;            &lt;version&gt;1.0.0.CR2&lt;/version&gt;&#x000A;            &lt;scope&gt;test&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;    &lt;/dependencies&gt;&#x000A;&lt;/profile&gt;&#x000A;&lt;!-- clip --&gt;</code></pre>
           <p class="info"><span>The remote GlassFish adapter uses Jersey to communicate with the container via JAX-RS (REST) and thus requires these additional libraries. The Weld API is required for unmarshalling exceptions returned by the container process.</span></p>
           <p>Once you&#8217;ve added the profiles to the pom.xml, right click on the project in Eclipse and select Maven &gt; Update Project Configuration. If the project is showing compiler errors, you need to activate one of the profiles.</p>
           <p>Recall that there are two ways to activate a Maven profile in Eclipse:</p>
@@ -438,12 +214,7 @@
           <p>You can also run the test on the commandline using Maven:</p>
           <pre class="command"><code class="command">$ mvn test -Parquillian-jbossas-remote -Dtest=BasketTest</code></pre>
           <p>You should see the following lines printed to the console:</p>
-          <pre class="output"><code class="output">-------------------------------------------------------
-          T E S T S
-          -------------------------------------------------------
-          Running org.arquillian.example.BasketTest
-          ...
-          Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.464 sec</code></pre>
+          <pre class="output"><code class="output">-------------------------------------------------------&#x000A;T E S T S&#x000A;-------------------------------------------------------&#x000A;Running org.arquillian.example.BasketTest&#x000A;...&#x000A;Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.464 sec</code></pre>
           <p><strong>Congratulations!</strong> You&#8217;ve earned your first <strong class="greenbar">green bar</strong> with Arquillian using a remote container.</p>
           <p class="info"><span>You can also inject the EJB using <code>@Inject</code> rather than <code>@EJB</code>. Give it a try!</span></p>
           <p>If you want to verify that the singleton is actually doing its job, go ahead and remove the <code>@Singleton</code> annotation from the <code>SingletonOrderRepository</code> class. You should see an assertion error when you run the test. Restore it and you&#8217;ll be back to green.</p>
@@ -474,20 +245,7 @@
           <p>Before we get to that, we need to think about how we are going to connect the debugger. Unless you&#8217;re super speedy with the mouse, you&#8217;re going to have a hard time connecting the debugger before Arquillian starts running the tests. Fortunately, we can tell the JVM to wait for the connector to debug before executing the application, in this case JBoss AS. That gives us time to hit the debug button in the IDE to connect to the process.</p>
           <p>Here&#8217;s the configuration you&#8217;ll need to add to the Arquillian configuration descriptor to get Arquillian to start the server in debug mode (no whitespace allowed immediately after <code>&lt;property&gt;</code> start tag):</p>
           <div class="filename">src/test/resources/arquillian.xml</div>
-          <pre class="prettify"><code class="prettify">&lt;arquillian xmlns="http://jboss.org/schema/arquillian"
-              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xsi:schemaLocation="
-                  http://jboss.org/schema/arquillian
-                  http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;
-              &lt;container qualifier="jbossas-7-managed" default="true"&gt;
-                  &lt;configuration&gt;
-                      &lt;property name="jbossHome"&gt;target/jboss-as-7.0.2.Final&lt;/property&gt;
-                      &lt;property name="javaVmArguments"&gt;-Xmx512m -XX:MaxPermSize=128m
-                          -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y
-                      &lt;/property&gt;
-                  &lt;/configuration&gt;
-              &lt;/container&gt;
-          &lt;/arquillian&gt;</code></pre>
+          <pre class="prettify"><code class="prettify">&lt;arquillian xmlns="http://jboss.org/schema/arquillian"&#x000A;    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;    xsi:schemaLocation="&#x000A;        http://jboss.org/schema/arquillian&#x000A;        http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;&#x000A;    &lt;container qualifier="jbossas-7-managed" default="true"&gt;&#x000A;        &lt;configuration&gt;&#x000A;            &lt;property name="jbossHome"&gt;target/jboss-as-7.0.2.Final&lt;/property&gt;&#x000A;            &lt;property name="javaVmArguments"&gt;-Xmx512m -XX:MaxPermSize=128m&#x000A;                -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y&#x000A;            &lt;/property&gt;&#x000A;        &lt;/configuration&gt;&#x000A;    &lt;/container&gt;&#x000A;&lt;/arquillian&gt;</code></pre>
           <p>Notice the <code>suspend=y</code> flag. That tells the process to wait for the debugger to connect. We&#8217;ve set the debug port to 8787, which is the port you&#8217;ll supply to the debugger configuration. We&#8217;ll get to that in a minute. First, let&#8217;s get the test started.</p>
           <ol>
           	<li>Activate the Maven profile for arquillian-jbossas-managed (refer to the <a href="/guides/getting_started">Getting Started</a> guide)</li>

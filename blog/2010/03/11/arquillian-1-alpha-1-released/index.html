@@ -69,43 +69,11 @@
               <p>It&#8217;s one thing to unit test your code outside of the container, but what happens when you run it inside? Does it still behave the same? How about testing against container managed resources? This is where Arquillian comes into its own.</p>
               <p>With Arquillian it&#8217;s just as easy to write integration tests as it is to write unit tests. In fact, to minimize the burden on you, Arquillian integrates with familiar testing frameworks, allowing reuse of tools such as the JUnit/TestNG support in your favorite IDE, Maven Surefire, Ant &#8211; in fact any tool which supports TestNG or JUnit!</p>
               <p>To show you just how simple this is, here&#8217;s an example test case setup using JUnit (we&#8217;ll get to the actual test next):</p>
-              <pre class="prettify"><code class="prettify">@RunWith(org.jboss.arquillian.junit.Arquillian.class)
-              public class TemperatureConverterTestCase {</code>
-               
-              <code class="prettify">    @Deployment
-                  public static JavaArchive createTestArchive() {
-                      return Archives.create("test.jar", JavaArchive.class)
-                          .addClasses(TemperatureConverter.class, TemperatureConverterBean.class);
-                  }</code>
-               
-              <code class="prettify">}</code></pre>
+              <pre class="prettify"><code class="prettify">@RunWith(org.jboss.arquillian.junit.Arquillian.class)&#x000A;public class TemperatureConverterTestCase {</code>&#x000A; &#x000A;<code class="prettify">    @Deployment&#x000A;    public static JavaArchive createTestArchive() {&#x000A;        return Archives.create("test.jar", JavaArchive.class)&#x000A;            .addClasses(TemperatureConverter.class, TemperatureConverterBean.class);&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">}</code></pre>
               <p>By using JUnit&#8217;s <code>@RunWith</code> annotation, you tell JUnit to use Arquillian as the test controller. Arquillian will then look for a static method marked with the <code>@Deployment</code> annotation, which defines your micro-deployment. In the example above, the micro-deployment contains a session bean interface and implementation, which Arquillian will deploy to the container.</p>
               <p>Arquillian hooks into your testing frameworks lifecycle and reacts to events. On the before suite and after suite events the container is started/stopped, while on the before class and after class events your micro-deployment is deployed to/undeployed from the container.</p>
               <p>The test case is started in the local JVM. Arquillian then overrides the normal test execution and migrates the test so that it&#8217;s executed inside the container. By the time the test framework calls your <code>@Test</code> annotated method, the test is running inside the container, giving us the possibility to work with container managed resources. Here&#8217;s the complete test class with JUnit <code>@Test</code> methods.</p>
-              <pre class="prettify"><code class="prettify">@RunWith(org.jboss.arquillian.junit.Arquillian.class)
-              public class TemperatureConverterTestCase {</code>
-               
-              <code class="prettify">    @Deployment
-                  public static JavaArchive createTestArchive() {
-                      return Archives.create("test.jar", JavaArchive.class)
-                          .addClasses(TemperatureConverter.class, TemperatureConverterBean.class);
-                  }</code>
-               
-              <code class="prettify">    @EJB
-                  TemperatureConverter converter;</code>
-               
-              <code class="prettify">    @Test
-                  public void shouldConvertToCelsius() {
-                      Assert.assertEquals(converter.convertToCelsius(32d), 0d);
-                      Assert.assertEquals(converter.convertToCelsius(212d), 100d);
-                  }</code>
-               
-              <code class="prettify">    @Test
-                  public void shouldConvertToFarenheit() {
-                      Assert.assertEquals(converter.convertToFarenheit(0d), 32d);
-                      Assert.assertEquals(converter.convertToFarenheit(100d), 212d);
-                  }
-              }</code></pre>
+              <pre class="prettify"><code class="prettify">@RunWith(org.jboss.arquillian.junit.Arquillian.class)&#x000A;public class TemperatureConverterTestCase {</code>&#x000A; &#x000A;<code class="prettify">    @Deployment&#x000A;    public static JavaArchive createTestArchive() {&#x000A;        return Archives.create("test.jar", JavaArchive.class)&#x000A;            .addClasses(TemperatureConverter.class, TemperatureConverterBean.class);&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">    @EJB&#x000A;    TemperatureConverter converter;</code>&#x000A; &#x000A;<code class="prettify">    @Test&#x000A;    public void shouldConvertToCelsius() {&#x000A;        Assert.assertEquals(converter.convertToCelsius(32d), 0d);&#x000A;        Assert.assertEquals(converter.convertToCelsius(212d), 100d);&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">    @Test&#x000A;    public void shouldConvertToFarenheit() {&#x000A;        Assert.assertEquals(converter.convertToFarenheit(0d), 32d);&#x000A;        Assert.assertEquals(converter.convertToFarenheit(100d), 212d);&#x000A;    }&#x000A;}</code></pre>
               <p>Note how we can use <code>@EJB</code> to inject the session bean from our deployment into the test case for use in our test method &#8211; <em>neat!</em></p>
               <p>The Arquillian TestEnricher SPI supports all the injection annotations from Java EE 6:</p>
               <ul>
@@ -130,33 +98,18 @@
               	<li><b>Multiple deployments controlled by same test</b> &#8212; Sometimes your micro-deployment is not enough to test on its own and you want to package other components as part of the same deployment. For example, you need to test the interaction between two Web applications.</li>
               	<li><b>Support for method argument injection</b> &#8212; In the first alpha we only support field injection. In alpha 2 we will be extending the <a href="http://docs.jboss.org/arquillian/spi/1.0.0.Alpha1/org/jboss/arquillian/spi/TestEnricher.html">TestEnricher SPI</a> to include support for method argument injection:</li>
               </ul>
-              <pre class="prettify"><code class="prettify">@Test
-              public void shouldWithdrawFromAccount(@EJB AccountManager manager)
-                      throws Exception {
-                  ...
-              }</code></pre>
+              <pre class="prettify"><code class="prettify">@Test&#x000A;public void shouldWithdrawFromAccount(@EJB AccountManager manager)&#x000A;        throws Exception {&#x000A;    ...&#x000A;}</code></pre>
               <ul>
               	<li><b>Test method interceptors</b> &#8211; Another planned enricher SPI is a test method interceptor. With this we can add support for transactions:</li>
               </ul>
-              <pre class="prettify"><code class="prettify">@Test
-              @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-              public void shouldWithdrawFromAccount(@EJB AccountManager manager)
-                      throws Exception {
-                  ...
-              }</code></pre>
+              <pre class="prettify"><code class="prettify">@Test&#x000A;@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)&#x000A;public void shouldWithdrawFromAccount(@EJB AccountManager manager)&#x000A;        throws Exception {&#x000A;    ...&#x000A;}</code></pre>
               <ul>
               	<li><b>Convention over configuration</b> &#8211; The micro-deployments should be as easy as possible to create, so adding support for common conventions should help speed up the test development. For example we can automatically add all classes in the same package as the test class to the deployment</li>
               	<li><b>Arquillian controlled resources</b> &#8211; Sometimes the container requires container specific configuration e.g, <code>java.naming.*</code> parameters needed to create an <code>InitialContext</code>. If the test case has to explicitly deal with this, it places the burden for container portability back on the test case author. Arquillian will provide an extension point to add Arquillian created/managed resources:</li>
               </ul>
-              <pre class="prettify"><code class="prettify">// auto creation of InitialContext based on running container, remote or local.
-              @ArquillianResource
-              InitialContext context;</code></pre>
-              <pre class="prettify"><code class="prettify">// auto creation of URL to a deployed Servlet, including http port/ip etc.
-              @ArquillianResource(MyServlet.class)
-              URL myServletURL;</code></pre>
-              <pre class="prettify"><code class="prettify">// the bundle context of a deployed osgi bundle
-              @ArquillianResource
-              BundleContext context;</code></pre>
+              <pre class="prettify"><code class="prettify">// auto creation of InitialContext based on running container, remote or local.&#x000A;@ArquillianResource&#x000A;InitialContext context;</code></pre>
+              <pre class="prettify"><code class="prettify">// auto creation of URL to a deployed Servlet, including http port/ip etc.&#x000A;@ArquillianResource(MyServlet.class)&#x000A;URL myServletURL;</code></pre>
+              <pre class="prettify"><code class="prettify">// the bundle context of a deployed osgi bundle&#x000A;@ArquillianResource&#x000A;BundleContext context;</code></pre>
               <ul>
               	<li><b>Support for more containers</b> &#8211; We will plan to support more containers! Currently we have planned: GlassFish 3 (as a remote container), Jetty, Tomcat, Resin, Felix OSGI. (Hey Spring guys, you&#8217;re welcome to join in too!)</li>
               	<li><b>Third party integrations</b> &#8211; In the spirit of ease of development, we integrate with existing test frameworks as much as possible, but we are always keen to learn of new frameworks we can integrate with. We already plan to support Selenium for example.</li>
