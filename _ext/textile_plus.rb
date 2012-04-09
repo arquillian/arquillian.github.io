@@ -1,7 +1,3 @@
-# Requires the following change to lib/awestruct/textilable.rb
-# in render(context), replace begin block with:
-#   rules = context.site.textile_rules ? context.site.textile_rules.map { |r| r.to_sym } : []
-#   rendered = RedCloth.new( context.interpolate_string( raw_page_content ) ).to_html(*rules)
 module Awestruct::Extensions
   class TextilePlus
     def initialize()
@@ -34,11 +30,11 @@ module Awestruct::Extensions
   end
 end
 
-# temporary fix for https://github.com/bobmcwhirter/awestruct/issues/68
+# make sure :no_span_caps is enabled, necessary for :textile filter in haml
 module RedCloth
   class TextileDoc < String
     def initialize(string, restrictions = [])
-      restrictions << :no_span_caps
+      restrictions << :no_span_caps unless restrictions.include? :no_span_caps
       restrictions.each { |r| method("#{r}=").call(true) }
       super(string)
     end
