@@ -74,11 +74,9 @@ Awestruct::Extensions::Pipeline.new do
   # Must be after all other extensions that might populate identities
   extension Awestruct::Extensions::Identities::Cache.new
 
-  #helper Awestruct::Extensions::Partial
+  helper Awestruct::Extensions::Partial
   helper Awestruct::Extensions::Interwiki
   helper Awestruct::Extensions::GoogleAnalytics
   #helper Awestruct::Extensions::CacheEvolver
   helper Awestruct::Extensions::AssetFingerprinter
-  #helper Awestruct::Extensions::ForkMeRibbon
-  #helper Awestruct::Extensions::PageDebug
 end
