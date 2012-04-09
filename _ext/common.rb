@@ -10,7 +10,9 @@ def getOrCache(tmp_file, url)
         response.return!(request, result, &block)
       end
     }.body;
-    File.open(tmp_file, 'w').write response_body
+    File.open(tmp_file, 'w') do |out|
+      out.write response_body
+    end
   else
     response_body = File.read(tmp_file)
   end
@@ -32,7 +34,9 @@ def getOrCacheJSON(tmp_file, json_url)
     if (response_body.match(/^(\{|\[)/))
       json = JSON.parse response_body
     end
-    File.open(tmp_file, 'w').write JSON.pretty_generate json
+    File.open(tmp_file, 'w') do |out|
+      out.write JSON.pretty_generate json
+    end
   else
     begin
       json = JSON.parse File.read(tmp_file)

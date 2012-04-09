@@ -137,7 +137,9 @@ class RestGetCache
         @redirects.eql? @request.headers[:redirects] and !response.body.empty?
       puts "Cache miss because #{@cache_file} is missing or expired"
       FileUtils.mkdir_p(File.dirname @cache_file)
-      File.open(@cache_file, 'w').write response.body
+      File.open(@cache_file, 'w') do |out|
+        out.write response.body
+      end
     end
   end
 end
