@@ -137,7 +137,7 @@ module Awestruct
               end
             end
             ## REVIEW END
-            Visitors.defined.each_value do |v|
+            Visitors.defined.each do |v|
               if v.handles(r)
                 v.visit(r, site)
               end
@@ -198,15 +198,15 @@ module Awestruct
       end
 
       module Visitors
-        # @return [{String => Repository::Visitors::Base}] a hash of visitor names to classes
+        # @return array of visitors
         def self.defined
-          @defined ||= {}
+          @defined ||= []
         end
 
         module Base
           def self.included(base)
-            Visitors.defined[base.name.split('::').last.downcase] = base
             base.extend(base)
+            Visitors.defined << base
           end
 
           def handles(repository)
