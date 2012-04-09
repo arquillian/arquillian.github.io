@@ -36,7 +36,7 @@ function activateSlideshow() {
   })
   .on('slid', function(e) {
     var $active = $('#slideshow').find('.active');
-    var pos = $active.parent().children().index(active);
+    var pos = $active.parent().children().index($active);
     window.location.hash = '#' + (pos + 1);
   })
   .carousel('pause');
