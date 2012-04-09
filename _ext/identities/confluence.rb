@@ -30,9 +30,11 @@ module Identities
         @identity_search_keys.each do |k|
           search = identity.send(k)
           next if search.nil?
-          queries << search
           # lowercase and remove middle names (shouldn't affect usernames)
           search = search.downcase.gsub(/^([^ ]+ ?).*?([^ ]+)$/, '\1\2')
+          # don't search on same string twice
+          next if queries.include? search
+          queries << search
           cleansed_query = search.gsub(' ', '-')
           url = File.join(@base_url, SEARCH_PATH) + '?query=' + URI.encode(search)
           data = RestClient.get(url, :cache_key => "confluence/query-#{cleansed_query}.json", :accept => 'application/json')
