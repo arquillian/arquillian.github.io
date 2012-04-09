@@ -43,7 +43,7 @@ function activateSlideshow() {
 }
 
 function toggleGuideMenu() {
-  $menu = $('guides');
+  $menu = $('#guides');
   if ($menu.css('display') == 'none') {
     $menu.css('display', 'block');
     $('body').click(toggleGuideMenu);
@@ -54,7 +54,7 @@ function toggleGuideMenu() {
   return false;
 }
 
-function bindGuideMenuControl() {
+function activateGuideMenuControl() {
   $('#guides_menu, .guides_menu').click(toggleGuideMenu);
 }
 
