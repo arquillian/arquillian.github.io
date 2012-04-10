@@ -88,7 +88,7 @@ fi
 awestruct -P production -g
 
 pushdq $DEPLOY_DIR
-git pull
+git pull origin master
 popdq
 
 rsync -a --delete --exclude='.git' "$SITE_DIR/" "$DEPLOY_DIR/"
