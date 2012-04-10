@@ -42,16 +42,18 @@ function activateSlideshow() {
   .carousel('pause');
 }
 
-function toggleGuideMenu() {
+function toggleGuideMenu(e) {
   $menu = $('#guides');
   if ($menu.css('display') == 'none') {
     $menu.css('display', 'block');
     $('body').click(toggleGuideMenu);
+    return false;
   } else {
     $menu.css('display', 'none');
     $('body').unbind('click');
+    // honor a click on a navigation link
+    return $(e.target).closest('#guides dd').length > 0 ? true : false;
   }
-  return false;
 }
 
 function activateGuideMenuControl() {
