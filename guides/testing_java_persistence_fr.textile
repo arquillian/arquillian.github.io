@@ -384,7 +384,7 @@ bc(prettify). <!-- clip -->
     <plugins>
         <plugin>
             <artifactId>maven-compiler-plugin</artifactId>
-            <version>2.3.1</version>
+            <version>2.3.2</version>
             <configuration>
                 <source>1.6</source>
                 <target>1.6</target>
@@ -402,7 +402,7 @@ bc(prettify).. <!-- clip -->
 <dependency>
     <groupId>org.hibernate</groupId>
     <artifactId>hibernate-jpamodelgen</artifactId>
-    <version>1.1.1.Final</version>
+    <version>1.2.0.Final</version>
     <scope>provided</scope>
 </dependency>
 <!-- clip -->
@@ -417,7 +417,7 @@ bc(prettify).. <!-- clip -->
         <dependency>
             <groupId>org.jboss.arquillian</groupId>
             <artifactId>arquillian-bom</artifactId>
-            <version>1.0.0.CR5</version>
+            <version>1.0.0.CR8</version>
             <scope>import</scope>
             <type>pom</type>
         </dependency>
@@ -427,7 +427,7 @@ bc(prettify).. <!-- clip -->
     <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.8.1</version>
+        <version>4.10</version>
     </dependency>
     <dependency>
         <groupId>org.jboss.arquillian.junit</groupId>
@@ -451,7 +451,7 @@ bc(prettify). <!-- clip -->
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-glassfish-embedded-3.1</artifactId>
-            <version>1.0.0.CR2</version>
+            <version>1.0.0.CR3</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.main.extras</groupId>
@@ -483,17 +483,15 @@ bc(command). $ mvn clean test
 Le profil pour Glassfish embarqué est activé par défaut. Vous trouverez des extraits de la sortie du test ci-dessous.
 
 bc(output). ...
-INFO: GlassFish Server Open Source Edition 3.1.1 (java_re-private)
+INFO: GlassFish Server Open Source Edition 3.1.2 (java_re-private)
 ...
-org.jboss.arquillian.container.glassfish.embedded_3.GlassFishEmbeddedContainer executeCommand
-INFO: add-resources command result (1): JDBC connection pool ArquillianEmbeddedDerbyPool created successfully.
-org.jboss.arquillian.container.glassfish.embedded_3.GlassFishEmbeddedContainer executeCommand
-INFO: add-resources command result (2): JDBC resource jdbc/arquillian created successfully.
-com.sun.enterprise.v3.services.impl.GrizzlyProxy$2$1 onReady
-INFO: Grizzly Framework 1.9.18-o started in: 226ms listening on port 8181
+org.jboss.arquillian.container.glassfish.embedded_3_1.GlassFishContainer executeCommand
+INFO: command add-resources result: PlainTextActionReporterSUCCESSDescription: add-resources AdminCommandnull
+    JDBC connection pool ArquillianEmbeddedDerbyPool created successfully.
+    JDBC resource jdbc/arquillian created successfully.
 ...
 com.sun.enterprise.web.WebApplication start
-INFO: Loading application test at /test
+INFO: WEB0671: Loading application [test] at [/test]
 ...
 Inserting records...
 Selecting (using JPQL)...
@@ -507,16 +505,14 @@ Game@25589884[id = 1; title = Super Mario Brothers]
 Game@18616220[id = 2; title = Mario Kart]
 Game@29940830[id = 3; title = F-Zero]
 ...
-com.sun.enterprise.v3.server.AppServerStartup stop
-INFO: Shutdown procedure finished
 
 p. *Félicitation !* *(greenbar)Green bar*! *Ça c'est un vrai test d'intégration !*
 
-h3. Exécuter le Test (JBoss AS)
+h3. Exécuter le Test (JBoss AS 7)
 
-Nous pouvons exécuter exactement le même test sur JBoss AS. Nous aurons besoin d'une unité de persistance différente, qui utilise une ressource JDBC disponible sur JBoss AS et qui positionne quelques paramètres Hibernate. (pour le moment, Arquillian ne supporte pas le déploiement de DataSource dans JBoss AS, même si c'est dans le pipeline ; nous utilisons donc une DataSource intégrée par défaut, java:/DefaultDS)
+Nous pouvons exécuter exactement le même test sur JBoss AS 7. Nous aurons besoin d'une unité de persistance différente, qui utilise une ressource JDBC disponible sur JBoss AS et qui positionne quelques paramètres Hibernate. (pour le moment, Arquillian ne supporte pas le déploiement de DataSource dans JBoss AS, même si c'est dans le pipeline ; nous utilisons donc une DataSource intégrée par défaut, java:jboss/datasources/ExampleDS)
 
-div(filename). src/test/resources-jbossas-remote/test-persistence.xml
+div(filename). src/test/resources-jbossas-remote/test-persistenc e.xml
 
 bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
 <persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence"
@@ -525,7 +521,7 @@ bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
         http://java.sun.com/xml/ns/persistence
         http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
     <persistence-unit name="test">
-        <jta-data-source>java:/DefaultDS</jta-data-source>
+        <jta-data-source>java:jboss/datasources/ExampleDS</jta-data-source>
         <properties>
             <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
             <property name="hibernate.show_sql" value="true"/>
@@ -533,7 +529,7 @@ bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
     </persistence-unit>
 </persistence>
 
-Maintenant nous avons besoin d'un profil Maven qui ajoute l'adaptateur du conteneur et l'API de la librairie client JBoss AS, ainsi que les ressources JBoss AS :
+Maintenant nous avons besoin d'un profil Maven qui ajoute l'adaptateur du conteneur JBoss AS, ainsi que les ressources JBoss AS :
 
 div(filename). pom.xml
 
@@ -542,30 +538,18 @@ bc(prettify). <!-- clip -->
     <id>arquillian-jbossas-managed</id>
     <dependencies>
         <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-jbossas-managed-6</artifactId>
-            <version>1.0.0.CR1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.jbossas</groupId>
-            <artifactId>jboss-as-client</artifactId>
-            <version>6.0.0.Final</version>
-            <type>pom</type>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-6.0</artifactId>
-            <version>1.0.0.Final</version>
-            <type>pom</type>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.jbossas</groupId>
-            <artifactId>jboss-server-manager</artifactId>
-            <version>1.0.4.Final</version>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-arquillian-container-managed</artifactId>
+            <version>7.1.1.Final</version>
             <scope>test</scope>
         </dependency>
+		<dependency>
+             <groupId>org.jboss.spec</groupId>
+             <artifactId>jboss-javaee-web-6.0</artifactId>
+             <version>3.0.0.Final</version>
+             <type>pom</type>
+             <scope>provided</scope>
+         </dependency>
     </dependencies>
     <build>
         <testResources>
@@ -580,7 +564,7 @@ bc(prettify). <!-- clip -->
 </profile>
 <!-- clip -->
 
-Maintenant, nous exécutons à nouveau le test avec Maven, mais cette fois-ci nous activons le profil JBoss AS managed. (Vous avez besoin de modifier la variable d'environnement JBOSS_HOME pour pointer sur le répertoire d'installation de JBoss AS)
+Maintenant, nous exécutons à nouveau le test avec Maven, mais cette fois-ci nous activons le profil JBoss AS managed. (Vous avez besoin de modifier la variable d'environnement JBOSS_HOME pour pointer vers un répertoire d'installation de JBoss AS 7.1)
 
 bc(command). $ mvn clean test -Parquillian-jbossas-managed
 
