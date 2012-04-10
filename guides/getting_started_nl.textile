@@ -10,11 +10,11 @@ guide_order: 10
 reference_rev: 52f8fbd2ff5f00fbbd70729a40f1d6ab124e600e
 ---
 [forge_home]http://jboss.org/forge
-[forge_download]https://repository.jboss.org/nexus/service/local/artifact/maven/redirect?r=releases&g=org.jboss.forge&a=forge-distribution&v=1.0.0.Beta3&e=zip
+[forge_download]https://repository.jboss.org/nexus/service/local/artifact/maven/redirect?r=releases&g=org.jboss.forge&a=forge-distribution&v=1.0.0.Final&e=zip
 [maven_home]http://maven.apache.org
 [maven_download]http://maven.apache.org/download.html
 [maven_search]http://search.maven.org
-[jdk_download]http://www.oracle.com/technetwork/java/javase/downloads/jdk-6u29-download-513648.html
+[jdk_download]http://www.oracle.com/technetwork/java/javase/downloads
 [as7_download]http://jboss.org/jbossas/downloads
 [tools_home]http://jboss.org/tools
 [shrinkwrap_home]http://jboss.org/shrinkwrap
@@ -39,7 +39,7 @@ Maven project.
 p(info). %Arquillian is niet afhankelijk van Maven, of van een andere specifieke build tool. Het werkt net zo goed--zelfs
 beter--met projecten die op Ant of Gradle gebaseerd zijn. Idealiter, heeft de build tool een dependency management systeem, want dat vereenvoudigd de integratie, omdat Arquillian via "Maven Central repository":maven_search. gedistribueerd wordt.%
 
-Deze handleiding gaat er van uit dat maven beschikbaar is op de opdrachtprompt of in je IDE(Integrated Development Environment). Zo niet, "installeer Maven nu":maven_download. Je moet ook "JDK(Java Development Kit) 1.6":jdk_download of beter geïnstalleerd hebben.
+Deze handleiding gaat er van uit dat maven beschikbaar is op de opdrachtprompt of in je IDE(Integrated Development Environment). Zo niet, "installeer Maven nu":maven_download. Je moet ook "JDK(Java Development Kit) 1.5":jdk_download of beter geïnstalleerd hebben.
 
 h3. Creëer een nieuw Project
 
@@ -48,18 +48,18 @@ Er zijn twee manieren de we aanbevelen om een nieuw Maven project te creëren:
 # "Creëer een Maven project met behulp van een Maven archetype":#generate_project_from_archetype
 # "Creëer een project met JBoss Forge en pas het aan":#create_project_using_forge
 
-p(info). %Als je al een Maven project hebt, kun je deze sectie gebruiken om te zien of je de juiste "dependencies" hebt voordat je verder gaat%
-
 Verreweg, is "JBoss Forge":forge_home de makkelijkste manier, maar deze handleiding bied beide opties als je niet klaar bent om naar JBoss Forge over te stappen. Kies een van de twee opties en spring naar de instructies.
+
+p(info). %Als je al een Maven project hebt, kun je deze sectie gebruiken om te zien of je de juiste "dependencies" hebt voordat je verder gaat%
 
 h4(#generate_project_from_archetype). Genereer een Project met behulp van een Maven Archetype
 
-Allereerst, creëer een Maven gebaseerd Java project met het volgende commando. _Kopieer de tekst na het @$@ teken en plak het in je commando regel._
+Allereerst, creëer een Maven gebaseerd Java project met het volgende commando.
 
 bc(command).. $ mvn archetype:generate -DarchetypeGroupId=net.avh4.mvn.archetype \
 -DarchetypeArtifactId=java-1.6-archetype
 
-p. Voeg, wanneer je gevraagd wordt de volgende waardes achter de dubbele punt in en bevestig na iedere regel met @<ENTER>@.
+p. _Kopieer de tekst na het @$@ teken en plak het in je commando regel._ Voeg, wanneer je gevraagd wordt de volgende waardes achter de dubbele punt in en bevestig na iedere regel met @<ENTER>@.
 
 bc(output). Define value for property 'groupId': : org.arquillian.example <ENTER>
 Define value for property 'artifactId': : arquillian-tutorial <ENTER>
@@ -83,7 +83,7 @@ p. Dit commando genereerd een Maven gebaseerd Java project in een map met de naa
 *** resources/ - Plaats alle test configuratie bestanden hier (b.v., arquillian.xml)
 * pom.xml - Het Maven build bestand. Verteld Maven hoe het project gebouwd moet worden.
 
-p(info). %Het project is ingesteld om Java6 en Junit 4.8, de minimale versies van Java en Junit om te testen met Arquillian te gebruiken.%
+p(info). %Het project is ingesteld om Java 1.6 en Junit 4.8, de minimale versies van Java en Junit om te testen met Arquillian te gebruiken.%
 
 De generator heeft ook een Java package genaamd: @org.arquillian.example@ gecreëer in de twee @java@ mappen. Het is beter je Java source bestanden in dit package te plaatsen dan direct in de @java@ map.
 
@@ -95,17 +95,26 @@ Na deze verandering ziet je bestand er zo uit (ingekort voor leesbaarheid):
 
 div(filename). pom.xml
 
-bc(prettify).. <project xmlns="http://maven.apache.org/POM/4.0.0"
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="
         http://maven.apache.org/POM/4.0.0
         http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <groupId>org.arquillian.example</groupId>
     <artifactId>arquillian-tutorial</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
+
     <name>arquillian-tutorial</name>
+    <url>http://arquillian.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -504,7 +513,9 @@ public class GreeterTest {
     }
 }
 
-p. Je hebt je eerste Arquillian test geschreven! Ah, je denkt vast hoe moet ik dit uitvoeren ~:S Als je denkt, "Gewoon als een unit test" dan heb je het goed! Maar, eerst moeten we nog een container adapter toevoegen aan het classpath.
+p. Je hebt je eerste Arquillian test geschreven!
+
+Ah, je denkt vast hoe moet ik dit uitvoeren ~:S Als je denkt, "Gewoon als een unit test" dan heb je het goed! Maar, eerst moeten we nog een container adapter toevoegen aan het classpath.
 
 h3. Toeveogen van een Container Adapter
 
@@ -559,7 +570,7 @@ Rechts klik op het GreeterTest.java bestand in de Package Exporer (of in de edit
 
 Wanneer de test loopt, ze je het volgende verschijnen in de console:
 
-bc(output). 26 [main] INFO org.jboss.weld.Version - WELD-000900 1.1.1 (Final)
+bc(output). 21 [main] INFO org.jboss.weld.Version - WELD-000900 1.1.5 (Final)
 Hello, Earthling!
 
 De JUnit view verschijnt met daarin een *(greenbar)green bar*!
@@ -576,9 +587,9 @@ bc(output). -------------------------------------------------------
 T E S T S
 -------------------------------------------------------
 Running org.arquillian.example.GreeterTest
-21 [main] INFO org.jboss.weld.Version - WELD-000900 1.1.1 (Final)
+19 [main] INFO org.jboss.weld.Version - WELD-000900 1.1.5 (Final)
 Hello, Earthling!
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.858 sec
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.907 sec
 
 *Gefeliciteerd!* Je hebt je eerste *(greenbar)green bar* met Arquillian verdient! 
 
@@ -929,5 +940,4 @@ p. Nu veranderen we het active Maven profiel naar @arquillian-jbossas-managed@, 
 
 p(info). %De meldingen van System.out worden in de server log geschreven in plaats van de console.%
 
-Dat was _dezelfde_ test, maar dit keer in een standaard (niet embedded) Java EE container. Arquillian zorg voor het samen pakken van de test het deployen binnen de container als Java EE archief, het uitvoeren van de test en de resultaten samenvatten en binnen Eclipse JUnit view. (of binnen Maven surefire). Je kunt meer lezen over hoe dit werk in de 
-"Arquillian reference guide":https://docs.jboss.org/author/display/ARQ/Negotiating+test+execution.
+Dat was _dezelfde_ test, maar dit keer in een standaard (niet embedded) Java EE container. Arquillian zorg voor het samen pakken van de test het deployen binnen de container als Java EE archief, het uitvoeren van de test en de resultaten samenvatten en binnen Eclipse JUnit view. (of binnen Maven surefire).
