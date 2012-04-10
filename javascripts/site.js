@@ -46,7 +46,7 @@ function toggleGuideMenu(e) {
   $menu = $('#guides');
   if ($menu.css('display') == 'none') {
     $menu.css('display', 'block');
-    $('body').click(toggleGuideMenu);
+    $('body').on('click', toggleGuideMenu);
     return false;
   } else {
     $menu.css('display', 'none');
@@ -57,7 +57,7 @@ function toggleGuideMenu(e) {
 }
 
 function activateGuideMenuControl() {
-  $('#guides_menu, .guides_menu').click(toggleGuideMenu);
+  $('#guides_menu, .guides_menu').on('click', toggleGuideMenu);
 }
 
 function activateScrollingToc(sections) {
@@ -154,28 +154,45 @@ function activateScrollingToc(sections) {
 }
 
 function activateToTopControl() {
-  var toTopLocked = true;
+  $toTop = $('#toTop');
+  // skip this whole mess if we are hiding it on a device
+  if ($toTop.css('display') == 'none') {
+    return;
+  }
+
+  $('#banner').click(function(e) {
+    if ($(e.target).closest('a').length == 0) {
+      $('html, body').animate({scrollTop: 0});
+      return false;
+    }
+  });
+
+  //if (window.location.pathname.search(/^\/(guides\/[^\/]+|blog)(\/|$)/) < 0) {
+  if (window.location.pathname.search(/^\/(guides\/[^\/]+)(\/|$)/) < 0) {
+    return;
+  }
+
+  var tuckedAway = true;
   var bannerFixed = $('#banner').css('position') == 'fixed';
   var showOffset = (bannerFixed ? $('#banner').height() + 20 : 20) + 'px'
   var hideOffset = '-50px';
   var triggerOffset = 250;
   $(window).bind('scroll', function() {
-     $toTop = $('#toTop');
-     if ($(this).scrollTop() >= triggerOffset)   {
-        if (toTopLocked) {
+     if ($(this).scrollTop() >= triggerOffset) {
+        if (tuckedAway) {
            $toTop.animate({top: showOffset});
         }
-        toTopLocked = false;
+        tuckedAway = false;
      }
      else {
-        if (!toTopLocked) {
+        if (!tuckedAway) {
            $toTop.animate({top: hideOffset}); 
         }
-        toTopLocked = true;
+        tuckedAway = true;
      }
   });
 
-  $('#toTop').click(function() {
+  $('#toTop').on('click', function() {
     $('html, body').animate({ scrollTop: 0 }, 'slow');
     return false;
   });
