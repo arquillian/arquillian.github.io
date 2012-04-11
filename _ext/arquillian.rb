@@ -307,7 +307,7 @@ module Awestruct::Extensions::Repository::Visitors
       pom = load_root_head_pom(repository)
       name = pom.root.text('name')
       # FIXME note misspelling of Aggregator in Drone extension
-      name.nil? ? repository.path : name.sub(/ (Aggregator|Agreggator|Parent)/, '')
+      name.nil? ? repository.path : name.sub(/[ :]*(Aggregator|Agreggator|Parent)/, '')
     end
 
     def resolve_group_id(repository)
@@ -351,6 +351,11 @@ module Awestruct::Extensions::Repository::Visitors
             lead = OpenStruct.new({
               :name => 'Paul Bakker',
               :jboss_username => 'pbakker'
+            })
+          elsif repository.path.eql? 'arquillian-graphene'
+            lead = OpenStruct.new({
+              :name => 'Lukáš Fryč',
+              :jboss_username => 'lfryc'
             })
           elsif repository.owner.eql? 'arquillian'
             lead = OpenStruct.new({
