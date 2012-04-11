@@ -21,11 +21,11 @@ h3. Hypothèses
 
 Nous considérerons que vous avez lu le guide "Démarrage Rapide":/guides/getting_started_fr et que vous avez configuré une suite de tests Arquillian dans votre projet. Nous allons ajouter une entité JPA au projet afin de créer un test de persistance Java (JPA). A partir de là, vous pouvez appliquer les instructions à n'importe quelle autre entité que vous avez besoin de tester.
 
-Les instructions dans ce guide sont spécifiques à un projet Maven, mais rappelez-vous qu'Arquillian n'est en aucune façon lié à Maven. Nous allons exécuter les tests dans un GlassFish embarqué et dans une instances JBoss AS 7, mais vous pouvez utiliser n'importe quel conteneur supporté par Arquillian et qui supporte JPA.
+Les instructions dans ce guide sont spécifiques à un projet Maven, mais rappelez-vous qu'Arquillian n'est en aucune façon lié à Maven. Nous allons exécuter les tests dans un GlassFish embarqué et dans une instance JBoss AS 7, mais vous pouvez utiliser n'importe quel conteneur supporté par Arquillian et qui supporte JPA.
 
 h3. Objectif
 
-L'application a une entité @Game@ (vidéo) avec deux champs :
+L'application a une entité @Game@ (*jeux vidéo*) avec deux champs :
 
 * @id@ - la clé primaire
 * @title@ - le titre du jeu
@@ -118,11 +118,11 @@ public class Game implements Serializable {
 
 p. La clé primaire est définie par le champ annoté avec @@Id@. Les autres colonnes sont automatiquement déduites des propriétés du bean (avec la convention getter/setter). Vous pouvez utiliser l'annotation @@Column@ pour modifier explicitement le nom de la colonne. Sinon, le nom de la colonne est défini en retirant le préfixe "get" de la méthode de lecture de la propriété du bean et en mettant le premier caractère du reste en minuscule (par exemple, getTitle() => title).
 
-Nous pouvons aussi utiliser les annotations standards de Bean Validation pour vérifier des contraintes. Ici, le titre est obligatoire et doit avoir entre 3 et 50 caractères. Ceci ferait un bon exemple de test.
+Nous pouvons aussi utiliser les annotations standards de Bean Validation pour vérifier des contraintes. Ici, le titre est obligatoire et doit avoir entre 3 et 50 caractères. Cela fait un bon exemple de test.
 
 h3. Ecrire le Test
 
-En parlant de tests, écrivons un nouveau cas de test avec JUnit 4 et Arquillian, @GamePersistenceTest@, et préparons le pour tester nos opérations JPA. Nous exploiterons "CDI (JSR-299)":http://docs.jboss.org/cdi/spec/1.0/html pour qu'il nous fournisse les ressources dont nous avons besoin via l'injection de dépendance. (Nous aurions aussi pu utiliser un EJB utilitaire pour gérer les transactions, ce que nous investiguerons dans un guide séparé).
+En parlant de tests, écrivons un nouveau cas de test avec JUnit 4 et Arquillian, @GamePersistenceTest@, et préparons-le pour tester nos opérations JPA. Nous exploiterons "CDI (JSR-299)":http://docs.jboss.org/cdi/spec/1.0/html pour qu'il nous fournisse les ressources dont nous avons besoin via l'injection de dépendance. (Nous aurions aussi pu utiliser un EJB utilitaire pour gérer les transactions, ce que nous investiguerons dans un guide séparé).
 
 div(filename). src/test/java/org/arquillian/example/GamePersistenceTest.java
 
@@ -176,7 +176,7 @@ public class GamePersistenceTest {
 p. Voyons ceci du début à la fin pour comprendre ce qu'il se passe avant de voir les tests.
 
 - @RunWith(Arquillian.class) := Indique à JUnit de déléguer l'exécution du test au runner Arquillian. Cela permet à Arquillian d'enrichir votre test avec un modèle de composant, qui consiste en une gestion de cycle de vie par un conteneur et en l'injection de dépendance, entre autres enrichissements. Notez que vous n'avez pas à étendre une classe de base, ce qui vous laisse libre de votre conception.
-- Méthode @Deployment := Produit une archive de "micro déploiement" avec l'API ShrinkWrap. Arquillian déploie cette archive dans le conteneur, incluant la classe de test et quelques classes d'infrastructure. Le test est alors exécuté comme un composant au sein de cette mini-application. Le contenu de cette archive constitue le test, isolé du reste du monde.
+- Méthode @Deployment := Produit une archive de "micro-déploiement" avec l'API ShrinkWrap. Arquillian déploie cette archive dans le conteneur, incluant la classe de test et quelques classes d'infrastructure. Le test est alors exécuté comme un composant au sein de cette mini-application. Le contenu de cette archive constitue le test, isolé du reste du monde.
 - Constante GAME_TITLES := Données de test
 - @PersistenceContext EntityManager := Injecte le contexte de persistance (@EntityManager@) directement dans le test, comme si le test était un "managed bean":http://download.oracle.com/javaee/6/api/javax/annotation/ManagedBean.html.
 - @Inject UserTransaction := Injecte une transaction JTA directement dans le test, un service fourni au managed bean par CDI (JSR-299).
@@ -258,8 +258,8 @@ bc(prettify).. private static void assertContainsAllGames(Collection<Game> retri
     assertTrue(retrievedGameTitles.containsAll(Arrays.asList(GAME_TITLES)));
 }
 
-
-p. Voyons maintenant un peu de JPA 2 ! Voici le même test qui utilise l'API Criteria. Notez que ces tests dépendent du processeur d'annotations JPA 2 qui génère la classe de métamodèle @Game_@ pendant l'étape de compilation du build.
+p. 
+Voyons maintenant un peu de JPA 2 ! Voici le même test qui utilise l'API Criteria. Notez que ces tests dépendent du processeur d'annotations JPA 2 qui génère la classe de métamodèle @Game_@ pendant l'étape de compilation du build.
 
 bc(prettify).. @Test
 public void shouldFindAllGamesUsingCriteriaApi() throws Exception {
@@ -303,7 +303,7 @@ Voici la structure complète de l'archive que ShrinkWrap va assembler pour ce ca
 ** lib/
 *** *.jar
 
-Jetons un coup d'oeil au descripteur de l'unité de persistance que nous utiliserons, en commençant par celui pour GlassFish embarqué.
+Jetons un coup d'oeil au descripteur de l'unité de persistance que nous utiliserons, en commençant par celui pour un conteneur GlassFish embarqué.
 
 h3. Configuration de le persistance
 
@@ -351,7 +351,7 @@ bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
     </jdbc-connection-pool>
 </resources>
 
-Nous avons ainsi isolé la définition de la DataSource des tests, de la même façon que dans l'application principale. Nous pouvons définir de la sorte n'importe quelle ressource dont nous aurions besoin pour notre test. Imaginez les possibilités.
+p. Nous avons ainsi isolé la définition de la DataSource des tests, de la même façon que dans l'application principale. Nous pouvons définir de la sorte n'importe quelle ressource dont nous aurions besoin pour notre test. Imaginez les possibilités.
 
 Maintenant, nous devons indiquer à Arquillian d'utiliser le fichier. Nous ouvrons le fichier de configuration d'Arquillian et configurons le conteneur Glassfish embarqué afin qu'il prenne ce fichier et qu'il le passe à la commande asadmin add-resources.
 
@@ -371,7 +371,7 @@ bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
     </container>
 </arquillian>
 
-Tout ce qu'il reste à faire, c'est de configurer le build Maven pour exécuter le test.
+p. Tout ce qu'il reste à faire, c'est de configurer le build Maven pour exécuter le test.
 
 h3. Préparer le Test (GlassFish)
 
@@ -417,7 +417,7 @@ bc(prettify).. <!-- clip -->
         <dependency>
             <groupId>org.jboss.arquillian</groupId>
             <artifactId>arquillian-bom</artifactId>
-            <version>1.0.0.CR8</version>
+            <version>1.0.0.Final</version>
             <scope>import</scope>
             <type>pom</type>
         </dependency>
