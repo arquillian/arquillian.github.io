@@ -1,0 +1,60 @@
+---
+---
+It's been a while since Alpha3 release of Arquillian Persistence Extension. After three long months we are excited to announce Alpha 4 with a lot of improvements and enhancements suggested by our great community. I would especially like to thank "Michael Brill":https://github.com/shogz for nailing down  DBUnit clean up strategies, "Pål Oliver Kristiansen":https://github.com/twistah and "Jarek Gilewski":https://github.com/jagin for suggesting  customization of DBUnit behaviour and "Juergen Zimmermann":profile://Juergen.Zimmermann for spotting a bug with transactional support. Last but not least many thanks to all who actively discussed the roadmap for next releases. There is plenty of great stuff on the way! Thank you very much for your feedback!
+
+And we finally have "complete documentation on wiki!":https://docs.jboss.org/author/display/ARQ/Persistence
+
+h3. Some of the highlights in this release
+
+p. Using custom SQL scripts for cleanup
+You can also use custom SQL scripts to clean your database before or after the test. For this purpose use @@CleanupUsingScript@ annotation and specifies SQL files which have to be executed. 
+
+p. More flexible custom SQL scripts execution.
+Insted of @@UsingScript@ we now provide @@ApplyScriptBefore@ and @@ApplyScriptAfter@ annotations.
+
+p. DBUnit insert strategies
+You can tell DBUnit how it should insert your data. Following strategies are available:
+
+* @INSERT@. Performs insert of the data defined in provided data sets. This is the default strategy.
+* @CLEAN_INSERT@. Performs insert of the data defined in provided data sets, after removal of all data present in the tables referred in provided files.
+* @REFRESH@. During this operation existing rows are updated and new ones are inserted. Entries already existing in the database which are not defined in the provided data set are not affected.
+* @UPDATE@. This strategy updates existing rows using data provided in the datasets. If dataset contain a row which is not present in the database (identified by its primary key) then exception is thrown.
+
+p. DBUnit cleanup modes
+You can specify when and how you would like your database to be cleaned. By default your database is entirely erased before each test. If you want to control this behavior, use @@Cleanup@ annotation for this purpose. Following modes are currently supported:
+
+* @STRICT@. Cleans the entire database. This strategy might require turning off database constraints (e.g. referential integrity).
+* @USED_ROWS_ONLY@. Deletes only those entries which were defined in data sets used for seeding.
+* @USED_TABLES_ONLY@. Deletes only those tables which were used in data sets.
+
+You can also specify when you would like to invoke the cleanup procedure. For instance:
+bc(prettify).. @Cleanup(phase = TestExecutionPhase.AFTER, strategy = CleanupStrategy.USED_ROWS_ONLY)
+
+You can invoke it @BEFORE@ or @AFTER@ the test. You can also disable cleanup by using @TestExecutionPhase.NONE@.
+
+p. Column filtering for data set matching
+@@ShouldMatchDatSet@ has been enhanced with @columnsToExclude@ list, where you can specify which columns shouldn't be used for database content verification.
+
+p. Nullable columns
+For XML, JSON and YAML you can now set arbitary columns to @null@ using @[null]@ placeholder.
+
+p. Separated configuration for core and (enhanced) DBUnit specific features.
+
+We provide configuration for all DBUnit properties and features as of Alpha 4! Moreover there is a split for core properties (such as default data source or JNDI of UserTransaction) and DBUnit related settings, as example below illustrates:
+
+div(filename). arquillian.xml
+
+bc(prettify).. <extension qualifier="persistence">
+    <property name="defaultDataSource">java:app/datasources/mssql_ds</property>
+    <property name="userTransactionJndi">java:jboss/UserTransaction</property>
+    <property name="initStatement">scripts/mssql-identity-insert-on.sql</property>
+    <property name="cleanupStatement">scripts/mssql-identity-insert-off.sql</property>
+  </extension>
+  <extension qualifier="persistence-dbunit">
+    <property name="datatypeFactory">org.dbunit.ext.mssql.MsSqlDataTypeFactory</property>
+    <property name="useIdentityInsert">true</property>
+  </extension>
+
+For complete list please refer to the "wiki":https://docs.jboss.org/author/display/ARQ/Persistence
+
+
