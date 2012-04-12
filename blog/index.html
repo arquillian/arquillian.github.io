@@ -6,7 +6,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <meta content="A revolutionary integration testing platform for Java and the JVM. Open source. Highly extensible." name="description" />
     <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml" />
-    <link href="/stylesheets/screen.css?d0f75d229309331fd71351a055855b729c54cd11" rel="stylesheet" />
+    <link href="/stylesheets/screen.css?6fd21206ac77ff468573741330c329db7fccfc58" rel="stylesheet" />
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.js"></script>
@@ -49,6 +49,190 @@
       </div>
       <div class="container">
         <div id="content">
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/">Arquillian Persistence Extension 1.0.0.Alpha4 Released</a>
+              </h2>
+              <div class="byline">
+                <img class="avatar" src="http://gravatar.com/avatar/de13898b827f3227a9f9f31eb90a2367?s=44" />
+                <span class="author">Posted by
+                <a href="https://community.jboss.org/people/bmajsak">Bartosz Majsak</a></span>
+                <span class="dateinline">on Apr 12, 2012</span>
+                <div class="date"><abbr>Apr</abbr> 12</div>
+                <span class="comments">| <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/#disqus_thread" data-disqus-identifier="680ef2b7cd34bee7c733594a4645aa493b47045c">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha4</em> release of the <em>Arquillian Persistence Extension</em> component!</p>
+              <p>It&#8217;s been a while since the <a href="/2011/12/30/arquillian-extension-persistence-1-0-0-Alpha3">Alpha3 release</a>. After three long months, we&#8217;re excited to announce Alpha 4 with <strong>a lot</strong> of improvements and enhancements suggested by our great community. Best of all, we finally have <a href="https://docs.jboss.org/author/display/ARQ/Persistence">complete documentation in the reference guide</a>!</p>
+              <p>I would especially like to thank <a href="https://github.com/shogz">Michael Brill</a> for nailing down  DBUnit clean up strategies, <a href="https://github.com/twistah">Pål Oliver Kristiansen</a> and <a href="https://github.com/jagin">Jarek Gilewski</a> for suggesting customization of DBUnit behaviour and <a href="https://community.jboss.org/people/Juergen.Zimmermann">Juergen Zimmermann</a> for spotting a bug with transactional support. Last, but not least, many thanks to all who actively discussed the roadmap for next releases. There is plenty of great stuff on the way! Thank you very much for your feedback!</p>
+              <h3>Some of the highlights in this release</h3>
+              <dl>
+              	<dt>Custom SQL scripts for cleanup</dt>
+              	<dd>You can now use custom SQL scripts to clean your database before or after the test. For this purpose use the <code>@CleanupUsingScript</code> annotation and specify SQL files which have to be executed.</dd>
+              	<dt>More flexible custom SQL scripts execution</dt>
+              	<dd>We&#8217;ve removed the <code>@UsingScript</code> annotation and replaced it with the <code>@ApplyScriptBefore</code> and <code>@ApplyScriptAfter</code> annotations.</dd>
+              	<dt>DBUnit insert strategies</dt>
+              	<dd><p>You can tell DBUnit how it should insert your data. The following strategies are available:</p>
+              <ul>
+              	<li><code>INSERT</code> &#8211; Performs insert of the data defined in provided data sets. <em>This is the default strategy</em>.</li>
+              	<li><code>CLEAN_INSERT</code> &#8211; Performs insert of the data defined in provided data sets, after removal of all data present in the tables referred in provided files.</li>
+              	<li><code>REFRESH</code> &#8211; During this operation, existing rows are updated and new ones are inserted. Entries already existing in the database which are not defined in the provided data set are not affected.</li>
+              	<li><code>UPDATE</code> &#8211; This strategy updates existing rows using data provided in the datasets. If the dataset contains a row which is not present in the database (identified by its primary key) then an exception is thrown.</li>
+              </ul></dd>
+              	<dt>DBUnit cleanup modes</dt>
+              	<dd><p>You can specify when and how you would like your database to be cleaned. By default, your database is <strong>erased entirely</strong> before each test. If you want to control this behavior, use the <code>@Cleanup</code> annotation for this purpose. The following modes are currently supported:</p>
+              <ul>
+              	<li><code>STRICT</code> &#8211; Cleans the entire database. This strategy might require turning off database constraints (e.g. referential integrity).</li>
+              	<li><code>USED_ROWS_ONLY</code> &#8211; Deletes only those entries that are defined in the datasets used for seeding.</li>
+              	<li><code>USED_TABLES_ONLY</code> &#8211; Deletes only those tables that are referenced in datasets.</li>
+              </ul>
+              <p>You can also specify when you would like to invoke the cleanup procedure. For instance:</p>
+              <pre class="prettify"><code class="prettify">@Cleanup(phase = TestExecutionPhase.AFTER, strategy = CleanupStrategy.USED_ROWS_ONLY)</code></pre>
+              <p>You can invoke cleanup <code>BEFORE</code> or <code>AFTER</code> the test. You can also disable cleanup by using <code>TestExecutionPhase.NONE</code>.</p></dd>
+              	<dt>Column filtering for data set matching</dt>
+              	<dd><code>@ShouldMatchDatSet</code> has been enhanced with <code>columnsToExclude</code> list, where you can specify which columns shouldn&#8217;t be used for database content verification.</dd>
+              	<dt>Nullable columns</dt>
+              	<dd>For XML, JSON and YAML you can now set arbitary columns to <code>null</code> using <code>[null]</code> placeholder.</dd>
+              	<dt>Separated configuration for core and (enhanced) DBUnit specific features</dt>
+              	<dd><p><strong>We provide configuration for all DBUnit properties and features as of Alpha 4!</strong> Moreover there is a split for core properties (such as default data source or JNDI of UserTransaction) and DBUnit related settings, as the example below illustrates:</p>
+              <div class="filename">arquillian.xml</div>
+              <pre class="prettify"><code class="prettify">&lt;extension qualifier="persistence"&gt;&#x000A;    &lt;property name="defaultDataSource"&gt;java:app/datasources/mssql_ds&lt;/property&gt;&#x000A;    &lt;property name="userTransactionJndi"&gt;java:jboss/UserTransaction&lt;/property&gt;&#x000A;    &lt;property name="initStatement"&gt;scripts/mssql-identity-insert-on.sql&lt;/property&gt;&#x000A;    &lt;property name="cleanupStatement"&gt;scripts/mssql-identity-insert-off.sql&lt;/property&gt;&#x000A;&lt;/extension&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;extension qualifier="persistence-dbunit"&gt;&#x000A;    &lt;property name="datatypeFactory"&gt;org.dbunit.ext.mssql.MsSqlDataTypeFactory&lt;/property&gt;&#x000A;    &lt;property name="useIdentityInsert"&gt;true&lt;/property&gt;&#x000A;&lt;/extension&gt;&#x000A;</code></pre></dd>
+              </dl>
+              <p>For complete list, please refer to the <a href="https://docs.jboss.org/author/display/ARQ/Persistence">reference guide</a>.</p>
+              <p>We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
+              <h3>What is Arquillian?</h3>
+              <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
+              <h3>Release details</h3>
+              <table class="table table-bordered table-striped">
+                <tbody>
+                  <tr>
+                    <th>Component</th>
+                    <td>
+                      <a href="/modules/persistence-extension">Arquillian Persistence Extension</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Version</th>
+                    <td>
+                      1.0.0.Alpha4
+                      <span class="label tag">
+                        <a href="https://github.com/arquillian/arquillian-extension-persistence/commit/4d7f59a7ff9c4575b8590a063d368b8f70cc259e.html">view tag</a>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Release date</th>
+                    <td>2012-04-12</td>
+                  </tr>
+                  <tr>
+                    <th>Released by</th>
+                    <td>Aslak Knutsen</td>
+                  </tr>
+                  <tr>
+                    <th>Compiled against</th>
+                    <td>
+                      <ul class="unstyled">
+                        <li>Arquillian Core &#8211; 1.0.0.Final</li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>
+                Published artifacts
+                <small>org.jboss.arquillian.extension</small>
+              </h3>
+              <ul>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-persistence-api
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-persistence-api/1.0.0.Alpha4/arquillian-persistence-api-1.0.0.Alpha4.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-persistence-api/1.0.0.Alpha4/arquillian-persistence-api-1.0.0.Alpha4.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-persistence-impl
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-persistence-impl/1.0.0.Alpha4/arquillian-persistence-impl-1.0.0.Alpha4.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-persistence-impl/1.0.0.Alpha4/arquillian-persistence-impl-1.0.0.Alpha4.pom" target="_blank">pom</a>
+                </li>
+              </ul>
+              <h3>
+                Release notes and resolved issues
+                <small>21</small>
+              </h3>
+              <p></p>
+              <dl>
+                <dt>Bug</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-721">ARQ-721</a> - Compilation error in older version of JDK 6</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-723">ARQ-723</a> - TransactionalWrapper.afterTest() ignores SessionContext.setRollbackOnly()</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-751">ARQ-751</a> - Empty YML file is causing error whereas it should be simply skipped</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-752">ARQ-752</a> - Persistence extension is failing to enrich archive when there is no dataset defined</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-765">ARQ-765</a> - Update ShrinkWrap Descriptors dependency</li>
+                  </ul>
+                </dd>
+              </dl>
+              <dl>
+                <dt>Enhancement</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-755">ARQ-755</a> - Introduce annotation based db cleanup configuration</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-756">ARQ-756</a> - Improve error messages</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-805">ARQ-805</a> - Convert test method names from camel to underscore</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-859">ARQ-859</a> - Cleanup configuration - move dbunit related settings to its own configuration.</li>
+                  </ul>
+                </dd>
+              </dl>
+              <dl>
+                <dt>Feature Request</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-718">ARQ-718</a> - Customization for DBUnit</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-719">ARQ-719</a> - Enable column sensing for FlatXmlDataSet</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-720">ARQ-720</a> - Enable nulls for FlatXmlDataSet</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-764">ARQ-764</a> - Using DBUnit with IDENTITY or auto-increment columns</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-777">ARQ-777</a> - Should be possible to run custom scripts before and after test</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-804">ARQ-804</a> - Should be able to clean database using custom SQL script</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-869">ARQ-869</a> - Move JavaDoc from Field level to Method level for Configuration objects</li>
+                  </ul>
+                </dd>
+              </dl>
+              <dl>
+                <dt>Task</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-757">ARQ-757</a> - Document extension in confluence.</li>
+                  </ul>
+                </dd>
+              </dl>
+              <dl>
+                <dt>Sub-task</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-771">ARQ-771</a> - Global DBUnit configuration should be exposed in arquillian.xml</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-772">ARQ-772</a> - Introduce column filtering for data set matching</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-806">ARQ-806</a> - Should provide cleanup strategies to control what needs to be removed for the given test</li>
+                  </ul>
+                </dd>
+              </dl>
+              <p>
+                Thanks to the following list of contributors:
+                <a href="https://community.jboss.org/people/bmajsak">Bartosz Majsak</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
+              </p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/persistence/">persistence</a>
+            </div>
+          </article>
           <article class="post">
             <header class="header">
               <h2 class="title">
@@ -809,306 +993,6 @@
               tagged as
               <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/platform/">platform</a> <a class="tag" href="/blog/tags/core/">core</a> <a class="tag" href="/blog/tags/jbosscentral/">jbosscentral</a>
             </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/04/05/arquillian-core-1-0-0-CR8/">Arquillian Core 1.0.0.CR8 Released</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a></span>
-                <span class="dateinline">on Apr 05, 2012</span>
-                <div class="date"><abbr>Apr</abbr> 05</div>
-                <span class="comments">| <a href="/blog/2012/04/05/arquillian-core-1-0-0-CR8/#disqus_thread" data-disqus-identifier="324b566430790e44dd40ee3b3b4d79270fae1d04">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.0.0.CR8</em> release of the <em>Arquillian Core</em> component!</p>
-              
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/core-platform">Arquillian Core</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.0.0.CR8
-                      <span class="label tag">
-                        <a href="https://github.com/arquillian/arquillian-core/commit/f5521ecf83d775f50d11d9b9ced02b4d69eaec9f.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2012-04-05</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Aslak Knutsen</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>ShrinkWrap Core &#8211; 1.0.0-cr-1</li>
-                        <li>ShrinkWrap Descriptors &#8211; 1.1.0-beta-1</li>
-                        <li>ShrinkWrap Resolvers &#8211; 1.0.0-beta-5</li>
-                        <li>JUnit &#8211; 4.8.1</li>
-                        <li>TestNG &#8211; 5.14.6</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian
-                  &raquo;
-                  arquillian-bom
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/arquillian-bom/1.0.0.CR8/arquillian-bom-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.config
-                  &raquo;
-                  arquillian-config-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-api/1.0.0.CR8/arquillian-config-api-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-api/1.0.0.CR8/arquillian-config-api-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.config
-                  &raquo;
-                  arquillian-config-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-impl-base/1.0.0.CR8/arquillian-config-impl-base-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-impl-base/1.0.0.CR8/arquillian-config-impl-base-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.config
-                  &raquo;
-                  arquillian-config-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-spi/1.0.0.CR8/arquillian-config-spi-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-spi/1.0.0.CR8/arquillian-config-spi-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-impl-base/1.0.0.CR8/arquillian-container-impl-base-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-impl-base/1.0.0.CR8/arquillian-container-impl-base-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-spi/1.0.0.CR8/arquillian-container-spi-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-spi/1.0.0.CR8/arquillian-container-spi-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-test-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-api/1.0.0.CR8/arquillian-container-test-api-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-api/1.0.0.CR8/arquillian-container-test-api-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-test-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-impl-base/1.0.0.CR8/arquillian-container-test-impl-base-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-impl-base/1.0.0.CR8/arquillian-container-test-impl-base-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-test-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-spi/1.0.0.CR8/arquillian-container-test-spi-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-spi/1.0.0.CR8/arquillian-container-test-spi-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.core
-                  &raquo;
-                  arquillian-core-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-api/1.0.0.CR8/arquillian-core-api-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-api/1.0.0.CR8/arquillian-core-api-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.core
-                  &raquo;
-                  arquillian-core-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-impl-base/1.0.0.CR8/arquillian-core-impl-base-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-impl-base/1.0.0.CR8/arquillian-core-impl-base-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.core
-                  &raquo;
-                  arquillian-core-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-spi/1.0.0.CR8/arquillian-core-spi-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-spi/1.0.0.CR8/arquillian-core-spi-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.junit
-                  &raquo;
-                  arquillian-junit-container
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-container/1.0.0.CR8/arquillian-junit-container-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-container/1.0.0.CR8/arquillian-junit-container-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.junit
-                  &raquo;
-                  arquillian-junit-core
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-core/1.0.0.CR8/arquillian-junit-core-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-core/1.0.0.CR8/arquillian-junit-core-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.junit
-                  &raquo;
-                  arquillian-junit-standalone
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-standalone/1.0.0.CR8/arquillian-junit-standalone-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-standalone/1.0.0.CR8/arquillian-junit-standalone-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.protocol
-                  &raquo;
-                  arquillian-protocol-jmx
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-jmx/1.0.0.CR8/arquillian-protocol-jmx-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-jmx/1.0.0.CR8/arquillian-protocol-jmx-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.protocol
-                  &raquo;
-                  arquillian-protocol-servlet
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-servlet/1.0.0.CR8/arquillian-protocol-servlet-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-servlet/1.0.0.CR8/arquillian-protocol-servlet-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.test
-                  &raquo;
-                  arquillian-test-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-api/1.0.0.CR8/arquillian-test-api-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-api/1.0.0.CR8/arquillian-test-api-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.test
-                  &raquo;
-                  arquillian-test-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-impl-base/1.0.0.CR8/arquillian-test-impl-base-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-impl-base/1.0.0.CR8/arquillian-test-impl-base-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.test
-                  &raquo;
-                  arquillian-test-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-spi/1.0.0.CR8/arquillian-test-spi-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-spi/1.0.0.CR8/arquillian-test-spi-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testenricher
-                  &raquo;
-                  arquillian-testenricher-cdi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-cdi/1.0.0.CR8/arquillian-testenricher-cdi-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-cdi/1.0.0.CR8/arquillian-testenricher-cdi-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testenricher
-                  &raquo;
-                  arquillian-testenricher-ejb
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-ejb/1.0.0.CR8/arquillian-testenricher-ejb-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-ejb/1.0.0.CR8/arquillian-testenricher-ejb-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testenricher
-                  &raquo;
-                  arquillian-testenricher-initialcontext
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-initialcontext/1.0.0.CR8/arquillian-testenricher-initialcontext-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-initialcontext/1.0.0.CR8/arquillian-testenricher-initialcontext-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testenricher
-                  &raquo;
-                  arquillian-testenricher-resource
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-resource/1.0.0.CR8/arquillian-testenricher-resource-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-resource/1.0.0.CR8/arquillian-testenricher-resource-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testng
-                  &raquo;
-                  arquillian-testng-container
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-container/1.0.0.CR8/arquillian-testng-container-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-container/1.0.0.CR8/arquillian-testng-container-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testng
-                  &raquo;
-                  arquillian-testng-core
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-core/1.0.0.CR8/arquillian-testng-core-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-core/1.0.0.CR8/arquillian-testng-core-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testng
-                  &raquo;
-                  arquillian-testng-standalone
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-standalone/1.0.0.CR8/arquillian-testng-standalone-1.0.0.CR8.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-standalone/1.0.0.CR8/arquillian-testng-standalone-1.0.0.CR8.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <h3>
-                Release notes and resolved issues
-                <small>9</small>
-              </h3>
-              <p>Support for Multiple Protocol Contexts within a Deployment</p>
-              <dl>
-                <dt>Bug</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-670">ARQ-670</a> - Arquillian Servlet&#39;s context root should be &quot;test&quot;, not &quot;test.war&quot;, in EAR</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-724">ARQ-724</a> - Upgrade to ShrinkWrap Resolver 1.1.0-alpha-2 in arquillian-parent.pom</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-748">ARQ-748</a> - Update Arquillian test dependencies to be able to do a clean build against Maven Central</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Enhancement</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-715">ARQ-715</a> - Add a getter for ProtocolMetaData.contexts</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Feature Request</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-792">ARQ-792</a> - Honor system property for debugging Arquillian internals</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-848">ARQ-848</a> - Should support multiple Protocol Context within one Deployment</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-849">ARQ-849</a> - Should not attempt to deploy to a Container that is not started</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-850">ARQ-850</a> - Should support custom container mode</li>
-                  </ul>
-                </dd>
-              </dl>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/sewatech">Alexis Hassler</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/04/05/arquillian-core-1-0-0-CR8/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/platform/">platform</a> <a class="tag" href="/blog/tags/core/">core</a>
-            </div>
             
                         <script type="text/javascript">
                         var disqus_shortname = 'arquillian';
@@ -1123,7 +1007,7 @@
             <li class="previous">
               <a href="/blog/page/2/">&laquo; Older</a>
             </li>
-            <li class="pages">Page 1 of 17</li>
+            <li class="pages">Page 1 of 18</li>
             <li class="disabled next">
               <a href="#">Newer &raquo;</a>
             </li>
@@ -1139,6 +1023,14 @@
           <nav class="latest">
             <h2>Latest Posts</h2>
             <ul>
+              <li>
+                <div class="title">
+                  <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/">Arquillian Persistence Extension 1.0.0.Alpha4 Released</a>
+                </div>
+                <div class="meta">
+                  Apr 12, 2012
+                </div>
+              </li>
               <li>
                 <div class="title">
                   <a href="/blog/2012/04/11/arquillian-graphene-1-0-0-Final/">Graphene 1.0.0.Final Released</a>
@@ -1169,14 +1061,6 @@
                 </div>
                 <div class="meta">
                   Apr 10, 2012
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2012/04/05/arquillian-core-1-0-0-CR8/">Arquillian Core 1.0.0.CR8 Released</a>
-                </div>
-                <div class="meta">
-                  Apr 05, 2012
                 </div>
               </li>
             </ul>
@@ -1309,7 +1193,7 @@
               <span class="tag tag-1">
                 <a href="/blog/tags/mission/">mission</a>
               </span>
-              <span class="tag tag-2">
+              <span class="tag tag-1">
                 <a href="/blog/tags/nonrelease/">nonrelease</a>
               </span>
               <span class="tag tag-0">
