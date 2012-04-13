@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Arquillian Blog &#183; Arquillian</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="A revolutionary integration testing platform for Java and the JVM. Open source. Highly extensible." name="description" />
+    <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml" />
+    <link href="/stylesheets/screen.css?5543419b705fa8aaa9df7af44794eada5d6e86d2" rel="stylesheet" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.js"></script>
+    <![endif]-->
+    <link href="/favicon.ico" rel="shortcut icon" />
+  </head>
+  <body class="blog index">
+    <header class="navbar navbar-fixed-top" id="banner" role="banner">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-target=".nav-collapse" data-toggle="collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="/">
+            <span class="logo"></span>
+            <span class="name">Arquillian</span>
+          </a>
+          <nav class="nav-collapse" role="navigation">
+            <ul class="nav">
+              <li><a href="/invasion/">Invasion!</a></li>
+              <li><a href="/features/">Features</a></li>
+              <li><a href="/guides/">Guides</a></li>
+              <li class="active"><a href="/blog/">Blog</a></li>
+              <li><a href="/community/">Community</a></li>
+              <li><a href="/code/">Code</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </header>
+    <div id="main" role="main">
+      <div id="content-header">
+        <div class="container">
+          <h1>
+            <a href="/blog/">Arquillian Blog</a>
+          </h1>
+        </div>
+      </div>
+      <div class="container">
+        <div id="content">
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">The Danger of Embedded Containers</a>
+              </h2>
+              <div class="byline">
+                <img class="avatar" src="http://gravatar.com/avatar/dcccd96c499963133f7f95e7ffa20c4e?s=44" />
+                <span class="author">Posted by
+                <a href="https://community.jboss.org/people/dan.j.allen">Dan Allen</a></span>
+                <span class="dateinline">on Apr 13, 2012</span>
+                <div class="date"><abbr>Apr</abbr> 13</div>
+                <span class="comments">| <a href="/blog/2012/04/13/the-danger-of-embedded-containers/#disqus_thread" data-disqus-identifier="fd953a5cdc598baacef2611c6d2a964b183575d0">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>In the Arquillian project, we&#8217;re all about <em>real</em> tests. There&#8217;s a good reason for this philosophy. If you use mocks or a substitute container when testing code that uses a programming model (i.e., CDI), all you can be sure of is that you&#8217;ve faked out enough functionality to get the test to work. You can&#8217;t be certain that your code works&#8212;really, truly works.</p>
+              <p>Obviously, we provide adapters for embedded containers (i.e., substitute containers). The reason is, they often do a decent enough job of simultating the real environment that we are willing to make the trade-off for its variations when we are working in development. I would expect, though, that you are also running the same tests in CI using a real container&#8230;just to get that peace of mind.</p>
+              <h3>How do you know when <em>not</em> to use an embedded container?</h3>
+              <p>If you write a test that you are positive should work, but instead throws some wacky exception, <em>immediately stop and try the same test in a real container</em>. For example, if you are using Embedded GlassFish, I would advise running the test in managed or remote GlassFish. The latter two adapters both use an authentic GlassFish instance. If the test passes, then you have answered the question of this section.</p>
+              <p><strong>When the embedded container begins to act inconsistently, drop it.</strong></p>
+              <p>As with all things, there are exceptions to the rule. If the code really <em>should</em> work on the embedded container, then it may be worth exploring why it isn&#8217;t. That may lead you to the discovery of a bug in the library you&#8217;re using. If debugging the library is your main concern, chase it down. If you are just trying to get a test written for your application, stop using the embedded container (or save debugging it for a rainy day).</p>
+              <h3>Example</h3>
+              <p>See <a href="https://community.jboss.org/message/729776">this thread</a> in the Seam 3 forums for an example where the Embedded GlassFish container was acting more of a hindrence than a help. The thread includes the steps I took to get a <strong class="greenbar">green bar</strong> using a different GlassFish container adapter.</p>
+              <h3>Closing thoughts</h3>
+              <p>Code that uses Solder works fine on GlassFish 3.1.2, but it does not play very nicely with Embedded GlassFish&#8212;it&#8217;s just a hostile environment for CDI because of the visibility issues that come with starting an embedded container inside an existing Java process. You end up in a minefield of class visibility and access problems, and far from making any progress writing tests (your ultimate goal).</p>
+              <p>If you want the container to start automatically like with embedded, then switch to a managed container. It works almost exactly the same as the remote container, except that Arquillian will start the standalone process at the beginning of the test execution and stop it at the end. In other words:</p>
+              <p>managed &gt;&gt;&gt;&gt; embedded</p>
+              <p>It&#8217;s clean. It&#8217;s true.</p>
+              <p>For speed of development:</p>
+              <p>remote &gt; managed</p>
+              <p>With remote, you don&#8217;t have to wait for the container to start&#8230;and you can start it in debug mode very easily and keep it there. That&#8217;s why I say that the best container adapters for development are the remote adapters and the best adapters for CI are the managed adapters. I personally don&#8217;t like the embedded container adapters much (with the exception of embedded CDI since that&#8217;s mostly a pure standalone CDI environment).</p>
+              <p>Keep that advice in mind.</p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/best-practice/">best-practice</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
+            </div>
+            
+                        <script type="text/javascript">
+                        var disqus_shortname = 'arquillian';
+                        (function () {
+                          var s = document.createElement('script'); s.async = true;
+                          s.src = "http://disqus.com/forums/arquillian/count.js";
+                          (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+                        }());
+                        </script>
+          </article>
+          <ul class="pager">
+            <li class="disabled previous">
+              <a href="#">&laquo; Older</a>
+            </li>
+            <li class="pages">Page 1 of 1</li>
+            <li class="disabled next">
+              <a href="#">Newer &raquo;</a>
+            </li>
+          </ul>
+        </div>
+        <aside id="sidebar" role="complementary">
+          <div class="subscribe">
+            <h2 class="icon news">
+              <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
+            </h2>
+            <p><em>Get the latest information on features, releases and events.</em></p>
+          </div>
+          <nav class="latest">
+            <h2>Latest Posts</h2>
+            <ul>
+              <li>
+                <div class="title">
+                  <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">The Danger of Embedded Containers</a>
+                </div>
+                <div class="meta">
+                  Apr 13, 2012
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/">Arquillian Persistence Extension 1.0.0.Alpha4 Released</a>
+                </div>
+                <div class="meta">
+                  Apr 12, 2012
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2012/04/11/arquillian-graphene-1-0-0-Final/">Graphene 1.0.0.Final Released</a>
+                </div>
+                <div class="meta">
+                  Apr 11, 2012
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2012/04/10/arquillian-first-stable-release/">Death to all bugs! Arquillian testing platform reaches first stable release</a>
+                </div>
+                <div class="meta">
+                  Apr 10, 2012
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2012/04/10/arquillian-extension-drone-1-0-0-Final/">Arquillian Drone Extension 1.0.0.Final Released</a>
+                </div>
+                <div class="meta">
+                  Apr 10, 2012
+                </div>
+              </li>
+            </ul>
+            
+                        <div id="popularposts" class="dsq-widget">
+                          <h2 class="dsq-widget-title">Popular Posts</h2>
+                          <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
+                          <script>
+                            var ppw = document.getElementById("popularposts");
+                            if (ppw.getElementsByTagName('li').length == 0) {
+                              var p = document.createElement('p');
+                              p.className = 'noresults';
+                              p.appendChild(document.createTextNode('No popular posts reported.')); 
+                              ppw.appendChild(p);
+                            }
+                          </script>
+                          <noscript>
+                            <p>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">popular posts powered by Disqus</a>.</p>
+                          </noscript>
+                        </div>
+          </nav>
+          <nav class="tags">
+            <h2>Tags</h2>
+            <div class="tag-cloud">
+              <span class="tag tag-1">
+                <a href="/blog/tags/2010/">2010</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/2011/">2011</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/2012/">2012</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/ajocado/">ajocado</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/android/">android</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/announcement/">announcement</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/as7/">as7</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/awards/">awards</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/best-practice/">best-practice</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/byteman/">byteman</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/cdi/">cdi</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/community/">community</a>
+              </span>
+              <span class="tag tag-3">
+                <a href="/blog/tags/container-adapter/">container-adapter</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/contributors/">contributors</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/core/">core</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/dependencies/">dependencies</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/docs/">docs</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/drone/">drone</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/event/">event</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/examples/">examples</a>
+              </span>
+              <span class="tag tag-2">
+                <a href="/blog/tags/extension/">extension</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/forge/">forge</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/glassfish/">glassfish</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/graphene/">graphene</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/guides/">guides</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/hackfest/">hackfest</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/jacoco/">jacoco</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/javaone/">javaone</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/jbossas/">jbossas</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/jbosscentral/">jbosscentral</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/jbossworld/">jbossworld</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/jetty/">jetty</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/jpa/">jpa</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/judcon/">judcon</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/maven/">maven</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/migration/">migration</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/mission/">mission</a>
+              </span>
+              <span class="tag tag-2">
+                <a href="/blog/tags/nonrelease/">nonrelease</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/openejb/">openejb</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/openshift/">openshift</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/openwebbeans/">openwebbeans</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/osgi/">osgi</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/performance/">performance</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/persistence/">persistence</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/photos/">photos</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/platform/">platform</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/plugin/">plugin</a>
+              </span>
+              <span class="tag tag-6">
+                <a href="/blog/tags/release/">release</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/roadmap/">roadmap</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/seam2/">seam2</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/spock/">spock</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/stats/">stats</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/test-runner/">test-runner</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/testing/">testing</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/tip/">tip</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/tomcat/">tomcat</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/tool-plugin/">tool-plugin</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/video/">video</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="/blog/tags/website/">website</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/weld/">weld</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="/blog/tags/wls/">wls</a>
+              </span>
+            </div>
+          </nav>
+        </aside>
+      </div>
+    </div>
+    <footer>
+      <div class="container">
+        <div class="project">
+          <img src="/images/arquillian_logo_200px.png" />
+          <p class="bottom">
+            &#169;
+            Copyright 2009-2012 Red Hat, Inc.
+            <br />
+            <i class="icon-fire"></i>
+            Baked by <a href="http://awestruct.org">Awestruct</a>.
+            <br />
+            <i class="icon-share-alt"></i>
+            Website and docs licensed as <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
+            <br />
+            Code released under the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License, v2.0</a>.
+          </p>
+        </div>
+        <div class="footer-nav">
+          <h4>Learn</h4>
+          <ul>
+            <li>
+              <a href="/invasion">Mission</a>
+            </li>
+            <li>
+              <a href="/features">Features</a>
+            </li>
+            <li>
+              <a href="/guides">Guides</a>
+            </li>
+            <li>
+              <a href="https://docs.jboss.org/author/display/ARQ/Reference+Guide">Manual</a>
+            </li>
+            <li>
+              <a href="http://community.jboss.org/en/arquillian/faq">FAQs</a>
+            </li>
+          </ul>
+        </div>
+        <div class="footer-nav">
+          <h4>Get Involved</h4>
+          <ul>
+            <li>
+              <a href="http://community.jboss.org/en/arquillian?view=discussions">Forums</a>
+            </li>
+            <li>
+              <a href="https://issues.jboss.org/browse/ARQ">Issue Tracker</a>
+            </li>
+            <li>
+              <a href="https://github.com/arquillian">Source Code</a>
+            </li>
+            <li>
+              <a href="/community/contributors">Contributors</a>
+            </li>
+            <li>
+              <a href="https://commmunity.jboss.org/groups/testing">Testing SIG</a>
+            </li>
+          </ul>
+        </div>
+        <div class="sponser">
+          <div class="follow-us">
+            <h4>Stay Informed</h4>
+            <ul>
+              <li>
+                <a href="https://plus.google.com/100660127586085393031"><img alt="Google+" src="/images/gplus-icon.png" /></a>
+              </li>
+              <li>
+                <a href="https://twitter.com/#!/search/%23arquillian"><img alt="Twitter" src="/images/tw-icon.png" /></a>
+              </li>
+              <li>
+                <a href="http://www.linkedin.com/groups?gid=3120340"><img alt="LinkedIn" src="/images/in-icon.png" /></a>
+              </li>
+              <li>
+                <a href="http://vimeo.com/channels/arquillian"><img alt="Vimeo" src="/images/vimeo-icon.png" /></a>
+              </li>
+            </ul>
+          </div>
+          <p>This website is open source! You can also <a href="http://www.seethestats.com/site/arquillian.org">see the stats</a>. If you want to help, <a href="http://github.com/arquillian/arquillian.github.com">fork the project</a> and hack on it.</p>
+          <p class="image"><a href="http://jboss.org"><img src="/images/jboss_redhat_branding.png" class="branding" title="Red Hat, Inc." alt="Red Hat, Inc." /></a></p>
+          <p>Arquillian is a <a href="http://jboss.org">JBoss Community</a> project and development is sponsored by Red Hat, Inc.</p>
+          <p class="bottom"><a href="http://www.redhat.com/legal/legal_statement.html">Terms of Use</a> | <a href="http://www.redhat.com/legal/privacy_statement.html">Privacy Policy</a></p>
+        </div>
+        <a class="visible-desktop" href="#" id="toTop">Top</a>
+      </div>
+    </footer>
+    <script type="text/javascript">
+      //<![CDATA[
+        $(function() {
+          prettify();
+          activateFooterGravity();
+          activateTooltips();
+          activateToTopControl();
+        });
+      //]]>
+    </script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.2/bootstrap.min.js"></script>
+    <script src="/javascripts/prettify.js"></script>
+    <script src="/javascripts/site.js?4c52ec076c01fb86281d08146616aec64ec1e569"></script>
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount','UA-18727998-3']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+     var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+  </body>
+</html>
