@@ -186,8 +186,8 @@ module Identities
         # append email if we got a new one
         identity.emails |= [identity.email]
         # fix blog urls missing http:// prefix
-        if not identity.url.nil? and not identity.url =~ /^https?:\/\//
-          identity.url += 'http://'
+        if !identity.blog.nil? and identity.blog !~ /^https?:\/\//
+          identity.blog = 'http://' + identity.blog
         end
 
         # manually credited commits
