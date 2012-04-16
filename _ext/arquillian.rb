@@ -121,9 +121,11 @@ module Awestruct::Extensions::Repository::Visitors
             :name => e.name,
             :sample_commit_sha => e.sha,
             :sample_commit_url => RepositoryHelpers.build_commit_url(repository, e.sha, 'json'),
-            :commits => 0
+            :commits => 0,
+            :repositories => []
           })
           site.git_author_index[e.email].commits += e.commits
+          site.git_author_index[e.email].repositories |= [repository.http_url]
         end
         e.delete_field('sha')
       }.sort {|a, b| a.name <=> b.name}

@@ -167,6 +167,8 @@ module Awestruct
                 else
                   entry.emails << author.email
                 end
+                entry.commits += author.commits
+                entry.repositories |= author.repositories
               else
                 author.emails = [author.email]
                 author.delete_field('email')
@@ -181,6 +183,7 @@ module Awestruct
           end
 
           # QUESTION should we do this in identities/github.rb?
+          # FALLBACK ONLY BLOCK
           rekeyed_index.keys.each do |id|
             author = rekeyed_index[id]
             next unless author.github_id.nil?
@@ -199,6 +202,7 @@ module Awestruct
                 match.emails << unmatched_email
               end
               match.commits += author.commits
+              match.repositories |= author.repositories
               rekeyed_index.delete id
               puts "Merged #{unmatched_name} <#{unmatched_email}> with matched github id #{match.github_id} based on name"
             else
