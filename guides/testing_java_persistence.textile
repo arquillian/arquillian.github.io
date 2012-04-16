@@ -1,18 +1,18 @@
 ---
 layout: guide
 title: Testing Java Persistence
-authors: [mojavelinux, bartoszmajsak]
+authors: [mojavelinux, bartoszmajsak, hasalex]
 tags: [jpa, database, persistence, transactions]
 description: Test your data! Learn how to test Java Persistence (JPA) queries against multiple providers in an Arquillian test.
 guide_group: 2
 guide_order: 1
 TODO: ["use utility EJB to handle transaction boundaries?"]
 ---
-This guide teaches you how to use Arquillian to test Java Persistence (JPA). After reading this guide, you'll be able to:
+This guide teaches you how to use Arquillian to test your Java Persistence (JPA) data layer. After reading this guide, you'll be able to:
 
 * Create a test archive that includes the JPA descriptor (persistence.xml)
 * Inject the EntityManager and UserTransaction into your test
-* Persist entities then subsequently query them via JPQL and the Criteria API (JPA 2)
+* Persist entities and retrieve them by querying via JPQL and the JPA 2 Criteria API
 * Execute the tests using different JPA providers
 
 You'll soon discover that Arquillian offers the perfect recipe for testing JPA or to simply experiment with how it works. We've designed this guide to be easy to follow so that you can come back to it whenever you need to hammer on JPA.
@@ -227,8 +227,6 @@ public void commitTransaction() throws Exception {
 
 p. Arquillian executes the @@Before@ and @@After@ methods in-container after the injections have occurred but still before/after each test method is executed.
 
-p(important). %When using TestNG, the @@Before@ method _does not_ get executed in-container by Arquillian. This feature only works with JUnit. See issue "ARQ-56":issue://ARQ-56.%
-
 Notice we have to explicitly enlist the @EntityManager@ in the JTA transaction. This step is necessary since we are using the two resources independently. This may look abnormal if you're used to using JPA from within an EJB, where enlistment happens automatically.
 
 Here's the test that verifies we can select the sample records using JPQL.  We'll print some logging statements so you can watch what's going on.
@@ -304,7 +302,7 @@ Here's the entire structure of the archive ShrinkWrap will assemble for this tes
 
 Let's look at the Persistence Unit descriptor we'll be using in the test, starting with the one for Embedded GlassFish.
 
-h3. Setup Persistence
+h3. Setup Persistence for GlassFish
 
 Here's the Persistence Unit descriptor we'll be using for Embedded GlassFish:
 
@@ -363,7 +361,7 @@ bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
         http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
     <container qualifier="glassfish-embedded" default="true">
         <configuration>
-            <property name="sunResourcesXml">
+            <property name="resourcesXml">
                 src/test/resources-glassfish-embedded/glassfish-resources.xml
             </property>
         </configuration>
@@ -372,7 +370,7 @@ bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
 
 p. All that's left is to setup the Maven build to execute the test.
 
-h3. Prep the Test (GlassFish)
+h3. Prep the Test for GlassFish
 
 To get this code to compile, we have to tell Maven it's okay to use JDK 6 (it's stubborn like that).
 
@@ -473,7 +471,7 @@ bc(prettify). <!-- clip -->
 
 We are explicitly adding the src/test/resources-glassfish-embedded directory as a test resource directory so that test-persistence.xml is placed into the classpath. Again, if you only intend on using Embedded GlassFish, this file can be moved into the standard Maven location and you can skip this configuration.
 
-h3. Run the Test
+h3. Run the Test in GlassFish
 
 When you are done setting everything up, you can run the test with the following command:
 
@@ -482,7 +480,7 @@ bc(command). $ mvn clean test
 The profile for Embedded GlassFish is activated by default. Snippets of the test output is show below.
 
 bc(output). ...
-INFO: GlassFish Server Open Source Edition 3.1.1 (java_re-private)
+INFO: GlassFish Server Open Source Edition 3.1.2 (java_re-private)
 ...
 org.jboss.arquillian.container.glassfish.embedded_3_1.GlassFishContainer executeCommand
 INFO: command add-resources result: PlainTextActionReporterSUCCESSDescription: add-resources AdminCommandnull
@@ -507,9 +505,9 @@ Game@29940830[id = 3; title = F-Zero]
 
 p. *Congratulations!* *(greenbar)Green bar*! *Now that's a real integration test!*
 
-h3. Run the Test (JBoss AS 7)
+h3. Run the Test in JBoss AS 7
 
-We can run the exact same test on JBoss AS 7. We'll need a different Persistence Unit definition that specifies a JDBC Resource available on JBoss AS and sets some Hibernate configuration settings. (Arquillian doesn't yet support deploying a DataSource to JBoss AS--though it's in the pipeline--so for now we use the built-in DataSource, java:jboss/datasources/ExampleDS)
+We can run the exact same test on JBoss AS 7. We'll need a different Persistence Unit definition that specifies a JDBC Resource available on JBoss AS and sets some Hibernate configuration settings. (Arquillian doesn't yet support deploying a DataSource to JBoss AS--though it's in the pipeline--so for now we use the built-in DataSource, java:jboss/datasources/ExampleDS).
 
 div(filename). src/test/resources-jbossas-remote/test-persistence.xml
 
@@ -563,7 +561,7 @@ bc(prettify). <!-- clip -->
 </profile>
 <!-- clip -->
 
-Now we run the test again using Maven, but this time activate the JBoss AS managed profile. (You need to set the JBOSS_HOME environment variable to point to a JBoss AS 7.1 installation)
+Now we run the test again using Maven, but this time activate the JBoss AS managed profile. (You need to set the JBOSS_HOME environment variable to point to a JBoss AS 7.1 installation).
 
 bc(command). $ mvn clean test -Parquillian-jbossas-managed
 
