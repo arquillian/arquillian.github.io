@@ -63,13 +63,11 @@ module Identities
           end
         end
 
-        # ?? this only makes sense if we didn't get the hash from the e-mail
-        if entry.has_key? 'email' and !entry['email'].to_s.strip.empty? and !identity.email.eql? entry['email']
-          if identity.emails.nil?
-            identity.emails = [identity.email, entry['email']]
-          else
-            identity.emails = identity.emails | [identity.email, entry['email']]
-          end
+        if entry.has_key? 'email' and !entry['email'].to_s.strip.empty?
+          email = entry['email'].downcase
+          identity.email = email if identity.email.nil?
+          identity.emails ||= []
+          identity.emails |= [identity.email, email]
         end
 
         (entry['accounts'] || []).each do |a|

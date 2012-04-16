@@ -72,8 +72,9 @@ module Identities
           if profile.match(/ id="email".*?>(.+?)</)
             replace = {' dot ' => '.', ' at ' => '@'}
             email = $1.gsub(/ (dot|at) /) {|m| replace[m]}
-            # FIXME add to identity.emails array if identity already has e-mail (make mixin method)
-            identity.email = email
+            identity.email = email if identity.email.nil?
+            identity.emails ||= []
+            identity.emails |= [identity.email, email]
           end
         end
 

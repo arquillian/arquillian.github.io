@@ -1,7 +1,8 @@
 module Identities
   module GitHub
-    CONTRIBUTOR_URL_TEMPLATE = 'https://api.github.com/repos/%s/%s/contributors'
+    CONTRIBUTORS_URL_TEMPLATE = 'https://api.github.com/repos/%s/%s/contributors'
     TEAM_MEMBERS_URL_TEMPLATE = 'https://api.github.com/teams/%s/members'
+    USER_URL_TEMPLATE = 'https://api.github.com/users/%s'
 
     # It appears that all github users have a gravatar_id
     AVATAR_URL_TEMPLATE = 'http://gravatar.com/avatar/%s?s=%i'
@@ -33,47 +34,42 @@ module Identities
 
       def add_match_filter(match_filter)
         @match_filters << match_filter
+        #File.open('/tmp/committers.yml', 'w') do |out|
+        #  YAML.dump(match_filter, out)
+        #end
       end
 
       def collect(identities)
+        visited = []
         @repositories.each do |r|
-          url = CONTRIBUTOR_URL_TEMPLATE % [ r.owner, r.path ]
+          url = CONTRIBUTORS_URL_TEMPLATE % [ r.owner, r.path ]
           contributors = RestClient.get url, :accept => 'application/json'
-          contributors.each do |c|
-            github_id = c['login'].downcase
-            ## BEGIN REVIEW
+          contributors.each do |acct|
+            github_id = acct['login'].downcase
             author = nil
             @match_filters.each do |filter|
-              author = filter[github_id]
+              author = filter.values.find{|candidate| candidate.github_id.eql? github_id }
               break unless author.nil?
             end
-            # TODO it would be interesting to report who didn't get matched when it's all over
             if author.nil?
-              puts "Skipping non-Arquillian contributor #{github_id} in repository #{r.owner}/#{r.path}"
+              #puts "Skipping non-Arquillian contributor #{github_id} in repository #{r.owner}/#{r.path}"
               next
             end
-            ## END REVIEW
             identity = identities.lookup_by_github_id(github_id, true)
-            identity.github_url = c['url'].downcase
-            identity.gravatar_id = c['gravatar_id']
-            # author contains the commits we counted from analyzing the repositories
-            identity.contributor = author
-            # alias for convenience
-            identity.commits = author.commits
-            # assume they want their commit name as the preferred name (unless it's an email)
-            if identity.name.nil? and author.name.index('@').nil?
-              if !author.name.index(' ').nil?
-                identity.name = author.name.split(' ').map{|n| n.capitalize}.join(' ')
-              else
-                identity.name = author.name.capitalize
-              end
-            end
-            if !identity.github.nil? and !identity.github.contributions.nil?
-              identity.github.contributions += c['contributions']
-            else
-              identity.github = OpenStruct.new if identity.github.nil?
-              identity.github.contributions = c['contributions']
-            end
+            github_acct_to_identity(acct, author, identity)
+            visited << github_id
+          end
+        end
+
+        # github doesn't keep perfect records of contributors, so handle those omitted contributors
+        @match_filters.each do |filter|
+          filter.values.select{|author| !author.github_id.nil? and !visited.include? author.github_id}.each do |author|
+            github_id = author.github_id
+            puts "Manually adding #{author.name} (#{github_id}) as a contributor"
+            url = USER_URL_TEMPLATE % [ github_id ]
+            user = RestClient.get url, :accept => 'application/json'
+            identity = identities.lookup_by_github_id(github_id, true)
+            github_acct_to_identity(user, author, identity)
           end
         end
 
@@ -96,6 +92,37 @@ module Identities
               end
             end
           end
+        end
+      end
+
+      def github_acct_to_identity(acct, author, identity)
+        # setup if first visit
+        if identity.github.nil? or identity.github.contributions.nil?
+          identity.github = OpenStruct.new if identity.github.nil?
+          identity.github.contributions = acct.has_key?('contributions') ? acct['contributions'] : 0
+          identity.github_url = acct['url'].downcase
+          identity.gravatar_id = acct['gravatar_id']
+          # author contains the commits we counted from analyzing the repositories
+          identity.contributor = author
+          identity.email = author.emails.first if identity.email.nil?
+          identity.emails ||= []
+          identity.emails |= [identity.email, author.emails.first]
+          # alias for convenience
+          identity.commits = author.commits
+          # assume they want their commit name as the preferred name (unless it's an email)
+          if identity.name.nil? and author.name.index('@').nil?
+            if !author.name.index(' ').nil?
+              # FIXME this could be made into a smarter utility function
+              identity.name = author.name.split(' ').map{|n| n.capitalize}.join(' ')
+              # special exception for Lincoln :)
+              identity.name.gsub!('Iii', 'III')
+            else
+              identity.name = author.name.capitalize
+            end
+          end
+        # if been there, just add contributions according to github
+        else
+          identity.github.contributions += acct.has_key?('contributions') ? acct['contributions'] : 0
         end
       end
 
@@ -125,16 +152,9 @@ module Identities
           if !identity.github_id.nil?
             url = PROFILE_URL_TEMPLATE % identity.github_id
           end
-          #['github_id', 'username'].each do |k|
-          #  user = identity.send(k)
-          #  if !user.nil?
-          #    url = PROFILE_URL_TEMPLATE % user
-          #    break
-          #  end
-          #end
         end
 
-        # can't find user, give up
+        # can't find user, give up (no github id or explicit url)
         if url.nil?
           return
         end
@@ -153,14 +173,30 @@ module Identities
         if !data['name'].nil? and (identity.name.nil? or data['name'].length > identity.name.length)
           identity.name = data['name'].titleize
         end
-        # TODO may need special handling for duplicate e-mail (make sure to grab contributor.email)
+        identity.emails ||= []
+        identity.emails |= [identity.email].compact
         keys_to_identity = ['email', 'gravatar_id', 'blog', 'location', 'bio', 'company']
+        # merge keys, overwriting duplicates
         identity.merge!(OpenStruct.new(data.select{|k, v|
           !v.to_s.strip.empty? and keys_to_identity.include? k
         }))
+        if identity.email
+          identity.email = identity.email.downcase
+        end
+        # append email if we got a new one
+        identity.emails |= [identity.email]
         # fix blog urls missing http:// prefix
         if not identity.url.nil? and not identity.url =~ /^https?:\/\//
           identity.url += 'http://'
+        end
+
+        # manually credited commits
+        if identity.commits and !identity.contributor
+          identity.contributor = OpenStruct.new({
+            :commits => identity.commits,
+            :emails => [identity.email],
+            :name => identity.name
+          })
         end
       end
     end

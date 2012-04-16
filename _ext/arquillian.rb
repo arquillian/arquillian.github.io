@@ -104,7 +104,7 @@ module Awestruct::Extensions::Repository::Visitors
       range_author_index = {}
       RepositoryHelpers.resolve_commits_between(repository, sha1, sha2).map {|c|
         # we'll use email as the key to finding their identity; the sha we just need temporarily
-        OpenStruct.new({:name => c.author.name, :email => c.author.email, :commits => 0, :sha => c.sha})
+        OpenStruct.new({:name => c.author.name, :email => c.author.email.downcase, :commits => 0, :sha => c.sha})
       }.each {|e|
         # This loop both grabs unique authors by email and counts their commits
         if !range_author_index.has_key? e.email
@@ -233,7 +233,7 @@ module Awestruct::Extensions::Repository::Visitors
           :date => commit.date,
           :released_by => OpenStruct.new({
             :name => committer.name,
-            :email => committer.email
+            :email => committer.email.downcase
           }),
           :contributors => RepositoryHelpers.resolve_contributors_between(site, repository, prev_sha, sha),
           :published_artifacts => []
@@ -330,12 +330,12 @@ module Awestruct::Extensions::Repository::Visitors
         pom.each_element('/project/developers/developer') do |dev|
           # capture first developer as fallback lead
           if lead.nil?
-            lead = OpenStruct.new({:name => dev.text('name'), :email => dev.text('email')})
+            lead = OpenStruct.new({:name => dev.text('name'), :email => dev.text('email').downcase})
           end
 
           if !dev.elements['roles'].nil?
             if !dev.elements['roles'].elements.find { |role| role.name.eql? 'role' and role.text =~ / Lead/ }.nil?
-              lead = OpenStruct.new({:name => dev.text('name'), :email => dev.text('email')})
+              lead = OpenStruct.new({:name => dev.text('name'), :email => dev.text('email').downcase})
               break
             end
           end

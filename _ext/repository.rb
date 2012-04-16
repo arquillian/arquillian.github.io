@@ -146,17 +146,66 @@ module Awestruct
 
           # use sample commits to get the github_id for each author
           rekeyed_index = {}
-          site.git_author_index.each do |email, info|
-            commit_data = RestClient.get(info.sample_commit_url, :accept => 'application/json')
+          site.git_author_index.each do |email, author|
+            commit_data = RestClient.get(author.sample_commit_url, :accept => 'application/json')
             github_id = commit_data['commit']['author']['login'].to_s.downcase
-            # case where a person has multiple e-mail address w/ one github account
-            if !github_id.empty? and rekeyed_index.has_key? github_id
-              # FIXME also capture secondary e-mail address!!!
-              rekeyed_index[github_id].commits += info.commits
+            if github_id.empty?
+              match = site.github_mapping.find{|candidate| candidate.email.eql? author.email}
+              if match
+                github_id = match.github_id
+                puts "Used github mapping to lookup github_id #{github_id} for #{author.name} <#{author.email}>"
+              end
+            end
+            if !github_id.empty?
+              author.github_id = github_id
+              # github_id may exist in index when a person has multiple e-mail address w/ one github account
+              if rekeyed_index.has_key? github_id
+                entry = rekeyed_index[github_id]
+                # this is rather crude, but put the e-mail w/ lots of commits first
+                if author.commits > entry.commits
+                  entry.emails.unshift author.email
+                else
+                  entry.emails << author.email
+                end
+              else
+                author.emails = [author.email]
+                author.delete_field('email')
+                rekeyed_index[github_id] = author
+              end
             else
-              rekeyed_index[github_id.empty? ? email : github_id] = info
+              author.github_id = nil
+              author.emails = [author.email]
+              author.delete_field('email')
+              rekeyed_index[email] = author
             end
           end
+
+          # QUESTION should we do this in identities/github.rb?
+          rekeyed_index.keys.each do |id|
+            author = rekeyed_index[id]
+            next unless author.github_id.nil?
+            # an unmatched account will have exactly one e-mail
+            unmatched_email = author.emails.first
+            unmatched_name = author.name
+            # attempt a name match (somewhat weak, but it will have to do)
+            match = rekeyed_index.values.find{|candidate|
+              !candidate.equal? author and candidate.name.downcase.eql? unmatched_name.downcase
+            }
+            if match
+              # this is rather crude, but put the e-mail w/ lots of commits first
+              if author.commits > match.commits
+                match.emails.unshift unmatched_email
+              else
+                match.emails << unmatched_email
+              end
+              match.commits += author.commits
+              rekeyed_index.delete id
+              puts "Merged #{unmatched_name} <#{unmatched_email}> with matched github id #{match.github_id} based on name"
+            else
+              puts "Could not resolve github id for author #{unmatched_name} <#{unmatched_email}>"
+            end
+          end
+
           @observers.each do |o|
             o.add_match_filter(rekeyed_index) if o.respond_to? 'add_match_filter'
           end
