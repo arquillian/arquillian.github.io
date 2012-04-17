@@ -8,6 +8,7 @@ module Awestruct
         @output_path = output_path
         @num_entries = opts[:num_entries] || 50
         @title = opts[:title] || nil
+        @additional_tags = opts[:additional_tags] || []
       end
 
       def execute(site)
@@ -19,10 +20,10 @@ module Awestruct
         atom_pages = []
 
         entries.each do |entry|
-          atom_pages << entry.clone
-          author_id = atom_pages.last.author
-          author = site.identities.lookup(author_id)
-          atom_pages.last.author = author
+          entry_clone = entry.clone
+          entry_clone.author = site.identities.lookup(entry_clone.author) 
+          entry_clone.additional_tags = @additional_tags
+          atom_pages << entry_clone
         end
 
         site.engine.set_urls(atom_pages)
