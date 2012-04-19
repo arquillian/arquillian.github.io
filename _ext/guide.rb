@@ -30,10 +30,10 @@ module Awestruct
                 page.description = page.guide_summary
               end
               guide.summary = page.description
-              guide.group = page.guide_group
-              guide.order = if page.guide_order then page.guide_order else 100 end
               
-              # FIXME contributors should be listed somewhere on the page
+              # FIXME contributors should be listed somewhere on the page, but not automatically authors
+              # perhaps as little pictures like on github
+
               # Add the Authors to Page and Guide based on Git Commit history
               #git_page_contributors = page_contributors(page, @num_changes)
               #if not page.authors
@@ -68,11 +68,12 @@ module Awestruct
 
               guide.languages = page.languages
 
-              # only add the 'main' (en) guide to the guide index
-              is_main_guide = !(page.relative_source_path =~ /.*_[a-z]{2}(_[a-z]{2})?\..*/)
-              if is_main_guide
+              # only add the main guide to the guide index (i.e., it doesn't have a locale suffix)
+              if !(page.relative_source_path =~ /.*_[a-z]{2}(_[a-z]{2})?\..*/)
+                guide.group = page.guide_group
+                guide.order = if page.guide_order then page.guide_order else 100 end
                 # default guide language is english
-                guide.language = site.languages.send('en')
+                guide.language = site.languages.en
                 guides << guide
               end
             end
