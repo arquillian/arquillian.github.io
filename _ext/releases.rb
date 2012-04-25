@@ -46,9 +46,15 @@ module Awestruct::Extensions::Releases
             inner_release_page.relative_source_path = inner_release_page.output_path
           end
 
-          # FIXME we can use site.layouts to get the layout
-          layouts_dir = File.basename site.engine.config.layouts_dir
-          release_page = site.engine.find_and_load_site_page(File.join(layouts_dir, 'release'))
+
+          inner_release_page.layout    = 'release'
+          inner_release_page.release   = release
+          inner_release_page.date      = release.date
+          inner_release_page.component = component
+
+          release_page = Awestruct::Page.new( site, inner_release_page )
+          release_page.prepare!
+          release_page.layout = 'post'
           release_page.output_path = File.join(@path_prefix, release_page_name.tr('.', '-')) + '.html'
 
           release.page = release_page
@@ -64,7 +70,6 @@ module Awestruct::Extensions::Releases
           # why do we need to do Time.utc?
           #release_page.date ||= release.date
           release_page.date = Time.utc(release.date.year, release.date.month, release.date.day)
-          #release_page.layout ||= 'release'
           release_page.tags ||= []
           if post_tags
             release_page.tags += post_tags
@@ -77,21 +82,9 @@ module Awestruct::Extensions::Releases
             release_page.release_notes = site.release_notes[release.key]
           end
 
-          # Fix date calculation performed by Posts extension
-          release_page.relative_source_path =
-              File.join(@path_prefix, release_page.date.strftime('%Y-%m-%d-') + release_page_name.tr('.', '-')) + '.html'
+          # Fix page slugging by NOT alterating the relative-source-path.
+          release_page.slug = release_page_name.tr('.', '-')
 
-          # pre-render the content so that the entry can be wrapped in the common release text
-          release_page.rendered_content = release_page.render(site.engine.create_context(release_page, inner_release_page.content))
-          class << release_page
-            def render(context)
-              self.rendered_content
-            end
-
-            def content
-              self.rendered_content
-            end
-          end
           site.pages << release_page
         end
       end
