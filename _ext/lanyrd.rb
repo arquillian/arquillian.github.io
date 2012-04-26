@@ -1,4 +1,5 @@
 require 'vpim/icalendar'
+require_relative 'vpim_patch'
 
 ##
 # Lanyrd is an Awestruct extension module for interacting with lanyrd.com

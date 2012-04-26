@@ -31,6 +31,7 @@ module Awestruct::Extensions
 end
 
 # make sure :no_span_caps is enabled, necessary for :textile filter in haml
+# still necessary for :textile use inside of haml, which does not respect rules
 module RedCloth
   class TextileDoc < String
     def initialize(string, restrictions = [])
@@ -42,6 +43,11 @@ module RedCloth
 end
 
 module RedCloth::Formatters::HTML
+  # hack to avoid getting an extra endline at end of code snippets when occur at the end of text
+  def before_transform(text)
+    text.chomp!
+  end
+
   # video. vimeo 22696384 320x400
   def video(opts)
     opts[:class] = (opts[:class] ? opts[:class] + ' video' : 'video')

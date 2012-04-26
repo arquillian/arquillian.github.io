@@ -19,12 +19,19 @@ module Awestruct
         def execute(site)
           if @use_data_cache
             modules_data_file = File.join(site.tmp_dir, 'datacache', 'components.yml')
-            if File.exist? modules_data_file
+            # TEMPORARY, but right now can't load components data if no identities data
+            identities_data_file = File.join(site.tmp_dir, 'datacache', 'identities.yml')
+            if File.exist? modules_data_file and File.exist? identities_data_file
               (site.components, site.modules) = YAML.load_file(modules_data_file)
               ## TEMPORARY! -> turn this into a post processor
               generate_pages(site)
               ## TEMPORARY!
               return
+            else
+              if File.exist? identities_data_file
+                # we are going to rebuild identities
+                File.unlink identities_data_file
+              end
             end
           end
 

@@ -198,7 +198,7 @@ module Awestruct
         changes = []
         g = Git.open(page.site.dir)
         g.log(size).path(page.relative_source_path[1..-1]).each do |c|
-          changes << Change.new(c.sha, c.author.name, c.author.date, c.message.to_a[0].chomp.chomp('.').capitalize)
+          changes << Change.new(c.sha, c.author.name, c.author.date, c.message.split(/\n/)[0].chomp('.').capitalize)
         end
         if changes.length == 0
           changes << Change.new('UNTRACKED', 'You', Time.now, 'Not yet committed')
