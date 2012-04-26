@@ -21,7 +21,7 @@ require_relative 'asset_fingerprinter'
 
 Awestruct::Extensions::Pipeline.new do
   # Custom tags and syntax for textile markup
-  extension Awestruct::Extensions::TextilePlus.new()
+  extension Awestruct::Extensions::TextilePlus.new
 
   # You need to have the file $HOME/.github-auth containing username:password on one line
   github_collector = Identities::GitHub::Collector.new(:auth_file => '.github-auth', :teams =>
@@ -59,7 +59,6 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Tagger.new(:posts, '/blog/index', '/blog/tags', :per_page => 5)
   extension Awestruct::Extensions::TagCloud.new(:posts, '/blog/tags/index.html')
   extension Awestruct::Extensions::Disqus.new
-  helper Awestruct::Extensions::PostsHelper
 
   # Indexifier moves HTML files to their own directory to achieve "pretty" URLs (e.g., features.html -> /features/index.html)
   extension Awestruct::Extensions::Indexifier.new
@@ -74,6 +73,11 @@ Awestruct::Extensions::Pipeline.new do
   # Must be after all other extensions that might populate identities
   extension Awestruct::Extensions::Identities::Cache.new
 
+  # Transformers
+  transformer Awestruct::Extensions::Minify.new([:js])
+
+  # Helpers
+  helper Awestruct::Extensions::PostsHelper
   helper Awestruct::Extensions::Partial
   helper Awestruct::Extensions::Interwiki
   helper Awestruct::Extensions::GoogleAnalytics
