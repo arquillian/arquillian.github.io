@@ -21,18 +21,18 @@ reference_rev: 52f8fbd2ff5f00fbbd70729a40f1d6ab124e600e
 このガイドではArquillianを紹介します。このガイドを読むと、以下のことができるようになります：
 
 * MavenベースのJavaプロジェクトに、Arquillianインフラストラクチャを追加する
-* CDI(Contexts and Dependency Injection) beanの振る舞いを検証するArquillianのテストケースを書く
-* 複数の互換性のあるコンテナでArquillianのテストケースを実行する
+* CDI(Contexts and Dependency Injection) beanの振る舞いを検証するArquillianのテストを書く
+* MavenとEclipseから、互換性のある複数のコンテナ上でArquillianのテストを実行する
 
-これらのスキルを、ArquillianをJava EEアプリケーションのテストスイートとMavenのビルドに組み込むことで学びます。このガイドは、読者がさっと始められるように、 _速く読めるよう_ デザインされています！
+これらのスキルを、MavenでビルドされるJava EEアプリケーションのテストスイートにArquillianを組み込むことによって学びます。このガイドは、読者がさっと始められるように、 _速く読めるよう_ デザインされています！
 
 h3. 前提
 
-Arquillianを始める最も簡単なやり方は、依存性の管理をしているプロジェクトのテストスイートに組み込むことです。今日、このカテゴリで最も広く利用されているビルドツールは、 "Apache Maven":maven_home です。このガイドでは、サンプルのMavenプロジェクトを使って、最初の *(greenbar)グリーンバー* へ案内します。
+Arquillianを始める最もシンプルな方法は、依存性の管理をしているプロジェクトのテストスイートに組み込むことです。今日、このカテゴリで最も広く利用されているビルドツールは、 "Apache Maven":maven_home です。このガイドでは、サンプルのMavenプロジェクトを使って、最初の *(greenbar)グリーンバー* へ案内します。
 
 p(info). %ArquillianはMavenには、もっと言えばどんな特定のビルドツールにも依存しません。それはAntやGradleでビルドするプロジェクトで使っても--より優れているとは言わないまでも--同じように機能します。理想的には、ビルドツールは、 "Maven Central repository":maven_search で配布されているArquillianライブラリをプロジェクトに追加するタスクを単純化できる、依存性管理を提供している物がいいでしょう。%
 
-このガイドは、読者がコマンドシェルとIDE(Integrated Development Environment:統合開発環境)からMavenを利用できると仮定しています。もしそうでなければ、 "Mavenをインストールしてください":maven_download 。 また、 "JDK(Java Development Kit) 1.5":jdk_download 以降のインストールが必要です。
+このガイドは、読者がコマンドシェルとIDE(Integrated Development Environment:統合開発環境)からMavenを利用できると仮定しています。もしそうでなければ、 "Mavenをダウンロードしてインストールしてください":maven_download 。 また、 "JDK(Java Development Kit) 1.5":jdk_download 以降のインストールが必要です。
 
 h3. 新しいプロジェクトを作成する
 
@@ -47,7 +47,7 @@ p(info). %既存のMavenプロジェクトがあれば、この章を、次章�
 
 h4(#generate_project_from_archetype). Maven Archetypeからプロジェクトを生成する
 
-まず、以下のコマンドでMavenベースのJavaプロジェクトを生成します。 
+まず、以下のコマンドでMavenベースのJavaプロジェクトを生成します：
 
 bc(command).. $ mvn archetype:generate -DarchetypeGroupId=net.avh4.mvn.archetype \
 -DarchetypeArtifactId=java-1.6-archetype
@@ -78,11 +78,11 @@ p. このコマンドは、カレントディレクトリに @arquillian-tutoria
 
 p(info). %このプロジェクトは、Arquillianがそれぞれ最低限要求するバージョンであるJava 1.6とJUnit 4.8を使用するようにあらかじめ設定されています。%
 
-ジェネレータはまた、2つの @java@ フォルダの下に、 @org.arquillian.example@ というJavaパッケージを作成しています。 @java@ フォルダ直下ではなく、このパッケージの下にJavaソースファイルを置いてください。
+プロジェクトジェネレータはまた、2つの @java@ フォルダの下に、 @org.arquillian.example@ というJavaパッケージを作成しています。 @java@ フォルダ直下ではなく、このパッケージの下にJavaソースファイルを置いてください。
 
 p(warning). %Arquillianはまた、TestNG 5をサポートしています。しかしこのガイドでは、JUnitを使用します。%
 
-さて、エディタで @pom.xml@ を開いてください。XMLファイルには、基本的なプロジェクト情報、ビルドセクション、依存セクションが含まれているのが分かります。 *JUnitより下の@<dependency>@要素は不要なので削除してください。*
+さて、エディタで @pom.xml@ を開いてください。XMLファイルには、基本的なプロジェクト情報、ビルドセクション、依存セクションが含まれているのが分かります。 *JUnitより下の @<dependency>@ 要素は不要なので削除してください。*
 
 編集が終わったら、以下のようになっているはずです（表示上、簡潔にしてあります）：
 
@@ -133,7 +133,7 @@ bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
 
 p. これからJava EE 6コンポーネントを書きます。そのため、Java EE 6 APIをクラスパスに追加する必要があります。そうすれば、これらのコンポーネントをコンパイルできます。
 
-@pom.xml@ ファイルをもう一度開き、そのXMLフラグメントを @<dependencies>@ 要素の下に追加してください。追加後は、以下のようになります：
+@pom.xml@ ファイルをもう一度開き、そのXMLフラグメントを @<dependencies>@ 要素の下に追加してください。 @<dependencies>@ 要素追加後は、以下のようになります：
 
 div(filename). pom.xml
 
@@ -155,9 +155,9 @@ bc(prettify).. <!-- clip -->
 </dependencies>
 <!-- clip -->
 
-p(important). %Java EE APIアーティファクトを、 @javax:javaee-api@ と組み合わせて *使わない* ことを強くおすすめします。このバンドルは、メソッドの実装を省いたクラスが含まれているので、実行時に（テストの実行時でも）これがクラスパスに残っていた場合、アプリケーションは奇妙なAbsent Codeエラーを投げます。もっと背景を知りたい場合は、 "このFAQを読んでください":http://community.jboss.org/wiki/WhatsTheCauseOfThisExceptionJavalangClassFormatErrorAbsentCode 。%
+p(important). % @org.jboss.spec:jboss-javaee-6.0@ アーティファクトは、Java EE 6 APIだけで構成されています。Java EE APIアーティファクトを、 @javax:javaee-api@ と組み合わせて *使わない* ことを強くおすすめします。後者のアーティファクトには、メソッドの実装を省いたクラスが含まれているので、実行時に（テストの実行時でも）これがクラスパスに残っていた場合、アプリケーションは奇妙なAbsent Codeエラーを投げます。もっと背景を知りたい場合は、 "このFAQを読んでください":http://community.jboss.org/wiki/WhatsTheCauseOfThisExceptionJavalangClassFormatErrorAbsentCode 。%
 
-p. プロジェクトの基本は準備できました！ "プロジェクトをEclipseで開く":#open_project_in_eclipse に進んでください。コードを書きはじめます！
+p. プロジェクトの基本は準備できました！ "プロジェクトをEclipseで開く":#open_the_project_in_eclipse に進んでください。コードを書きはじめます！
 
 h4(#create_project_using_forge). Forgeでプロジェクトを生成する
 
@@ -213,7 +213,7 @@ Forgeが生成したこのプロジェクトのファイル構成を以下に示
 
 bc(command). [arquillian-tutorial] arquillian-tutorial $ 
 
-デフォルトでは、Forgeはプロジェクトに、Arquillianが最低限要求するバージョンである、Java 1.6を設定します。便利ですね。
+デフォルトでは、Forgeはプロジェクトに、Arquillianが最低限推奨するバージョンである、Java 1.6を設定します。便利ですね。
 
 次に追加する必要があるのは、Java EE APIです。以下の @project add-dependency@ コマンドでできます：
 
@@ -279,14 +279,18 @@ p(warning). %もし、プロジェクトのpom.xmlにリポジトリを明記す
 
 p. プロジェクトの基本は準備できました！Eclipseでプロジェクトを開きましょう。コードを書きはじめます！
 
-h3. プロジェクトをEclipseで開く
+h3(#open_the_project_in_eclipse). プロジェクトをEclipseで開く
 
-Javaプロジェクトで開発するときは、EclipseのようなIDEを使うでしょう。だから、Arquillianは、IDEフレンドリーに設計されています。つまり、型破りな変更をしなくてもArquillianテストをIDEから実行できます。IDEの利点をすぐに活用しましょう。
+Javaプロジェクトで開発するときは、EclipseのようなIDEを使うでしょう。だから、Arquillianは、IDEフレンドリーに設計されています。特別な設定をしなくてもArquillianテストをIDEから実行できます。IDEの利点をすぐに活用しましょう。
 
-Eclipseの起動から始めます。これはMavenプロジェクトなので、プロジェクトを開くには  "Maven Integration for Eclipse":m2e_home (m2e)のインストールが必要です。もしまだインストールしていなければ、簡単な方法は、 "JBoss Tools":tools_home をインストールすることです。次のステップに従ってEclipseマーケットプレイス（Eclipseのアプリケーションストアのようなもの）からインストールしてください。
+Eclipseの起動から始めます。これはMavenプロジェクトなので、プロジェクトを開くには  "Maven Integration for Eclipse":m2e_home (m2e)のインストールが必要です。
+
+h4. m2eプラグインのインストール
+
+もしまだインストールしていなければ、簡単な方法は、 "JBoss Tools":tools_home をインストールすることです。次のステップに従ってEclipseマーケットプレイス（Eclipseのアプリケーションストアのようなもの）からインストールしてください。
 
 # メインメニューから、 @Help > Eclipse Marketplace...@ を選択
-#  検索フィールドに"jboss tools"と入力し（引用符を除く）、Enterを押す
+#  検索フィールドに"jboss tools"（引用符は除く）と入力し、Enterを押す
 # JBoss Tools (Indigo)のインストールボタンをクリック
 # インストールウィザードを完了して、再起動のプロンプトが表示されたら再起動する
 
@@ -300,13 +304,15 @@ JBoss Tools はJava EEアプリケーション開発の快適な環境を提供�
 # インストールウィザードを完了して、再起動のプロンプトが表示されたら再起動する
 # Maven Integration for Eclipse WTPについてステップを繰り返す
 
+h4. m2eを使ってプロジェクトをインポートする
+
 Maven Integrationプラグインをインストールしたら、以下のステップでプロジェクトを開きます：
 
 # メインメニューから、 @File > Import...@ を選択
-# input sourceフィールドで"existing maven"と入力する
+# input sourceフィールドで"existing maven"（引用符を除く）と入力する
 # Existing Maven Projectsオプションを選択し、Nextボタンをクリックする
 # Browse...ボタンをクリックする
-# ファイルシステムでプロジェクトフォルダへ移動し、OKボタンをクリックする
+# ファイルブラウザでプロジェクトフォルダへ移動して選択し、OKボタンをクリックする
 # Finishボタンをクリックして、プロジェクトを開く
 
 EclipseはMavenプロジェクトを認識し、プロジェクトナビゲータビューで開きます。プロジェクトを展開したら、次の画像と同様に見えるでしょう：
@@ -376,7 +382,7 @@ bc(prettify).. <!-- clip -->
 </dependency>
 <!-- clip -->
 
-p. Arquillian-JUnitインテグレーションアーティファクトは、また、ShrinkWrap APIをテストクラスパスに追加します。これらの全ライブラリは、JUnit Arquillianテストを書き、コンパイルする際に必要です。
+p. Arquillian-JUnitインテグレーションアーティファクトは、Arquillian CoreとShrinkWrapのAPIもテストクラスパスに追加します。これらの全ライブラリは、JUnit Arquillianテストを書き、コンパイルする際に必要です。
 
 p(info). %JUnitの代わりにTestNGを使うためには、Arquillian JUnitインテグレーションをArquillian TestNGインテグレーションで置き換えてください。%
 
@@ -420,7 +426,7 @@ h4. テストアーカイブとは？
 
 p(info). %また、ShrinkWrapはアーティファクト（ライブラリ）の解決をサポートします。プログラム的に設定ファイルを作成し、テストアーカイブに追加します。ShrinkWrapのより詳細な説明は、 "ShrinkWrap introduction":/guides/shrinkwrap_introduction を参照してください。%
 
-Arquillianのフレアをテストに加えましょう：
+コードを下記のように置き換えて、Arquillianのフレアをテストに加えましょう：
 
 div(filename). src/test/java/org/arquillian/example/GreeterTest.java
 
@@ -451,9 +457,9 @@ public class GreeterTest {
     }
 }
 
-p. ShrinkWrapを使って、Javaアーカイブ（jar）を定義しました。このアーカイブは、テスト対象の @Greeter@ クラスと、META-INFディレクトリ内にこのアーカイブでCDIを有効にするための空のbeans.xmlファイルを含みます。
+p. ShrinkWrapを使って、Javaアーカイブ（jar）をデプロイメントとして定義しました。このアーカイブは、テスト対象の @Greeter@ クラスと、META-INFディレクトリ内にこのアーカイブでCDIを有効にするための空のbeans.xmlファイルを含みます。
 
-ここでやるべきことは、テストメソッドの上で @Greeter@ インスタンスを直接フィールドに注入し、未実装のテストメソッドをそのbeanの振る舞いを検証するものに置き換えることです。読者に和んでもらえるように、コンソールにも挨拶を出力します。
+ここでやるべきことは、テストメソッドの上で @Greeter@ インスタンスを直接フィールドに注入し、未実装のテストメソッドをそのbeanの振る舞いを検証するものに置き換えることです。読者に和んでもらえるように、コンソールにも挨拶を出力します。テストメソッドを以下のように置き換えて @javax.inject.Inject@ のインポート文を追加してください。
 
 div(filename). src/test/java/org/arquillian/example/GreeterTest.java
 
@@ -514,11 +520,11 @@ p. 最初のArquillianテストが書けました！
 
 h3. コンテナアダプタを追加する
 
-これまで、コンテナでテストすることについて数多く語ってきましたが、今のところどれとは言及しませんでした。それは、実行時に決定することだからです。
+これまで、コンテナでテストすることについて数多く語ってきましたが、今のところどれを使うかは検討しませんでした。それは、実行時に決定することだからです。
 
 Arquillianは、テストクラスパスで利用可能なコンテナの中からターゲットコンテナを選択します。だから、プロジェクトにもっとライブラリを追加します。
 
-Arquillianのテストは、テストで使用するプログラミングモデルと互換性があるならば（コンテナ用のArquillianアダプタがあるならば）どんなコンテナでも実行できます。私達のテストは、CDIプログラミングモデルを使用しているので、CDIをサポートするコンテナを使う必要があります。開発中は高速にターンアラウンドしたいので、Weld EEエンベデッドコンテナから始めましょう。
+Arquillianのテストは、テストで使用するプログラミングモデルと互換性があるならば（つまり、コンテナ用のArquillianアダプタがあるならば）どんなコンテナでも実行できます。私達のテストは、CDIプログラミングモデルを使用しているので、CDIをサポートするコンテナを使う必要があります。開発中は高速にターンアラウンドしたいので、Weld EEエンベデッドコンテナから始めましょう。
 
 また @pom.xml@ を開き、他の @<dependency>@ 要素の下に、 以下の依存性のグループを追加してください：
 
@@ -549,7 +555,7 @@ p. まとめると、Arquillianを使うには、（JUnitと共に）以下の3�
 
 # Arquillian JUnit インテグレーション
 # ターゲットコンテナ向けのArquillianコンテナアダプタ
-# コンテナのランタイム（エンベデッドコンテナ）または、コンテナのクライアント（リモートコンテナ）
+# コンテナのランタイム（エンベデッドコンテナ向け）または、コンテナのクライアント（リモートコンテナ向け）
 
 このサンプルでは、エンベデッドコンテナを使っています。それで、コンテナのランタイムであるWeldが必要です。
 
@@ -644,13 +650,13 @@ public class Greeter {
     }
 }
 
-p. さて、テスト実行のために、 @PhraseBuilder@ のインスタンスが作成され、 その @@PostConstruct@ メソッドが実行され、 @Greeter@ のインスタンスが作成されるときに @Greeter@ のコンストラクタに注入されなければなりません。これらがすべてが起きれば、CDIが動作していることを確認できます。
+p. さて、テスト実行のために、 @PhraseBuilder@ のインスタンスが作成され、 その @@PostConstruct@ メソッドが実行されなければならず、 @Greeter@ のインスタンスが作成されるときに @Greeter@ のコンストラクタに注入されなければなりません。これらがすべてが起きれば、CDIが動作していることを確認できます。
 
-p. 最後のステップです。新しいクラスを作ったので、テスト時に @@Deployment@ メソッド が返すアーカイブにそれを加える必要があります。簡単に、以下の行を変更してください：
+p. 最後のステップです。新しいクラスを作ったので、テスト時に @@Deployment@ メソッドが返すアーカイブにそれを加える必要があります。簡単に、以下の行を変更してください：
 
 bc(prettify).. .addClass(Greeter.class)
 
-p. ...次のように：
+p. ...このように：
 
 bc(prettify).. .addClasses(Greeter.class, PhraseBuilder.class)
 
@@ -658,7 +664,7 @@ p. もう一度テストを実行してください。また、 *(greenbar)グ�
 
 h3. テストをデバッグする
 
-これは短い章になるでしょう。なぜか？Arquillianのテストは、とても直接的なので、まさにユニットテストをデバッグするようにデバッグします。テストコードでも、アプリケーションコードでも、どこにでもブレークポイントを追加するだけです。それから、ファイルを右クリックして、Debug As > JUnit Testを選択します。これでコンテナでデバッグができます！楽しく調べ回ってください！
+これは短い章になるでしょう。なぜか？Arquillianのテストは、とても直接的なので、まさにユニットテストをデバッグするようにデバッグします。テストコードでも、アプリケーションコードでも、どこにでもブレークポイントを追加するだけです。それから、ファイルを右クリックして、Debug As > JUnit Testを選択します。これでコンテナでデバッグができます！楽しく見て回ってください！
 
 !/images/guides/arquillian_tutorial_debugging_test.png!
 
@@ -666,19 +672,21 @@ p(warning). %リモートコンテナを使っている場合、Debug As では�
 
 いま経験したように、ArquillianはCDIアプリケーションのテストには理想的なツールです。それはCDI環境のロードを行い、テストに直接、beanを注入します。もっとも良い点は、エンベデッドCDIコンテナを使っていると、ユニットテストのように素早く実行することです。これで要望が満たせたら、このチュートリアルを抜けてテストを書き始めてもかまいません。
 
-*しかし！* エンベデッドコンテナはすべてのストーリーを語ってくれるでしょうか？コンポーネントは、完全なコンテナ上で実行しても動作するでしょうか？
+*でもちょっと待って！* エンベデッドコンテナはすべてのストーリーを語ってくれるでしょうか？コンポーネントは、完全なコンテナ上で実行しても動作するでしょうか？
 
-Arquillianの恩恵の一つは、同じテストを互換性のある異なるコンテナ上で実行できることです。別のエンベデッドコンテナや、スタンドアロンのコンテナであっても。複数のコンテナを使いたいなら、読み進めてください。
+Arquillianの恩恵の一つは、同じテストを互換性のある異なるコンテナ上で実行できることです。別のエンベデッドコンテナや、スタンドアロンのコンテナであっても。実際のコンテナを使いたいなら、読み進めてください。
 
 h3. さらにコンテナを追加する
 
 以前に学んだように、Arquillianはクラスパス上のコンテナアダプタを元に、コンテナを選択します。別のコンテナに切り替えるには、クラスパス上のコンテナアダプタをテストの前に変更するだけです。
 
-p(important). %テスト実行の時点では、クラスパス上にコンテナアダプタは一つだけ存在できます。%
+p(important). %テスト実行の時点では、クラスパス上にコンテナアダプタは一つだけ存在できます。Arquillianは、複数のアダプタを見つけたら、テストの実行を中止します。%
 
-クラスパス上のライブラリを切り替える一つの方法は、毎回手動で @pom.xml@ に依存の定義を編集することです。でもそれは馬鹿馬鹿しい。もっといいやり方があります。
+クラスパス上のライブラリを切り替える一つの方法は、毎回手動で @pom.xml@ に依存の定義を編集することです。でもそれは退屈なだけです。おすすめのアプローチは、Mavenのプロファイルを使うことです。
 
-依存をグループに入れて区別するために、Mavenのプロファイルが使えます。コンテナアダプタと関連するアーティファクト毎に、一つのグループです。テスト実行時に、コマンドラインフラグ（-P）や、IDEのプリファレンスから、コンテナを選択するために一つのグループを有効化します。
+h4. Mavenのプロファイルを設定する
+
+Mavenのプロファイルを使えば、依存をグループに入れて区別することができます。コンテナアダプタと関連するアーティファクト毎に、一つのグループです。テスト実行時に、対象のコンテナを選択するためにグループのうちの一つを有効化します。そのプロファイルはコマンドラインフラグ（-P）や、IDEのプリファレンスから、有効化されます。
 
 @pom.xml@ を開き、以下のXMLを @<dependencies>@ 要素直下に追加して、Weld EEエンベデッド用の新しいプロファイルを作ります：
 
@@ -861,7 +869,9 @@ JBoss Toolsがインストール済みなら、有効なプロファイルの選
 
 !/images/guides/arquillian_tutorial_maven_profile_selector.png!
 
-一度プロファイルを有効化したら、テストはまた成功できるはずです。
+一度プロファイルを有効化したら、コンパイラのエラーは消え、テストはまた成功するはずです。
+
+h4. コンテナを切り替える
 
 すでにこのテストがWeld EEエンベデッドで成功することはわかっています。上のステップを繰り返してGlassFishエンベデッドに切り替え、今回は @arquillian-glassfish-embedded@ だけを有効にします。テストをまた実行。GlassFishがコンソールで起動するのが見えて…今度も *(greenbar)グリーンバー* です！
 
@@ -869,8 +879,8 @@ JBoss Toolsがインストール済みなら、有効なプロファイルの選
 
 スタンドアロンのJBoss ASインスタンスでテストするには、まず初めに次のどちらかのセットアップが必要です：
 
-# ダウンロードしてプロジェクト外の場所に展開する または、
-# ビルド中にMavenでダウンロード、展開することもできる
+# ダウンロードしてプロジェクト外の場所に展開する
+# ビルド中にMavenでダウンロード、展開する
 
 プロジェクト外でJBoss AS 7をセットアップするには、以下の手順に従ってください：
 
@@ -879,7 +889,11 @@ JBoss Toolsがインストール済みなら、有効なプロファイルの選
 # アーカイブを展開する
 # （オプション）展開したディレクトリのパスを @JBOSS_HOME@ 環境変数にセット
 
-代わりに、Mavenにこのタスクを実行させるには、以下のXMLフラグメントを、 @arquillian-jbossas-managed@ プロファイルの @<id>@ 要素の下に追加してください：
+もしJBoss ASがインストール済み（つまり、展開済み）で、 @JBOSS_HOME@ 環境変数がその場所を指し示しているなら、 @arquillian-jbossas-managed@ プロファイルを有効にして、テストを実行できます。コンソールではJBoss ASが起動しているのが見えて…また *(greenbar)グリーンバー* です！
+
+p(info). %標準出力に出力されるメッセージは、コンソールではなくサーバーログに出力されるので、そちらで見てください。%
+
+Mavenでこのタスクを実行したい場合（オプション）、 @arq-jbossas-managed@ の @id@ の後に、以下のXMLフラグメントを追加してください：
 
 div(filename). pom.xml
 
@@ -914,7 +928,7 @@ bc(prettify).. <!-- clip -->
 </build> 
 <!-- clip -->
 
-p. JBoss AS 7マネージドインスタンスをターゲットにするには、もう少しArquillianに設定が必要です。以下の設定ファイルを作成し、 @jbossHome@ プロパティの値を、JBoss AS 7がインストールされた場所にします。Maven依存プラグインを使っている場合は、場所は、 @target/jboss-as-7.1.1.Final@ です。
+p. MavenでダウンロードしたJBoss AS 7マネージドインスタンスをターゲットにするには、もう少しArquillianに設定が必要です。以下の設定ファイルを作成し、 @jbossHome@ プロパティの値を、JBoss AS 7がインストールされた場所にします。Maven依存プラグインを使っている場合は、場所は、 @target/jboss-as-7.0.2.Final@ です。
 
 div(filename). src/test/resources/arquillian.xml
 
@@ -932,6 +946,6 @@ bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
 
 p. さて、有効なMavenプロファイルを @arquillian-jbossas-managed@ に変更して、またテストを実行します。コンソールでJBoss ASの起動が見えて…またもや *(greenbar)グリーンバー* です！
 
-p(info). %System.outに出力されたメッセージはコンソールではなくサーバーログに出力されます。%
+これは _同じ_ テストです。今回は完全なJava EEコンテナで実行しました。Arquillianはテストをパッケージ化して、Java EEアーカイブとしてコンテナにデプロイし、リモートでテストを実行し、結果を取得したのち、EclipseのJUnitビュー（またはMavenのsurefire results）に伝えます。
 
-これは _同じ_ テストです。今回はスタンドアロンの（エンベデッドでない）Java EEコンテナで実行しました。Arquillianはテストをパッケージ化して、Java EEアーカイブとしてコンテナにデプロイし、リモートでテストを実行し、結果を取得したのち、EclipseのJUnitビュー（またはMavenのsurefire results）に伝えます。
+Arquillianをより深く知りたい場合は、 "Getting Started: Rinse and Repeat":/guides/getting_started_rinse_and_repeat ガイドへどうぞ。Arquillianを自動的に設定するためのForgeの使い方については、 "Get Started Faster with Forge":/guides/get_started_faster_with_forge を読んでください。
