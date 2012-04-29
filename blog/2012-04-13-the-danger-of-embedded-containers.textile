@@ -16,13 +16,19 @@ If you write a test that you are positive should work, but instead throws some w
  
 As with all things, there are exceptions to the rule. If the code really _should_ work on the embedded container, then it may be worth exploring why it isn't. That may lead you to the discovery of a bug in the library you're using. If debugging the library is your main concern, chase it down. If you are just trying to get a test written for your application, stop using the embedded container (or save debugging it for a rainy day).
 
-h3. Example
+h3. Examples
 
 See "this thread":https://community.jboss.org/message/729776 in the Seam 3 forums for an example where the Embedded GlassFish container was acting more of a hindrence than a help. The thread includes the steps I took to get a *(greenbar)green bar* using a different GlassFish container adapter.
 
+"Markus Eisele":profile://myfear identifies another hazard. He points out in a "recent blog post":http://blog.eisele.net/2012/01/arquillian-with-netbeans-glassfish_18.html that testing JPA using Embedded GlassFish is problematic because JPA weaving (in EclipseLink) does not occur:
+
+bq. [Weaving] only works when the entity classes to be weaved only exist in the application classloader. The combination of Embedded GlassFish, Arquillian and the Maven Surefire Plugin mix this up a bit and the end of the story is, that exactly none of your entities are enhanced at all.
+
+Again, testing on Embedded GlassFish is not serving us well in this scenario. Graduate.
+
 h3. Closing thoughts
 
-Code that uses Solder works fine on GlassFish 3.1.2, but it does not play very nicely with Embedded GlassFish--it's just a hostile environment for CDI because of the visibility issues that come with starting an embedded container inside an existing Java process. You end up in a minefield of class visibility and access problems, and far from making any progress writing tests (your ultimate goal).
+Code that uses Solder works fine on GlassFish 3.1.2, but it does not play very nicely with Embedded GlassFish--it's just a hostile environment for CDI because of the visibility issues that come with starting an embedded container inside an existing Java process. The same goes for JPA. You end up in a minefield of class visibility and access problems, and far from making any progress writing tests (your ultimate goal).
  
 If you want the container to start automatically like with embedded, then switch to a managed container. It works almost exactly the same as the remote container, except that Arquillian will start the standalone process at the beginning of the test execution and stop it at the end. In other words:
  
