@@ -398,11 +398,11 @@ p. If you're having trouble with the pom.xml up to this point, you can download 
 
 h3. Write an Arquillian Test
 
-An Arquillian test looks just like a unit test, just with some extra flair. Let's return to the IDE.
+An Arquillian test looks just like a unit test, just with some extra flair. Let's return to the IDE to create one.
 
 p(warning). %If you get the message "Project configuration is out of date with pom.xml" then right click and select Project > Maven > Update Project Configuration to resync the project.%
 
-Begin by creating a new JUnit test case in src/test/java under the @org.arquillian.example@ package and name it @GreeterTest@. You won't need the typical setup and teardown methods since Arquillian is doing most of the heavy lifting. Here's what we have so far:
+Begin by creating a new JUnit test case in src/test/java named @GreeterTest@ and assign it the package name @org.arquillian.example@. You won't need the typical JUnit setup and tearDown methods since Arquillian will handle the heavy lifting. Here's what we have so far:
 
 div(filename). src/test/java/org/arquillian/example/GreeterTest.java
 
@@ -421,14 +421,16 @@ public class GreeterTest {
 p. Now, about that flair. An Arquillian test case must have three things:
 
 # A @@RunWith(Arquillian.class)@ annotation on the class
-# A static method annotated with @@Deployment@ that returns a ShrinkWrap archive
+# A public static method annotated with @@Deployment@ that returns a ShrinkWrap archive
 # At least one method annotated with @@Test@
 
-The @@RunWith@ annotation tells JUnit to use Arquillian as the test controller. Arquillian then looks for a static method annotated with the @@Deployment@ annotation to retrieve the test archive (i.e., micro-deployment). Then some magic happens and each @@Test@ method is run inside the container environment.
+The @@RunWith@ annotation tells JUnit to use Arquillian as the test controller. Arquillian then looks for a public static method annotated with the @@Deployment@ annotation to retrieve the test archive (i.e., micro-deployment). Then some magic happens and each @@Test@ method is run inside the container environment.
 
 h4. What's a test archive?
 
-The purpose of the test archive is to isolate the classes and resources which are needed by the test from the remainder of the classpath. Unlike a normal unit test, Arquillian does not simply dip into the entire classpath. Instead, you include only what the test needs (which may be the entire classpath, if that's what you decide). The archive is defined using "ShrinkWrap":shrinkwrap_home, which is a Java API for creating archives (e.g., jar, war, ear) in Java. The micro-deployment strategy let's you focus on precisely the classes you want to test. As a result, the test remains very lean and manageable.
+The purpose of the test archive is to isolate the classes and resources which are needed by the test from the remainder of the classpath. Unlike a normal unit test, Arquillian does not simply tap the entire classpath. Instead, you include only what the test needs (which may be the entire classpath, if that's what you decide). The archive is defined using "ShrinkWrap":shrinkwrap_home, which is a Java API for creating archives (e.g., jar, war, ear) in Java. The micro-deployment strategy let's you focus on precisely the classes you want to test. As a result, the test remains very lean and manageable.
+
+Once the ShrinkWrap archive is deployed to the server, it becomes a real archive. The container deployer has no knowledge that the archive was package by ShrinkWrap. You can think of ShrinkWrap as a Java-based build tool, with one exception. In the optimal case, it streams the archive to the server instead of writing the archive to disk. But what it creates is an authentic archive.
 
 p(info). %ShrinkWrap also supports resolving artifacts (libraries) and create configuration files programmatically, which can then be added to the test archive. For a more thorough introduction to ShrinkWrap, see the "ShrinkWrap introduction":/guides/shrinkwrap_introduction guide.%
 
