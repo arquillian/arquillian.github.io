@@ -773,7 +773,7 @@ bc(prettify).. <!-- clip -->
 </profiles>
 <!-- clip -->
 
-p(info). %The Java EE API dependency has been moved to the profile since some containers, like Embedded GlassFish, already provide these libraries. Having both on the classpath at the same time would result in conflicts. So we have to play this classpath dance.%
+p(info). %The Java EE API dependency has been moved to the profile since some containers, like Embedded GlassFish, already provide these libraries. Having both on the classpath at the same time results in conflicts. Therefore, we have to play this classpath dance.%
 
 We'll now include two additional profiles in the @pom.xml@ inside the @<profiles>@ element, the first for "Embedded GlassFish":http://embedded-glassfish.java.net:
 
@@ -817,7 +817,7 @@ bc(prettify).. <!-- clip -->
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-arquillian-container-managed</artifactId>
-            <version>7.0.2.Final</version>
+            <version>7.1.1.Final</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -832,7 +832,7 @@ h3. Test Across Containers
 
 When you refresh the project in Eclipse, you'll notice that it no longer builds. That's because you need to activate one of the container profiles. Let's activate the Weld EE embedded profile to restore the previous state.
 
-There are two ways to activate a Maven profile in Eclipse:
+There are two ways to activate a Maven profile in Eclipse (assuming you are using the "Maven Integration for Eclipse":http://www.eclipse.org/m2e):
 
 # Manual configuration (standard approach)
 # Maven profile selector (JBoss Tools)
@@ -865,9 +865,31 @@ Here's the Maven profile selector dialog showing the profile we've activated:
 
 Once you've activate the profile, the compile errors will disappear and you'll be able to run the test again successfully.
 
+Another option to active a profile is to set one of the profiles to be active by default. Let's make the Weld EE Embedded profile the default by adding an @<activation>@ element to the profile definition:
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<profile>
+    <id>arquillian-weld-ee-embedded</id>
+    <activation>
+        <activeByDefault>true</activeByDefault>
+    </activation>
+    <dependencies>
+        <!-- hidden -->
+    </dependencies>
+</profile>
+<!-- clip -->
+
+p. Now you no longer have to select a profile in the IDE since this one will be automatically selected. However, to use a different profile (exclusively), you have to first explicitly deactivate this profile.
+
 h4. Switching between containers
 
-You already know the test works in Weld EE Embedded. Let's switch to GlassFish embedded by repeating the steps above, this time activating only the @arquillian-glassfish-embedded@ profile. Run the test again. You should see GlassFish start in the console...and another *(greenbar)green bar*!
+You already know the test works in Weld EE Embedded. Let's switch to GlassFish embedded by repeating the steps above, this time activating only the @arquillian-glassfish-embedded@ profile.
+
+p(info). %If you set the Weld EE Embedded profile to be active by default, you have to explicitly disable it to use another profile. You can disable a profile in the Maven Profile selector by right clicking on the entry and selecting Deactivate from the context menu. You'll see this prefixes the profile name with an exclamation mark (e.g., @!arquillian-weld-ee-embedded@). Multiple profile selections (or deactivations) are separated by commas.%
+
+Run the test again. You should see GlassFish start in the console...and another *(greenbar)green bar*!
 
 You've now run the same test on two different embedded containers, a CDI container (Weld) and a Java EE container (GlassFish). Both of these executions are in process. To really be sure the component works in a pure environment, we need to use a standalone container. Let's switch to using JBoss AS.
 
@@ -887,7 +909,7 @@ If you have JBoss AS installed (i.e., extracted) and your @JBOSS_HOME@ environme
 
 p(info). %The message printed to System.out gets written to the server log instead of the console, so look over there.%
 
-If you want Maven to handle this task for you instead (optional), add the following XML fragment under the @<id>@ element of the @arq-jbossas-managed@ profile:
+If you want Maven to handle this task for you instead (optional), add the following XML fragment under the @<id>@ element of the @arquillian-jbossas-managed@ profile:
 
 div(filename). pom.xml
 
@@ -908,7 +930,7 @@ bc(prettify).. <!-- clip -->
                             <artifactItem>
                                 <groupId>org.jboss.as</groupId>
                                 <artifactId>jboss-as-dist</artifactId>
-                                <version>7.0.2.Final</version>
+                                <version>7.1.1.Final</version>
                                 <type>zip</type>
                                 <overWrite>false</overWrite>
                                 <outputDirectory>target</outputDirectory>
@@ -922,7 +944,7 @@ bc(prettify).. <!-- clip -->
 </build> 
 <!-- clip -->
 
-p. To target a managed JBoss AS 7 instance downloaded by Maven, you also need a small bit of Arquillian configuration. Create the following configuration file and assign the value of the @jbossHome@ property to the location where JBoss AS 7 is installed. If you're using the Maven dependency plugin, the location is @target/jboss-as-7.0.2.Final@.
+p. To target a managed JBoss AS 7 instance downloaded by Maven, you also need a small bit of Arquillian configuration. Create the following configuration file and assign the value of the @jbossHome@ property to the location where JBoss AS 7 is installed. If you're using the Maven dependency plugin, the location is @target/jboss-as-7.1.1.Final@.
 
 div(filename). src/test/resources/arquillian.xml
 
@@ -931,9 +953,9 @@ bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
     xsi:schemaLocation="
         http://jboss.org/schema/arquillian
         http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
-    <container qualifier="jbossas-7-managed" default="true">
+    <container qualifier="jbossas-managed" default="true">
         <configuration>
-            <property name="jbossHome">target/jboss-as-7.0.2.Final</property>
+            <property name="jbossHome">target/jboss-as-7.1.1.Final</property>
         </configuration>
     </container>
 </arquillian>
