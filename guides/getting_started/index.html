@@ -295,23 +295,27 @@
           <pre class="prettify"><code class="prettify">&lt;!-- clip --&gt;&#x000A;&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.junit&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-junit-container&lt;/artifactId&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;&#x000A;&lt;!-- clip --&gt;</code></pre>
           <p>The Arquillian JUnit integration artifact also adds the Arquillian Core and ShrinkWrap APIs to the test classpath. You need all of these libraries to write and compile a JUnit Arquillian test.</p>
           <p class="info"><span>To use TestNG instead of JUnit, substitute the Arquillian JUnit integration with the Arquillian TestNG integration.</span></p>
+          <p>(Optional) We recommend upgrading the Maven Surefire Plugin from the default version, for reasons described in <a href="https://community.jboss.org/wiki/WhatVersionOfSurefireShouldIUseToRunMyArquillianTestsInAMavenBuild">this FAQ</a>. You can set the version of the Surefire Plugin by appending this <code>&lt;plugin&gt;</code> element inside the <code>&lt;plugins&gt;</code> element, just below the Maven Compiler Plugin:</p>
+          <div class="filename">pom.xml</div>
+          <pre class="prettify"><code class="prettify">&lt;!-- clip --&gt;&#x000A;&lt;plugin&gt;&#x000A;    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;&#x000A;    &lt;version&gt;2.12&lt;/version&gt;&#x000A;&lt;/plugin&gt;&#x000A;&lt;!-- clip --&gt;</code></pre>
           <p>If you&#8217;re having trouble with the pom.xml up to this point, you can download the file from <a href="https://gist.github.com/1263892">this gist</a>.</p>
           <p><strong>You&#8217;re all set to write your first Arquillian test!</strong></p>
           <h3 id="write_an_arquillian_test">Write an Arquillian Test</h3>
-          <p>An Arquillian test looks just like a unit test, just with some extra flair. Let&#8217;s return to the IDE.</p>
+          <p>An Arquillian test looks just like a unit test, just with some extra flair. Let&#8217;s return to the IDE to create one.</p>
           <p class="warning"><span>If you get the message &#8220;Project configuration is out of date with pom.xml&#8221; then right click and select Project &gt; Maven &gt; Update Project Configuration to resync the project.</span></p>
-          <p>Begin by creating a new JUnit test case in src/test/java under the <code>org.arquillian.example</code> package and name it <code>GreeterTest</code>. You won&#8217;t need the typical setup and teardown methods since Arquillian is doing most of the heavy lifting. Here&#8217;s what we have so far:</p>
+          <p>Begin by creating a new JUnit test case in src/test/java named <code>GreeterTest</code> and assign it the package name <code>org.arquillian.example</code>. You won&#8217;t need the typical JUnit setup and tearDown methods since Arquillian will handle the heavy lifting. Here&#8217;s what we have so far:</p>
           <div class="filename">src/test/java/org/arquillian/example/GreeterTest.java</div>
           <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>&#x000A;&#x000A;<code class="prettify">import org.junit.Assert;&#x000A;import org.junit.Test;</code>&#x000A;&#x000A;<code class="prettify">public class GreeterTest {&#x000A;    @Test&#x000A;    public void should_create_greeting() {&#x000A;        Assert.fail("Not yet implemented");&#x000A;    }&#x000A;}</code></pre>
           <p>Now, about that flair. An Arquillian test case must have three things:</p>
           <ol>
           	<li>A <code>@RunWith(Arquillian.class)</code> annotation on the class</li>
-          	<li>A static method annotated with <code>@Deployment</code> that returns a ShrinkWrap archive</li>
+          	<li>A public static method annotated with <code>@Deployment</code> that returns a ShrinkWrap archive</li>
           	<li>At least one method annotated with <code>@Test</code></li>
           </ol>
-          <p>The <code>@RunWith</code> annotation tells JUnit to use Arquillian as the test controller. Arquillian then looks for a static method annotated with the <code>@Deployment</code> annotation to retrieve the test archive (i.e., micro-deployment). Then some magic happens and each <code>@Test</code> method is run inside the container environment.</p>
+          <p>The <code>@RunWith</code> annotation tells JUnit to use Arquillian as the test controller. Arquillian then looks for a public static method annotated with the <code>@Deployment</code> annotation to retrieve the test archive (i.e., micro-deployment). Then some magic happens and each <code>@Test</code> method is run inside the container environment.</p>
           <h4>What&#8217;s a test archive?</h4>
-          <p>The purpose of the test archive is to isolate the classes and resources which are needed by the test from the remainder of the classpath. Unlike a normal unit test, Arquillian does not simply dip into the entire classpath. Instead, you include only what the test needs (which may be the entire classpath, if that&#8217;s what you decide). The archive is defined using <a href="http://jboss.org/shrinkwrap">ShrinkWrap</a>, which is a Java API for creating archives (e.g., jar, war, ear) in Java. The micro-deployment strategy let&#8217;s you focus on precisely the classes you want to test. As a result, the test remains very lean and manageable.</p>
+          <p>The purpose of the test archive is to isolate the classes and resources which are needed by the test from the remainder of the classpath. Unlike a normal unit test, Arquillian does not simply tap the entire classpath. Instead, you include only what the test needs (which may be the entire classpath, if that&#8217;s what you decide). The archive is defined using <a href="http://jboss.org/shrinkwrap">ShrinkWrap</a>, which is a Java API for creating archives (e.g., jar, war, ear) in Java. The micro-deployment strategy let&#8217;s you focus on precisely the classes you want to test. As a result, the test remains very lean and manageable.</p>
+          <p>Once the ShrinkWrap archive is deployed to the server, it becomes a real archive. The container deployer has no knowledge that the archive was package by ShrinkWrap. You can think of ShrinkWrap as a Java-based build tool, with one exception. In the optimal case, it streams the archive to the server instead of writing the archive to disk. But what it creates is an authentic archive.</p>
           <p class="info"><span>ShrinkWrap also supports resolving artifacts (libraries) and create configuration files programmatically, which can then be added to the test archive. For a more thorough introduction to ShrinkWrap, see the <a href="/guides/shrinkwrap_introduction">ShrinkWrap introduction</a> guide.</span></p>
           <p>Let&#8217;s add that Arquillian flair to the test by replacing its contents with the code below:</p>
           <div class="filename">src/test/java/org/arquillian/example/GreeterTest.java</div>
@@ -332,7 +336,7 @@
           <p>Ah, but you&#8217;re probably wondering how to run it <img src="/images/emoticons/confused.png" alt=":S" class="emoticon" /> If you&#8217;re thinking, &#8220;Just like a unit test&#8221;, then you&#8217;re correct! However, we first need to add a container adapter to the classpath.</p>
           <h3 id="add_a_container_adapter">Add a Container Adapter</h3>
           <p>We&#8217;ve been talking a lot about testing in a container, but so far we haven&#8217;t discussed which one we&#8217;ll be using. That&#8217;s because it&#8217;s a runtime decision.</p>
-          <p>Arquillian selects the target container based on which container adapter is available on the test classpath. That means we&#8217;ll be adding more libraries to the project.</p>
+          <p>Arquillian selects the target container based on which container adapter is available on the test classpath. A <em>container adapter</em> is that controls and communicates with the container (it&#8217;s not a container itself). That means we&#8217;ll be adding more libraries to the project.</p>
           <p>An Arquillian test can be executed in any container that is compatible with the programming model used in the test (as long as that container has an Arquillian adapter, of course). Our test is using the CDI programming model, so we need to use any container to supports CDI. We want fast turnaround during development, so we&#8217;ll start with the Weld EE embedded container.</p>
           <p>Open the <code>pom.xml</code> file again and add the following group of dependencies directly below the other <code>&lt;dependency&gt;</code> elements:</p>
           <div class="filename">pom.xml</div>
@@ -471,6 +475,26 @@
           <ul>
             <li>
               Apr 30, 2012:
+              Emphasis on container adapter
+              <em>by Dan Allen</em>
+            </li>
+            <li>
+              Apr 30, 2012:
+              Add clarification about the container adapter
+              <em>by Dan Allen</em>
+            </li>
+            <li>
+              Apr 30, 2012:
+              Add note about shrinkwrap archives, clarify some text
+              <em>by Dan Allen</em>
+            </li>
+            <li>
+              Apr 30, 2012:
+              Add optional recommendation to upgrade maven-surefire-plugin version
+              <em>by Dan Allen</em>
+            </li>
+            <li>
+              Apr 30, 2012:
               Fixed the add-dependency forge command for the jboss-javaee-6.0 artifact
               <em>by Mylène Reiners</em>
             </li>
@@ -522,26 +546,6 @@
             <li>
               Apr 08, 2012:
               Reword some sentences
-              <em>by Dan Allen</em>
-            </li>
-            <li>
-              Apr 07, 2012:
-              Correct missing negation
-              <em>by Dan Allen</em>
-            </li>
-            <li>
-              Apr 05, 2012:
-              Use description in prolog for guide summary
-              <em>by Dan Allen</em>
-            </li>
-            <li>
-              Mar 29, 2012:
-              Updated the versions for weld and slf4j given in the pom files from 1.1.1.final and 1.5.10 to 1.1.5.final and 1.6.4 respectively
-              <em>by paul-thomson</em>
-            </li>
-            <li>
-              Mar 28, 2012:
-              Use variable for arquillian core version
               <em>by Dan Allen</em>
             </li>
           </ul>
