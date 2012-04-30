@@ -260,13 +260,36 @@
           <p><img src="/images/guides/arquillian_tutorial_2_debug_remote_test.png" alt="" /></p>
           <p>You are now poking around the server from the comfort of your IDE.</p>
           <p class="warning"><span>If you see the message &#8220;Source not found&#8221; in the editor view when the debugger stops at the breakpoint, you need to add the project to the debug configuration. Click &#8220;Edit Source Lookup Path&#8230;&#8221;, then click &#8220;Add&#8230;&#8221;, select Java Project, check the box next to your project then click &#8220;OK&#8221;. Voila! Source code.</span></p>
+          <h4>Stepping into External Libraries</h4>
+          <p>If you plan to step into a class in an external library (code outside of your application), you need to link the library to its source code.</p>
+          <p class="info"><span>This configuration is not necessary if you are using a Maven project and the sources for the library are available in the Maven repository. When you hit a breakpoint in a library not yet available locally, give it some time to download and the source code will eventually be revealed. If not, the source is probably not in the repository and you need to read on.</span></p>
+          <p>Here are the steps you need to follow to link a library to its source in the debug configuration:</p>
+          <ol>
+          	<li>Select the <code>Run &gt; Debug Configurations...</code> menu from the main menubar</li>
+          	<li>Select the name of the test class in the JUnit (or TestNG) category</li>
+          	<li>Select the Source tab</li>
+          	<li>Click the Add&#8230; button on the right</li>
+          	<li>If the source code is in another project:
+          	<ol>
+          		<li>Select Java Project</li>
+          		<li>Check the project that contains the class you want to debug</li>
+          		<li>Click OK on the Project Selection window</li>
+          	</ol></li>
+          	<li>If the source code is in a library:
+          	<ol>
+          		<li>Select External Archive</li>
+          		<li>Navigate to the archive that contains the source code (which you have to download, of course)</li>
+          	</ol></li>
+          	<li>Click Close on the Debug Configurations window</li>
+          </ol>
+          <p>You&#8217;ll have to complete those steps for any test class you are debugging, though you only have to do it once (the debug configuration sticks around indefinitely).</p>
           <h3 id="debug_a_managed_server">Debug a Managed Server</h3>
           <p>Is it possible to debug when using a managed container? You bet! We just need a little extra configuration.</p>
           <p>Since Arquillian handles starting and stopping the container, we need to instruct Arquillian to start the container in debug mode. That&#8217;s a JVM hint that Arquillian needs to pass to the server, which we&#8217;ll supply using a container configuration property.</p>
           <p>Before we get to that, we need to think about how we are going to connect the debugger. Unless you&#8217;re super speedy with the mouse, you&#8217;re going to have a hard time connecting the debugger before Arquillian starts running the tests. Fortunately, we can tell the JVM to wait for the connector to debug before executing the application, in this case JBoss AS. That gives us time to hit the debug button in the IDE to connect to the process.</p>
           <p>Here&#8217;s the configuration you&#8217;ll need to add to the Arquillian configuration descriptor, arquillian.xml, to get Arquillian to start the server in debug mode: (No whitespace is allowed immediately after <code>&lt;property&gt;</code> start tag)</p>
           <div class="filename">src/test/resources/arquillian.xml</div>
-          <pre class="prettify"><code class="prettify">&lt;arquillian xmlns="http://jboss.org/schema/arquillian"&#x000A;    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;    xsi:schemaLocation="&#x000A;        http://jboss.org/schema/arquillian&#x000A;        http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;&#x000A;    &lt;container qualifier="jbossas-7-managed" default="true"&gt;&#x000A;        &lt;configuration&gt;&#x000A;            &lt;property name="jbossHome"&gt;target/jboss-as-7.1.1.Final&lt;/property&gt;&#x000A;            &lt;property name="javaVmArguments"&gt;-Xmx512m -XX:MaxPermSize=128m&#x000A;                -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y&#x000A;            &lt;/property&gt;&#x000A;        &lt;/configuration&gt;&#x000A;    &lt;/container&gt;&#x000A;&lt;/arquillian&gt;</code></pre>
+          <pre class="prettify"><code class="prettify">&lt;arquillian xmlns="http://jboss.org/schema/arquillian"&#x000A;    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;    xsi:schemaLocation="&#x000A;        http://jboss.org/schema/arquillian&#x000A;        http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;&#x000A;    &lt;container qualifier="jbossas-managed" default="true"&gt;&#x000A;        &lt;configuration&gt;&#x000A;            &lt;property name="jbossHome"&gt;target/jboss-as-7.1.1.Final&lt;/property&gt;&#x000A;            &lt;property name="javaVmArguments"&gt;-Xmx512m -XX:MaxPermSize=128m&#x000A;                -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y&#x000A;            &lt;/property&gt;&#x000A;        &lt;/configuration&gt;&#x000A;    &lt;/container&gt;&#x000A;&lt;/arquillian&gt;</code></pre>
           <p>Notice the <code>suspend=y</code> flag. That tells the process to wait for the debugger to connect. We&#8217;ve set the debug port to 8787, which is the port you&#8217;ll supply to the debugger configuration. We&#8217;ll get to that in a minute. First, let&#8217;s get the test started.</p>
           <ol>
           	<li>Activate the Maven profile for <code>arquillian-jbossas-managed</code> (refer to the <a href="/guides/getting_started">Getting Started</a> guide)</li>
@@ -300,6 +323,16 @@
           <p>Find a bug in the guide? Something missing? You can fix it by <a href="http://github.com/arquillian/arquillian.github.com">forking this website</a>, making the correction and <a href="http://help.github.com/send-pull-requests">sending a pull request</a>. If you&#8217;re just plain stuck, feel free to ask a question in the <a href="http://community.jboss.org/en/arquillian?view=discussions">user discussion forum</a>.</p>
           <h4>Recent Changelog</h4>
           <ul>
+            <li>
+              Apr 30, 2012:
+              Upgrade to jboss as 7.1.1.final
+              <em>by Dan Allen</em>
+            </li>
+            <li>
+              Apr 30, 2012:
+              Document how to step into the source of external libraries
+              <em>by Dan Allen</em>
+            </li>
             <li>
               Apr 30, 2012:
               Add section on exporting the deployment archive
@@ -363,16 +396,6 @@
             <li>
               Oct 25, 2011:
               Move guide header wrapper into extension; notes
-              <em>by Dan Allen</em>
-            </li>
-            <li>
-              Oct 24, 2011:
-              Add sort/order to guides within a group
-              <em>by Aslak Knutsen</em>
-            </li>
-            <li>
-              Oct 16, 2011:
-              New guides, fix to guide toc, ref doc links, notes
               <em>by Dan Allen</em>
             </li>
           </ul>
