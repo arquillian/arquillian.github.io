@@ -453,6 +453,29 @@ public class GreeterTest {
 
 p. Using ShrinkWrap, we've defined a Java archive (jar) as the deployment. It includes the @Greeter@ class that the test will invoke and an empty beans.xml in the META-INF directory to activate CDI in this archive.
 
+If you want to see the contents of the archive that ShrinkWrap creates when the test is run, you can print the archive to stdout (i.e., the console) before returning it.
+
+bc(prettify).. @Deployment
+public static JavaArchive createDeployment() {
+    JavaArchive jar = ShrinkWrap.create(JavaArchive.class)
+        .addClass(Greeter.class)
+        .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    System.out.println(jar.toString(true));
+    return jar;
+}
+
+p. This produces the following output when the test is run: 
+
+bc(output). 2ac9cd28-a71a-479a-a785-750b40221766.jar:
+/META-INF/
+/META-INF/beans.xml
+/org/
+/org/arquillian/
+/org/arquillian/example/
+/org/arquillian/example/Greeter.class
+
+ShrinkWrap assigned the archive a random name since we didn't specify one explicitly. We'll cover another way to inspect the archive in the follow-up guide, "Getting Started: Rinse and Repeat":/guides/getting_started_rinse_and_repeat/#export_the_deployment.
+
 Now all we need to do is inject the @Greeter@ instance into a field directly above the test method and replace the unimplemented test method with one that asserts the behavior of the bean. To give you that warm fuzzy feeling, we'll also print the greeting to the console. Replace the test method with the code below and add an import for @javax.inject.Inject@.
 
 div(filename). src/test/java/org/arquillian/example/GreeterTest.java
