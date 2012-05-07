@@ -355,9 +355,9 @@ p. Next, right click on the project and select Properties. Expand the Java Compi
 * Check the box "Enable annotation processing"
 * Click the Apply button and accept a full build
 
-Yes, you have to fiddle with it a little bit, just like you have to kick the snack machine for your snack to drop ~:)
-
 You should now see @Game_.java@ under the target/generated-sources/annotations directory, which should also be on the build path.
+
+p(info). %Yes, you have to fiddle with it a little bit, just like you have to kick the snack machine for your snack to drop ~:) If it's too much trouble, you can skip the metamodel generation and simply reference column names using string values.%
 
 At last, you are ready to write a criteria query!
 
@@ -379,6 +379,8 @@ public void shouldFindAllGamesUsingCriteriaApi() throws Exception {
     		
     Root<Game> game = criteria.from(Game.class);
     criteria.select(game);
+    // TIP: If you don't want to use the JPA 2 Metamodel,
+    // you can change the get() method call to get("id")
     criteria.orderBy(builder.asc(game.get(Game_.id)));
     // No WHERE clause, which implies select all
 
@@ -393,7 +395,7 @@ public void shouldFindAllGamesUsingCriteriaApi() throws Exception {
 
 p. In order for JPA to work, it also needs a Persistence Unit.
 
-We define the Persistence Unit in the test-persistence.xml that's associated with the target container. ShrinkWrap takes this file from the classpath and puts it into its standard location within the archive.
+We define the Persistence Unit in a test-persistence.xml file that's corresponding to the target container. ShrinkWrap takes this file from the classpath and puts it into its standard location within the archive.
 
 bc(prettify). .addAsResource("test-persistence.xml", "META-INF/persistence.xml")
 
@@ -611,13 +613,13 @@ We are explicitly adding the src/test/resources-glassfish-embedded directory as 
 
 p(info). %If you don't plan to test using different containers, you don't need to wrap the configuration above inside a profile.%
 
-h3. Run the Test in GlassFish
+h3. Run the Test on GlassFish
 
 When you are done setting everything up, you can run the test in the IDE by selecting Run As > JUnit Test or from Maven using the following command:
 
 bc(command). $ mvn clean test
 
-The profile for Embedded GlassFish is activated by default. Snippets of the test output is show below.
+The Maven profile for Embedded GlassFish is activated by default (as is the container adapter configuration in arquillian.xml). Snippets of the test output is show below.
 
 bc(output). ...
 Running org.arquillian.example.GamePersistenceTest
@@ -669,11 +671,13 @@ p. *Congratulations!* *(greenbar)Green bar*! _Now that's a real integration test
 
 p(important). %As you introduce advanced JPA mappings, such as lazy loading and fetch groups, you may run into errors or warnings caused by Embedded GlassFish interfering with the necessary weaving step in EclipseLink. Additional build configuration is required to workaround this problem. Refer to "Markus Eisele's blog":http://blog.eisele.net/2012/01/arquillian-with-netbeans-glassfish_18.html for instructions. You won't have this problem when using a managed or remote container adapter.%
 
-h3. Run the Test in JBoss AS 7
+h3. Run the Test on JBoss AS 7
 
-We can run the exact same test on JBoss AS 7. We'll need a different Persistence Unit definition that specifies a JDBC Resource available on JBoss AS and sets some Hibernate configuration settings.
+We can run the exact same test on JBoss AS 7 with a few classpath tweaks.
 
-p(warning). %Arquillian doesn't yet support deploying a DataSource to JBoss AS--though it's in the pipeline. For now, we'll use the built-in DataSource in JBoss AS 7, java:jboss/datasources/ExampleDS.%
+We'll first need a different Persistence Unit definition that specifies a DataSource that's available on JBoss AS (and optionally sets some Hibernate configuration settings).
+
+If you were using JBoss AS 7.0, you'd need to "setup a DataSource manually in the JBoss AS configuration":https://docs.jboss.org/author/display/AS7/Admin+Guide#AdminGuide-Datasources or leverage the built-in DataSource, java:jboss/datasources/ExampleDS. Here's the Persistence Unit descriptor for JBoss AS 7.0 that uses the built-in DataSource.
 
 div(filename). src/test/resources-jbossas-managed/test-persistence.xml
 
@@ -694,7 +698,54 @@ bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
 
 The Hibernate-specific properties hibernate.hbm2ddl.auto and hibernate.show_sql perform the same two functions as the EclipseLink properties previously described.
 
-We also need a Maven profile that adds the JBoss AS container adapter and the JBoss AS resources to the classpath:
+If you're using JBoss AS 7.1, which we recommend, you can register a new DataSource dynamically by adding a DataSource descriptor (i.e., a file with the extension -ds.xml) containing one or more DataSource definitions to the META-INF directory of a java archive or the WEB-INF directory of a web archive.
+
+Here's a descriptor that defines an H2 DataSource with the JNDI name jdbc/arquillian (the same JNDI name as the DataSource we defined earlier for GlassFish):
+
+div(filename). src/test/resources/jbossas-ds.xml
+
+bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
+<datasources xmlns="http://www.jboss.org/ironjacamar/schema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.jboss.org/ironjacamar/schema
+        http://docs.jboss.org/ironjacamar/schema/datasources_1_0.xsd">
+    <datasource enabled="true"
+        jndi-name="jdbc/arquillian"
+        pool-name="ArquillianEmbeddedH2Pool">
+        <connection-url>jdbc:h2:mem:arquillian;DB_CLOSE_DELAY=-1</connection-url>
+        <driver>h2</driver>
+    </datasource>
+</datasources>
+
+p(info). %JBoss AS 7.1 supports the H2 database out of the box. To use another database, you have to add the corresponding driver to the installation as described in "DataSources chapter of the JBoss AS 7.1 reference guide":https://docs.jboss.org/author/display/AS71/Admin+Guide#AdminGuide-Datasources.%
+
+We need to update our Persistence Unit to reference our new DataSource:
+
+div(filename). src/test/resources-jbossas-managed/test-persistence.xml
+
+bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://java.sun.com/xml/ns/persistence
+        http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+    <persistence-unit name="test">
+        <jta-data-source>jdbc/arquillian</jta-data-source>
+        <properties>
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+            <property name="hibernate.show_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+
+We also need to add the descriptor to the WEB-INF directory of the test archive. Add the following method to the ShrinkWrap builder in the @@Deployment@ method of the test case:
+
+bc(prettify). .addAsWebInfResource("jbossas-ds.xml")
+
+Including this file in the archive does not impact the ability to run the test on Embedded GlassFish. The DataSource and the Persistence Unit are ready to go.
+
+Next we'll define a Maven profile that puts the JBoss AS container adapter and the JBoss AS resources folder on the classpath:
 
 div(filename). pom.xml
 
@@ -735,11 +786,11 @@ bc(prettify). <!-- clip -->
 </profile>
 <!-- clip -->
 
-Now we run the test again using Maven, this time activating the JBoss AS managed profile:
-
-p(warning). %Make sure your JBOSS_HOME environment variable points to a JBoss AS 7.1.1.Final installation. Alternatively, you can set the location using the jbossHome property in arquillian.xml.%
+We can now run the test again using Maven, this time activating the JBoss AS managed profile:
 
 bc(command). $ mvn clean test -Parquillian-jbossas-managed
+
+p(warning). %Make sure your JBOSS_HOME environment variable points to a JBoss AS 7.1.1.Final installation. Alternatively, you can set the location using the jbossHome property in arquillian.xml.%
 
 Here's the kicker. You can also run this test into your IDE! Just import the project, activate the arquillian-jbossas-managed Maven profile (and deactivate the arquillian-glassfish-embedded profile), open the test case and, finally, select "Run As > JUnit Test". Voila! It works just like any other JUnit test. *(greenbar)Green bar*!
 
