@@ -101,7 +101,10 @@ module Awestruct
               trans_page.language.code = trans_lang
               if !trans_page.translators.nil?
                 trans_page.translators.each do |username|
-                  page.site.identities.lookup(username).translator = true
+                  user=page.site.identities.lookup(username)
+		  if user
+		      user.translator = true
+		  end
                 end
               end
 
