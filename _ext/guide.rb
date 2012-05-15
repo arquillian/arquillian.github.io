@@ -95,7 +95,8 @@ module Awestruct
               #puts "#{trans_base_name} #{trans_lang} #{trans_postfix}"
 
               trans_page = page.site.pages.find{|e| e.source_path =~ /.*#{trans_base_name}_#{trans_lang}.#{trans_postfix}/}
-
+	      next if not trans_page
+	     
               trans_page.language_parent = page
               trans_page.language = page.site.languages.send(trans_lang)
               trans_page.language.code = trans_lang
