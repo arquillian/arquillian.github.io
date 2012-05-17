@@ -454,9 +454,29 @@ public class LoginScreenSeleniumTest {
     }
 }
 
-p(important). %If get java.lang.ClassNotFoundException: com.thoughtworks.selenium.DefaultSelenium later when you run the test, likely you don't have the testable = false attribute set on the @@Deployment@ annotation. Don't forget it!%
+p(important). %If you encounter a java.lang.ClassNotFoundException: com.thoughtworks.selenium.DefaultSelenium when you run the test, likely you don't have the @testable = false@ attribute on the @@Deployment@ annotation. Don't forget it!%
 
-p(info). %Keep in mind that ShrinkWrap can add a package, directory and so on, so your method can be made far more concise.%
+p. If you have a lot of web pages that are part of the test, having to add them to the archive individually is tedious. Instead, you can import them in bulk using the @ExplodedImporter@ from ShrinkWrap. Here's an example of how to add all the web sources that end in .xhtml to the archive:
+
+div(filename). src/test/java/org/arquillian/example/LoginScreenSeleniumTest.java
+
+bc(prettify).. // clip
+import org.jboss.shrinkwrap.api.Filters;
+import org.jboss.shrinkwrap.api.GenericArchive;
+import org.jboss.shrinkwrap.api.importer.ExplodedImporter;
+// clip
+
+return ShrinkWrap.create(WebArchive.class, "login.war")
+    .addClasses(Credentials.class, User.class, LoginController.class)
+    .merge(ShrinkWrap.create(GenericArchive.class).as(ExplodedImporter.class)
+        .importDirectory(WEBAPP_SRC).as(GenericArchive.class),
+        "/", Filters.include(".*\\.xhtml$"))
+    .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
+    .addAsWebInfResource(EmptyAsset.INSTANCE, "faces-config.xml");
+
+// clip
+
+p. For more information about how to use @ExplodedImporter@ for this task, and alternative strategies, see "this FAQ":https://community.jboss.org/wiki/HowDoIAddAllWebResourcesToTheShrinkWrapArchive.
 
 p. One way to trim this down is to move the creation of the archive to a utility class and refer to it whenever you need this particular micro application. That leaves you with a much simpler @@Deployment@ method:
 
