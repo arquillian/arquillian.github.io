@@ -90,6 +90,7 @@ function activateScrollingToc(sections) {
     // if scrolled past toc, move it down
     if (scrollY > tocMetrics.top) {
       if ($toc.css('position') != 'fixed') {
+        $toc.css('width', $toc.width() + 'px');
         $toc.css('position', 'fixed');
       }
       var remainingHeight = bottomBumper - scrollY;
