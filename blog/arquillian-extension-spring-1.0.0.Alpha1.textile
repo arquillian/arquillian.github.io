@@ -1,0 +1,70 @@
+---
+tags: [ gsoc2012 ]
+---
+We're moving the boundaries of Arquillian into a completely new area by including built-in support for testing applications that use the "Spring Framework":http://springsource.org. This release is the first milestone for this extension. The focus so far has been on providing support for Spring's core features (e.g., IoC container, data sources, persistence, transactions, javax.inject and EJB integration, etc.).
+
+I'm working on the Spring extension for my "Google Summer of Code 2012 project":http://www.google-melange.com/gsoc/project/google/gsoc2012/jnarloch/41002. This post also serves as my first status update. Coding began yesterday, but I've already been hard at work ;)
+
+h3(highlights). Some of the highlights in this release
+
+- <i class="icon-star"></i> Dependency injection :=
+The extension provides three simple ways to enable Spring support in Arquillian test case. In other to create application context from XML simply add to the test @@SpringConfiguration@ with locations of the XML files. Java-based config is supported as well with @@SpringAnnotatedConfiguration@ which can be configured with concrete classes or names of packages to scan. The last possibility, @@SpringWebConfiguration@ that allows to retrieve the application context of the specific DispatcherServlet running in the container, can be used only with web applications.
+
+- <i class="icon-star"></i> Custom context classes :=
+There are situations when plain Spring context isn't enough, so we allowed to register custom context classes that will be instantiated for each test. The context classes could be customized through annotations or through extension settings provided with arquillian.xml. A typical scenario would be for example running the Spring in JBoss AS using "Snowdrop":http://jboss.org/snowdrop custom context classes.
+
+- <i class="icon-star"></i> Artifact packaging :=
+The extension, by default, handles packaging of spring-context and spring-web automatically with each test.
+
+- <i class="icon-star"></i> Intuitive configuration :=
+The extension can be easily configured through the arquillian.xml. All the settings like e.g. artifacts versions can be overridden here.
+
+div(filename). src/test/resources/arquillian.xml
+
+bc(prettify).. <extension qualifier="spring">
+    <property name="autoPackage">true</property>
+    <property name="springVersion">3.0.0.RELEASE</property>
+    <property name="cglibVersion">2.2</property>
+
+    <property name="includeSnowdrop">true</property>
+    <property name="snowdropVersion">2.0.3.Final</property>
+
+    <property name="customContextClass">org.jboss.spring.vfs.context.VFSClassPathXmlApplicationContext</property>
+</extension>
+=:
+
+Here's an example of a basic Spring test with Arquillian:
+
+bc(prettify).. @RunWith(Arquillian.class)
+@SpringConfiguration("applicationContext.xml")
+public class DefaultStockRepositoryTestCase {
+
+    @Deployment
+    public static JavaArchive createTestArchive() {
+        return ShrinkWrap.create(JavaArchive.class)
+                .addClasses(Stock.class, StockRepository.class, StockService.class,
+                        DefaultStockRepository.class, DefaultStockService.class)
+                .addAsResource("applicationContext.xml");
+    }
+
+    @Autowired
+    StockRepository stockRepository;
+
+    @Test
+    public void testSave() {
+        Stock acme = createStock("Acme", "ACM", 123.21D, new Date());
+        Stock redhat = createStock("Red Hat", "RHC", 59.61D, new Date());
+
+        stockRepository.save(acme);
+        stockRepository.save(redhat);
+
+        assertTrue("The stock id hasn't been assigned.", acme.getId() > 0);
+        assertTrue("The stock id hasn't been assigned.", redhat.getId() > 0);
+    }
+}
+
+For more examples on how to use these extensions and quickly get started with development you can take a look at prepared "showcases":https://github.com/arquillian/arquillian-showcase/spring. Additionally you browse the "integration tests":https://github.com/arquillian/arquillian-container-spring that are part of project source code.
+
+For help with preparing this release, I'd like to especially thank "Dan Allen":profile://dan.j.allen, "Marius Bogoevici":profile://marius.bogoevici and "Aslak Knutsen":profile://aslak for sharing their knowledge and providing helping hand.
+
+We look forward to hearing your feedback about this release in the "community forums":#{site.project_space}!
