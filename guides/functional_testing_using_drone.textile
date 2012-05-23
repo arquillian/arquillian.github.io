@@ -133,7 +133,7 @@ bc(prettify).. <!-- clip -->
         <dependency>
             <groupId>org.jboss.arquillian</groupId>
             <artifactId>arquillian-bom</artifactId>
-            <version>1.0.0.CR7</version>
+            <version>1.0.0.Final</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -151,14 +151,14 @@ bc(prettify).. <!-- clip -->
         <dependency>
             <groupId>org.jboss.arquillian</groupId>
             <artifactId>arquillian-bom</artifactId>
-            <version>1.0.0.CR7</version>
+            <version>1.0.0.Final</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.extension</groupId>
             <artifactId>arquillian-drone-bom</artifactId>
-            <version>1.0.0.CR3</version>
+            <version>1.0.0.Final</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -225,6 +225,7 @@ bc(prettify).. <!-- clip -->
 <dependency>
     <groupId>org.slf4j</groupId>
     <artifactId>slf4j-simple</artifactId>
+    <version>1.6.4</version>
     <scope>test</scope>
 </dependency> 
 <!-- clip -->
@@ -239,7 +240,7 @@ bc(prettify).. <!-- clip -->
 <dependency>
     <groupId>org.jboss.as</groupId>
     <artifactId>jboss-as-arquillian-container-managed</artifactId>
-    <version>7.0.2.Final</version>
+    <version>7.1.1.Final</version>
     <scope>test</scope>
 </dependency>
 <!-- clip -->
@@ -434,6 +435,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
@@ -450,11 +452,15 @@ public class LoginScreenSeleniumTest {
             .addAsWebResource(new File(WEBAPP_SRC, "login.xhtml"))
             .addAsWebResource(new File(WEBAPP_SRC, "home.xhtml"))
             .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-            .addAsWebInfResource(EmptyAsset.INSTANCE, "faces-config.xml");
+            .addAsWebInfResource(
+                new StringAsset("<faces-config version=\"2.0\"/>"),
+                "faces-config.xml");
     }
 }
 
 p(important). %If you encounter a java.lang.ClassNotFoundException: com.thoughtworks.selenium.DefaultSelenium when you run the test, likely you don't have the @testable = false@ attribute on the @@Deployment@ annotation. Don't forget it!%
+
+p(warning). %The Java EE 6 specification requires a @faces-config.xml@ descriptor to be present in WEB-INF to activate JSF. Unlike @beans.xml@, however, the @faces-config.xml@ descriptor cannot be an empty file. It must contain at least the root node and the version attribute to specify the JSF version in use.%
 
 p. If you have a lot of web pages that are part of the test, having to add them to the archive individually is tedious. Instead, you can import them in bulk using the @ExplodedImporter@ from ShrinkWrap. Here's an example of how to add all the web sources that end in .xhtml to the archive:
 
@@ -472,7 +478,9 @@ return ShrinkWrap.create(WebArchive.class, "login.war")
         .importDirectory(WEBAPP_SRC).as(GenericArchive.class),
         "/", Filters.include(".*\\.xhtml$"))
     .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-    .addAsWebInfResource(EmptyAsset.INSTANCE, "faces-config.xml");
+    .addAsWebInfResource(
+        new StringAsset("<faces-config version=\"2.0\"/>"),
+        "faces-config.xml");
 
 // clip
 
@@ -686,11 +694,14 @@ import java.io.File;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.DependencyResolvers;
 import org.jboss.shrinkwrap.resolver.api.maven.MavenDependencyResolver;
 
 public class Deployments {
+    private static final String WEBAPP_SRC = "src/main/webapp";
+
     public static WebArchive createLoginScreenDeployment() {
         MavenDependencyResolver resolver = DependencyResolvers
             .use(MavenDependencyResolver.class)
@@ -704,7 +715,9 @@ public class Deployments {
             .addAsWebResource(new File(WEBAPP_SRC, "login.xhtml"))
             .addAsWebResource(new File(WEBAPP_SRC, "home.xhtml"))
             .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-            .addAsWebInfResource(EmptyAsset.INSTANCE, "faces-config.xml");
+            .addAsWebInfResource(
+                new StringAsset("<faces-config version=\"2.0\"/>"),
+                "faces-config.xml");
     }
     // clip 
 }
