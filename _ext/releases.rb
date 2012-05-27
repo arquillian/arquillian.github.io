@@ -26,6 +26,7 @@ module Awestruct::Extensions::Releases
           post_author = nil
           post_tags = nil
           post_title = nil
+          post_date = nil
           # TODO perhaps standardize on -release suffix to make files more clear
           release_page_name = repo_path + '-' + release.version
           release_page_simple_input_path = File.join(@path_prefix, release_page_name)
@@ -36,6 +37,7 @@ module Awestruct::Extensions::Releases
             comparison_path = '/' + release_page_input_path
             inner_release_page = site.pages.find {|candidate| candidate.relative_source_path.eql? comparison_path }
             post_author = !inner_release_page.author.nil? ? inner_release_page.author : get_post_author(inner_release_page)
+            post_date = get_post_date(inner_release_page)
             post_tags = inner_release_page.tags
             post_title = inner_release_page.title
             site.pages.delete inner_release_page
@@ -61,9 +63,13 @@ module Awestruct::Extensions::Releases
             release_page.title ||= "#{component.name} #{release.version} Released"
           end
           release_page.author ||= !post_author.nil? ? post_author : site.identities.lookup_by_contributor(release.released_by).username
-          # why do we need to do Time.utc?
-          #release_page.date ||= release.date
-          release_page.date = Time.utc(release.date.year, release.date.month, release.date.day)
+          if post_date
+            release_page.date ||= post_date
+          else
+            release_page.date ||= release.date
+          end
+          # FIXME why do we need to do Time.utc?
+          release_page.date = Time.utc(release_page.date.year, release_page.date.month, release_page.date.day)
           #release_page.layout ||= 'release'
           release_page.tags ||= []
           if post_tags
@@ -113,6 +119,14 @@ module Awestruct::Extensions::Releases
       if !last_commit.nil?
         # FIXME fragile lookup!
         page.site.identities.lookup_by_name(last_commit.author.name).username
+      end
+    end
+
+    def get_post_date(page)
+      rc = Git.open(page.site.dir)
+      last_commit = rc.log(nil).path(page.relative_source_path[1..-1]).to_a.last
+      if !last_commit.nil?
+        last_commit.author_date
       end
     end
   end
