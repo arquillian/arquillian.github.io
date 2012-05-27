@@ -1,0 +1,156 @@
+---
+tags: [ ]
+---
+
+* Have you ever been writing in-contair test and have a feeling it is *not real enough*?
+
+* Wouldn't it be great to use *client-side test* (e.g. _Selenium_) *verifying server logic*?
+
+
+There wasn't tool which would help you using real client-side automation tools and cover the server logic in scope of one test easily. But _Ike_ strikes again to show us how to test our stuff!
+
+
+h3. Taking a Client Test on a Tour to a Server
+
+Warp fills a *gap between a client-side and a server-side testing* by allowing cover *integration logic* between those.
+
+You can use _real_ application logic, render content to _real_ browser and trigger _real_ requests. That effectively means _less mocking_ needed. And it also opens up _new debugging possibilities_.
+
+It may sound like sci-fi, but using Warp - Arquillian alien technology for killing real bugs - you can experience it right now!
+
+
+h3. Show Me the Code
+
+Let's start with basic Arquillian client-side test, but add the @@WarpTest@ annotation to test class:
+
+div(filename). BasicWarpTest.class
+
+bc(prettify).. // instructs Warp to enhance the test archive
+@WarpTest
+@RunWith(Arquillian.class)
+public class BasicWarpTest {
+    
+    @Drone
+    WebDriver browser;
+
+    @ArquillianResource
+    URL contextPath;
+
+    @Deployment
+    public static WebArchive createDeployment() { ... }
+
+    @Test
+    @RunAsClient
+    public void test_opening_index_page() {
+        // triggers a HTTP request to a server
+        browser.navigate().to(contextPath);
+    }
+}
+
+p. Note that you can use *any HTTP client*. For sake of simplicity we used @@Drone@ bringing _Selenium2 / WebDriver_ to our test. Additionally, we have injected _context path URL_ and provided _WAR deployment_ to be tested (shortened).
+
+So far, we have defined only basic client-side Selenium test yet, right?
+Okay, let's bring a little bit of magic and define following inner class in the @BasicTest@:
+
+
+bc(prettify)..     public static class InitialRequestVerification extends ServerAssertion {
+
+        private static final long serialVersionUID = 1L;
+
+        @Inject
+        TowelBean towel;
+
+        @AfterPhase(RENDER_RESPONSE)
+        public void test_initial_state() {
+
+            // verify we are on right viewId
+            assertEquals("/index.xhtml", FacesContext.getCurrentInstance().getViewRoot().getViewId());
+
+            // assert the bean state
+            assertNull(42, towelBean.getAnswerToLife());
+        }
+    }
+
+p. We have defined the @ServerAssertion@ object - a bean which will be later enriched on the server (@TowelBean@ will be injected) and then the test method will be invoked in an appropriate phase of the application (after rendering response).
+
+The only is missing now: send your assertion to a trip to server!
+
+Modify the client-test as follows:
+
+
+bc(prettify)..     @Test
+    @RunAsClient
+    public void test() {
+        // define the client action which will lead to HTTP request
+        Warp.execute(new ClientAction() {
+            public void action() {
+                // the original request
+                browser.navigate().to(contextPath);
+            }
+        
+        // enhance the subsequent HTTP request with ServerAssertion
+        }).verify(new InitialRequestVerification());
+    }
+
+p. That's it. Selenium-driven browser *sends HTTP request* which is caught and *enhanced* with the @InitialRequestVerification@ assertion object (the object is added as payload).
+
+Once the request comes to server, @InitialRequestVerification@ assertion object is *registered* to _Arquillian_ and the application logic is triggered.
+
+After rendering a response, the @InitialRequestVerification@ assertion object is *enriched* with all the required resources (EJB beans, CDI beans, Arquillian resources or recently also Spring beans) and then *test method is invoked*.
+
+Once the request is completed, @InitialRequestVerification@ object is *sent back* to the client-side test.
+
+If anything on the server-side _failed_ (including _assertions_ you have defined), the *failure is propagated* back to the client and handled appropriately.
+
+
+h3. A few highlights
+
+- <i class="icon-star"></i> Support for Servlet events :=
+Warp allows to test Servlet lifecycle by supporting following two lifecycle event annotations:
+@@BeforeServlet@ - triggered before the request is processed by Servlet
+@@AfterServlet@ - triggered after the request is processed by Servlet =:
+
+- <i class="icon-star"></i> Phaser extension - support for JSF lifecycle events :=
+An Warp's extension called *Phaser* provides integration with JSF lifecycle, so you can basically test state of the application in any JSF phase.
+
+Following JSF-specific events are supported:
+@@BeforePhase(Phase)@ - triggered before the given JSF phase is executed
+@@AfterPhase(Phase)@ - triggered after the given JSF phase is executed =:
+
+- <i class="icon-star"></i> Works with any HTTP client :=
+Warp works with any HTTP client: Selenium, HtmlUnit, HttpUnit, REST client, JavaScript test, Android device. No boundaries here! =:
+
+- <i class="icon-star"></i> Open to more protocols  :=
+Only HTTP protocol is supported currently, but other protocols can be supported as well! (SPI to be defined in later releases.) =:
+
+- <i class="icon-star"></i> Open to other frameworks  :=
+In fact, Warp was designed to support any server-side web framework based on Servlets API (read bellow). =:
+
+
+h3. Need to know more?
+
+You can find the complete Maven-based sample of usage in "**Arquillian Showcase**":https://github.com/arquillian/arquillian-showcase/tree/master/warp.
+
+Additionally, you can look into functional tests in the Warp test suite: "Servlet integration":https://github.com/arquillian/arquillian-extension-warp/blob/1.0.0.Alpha1/ftest/src/test/java/org/jboss/arquillian/warp/ftest/WarpBasicTest.java and "Phaser (JSF) integration":https://github.com/arquillian/arquillian-extension-warp/blob/1.0.0.Alpha1/extension/phaser-ftest/src/test/java/org/jboss/arquillian/warp/extension/phaser/ftest/PhaserBasicTest.java .
+
+h3. Roadmap
+
+In future releases, we will be looking into further improving the extension, most notably:
+
+* *enrichments specific for web frameworks* (e.g. injectable @HttpServletRequest@, @FacesContext@, etc.)
+
+
+But have in mind Warp extension opens us *many possibilities for integration*:
+
+* support for wide range of *server-side web frameworks* (Wicket, Vaadin, GWT, Tapestry, ...)
+* support for *alternative protocols* (WebSockets)
+* built-in support for variety of *client-side testing tools*
+
+We would love to hear from you where Warp can be stretched to reach boundaries of impossibility!
+
+
+h3. Call for action
+
+If you would like to have support for your favorite web framework, you miss some feature or you can see space for improvements, don't hesitate and come to Arquillian forums or IRC #jbosstesting at irc.freenode.net!
+
+Arquillian Team will be pleased to hear from you.
