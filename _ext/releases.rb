@@ -37,7 +37,8 @@ module Awestruct::Extensions::Releases
             comparison_path = '/' + release_page_input_path
             inner_release_page = site.pages.find {|candidate| candidate.relative_source_path.eql? comparison_path }
             post_author = !inner_release_page.author.nil? ? inner_release_page.author : get_post_author(inner_release_page)
-            post_date = get_post_date(inner_release_page)
+            #post_date = get_post_date(inner_release_page)
+            post_date = inner_release_page.date
             post_tags = inner_release_page.tags
             post_title = inner_release_page.title
             site.pages.delete inner_release_page
