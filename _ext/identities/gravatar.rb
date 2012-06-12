@@ -16,7 +16,7 @@ module Identities
           hash = Digest::MD5.new().update(identity.email.downcase).hexdigest 
         end
         url = API_URL_TEMPLATE % hash
-        response = RestClient.get(url) do |rsp, req, res, &blk|
+        response = RestClient.get(url, :user_agent => "rest-client") do |rsp, req, res, &blk|
           if rsp.code.eql? 404
             rsp = RestClient::Response.create('{}', rsp.net_http_res, rsp.args)
             rsp.instance_variable_set(:@code, 200)
