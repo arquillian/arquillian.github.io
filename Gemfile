@@ -32,6 +32,7 @@ source :rubygems
 gem "awestruct", "0.2.15"
 gem "rest-client", "1.6.7"
 gem "git", "1.2.5"
-gem "vpim", "0.695"
+gem "ri_cal", "0.8.8"
+gem "tzinfo", "0.3.33"
 gem "jruby-openssl", "0.7.6.1", :platforms => :jruby
 gem "rb-inotify", "0.8.8", :platforms => [:ruby, :jruby]
