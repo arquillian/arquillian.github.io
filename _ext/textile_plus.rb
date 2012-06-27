@@ -1,3 +1,5 @@
+require 'redcloth'
+
 module Awestruct::Extensions
   class TextilePlus
     def initialize()
