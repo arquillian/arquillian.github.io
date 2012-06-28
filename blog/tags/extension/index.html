@@ -42,7 +42,7 @@
         </div>
       </div>
     </header>
-    <div id="main" role="main">
+    <div role="main" id="main">
   <div id="content-header">
     <div class="container">
       <h1>
@@ -60,7 +60,7 @@
     <div class="byline">
       <img class="avatar" src="http://gravatar.com/avatar/eef1d6d311aa3bf4db3a9a40ed912bf9?s=44" />
       <span class="author">Posted by
-      <a href="https://github.com/papousek">Jan PapoušEk</a></span>
+      <a href="https://github.com/papousek">Jan PapouÅ¡Ek</a></span>
       <span class="dateinline">on Jun 27, 2012</span>
       <div class="date"><abbr>Jun</abbr> 27</div>
       <span class="comments">| <a href="/blog/2012/06/27/arquillian-extension-drone-1-1-0-CR1/#disqus_thread" data-disqus-identifier="da6e582677f297dffeb846275396c3aaf51de052">Comments</a></span>
@@ -76,7 +76,35 @@
 	<li>reusable session for <a href="http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/remote/RemoteWebDriver.html">RemoteWebDriver</a> introduced</li>
 </ul>
 <h3>Configuration Improvement</h3>
-<p>Have you ever been stucked because you didn&#8217;t remember full qualified class name of the webdriver you wanted to use in your tests? Last Drone version required setting of <strong>implementationClass</strong> property and we should admit it wasn&#8217;t really comfortable. So we present a new property called <strong>browserCapabilities</strong> which can have the following values: android, chrome, firefox, htmlUnit, internetExplorer, iphone and opera. The values</p>
+<p>Have you ever been stucked because you didn&#8217;t remember full qualified class name of the webdriver you wanted to use in your tests? Last Drone version required setting of <strong>implementationClass</strong> property and we should admit it wasn&#8217;t really comfortable. So we present a new property called <strong>browserCapabilities</strong> which can have the following values: android, chrome, firefox, htmlUnit, internetExplorer, iphone and opera. The values ​​correspond to the factory methods of <a href="http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/remote/DesiredCapabilities.html">DesiredCapabilities</a> class.</p>
+<p>We have also enabled webdriver configuration via <a href="http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/Capabilities.html">Capabilities</a> interface. Now you can use the configuration as you know it from documentation of each webdriver. Use <strong>capability</strong> prefix and camel case instead of dots in the property name to set the capability value.</p>
+<p>So assume you want to use Firefox browser and specify the path to its binary file. We know <strong>webdriver.firefox.bin</strong> configuration property from <a href="http://code.google.com/p/selenium/wiki/FirefoxDriver">FirefoxDriver documention</a>.</p>
+<div class="filename">arquillian.xml</div>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="webdriver"&gt;&#x000A;    &lt;property name="browserCapabilities"&gt;firefox&lt;/property&gt;&#x000A;    &lt;property name="capabilityWebdriverFirefoxBin"&gt;/path/to/my/firefox/installation/firefox&lt;/property&gt;&#x000A;&lt;/extension&gt;</code></pre>
+<h3>Reusable Session for RemoteWebDriver</h3>
+<p>To increase your productivity in test development Drone presents a new feature to reuse session from previous test execution. Skip creating a new session to save your time. You can check the speed-up in the following table. The table contains time needed to run a test (including deployment on JBoss AS 7.1.1.Final).</p>
+<table class="table table-bordered table-striped">
+	<tr>
+		<td>                   </td>
+		<th>Common Session      </th>
+		<th>Reusable Session    </th>
+	</tr>
+	<tr>
+		<th>Firefox         </th>
+		<td> 3.98 &plusmn; 0.27 s  </td>
+		<td> 2.15 &plusmn; 0.15 s  </td>
+	</tr>
+	<tr>
+		<th>Google Chrome   </th>
+		<td> 4.75 &plusmn; 0.03 s  </td>
+		<td> 2.57 &plusmn; 0.05 s  </td>
+	</tr>
+</table>
+<p>The feature requires <a href="http://code.google.com/p/selenium/downloads/list">standalone selenium server</a> running, <strong>remoteReusable</strong> enabled and <strong>remoteAddress</strong> pointed to your selenium server.</p>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="webdriver"&gt;&#x000A;    &lt;property name="browserCapabilities"&gt;firefox&lt;/property&gt;&#x000A;    &lt;property name="remoteReusable"&gt;true&lt;/property&gt;&#x000A;    &lt;property name="remoteAddress"&gt;http://localhost:4444/wd/hub&lt;/property&gt;&#x000A;&lt;/extension&gt;</code></pre>
+<p>Using the reusable session the browser stays open after the test completion, so all its settings are kept alive. If you need to debug your tests on the client side, you can easily prepare break points in the browser and run tests with <strong>remoteReusable</strong> flag.</p>
+<p>After the proper configuration of reusable session <a href="http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/remote/RemoteWebDriver.html">RemoteWebDriver</a> will be chosen automatically. That means you have to use compatible types in your test code (<a href="http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/WebDriver.html">WebDriver</a> ideally).</p>
+<pre class="prettify"><code class="prettify">public void testMethod(@Drone WebDriver driver) {&#x000A;    // test code&#x000A;}</code></pre>
 <h3>What is Arquillian?</h3>
 <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
 <h3>Release details</h3>
@@ -117,12 +145,37 @@
 </table>
 <h3>
   Release notes and resolved issues
-  <small>0</small>
+  <small>4</small>
 </h3>
 <p>Support for Reusable sessions</p>
+<dl>
+  <dt>Feature Request</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-926">ARQ-926</a> -         Fast development turnaround using Selenium Server and RemoteWebDriver session reusal</li>
+    </ul>
+  </dd>
+</dl>
+<dl>
+  <dt>Task</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-868">ARQ-868</a> -         Update Selenium version to 2.24.1</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-970">ARQ-970</a> -         Drone: Merge tests for reusable remote session</li>
+    </ul>
+  </dd>
+</dl>
+<dl>
+  <dt>Sub-task</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-927">ARQ-927</a> -         Configuration for RemoteWebDriver Drone extension</li>
+    </ul>
+  </dd>
+</dl>
 <p>
   Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://github.com/papousek">Jan PapoušEk</a>, <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
+  <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://github.com/papousek">Jan PapouÅ¡Ek</a>, <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
 </p>
   </div>
   <div class="footer">
@@ -130,7 +183,7 @@
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/drone/">drone</a>
+    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/drone/" class="tag">drone</a>
   </div>
 </article>
 <article class="post">
@@ -190,9 +243,17 @@
     </table>
     <h3>
       Release notes and resolved issues
-      <small>0</small>
+      <small>2</small>
     </h3>
     <p>Support for Client JVM instrumentation</p>
+    <dl>
+      <dt>Feature Request</dt>
+      <dd>
+        <ul class="unstyled">
+          <li><a href="https://issues.jboss.org/browse/ARQ-737">ARQ-737</a> -         Support Byteman Rules in client mode</li>
+        </ul>
+      </dd>
+    </dl>
     <p>
       Thanks to the following list of contributors:
       <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
@@ -203,7 +264,7 @@
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/byteman/">byteman</a>
+    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/byteman/" class="tag">byteman</a>
   </div>
 </article>
 <article class="post">
@@ -340,9 +401,38 @@
 </table>
 <h3>
   Release notes and resolved issues
-  <small>0</small>
+  <small>9</small>
 </h3>
 <p>First Release of Warp Extension</p>
+<dl>
+  <dt>Feature Request</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-578">ARQ-578</a> -         Create a Extension for handling Server State assertion during normal Servlet/JSF requests</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-957">ARQ-957</a> -         Add Warp Showcase sample</li>
+    </ul>
+  </dd>
+</dl>
+<dl>
+  <dt>Enhancement</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-931">ARQ-931</a> -         Warp: Define API/SPI</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-933">ARQ-933</a> -         Warp: server exception propagation</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-948">ARQ-948</a> -         Make the ServerAssertion abstract class to ensure future compatibility</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-955">ARQ-955</a> -         Warp: Define BOM</li>
+    </ul>
+  </dd>
+</dl>
+<dl>
+  <dt>Bug</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-935">ARQ-935</a> -         Should handle de-enrich of final fields</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-943">ARQ-943</a> -         Should be able to detect Serialization problems</li>
+    </ul>
+  </dd>
+</dl>
 <p>
   Thanks to the following list of contributors:
   <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/kenfinni">Ken Finnigan</a>
@@ -353,7 +443,7 @@
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/warp/">warp</a>
+    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/warp/" class="tag">warp</a>
   </div>
 </article>
 <article class="post">
@@ -385,11 +475,7 @@
 	<dt><i class="icon-star"></i> Intuitive configuration</dt>
 	<dd><p>The extension can be easily configured through the arquillian.xml. All the settings like e.g. artifacts versions can be overridden here.</p>
 <div class="filename">arquillian.xml</div>
-<pre class="prettify"><code class="prettify">&lt;extension qualifier="spring"&gt;&#x000A;    &lt;property name="autoPackage"&gt;true&lt;/property&gt;&#x000A;    &lt;property name="springVersion"&gt;3.0.0.RELEASE&lt;/property&gt;&#x000A;    &lt;property name="cglibVersion"&gt;2.2&lt;/property&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;property name="includeSnowdrop"&gt;true&lt;/property&gt;&#x000A;    &lt;property name="snowdropVersion"&gt;2.0.3.Final&lt;/property&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;property name="customContextClass"&gt;org.jboss.spring.vfs.context.VFSClassPathXmlApplicationContext&lt;/property&gt;&#x000A;&lt;/extension&gt; </code></pre></dd>
-</dl>
-<p>Here&#8217;s an example of a basic Spring test with Arquillian:</p>
-<div class="filename">DefaultStockRepositoryTestCase.java</div>
-<pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;@SpringConfiguration("applicationContext.xml")&#x000A;public class DefaultStockRepositoryTestCase {</code>&#x000A;&#x000A;<code class="prettify">    @Deployment&#x000A;    public static JavaArchive createTestArchive() {&#x000A;        return ShrinkWrap.create(JavaArchive.class)&#x000A;                .addClasses(Stock.class, StockRepository.class, StockService.class,&#x000A;                        DefaultStockRepository.class, DefaultStockService.class)&#x000A;                .addAsResource("applicationContext.xml");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Autowired&#x000A;    StockRepository stockRepository;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testSave() {&#x000A;        Stock acme = createStock("Acme", "ACM", 123.21D, new Date());&#x000A;        Stock redhat = createStock("Red Hat", "RHC", 59.61D, new Date());</code>&#x000A;&#x000A;<code class="prettify">        stockRepository.save(acme);&#x000A;        stockRepository.save(redhat);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue("The stock id hasn't been assigned.", acme.getId() &gt; 0);&#x000A;        assertTrue("The stock id hasn't been assigned.", redhat.getId() &gt; 0);&#x000A;    }&#x000A;}</code></pre>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="spring"&gt;&#x000A;    &lt;property name="autoPackage"&gt;true&lt;/property&gt;&#x000A;    &lt;property name="springVersion"&gt;3.0.0.RELEASE&lt;/property&gt;&#x000A;    &lt;property name="cglibVersion"&gt;2.2&lt;/property&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;property name="includeSnowdrop"&gt;true&lt;/property&gt;&#x000A;    &lt;property name="snowdropVersion"&gt;2.0.3.Final&lt;/property&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;property name=&#8220;customContextClass&#8221;&gt;org.jboss.spring.vfs.context.VFSClassPathXmlApplicationContext&lt;/property&gt;<br />&#x000A;&lt;/extension&gt;</code></pre></dd>&#x000A;</dl>&#x000A;<p>Here&#8217;s an example of a basic Spring test with Arquillian:</p>&#x000A;<div class="filename">DefaultStockRepositoryTestCase.java</div>&#x000A;<pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;@SpringConfiguration("applicationContext.xml")&#x000A;public class DefaultStockRepositoryTestCase {</code>&#x000A;&#x000A;<code class="prettify">    @Deployment&#x000A;    public static JavaArchive createTestArchive() {&#x000A;        return ShrinkWrap.create(JavaArchive.class)&#x000A;                .addClasses(Stock.class, StockRepository.class, StockService.class,&#x000A;                        DefaultStockRepository.class, DefaultStockService.class)&#x000A;                .addAsResource("applicationContext.xml");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Autowired&#x000A;    StockRepository stockRepository;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testSave() {&#x000A;        Stock acme = createStock("Acme", "ACM", 123.21D, new Date());&#x000A;        Stock redhat = createStock("Red Hat", "RHC", 59.61D, new Date());</code>&#x000A;&#x000A;<code class="prettify">        stockRepository.save(acme);&#x000A;        stockRepository.save(redhat);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue("The stock id hasn't been assigned.", acme.getId() &gt; 0);&#x000A;        assertTrue("The stock id hasn't been assigned.", redhat.getId() &gt; 0);&#x000A;    }&#x000A;}</code></pre>
 <p>For more examples on how to use these extensions and quickly get started with development you can take a look at prepared <a href="https://github.com/arquillian/arquillian-showcase/tree/master/spring">showcase</a>. Additionally, you can browse the <a href="https://github.com/arquillian/arquillian-extension-spring">integration tests</a> that are part of project source code.</p>
 <p>For help with preparing this release, I&#8217;d like to especially thank <a href="https://community.jboss.org/people/dan.j.allen">Dan Allen</a>, <a href="https://community.jboss.org/people/marius.bogoevici">Marius Bogoevici</a> and <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a> for sharing their knowledge and providing helping hand.</p>
 <p>We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
@@ -434,9 +520,17 @@
 </table>
 <h3>
   Release notes and resolved issues
-  <small>0</small>
+  <small>2</small>
 </h3>
 <p>Support for Spring enrichment in other Containers</p>
+<dl>
+  <dt>Feature Request</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-301">ARQ-301</a> -         Create a Spring framework integration (for non-standalone containers)</li>
+    </ul>
+  </dd>
+</dl>
 <p>
   Thanks to the following list of contributors:
   <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a>
@@ -447,7 +541,7 @@
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/gsoc/">gsoc</a> <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/spring/">spring</a>
+    <a href="/blog/tags/gsoc/" class="tag">gsoc</a> <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/spring/" class="tag">spring</a>
   </div>
 </article>
 <article class="post">
@@ -466,73 +560,74 @@
   </header>
   <div class="body">
     <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha1</em> release of the <em>Arquillian Portal Extension</em> component!</p>
-<p>This is the first release of a new Arquillian Extension for assisting in the complex task of testing portlets in a portal environment.</p>
-<h3 class="highlights">Some of the highlights in this release</h3>
-<dl>
-	<dt><i class="icon-star"></i> Portal URL resource</dt>
-	<dd></dd>
-	<dd>The SPI provides <code>PortalURLProvider</code> for portal specific implementations to provide a different URL when injecting a <code>@ArquillianResource</code> of type <code>URL</code> into a test. All that is required to use it is add <code>@PortalURL</code> onto the injection point, it&#8217;s that simple.</dd>
-	<dt><i class="icon-star"></i> Additional portal deployments</dt>
-	<dd></dd>
-	<dd>The SPI provides <code>PortalContainerDeploymentProvider</code> for portal specific implementations to provide additional deployments that are required by the container to initiate the portal.</dd>
-</dl>
-<p>Currently there are two implementations of this extension for use with <a href="https://github.com/jbossportletbridge/pluto-testing">Pluto</a> and <a href="https://github.com/jbossportletbridge/gatein-testing">GateIn</a> portal containers.</p>
-<p>For examples on how to use these extensions with their respective portal containers, you can take a look at the <a href="https://github.com/jbossportletbridge/jbossportletbridge/tree/master/testsuites">testsuite</a> of JBoss Portlet Bridge.</p>
-<p>We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
-<h3>What is Arquillian?</h3>
-<p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
-<h3>Release details</h3>
-<table class="table table-bordered table-striped">
-  <tbody>
-    <tr>
-      <th>Component</th>
-      <td>
-        <a href="/modules/portal-extension/">Arquillian Portal Extension</a>
-      </td>
-    </tr>
-    <tr>
-      <th>Version</th>
-      <td>
-        1.0.0.Alpha1
-        <span class="label tag">
-          <a href="https://github.com/arquillian/arquillian-extension-portal/commit/9ebfab1a51aae4470a53d02e72536b57575a7a4b.html">view tag</a>
-        </span>
-      </td>
-    </tr>
-    <tr>
-      <th>Release date</th>
-      <td>2012-05-08</td>
-    </tr>
-    <tr>
-      <th>Released by</th>
-      <td>Ken Finnigan</td>
-    </tr>
-    <tr>
-      <th>Compiled against</th>
-      <td>
+    <p>This is the first release of a new Arquillian Extension for assisting in the complex task of testing portlets in a portal environment.</p>
+    <h3 class="highlights">Some of the highlights in this release</h3>
+    <dl>
+    	<dt><i class="icon-star"></i> Portal URL resource</dt>
+    </dl><h3>What is Arquillian?</h3>
+    <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
+    <h3>Release details</h3>
+    <table class="table table-bordered table-striped">
+      <tbody>
+        <tr>
+          <th>Component</th>
+          <td>
+            <a href="/modules/portal-extension/">Arquillian Portal Extension</a>
+          </td>
+        </tr>
+        <tr>
+          <th>Version</th>
+          <td>
+            1.0.0.Alpha1
+            <span class="label tag">
+              <a href="https://github.com/arquillian/arquillian-extension-portal/commit/9ebfab1a51aae4470a53d02e72536b57575a7a4b.html">view tag</a>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <th>Release date</th>
+          <td>2012-05-08</td>
+        </tr>
+        <tr>
+          <th>Released by</th>
+          <td>Ken Finnigan</td>
+        </tr>
+        <tr>
+          <th>Compiled against</th>
+          <td>
+            <ul class="unstyled">
+              <li>Arquillian Core &#8211; 1.0.0.Final</li>
+            </ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <h3>
+      Release notes and resolved issues
+      <small>4</small>
+    </h3>
+    <p>First Release of Portal Extension</p>
+    <dl>
+      <dt>Task</dt>
+      <dd>
         <ul class="unstyled">
-          <li>Arquillian Core &#8211; 1.0.0.Final</li>
+          <li><a href="https://issues.jboss.org/browse/ARQ-902">ARQ-902</a> -         Add README to portal extension project</li>
+          <li><a href="https://issues.jboss.org/browse/ARQ-903">ARQ-903</a> -         Update pom.xml with missing information</li>
+          <li><a href="https://issues.jboss.org/browse/ARQ-904">ARQ-904</a> -         Update license to ASLv2</li>
         </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-<h3>
-  Release notes and resolved issues
-  <small>0</small>
-</h3>
-<p>First Release of Portal Extension</p>
-<p>
-  Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/kenfinni">Ken Finnigan</a>
-</p>
+      </dd>
+    </dl>
+    <p>
+      Thanks to the following list of contributors:
+      <a href="https://community.jboss.org/people/kenfinni">Ken Finnigan</a>
+    </p>
   </div>
   <div class="footer">
     <a href="/blog/2012/05/08/arquillian-extension-portal-1-0-0-Alpha1/">permalink</a>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/portal/">portal</a>
+    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/portal/" class="tag">portal</a>
   </div>
   
               <script type="text/javascript">
@@ -554,7 +649,7 @@
   </li>
 </ul>
 </div>
-<aside id="sidebar" role="complementary">
+<aside role="complementary" id="sidebar">
   <div class="subscribe">
     <h2 class="icon news">
       <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
@@ -606,7 +701,7 @@
       </li>
     </ul>
     
-                <div id="popularposts" class="dsq-widget">
+                <div class="dsq-widget" id="popularposts">
                   <h2 class="dsq-widget-title">Popular Posts</h2>
                   <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
                   <script>
