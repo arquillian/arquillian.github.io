@@ -45,457 +45,407 @@
       </div>
     </header>
     <div id="main" role="main">
-      <div id="content-header">
-        <div class="container">
-          <h1>
-            <a href="/blog/">Arquillian Blog</a>
-          </h1>
-        </div>
-      </div>
-      <div class="container">
-        <div id="content">
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/">Arquillian Persistence Extension 1.0.0.Alpha4 Released</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/de13898b827f3227a9f9f31eb90a2367?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/bmajsak">Bartosz Majsak</a></span>
-                <span class="dateinline">on Apr 12, 2012</span>
-                <div class="date"><abbr>Apr</abbr> 12</div>
-                <span class="comments">| <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/#disqus_thread" data-disqus-identifier="680ef2b7cd34bee7c733594a4645aa493b47045c">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha4</em> release of the <em>Arquillian Persistence Extension</em> component!</p>
-              <p>It&#8217;s been a while since the <a href="/2011/12/30/arquillian-extension-persistence-1-0-0-Alpha3">Alpha3 release</a>. After three long months, we&#8217;re excited to announce Alpha 4 with <strong>a lot</strong> of improvements and enhancements suggested by our great community. Best of all, we finally have <a href="https://docs.jboss.org/author/display/ARQ/Persistence">complete documentation in the reference guide</a>!</p>
-              <p>I would especially like to thank <a href="https://github.com/shogz">Michael Brill</a> for nailing down  DBUnit clean up strategies, <a href="https://github.com/twistah">Pål Oliver Kristiansen</a> and <a href="https://github.com/jagin">Jarek Gilewski</a> for suggesting customization of DBUnit behaviour and <a href="https://community.jboss.org/people/Juergen.Zimmermann">Juergen Zimmermann</a> for spotting a bug with transactional support. Last, but not least, many thanks to all who actively discussed the roadmap for next releases. There is plenty of great stuff on the way! Thank you very much for your feedback!</p>
-              <h3 class="highlights">Some of the highlights in this release</h3>
-              <dl>
-              	<dt><i class="icon-star"></i> Custom SQL scripts for cleanup</dt>
-              	<dd>You can now use custom SQL scripts to clean your database before or after the test. For this purpose use the <code>@CleanupUsingScript</code> annotation and specify SQL files which have to be executed.</dd>
-              	<dt><i class="icon-star"></i> More flexible custom SQL scripts execution</dt>
-              	<dd>We&#8217;ve removed the <code>@UsingScript</code> annotation and replaced it with the <code>@ApplyScriptBefore</code> and <code>@ApplyScriptAfter</code> annotations.</dd>
-              	<dt><i class="icon-star"></i> DBUnit insert strategies</dt>
-              	<dd><p>You can tell DBUnit how it should insert your data. The following strategies are available:</p>
-              <ul>
-              	<li><code>INSERT</code> &#8211; Performs insert of the data defined in provided data sets. <em>This is the default strategy</em>.</li>
-              	<li><code>CLEAN_INSERT</code> &#8211; Performs insert of the data defined in provided data sets, after removal of all data present in the tables referred in provided files.</li>
-              	<li><code>REFRESH</code> &#8211; During this operation, existing rows are updated and new ones are inserted. Entries already existing in the database which are not defined in the provided data set are not affected.</li>
-              	<li><code>UPDATE</code> &#8211; This strategy updates existing rows using data provided in the datasets. If the dataset contains a row which is not present in the database (identified by its primary key) then an exception is thrown.</li>
-              </ul></dd>
-              	<dt><i class="icon-star"></i> DBUnit cleanup modes</dt>
-              	<dd><p>You can specify when and how you would like your database to be cleaned. By default, your database is <strong>erased entirely</strong> before each test. If you want to control this behavior, use the <code>@Cleanup</code> annotation for this purpose. The following modes are currently supported:</p>
-              <ul>
-              	<li><code>STRICT</code> &#8211; Cleans the entire database. This strategy might require turning off database constraints (e.g. referential integrity).</li>
-              	<li><code>USED_ROWS_ONLY</code> &#8211; Deletes only those entries that are defined in the datasets used for seeding.</li>
-              	<li><code>USED_TABLES_ONLY</code> &#8211; Deletes only those tables that are referenced in datasets.</li>
-              </ul>
-              <p>You can also specify when you would like to invoke the cleanup procedure. For instance:</p>
-              <pre class="prettify"><code class="prettify">@Cleanup(phase = TestExecutionPhase.AFTER, strategy = CleanupStrategy.USED_ROWS_ONLY)</code></pre>
-              <p>You can invoke cleanup <code>BEFORE</code> or <code>AFTER</code> the test. You can also disable cleanup by using <code>TestExecutionPhase.NONE</code>.</p></dd>
-              	<dt><i class="icon-star"></i> Column filtering for data set matching</dt>
-              	<dd><code>@ShouldMatchDatSet</code> has been enhanced with <code>columnsToExclude</code> list, where you can specify which columns shouldn&#8217;t be used for database content verification.</dd>
-              	<dt><i class="icon-star"></i> Nullable columns</dt>
-              	<dd>For XML, JSON and YAML you can now set arbitary columns to <code>null</code> using <code>[null]</code> placeholder.</dd>
-              	<dt><i class="icon-star"></i> Separated configuration for core and (enhanced) DBUnit specific features</dt>
-              	<dd><p><strong>We provide configuration for all DBUnit properties and features as of Alpha 4!</strong> Moreover there is a split for core properties (such as default data source or JNDI of UserTransaction) and DBUnit related settings, as the example below illustrates:</p>
-              <div class="filename">arquillian.xml</div>
-              <pre class="prettify"><code class="prettify">&lt;extension qualifier="persistence"&gt;&#x000A;    &lt;property name="defaultDataSource"&gt;java:app/datasources/mssql_ds&lt;/property&gt;&#x000A;    &lt;property name="userTransactionJndi"&gt;java:jboss/UserTransaction&lt;/property&gt;&#x000A;    &lt;property name="initStatement"&gt;scripts/mssql-identity-insert-on.sql&lt;/property&gt;&#x000A;    &lt;property name="cleanupStatement"&gt;scripts/mssql-identity-insert-off.sql&lt;/property&gt;&#x000A;&lt;/extension&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;extension qualifier="persistence-dbunit"&gt;&#x000A;    &lt;property name="datatypeFactory"&gt;org.dbunit.ext.mssql.MsSqlDataTypeFactory&lt;/property&gt;&#x000A;    &lt;property name="useIdentityInsert"&gt;true&lt;/property&gt;&#x000A;&lt;/extension&gt;&#x000A;</code></pre></dd>
-              </dl>
-              <p>For complete list, please refer to the <a href="https://docs.jboss.org/author/display/ARQ/Persistence">reference guide</a>.</p>
-              <p>We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/persistence-extension/">Arquillian Persistence Extension</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.0.0.Alpha4
-                      <span class="label tag">
-                        <a href="https://github.com/arquillian/arquillian-extension-persistence/commit/4d7f59a7ff9c4575b8590a063d368b8f70cc259e.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2012-04-12</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Aslak Knutsen</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>Arquillian Core &#8211; 1.0.0.Final</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.extension</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-persistence-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-persistence-api/1.0.0.Alpha4/arquillian-persistence-api-1.0.0.Alpha4.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-persistence-api/1.0.0.Alpha4/arquillian-persistence-api-1.0.0.Alpha4.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-persistence-impl
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-persistence-impl/1.0.0.Alpha4/arquillian-persistence-impl-1.0.0.Alpha4.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-persistence-impl/1.0.0.Alpha4/arquillian-persistence-impl-1.0.0.Alpha4.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="https://community.jboss.org/people/bmajsak">Bartosz Majsak</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/persistence/">persistence</a>
-            </div>
-            <div id="comments">
-              
-                          <div id="disqus_thread"></div>
-                          <script type="text/javascript">
-                          var disqus_shortname = 'arquillian';
-                          var disqus_url = "http://arquillian.org/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/";
-                          var disqus_developer = null;
-                          var disqus_identifier = "680ef2b7cd34bee7c733594a4645aa493b47045c";
-                          (function() {
-                            var dsq = document.createElement("script"); dsq.type = "text/javascript"; dsq.async = true;
-                            dsq.src = "http://arquillian.disqus.com/embed.js";
-                            (document.getElementsByTagName("head")[0] || document.getElementsByTagName("body")[0]).appendChild(dsq);
-                          })();
-                          </script>
-                          <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript=arquillian">comments powered by Disqus.</a></noscript>
-            </div>
-            
-                        <script type="text/javascript">
-                        var disqus_shortname = 'arquillian';
-                        (function () {
-                          var s = document.createElement('script'); s.async = true;
-                          s.src = "http://disqus.com/forums/arquillian/count.js";
-                          (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
-                        }());
-                        </script>
-          </article>
-          <ul class="pager">
-            <li class="previous">
-              <a href="/blog/2012/04/11/arquillian-graphene-1-0-0-Final/">&laquo; Previous</a>
-            </li>
-            <li class="pages">Post 81 of 89</li>
-            <li class="next">
-              <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">Next &raquo;</a>
-            </li>
-          </ul>
-        </div>
-        <aside id="sidebar" role="complementary">
-          <div class="addthis_toolbox addthis_default_style">
-            <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
-            <a class="addthis_counter addthis_button_tweet"></a>
-            <a class="addthis_counter addthis_pill_style"></a>
-          </div>
-          <div class="subscribe">
-            <h2 class="icon news">
-              <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
-            </h2>
-            <p><em>Get the latest information on features, releases and events.</em></p>
-          </div>
-          <nav class="latest">
-            <h2>Latest Posts</h2>
-            <ul>
-              <li>
-                <div class="title">
-                  <a href="/blog/2012/06/05/arquillian-extension-byteman-1-0-0-Alpha2/">Arquillian Extension Byteman 1.0.0.Alpha2 Released</a>
-                </div>
-                <div class="meta">
-                  Jun 05, 2012
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2012/06/01/arquillian-core-1-0-1-Final/">Arquillian Core 1.0.1.Final Released</a>
-                </div>
-                <div class="meta">
-                  Jun 01, 2012
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2012/05/27/arquillian-extension-warp-1-0-0-Alpha1/">Arquillian Warp Extension 1.0.0.Alpha1 Released</a>
-                </div>
-                <div class="meta">
-                  May 27, 2012
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2012/05/21/arquillian-extension-spring-1-0-0-Alpha1/">Arquillian Spring Framework Extension 1.0.0.Alpha1 Released</a>
-                </div>
-                <div class="meta">
-                  May 21, 2012
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2012/05/08/arquillian-extension-portal-1-0-0-Alpha1/">Arquillian Portal Extension 1.0.0.Alpha1 Released</a>
-                </div>
-                <div class="meta">
-                  May 08, 2012
-                </div>
-              </li>
-            </ul>
-            
-                        <div id="popularposts" class="dsq-widget">
-                          <h2 class="dsq-widget-title">Popular Posts</h2>
-                          <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
-                          <script>
-                            var ppw = document.getElementById("popularposts");
-                            if (ppw.getElementsByTagName('li').length == 0) {
-                              var p = document.createElement('p');
-                              p.className = 'noresults';
-                              p.appendChild(document.createTextNode('No popular posts reported.')); 
-                              ppw.appendChild(p);
-                            }
-                          </script>
-                          <noscript>
-                            <p>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">popular posts powered by Disqus</a>.</p>
-                          </noscript>
-                        </div>
-          </nav>
-          <nav class="tags">
-            <h2>Tags</h2>
-            <div class="tag-cloud">
-              <span class="tag tag-1">
-                <a href="/blog/tags/2010/">2010</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/2011/">2011</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/2012/">2012</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/ajocado/">ajocado</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/android/">android</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/announcement/">announcement</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/as7/">as7</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/awards/">awards</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/best-practice/">best-practice</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/byteman/">byteman</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/cdi/">cdi</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/community/">community</a>
-              </span>
-              <span class="tag tag-3">
-                <a href="/blog/tags/container-adapter/">container-adapter</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/contributors/">contributors</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/core/">core</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/dependencies/">dependencies</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/docs/">docs</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/drone/">drone</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/event/">event</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/examples/">examples</a>
-              </span>
-              <span class="tag tag-3">
-                <a href="/blog/tags/extension/">extension</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/forge/">forge</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/glassfish/">glassfish</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/graphene/">graphene</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/gsoc/">gsoc</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/guides/">guides</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/hackfest/">hackfest</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/jacoco/">jacoco</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/javaone/">javaone</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/jboss/">jboss</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/jbossas/">jbossas</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/jbosscentral/">jbosscentral</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/jbossworld/">jbossworld</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/jetty/">jetty</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/jpa/">jpa</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/judcon/">judcon</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/maven/">maven</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/migration/">migration</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/mission/">mission</a>
-              </span>
-              <span class="tag tag-2">
-                <a href="/blog/tags/nonrelease/">nonrelease</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/openejb/">openejb</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/openshift/">openshift</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/openwebbeans/">openwebbeans</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/osgi/">osgi</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/performance/">performance</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/persistence/">persistence</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/photos/">photos</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/platform/">platform</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/plugin/">plugin</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/portal/">portal</a>
-              </span>
-              <span class="tag tag-6">
-                <a href="/blog/tags/release/">release</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/roadmap/">roadmap</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/seam2/">seam2</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/spock/">spock</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/spring/">spring</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/stats/">stats</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/test-runner/">test-runner</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/testing/">testing</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/tip/">tip</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/tomcat/">tomcat</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/tool-plugin/">tool-plugin</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/video/">video</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/warp/">warp</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/website/">website</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/weld/">weld</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/wls/">wls</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/wrapup/">wrapup</a>
-              </span>
-            </div>
-          </nav>
-        </aside>
-      </div>
+  <div id="content-header">
+    <div class="container">
+      <h1>
+        <a href="/blog/">Arquillian Blog</a>
+      </h1>
     </div>
+  </div>
+  <div class="container">
+    <div id="content">
+  <article class="post">
+  <header class="header">
+    <h2 class="title">
+      <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/">Arquillian Persistence Extension 1.0.0.Alpha4 Released</a>
+    </h2>
+    <div class="byline">
+      <img class="avatar" src="http://gravatar.com/avatar/de13898b827f3227a9f9f31eb90a2367?s=44" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/bmajsak">Bartosz Majsak</a></span>
+      <span class="dateinline">on Apr 12, 2012</span>
+      <div class="date"><abbr>Apr</abbr> 12</div>
+      <span class="comments">| <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/#disqus_thread" data-disqus-identifier="680ef2b7cd34bee7c733594a4645aa493b47045c">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha4</em> release of the <em>Arquillian Persistence Extension</em> component!</p>
+    <p>It&#8217;s been a while since the <a href="/2011/12/30/arquillian-extension-persistence-1-0-0-Alpha3">Alpha3 release</a>. After three long months, we&#8217;re excited to announce Alpha 4 with <strong>a lot</strong> of improvements and enhancements suggested by our great community. Best of all, we finally have <a href="https://docs.jboss.org/author/display/ARQ/Persistence">complete documentation in the reference guide</a>!</p>
+    <p>I would especially like to thank <a href="https://github.com/shogz">Michael Brill</a> for nailing down  DBUnit clean up strategies, &quot;P</p>
+    <h3>What is Arquillian?</h3>
+    <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
+    <h3>Release details</h3>
+    <table class="table table-bordered table-striped">
+      <tbody>
+        <tr>
+          <th>Component</th>
+          <td>
+            <a href="/modules/persistence-extension/">Arquillian Persistence Extension</a>
+          </td>
+        </tr>
+        <tr>
+          <th>Version</th>
+          <td>
+            1.0.0.Alpha4
+            <span class="label tag">
+              <a href="https://github.com/arquillian/arquillian-extension-persistence/commit/4d7f59a7ff9c4575b8590a063d368b8f70cc259e.html">view tag</a>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <th>Release date</th>
+          <td>2012-04-12</td>
+        </tr>
+        <tr>
+          <th>Released by</th>
+          <td>Aslak Knutsen</td>
+        </tr>
+        <tr>
+          <th>Compiled against</th>
+          <td>
+            <ul class="unstyled">
+              <li>Arquillian Core &#8211; 1.0.0.Final</li>
+            </ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <h3>
+      Release notes and resolved issues
+      <small>0</small>
+    </h3>
+    <p></p>
+    <p>
+      Thanks to the following list of contributors:
+      <a href="https://community.jboss.org/people/bmajsak">Bartosz Majsak</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
+    </p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/persistence/">persistence</a>
+  </div>
+  <div id="comments">
+    
+                <div id="disqus_thread"></div>
+                <script type="text/javascript">
+                var disqus_shortname = 'arquillian';
+                var disqus_url = "http://arquillian.org/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/";
+                var disqus_developer = null;
+                var disqus_identifier = "680ef2b7cd34bee7c733594a4645aa493b47045c";
+                (function() {
+                  var dsq = document.createElement("script"); dsq.type = "text/javascript"; dsq.async = true;
+                  dsq.src = "http://arquillian.disqus.com/embed.js";
+                  (document.getElementsByTagName("head")[0] || document.getElementsByTagName("body")[0]).appendChild(dsq);
+                })();
+                </script>
+                <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript=arquillian">comments powered by Disqus.</a></noscript>
+  </div>
+  
+              <script type="text/javascript">
+              var disqus_shortname = 'arquillian';
+              (function () {
+                var s = document.createElement('script'); s.async = true;
+                s.src = "http://disqus.com/forums/arquillian/count.js";
+                (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+              }());
+              </script>
+</article>
+<ul class="pager">
+  <li class="previous">
+    <a href="/blog/2012/04/11/arquillian-graphene-1-0-0-Final/">&laquo; Previous</a>
+  </li>
+  <li class="pages">Post 88 of 97</li>
+  <li class="next">
+    <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">Next &raquo;</a>
+  </li>
+</ul>
+</div>
+<aside id="sidebar" role="complementary">
+  <div class="addthis_toolbox addthis_default_style">
+    <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    <a class="addthis_counter addthis_button_tweet"></a>
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <div class="subscribe">
+    <h2 class="icon news">
+      <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
+    </h2>
+    <p><em>Get the latest information on features, releases and events.</em></p>
+  </div>
+  <nav class="latest">
+    <h2>Latest Posts</h2>
+    <ul>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/06/27/arquillian-extension-drone-1-1-0-CR1/">Arquillian Drone Extension 1.1.0.CR1 Released</a>
+        </div>
+        <div class="meta">
+          Jun 27, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/06/05/arquillian-extension-byteman-1-0-0-Alpha2/">Arquillian Extension Byteman 1.0.0.Alpha2 Released</a>
+        </div>
+        <div class="meta">
+          Jun 05, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/06/01/arquillian-core-1-0-1-Final/">Arquillian Core 1.0.1.Final Released</a>
+        </div>
+        <div class="meta">
+          Jun 01, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/05/27/arquillian-extension-warp-1-0-0-Alpha1/">Arquillian Warp Extension 1.0.0.Alpha1 Released</a>
+        </div>
+        <div class="meta">
+          May 27, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/05/22/arquillian-extension-spring-1-0-0-Alpha1/">Arquillian Spring Framework Extension 1.0.0.Alpha1 Released</a>
+        </div>
+        <div class="meta">
+          May 22, 2012
+        </div>
+      </li>
+    </ul>
+    
+                <div id="popularposts" class="dsq-widget">
+                  <h2 class="dsq-widget-title">Popular Posts</h2>
+                  <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
+                  <script>
+                    var ppw = document.getElementById("popularposts");
+                    if (ppw.getElementsByTagName('li').length == 0) {
+                      var p = document.createElement('p');
+                      p.className = 'noresults';
+                      p.appendChild(document.createTextNode('No popular posts reported.')); 
+                      ppw.appendChild(p);
+                    }
+                  </script>
+                  <noscript>
+                    <p>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">popular posts powered by Disqus</a>.</p>
+                  </noscript>
+                </div>
+  </nav>
+  <nav class="tags">
+    <h2>Tags</h2>
+    <div class="tag-cloud">
+      <span class="tag tag-1">
+        <a href="/blog/tags/2010/">2010</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/2011/">2011</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/2012/">2012</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/ajocado/">ajocado</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/android/">android</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/announcement/">announcement</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/as7/">as7</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/awards/">awards</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/best-practice/">best-practice</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/byteman/">byteman</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/cdi/">cdi</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/community/">community</a>
+      </span>
+      <span class="tag tag-3">
+        <a href="/blog/tags/container-adapter/">container-adapter</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/contributors/">contributors</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/core/">core</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/dependencies/">dependencies</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/docs/">docs</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/drone/">drone</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/event/">event</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/examples/">examples</a>
+      </span>
+      <span class="tag tag-3">
+        <a href="/blog/tags/extension/">extension</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/forge/">forge</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/glassfish/">glassfish</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/graphene/">graphene</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/gsoc/">gsoc</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/guides/">guides</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/hackfest/">hackfest</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/jacoco/">jacoco</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/javaone/">javaone</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/jboss/">jboss</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/jbossas/">jbossas</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/jbosscentral/">jbosscentral</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/jbossworld/">jbossworld</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/jetty/">jetty</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/jpa/">jpa</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/judcon/">judcon</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/maven/">maven</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/migration/">migration</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/mission/">mission</a>
+      </span>
+      <span class="tag tag-2">
+        <a href="/blog/tags/nonrelease/">nonrelease</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/openejb/">openejb</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/openshift/">openshift</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/openwebbeans/">openwebbeans</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/osgi/">osgi</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/performance/">performance</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/persistence/">persistence</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/photos/">photos</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/platform/">platform</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/plugin/">plugin</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/portal/">portal</a>
+      </span>
+      <span class="tag tag-6">
+        <a href="/blog/tags/release/">release</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/roadmap/">roadmap</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/seam2/">seam2</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/spock/">spock</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/spring/">spring</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/stats/">stats</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/test-runner/">test-runner</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/testing/">testing</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/tip/">tip</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/tomcat/">tomcat</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/tool-plugin/">tool-plugin</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/video/">video</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/warp/">warp</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/website/">website</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/weld/">weld</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/wls/">wls</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/wrapup/">wrapup</a>
+      </span>
+    </div>
+  </nav>
+</aside>
+  </div>
+</div>
     <footer>
       <div class="container">
         <div class="project">

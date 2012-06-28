@@ -129,81 +129,10 @@
           <strong style="padding-left: 10px;">Language:</strong>
           <img class="flag" rel="tooltip" src="/images/flags/ja.png" title="日本 (ja)" />
           <br />
-          <strong style="padding-left: 0px;">Last Update:</strong> Apr 18, 2012</div>
-              <p>このガイドでは、JBoss ForgeのArquillianプラグインについて解説します。このガイドを読むと、以下のことができるようになります：</p>
-              <ul>
-          	<li>Forge環境にArquillainプラグインをインストールする</li>
-          	<li>このプラグインを使って、MavenベースのJavaプロジェクトに、Arquillianインフラストラクチャを追加する</li>
-          	<li>コンポーネントと、対応するArquillianのテストを生成する</li>
-          	<li>複数のコンテナで手動設定なしにArquillianテストを実行する</li>
-          </ul>
-              <p>読者は、 <a href="../getting_started">Getting Started</a> guide で説明されているたくさんの重複したステップを実行しているでしょう。それらの煩雑な作業はForgeに実行させます。このガイドは、これまでのガイドよりも、早く始められるよう、早く読めるように作成しました。</p>
+          <strong style="padding-left: 0px;">Last Update:</strong> Apr 19, 2012</div>
               </div>
               </div>
-            <h3 id="&#21069;&#25552;">前提</h3>
-          <p>このガイドは、 <a href="http://jboss.org/forge">JBoss Forge</a> がセットアップ済みであることが前提です。Forgeのインストールは、比較的短い手順です。ダウンロードやインストールの説明は、&quot;Getting Started guide&quot;や <a href="https://docs.jboss.org/author/display/FORGE/Home">official Forge documentation</a> を参照してください。また、 <a href="http://www.oracle.com/technetwork/java/javase/downloads/jdk-6u29-download-513648.html"><acronym title="Java Development Kit">JDK</acronym> 1.6</a> 以降が必要です。</p>
-          <h3 id="&#12503;&#12525;&#12472;&#12455;&#12463;&#12488;&#12434;&#20316;&#25104;&#12377;&#12427;">プロジェクトを作成する</h3>
-          <p>Arquillianを始める前に、プロジェクトが必要です。まだ作成していなければ、以下のForgeのコマンドでJPAを含むシンプルなJava EE 6プロジェクトを作成してください。</p>
-          <pre class="command"><code class="command">$ new-project --named arquillian-demo --topLevelPackage demo</code></pre>
-          <pre class="output"><code class="output">? Use [/Users/paul/arquillian-demo] as project directory? [Y/n]&#x000A;***SUCCESS*** Created project [arquillian-demo] in new working directory [/Users/paul/arquillian-demo]&#x000A;Wrote /Users/paul/arquillian-demo&#x000A;Wrote /Users/paul/arquillian-demo/pom.xml&#x000A;Wrote /Users/paul/arquillian-demo/src/main/java&#x000A;Wrote /Users/paul/arquillian-demo/src/test/java&#x000A;Wrote /Users/paul/arquillian-demo/src/main/resources&#x000A;Wrote /Users/paul/arquillian-demo/src/test/resources&#x000A;Wrote /Users/paul/arquillian-demo/src/main/resources/META-INF/forge.xml</code></pre>
-          <p>新しいプロジェクトが作成されました。次に、テスト対象のコードが必要です。Forgeを使って新しいCDI beanを作成しましょう。</p>
-          <p>まず、&quot;beans&quot;プラグインを使って、CDIをプロジェクトにインストールします。</p>
-          <pre class="command"><code class="command">$ beans setup</code></pre>
-          <pre class="output"><code class="output">***SUCCESS*** Installed [forge.spec.cdi] successfully.&#x000A; ? Do you want to install CDI APIs? [y/N]</code>&#x000A;&#x000A;<code class="output">Wrote /Users/paul/arquillian-demo/src/main/resources/META-INF/beans.xml</code></pre>
-          <p>それから、新しいbeanをつくりましょう。</p>
-          <pre class="command"><code class="command">$ beans new-bean --type demo.MySimpleBean --scoped DEPENDENT</code></pre>
-          <pre class="output"><code class="output">Picked up type &lt;JavaResource&gt;: demo.MySimpleBean&#x000A;Wrote /Users/paul/arquillian-demo/src/main/java/demo/MySimpleBean.java</code></pre>
-          <p>プロジェクトはセットアップされました。テストの時間です！</p>
-          <h3 id="&#12473;&#12479;&#12540;&#12488;">スタート</h3>
-          <p>すでに <a href="../getting_started">general getting started guide</a> で見ているかもしれませんが、Arquillianのセットアップは簡単です。pom.xmlにArquillianで使う新しいコンテナを設定するのは、たくさんのコピー／ペースト作業です。Forgeでやれば、一つのコマンドです！</p>
-          <p>まず、Arquillianプラグインをインストールします。</p>
-          <pre class="command"><code class="command">$ forge install-plugin arquillian</code></pre>
-          <p>次に、Arquillianとコンテナ設定をセットアップします。最初はJBoss AS7にしてみましょう。</p>
-          <pre class="command"><code class="command">$ arquillian setup --container JBOSS_AS_7_MANAGED</code></pre>
-          <p>ForgeはどのバージョンのJUnitやArquillian、JBoss AS7を使用するか、聞いてきます。それぞれ、最新のfinalバージョンを使ってください。Forgeはもしユーザーがまだダウンロードしていなければ、JBoss AS7のダウンロードまでも行います。</p>
-          <p>これだけです！Arquillianの設定は終わりました。作成したプロジェクトのpom.xmlを確認すると、dependenciesとprofileが追加されていることが見て取れます。同じくForgeはarquillian.xmlファイルをsrc/test/resourcesに作成します</p>
-          <h3 id="&#12486;&#12473;&#12488;&#12434;&#26360;&#12367;">テストを書く</h3>
-          <p>では、テストを書きましょう。繰り返しますが、Forgeを使えば素早くスタートできます。</p>
-          <pre class="command"><code class="command">$ arquillian create-test --class demo.MySimpleBean.java</code></pre>
-          <pre class="output"><code class="output">Picked up type &lt;JavaResource&gt;: demo.MySimpleBeanTest&#x000A;Wrote /Users/paul/arquillian-demo/src/test/java/demo/MySimpleBeanTest.java</code></pre>
-          <p>デプロイメントとテストメソッドを持った新しいテストクラスが追加されました。これはCDIを使って、テスト対象クラスをインジェクトするので、このテストが本当にコンテナ内で実行されるか確認しましょう。もし、IDEでインポートできなければ、前に作成したMavenのプロファイルを有効にしてください。これでIDEや、直接Mavenで、あるいはForgeからテストを実行できます。</p>
-          <pre class="command"><code class="command">$ build --profile arq-jbossas-7-managed</code></pre>
-          <p><strong>おめでとう！</strong> ArquillianとForgeを使った最初の <strong class="greenbar">グリーンバー</strong> が表示されました！</p>
-          <p>ではJPAコードのテストを試してみましょう。</p>
-          <h3 id="&#27704;&#32154;&#21270;&#12398;&#12486;&#12473;&#12488;">永続化のテスト</h3>
-          <p>Java Persistence API (JPA)を使ったテストを書き始める前に、JPAの設定が必要です。それから、エンティティとシンプルなデータ・アクセス・オブジェクトを作ります。これらはテスト対象のクラスです。</p>
-          <pre class="command"><code class="command">$ persistence setup --provider HIBERNATE --container JBOSS_AS7</code></pre>
-          <pre class="output"><code class="output">***SUCCESS*** Installed [forge.spec.jpa] successfully.&#x000A;***INFO*** Setting transaction-type="JTA"&#x000A;***INFO*** Using example data source [java:jboss/datasources/ExampleDS]&#x000A;Warning:  The encoding 'UTF-8' is not supported by the Java runtime.&#x000A; ? The JPA provider [HIBERNATE], also supplies extended APIs. Install these as well? [y/N]  [false] &#x000A;Wrote /Users/paul/arquillian-demo/pom.xml&#x000A;Wrote /Users/paul/arquillian-demo/src/main/resources/META-INF/persistence.xml</code></pre>
-          <p>では、エンティティを作成します。</p>
-          <pre class="command"><code class="command">$ entity --named Language --package demo.entities</code></pre>
-          <pre class="output"><code class="output">Created @Entity [demo.entities.Language]&#x000A;Picked up type &lt;JavaResource&gt;: demo.entities.Language&#x000A;Wrote /Users/paul/arquillian-demo/src/main/java/demo/entities/Language.java</code></pre>
-          <p>そして、エンティティにフィールドを追加します。</p>
-          <pre class="command"><code class="command">$ field string --named name</code></pre>
-          <pre class="output"><code class="output">Added field to demo.entities.Language: @Column private String name;&#x000A;Wrote /Users/paul/arquillian-demo/src/main/java/demo/entities/Language.java</code></pre>
-          <p>次のファイルをあなたのプロジェクトに作成してください。</p>
-          <div class="filename">src/main/java/demo/dao/LanguageDao.java</div>
-          <pre class="prettify"><code class="prettify">package demo.dao;</code>&#x000A;&#x000A;<code class="prettify">import demo.entities.Language;&#x000A;import javax.annotation.PostConstruct;&#x000A;import javax.ejb.Singleton;&#x000A;import javax.ejb.Startup;&#x000A;import javax.persistence.EntityManager;&#x000A;import javax.persistence.PersistenceContext;&#x000A;import java.util.List;</code>&#x000A;&#x000A;<code class="prettify">@Singleton&#x000A;@Startup&#x000A;public class LanguageDao {&#x000A;    @PersistenceContext&#x000A;    EntityManager em;</code>&#x000A;&#x000A;<code class="prettify">    public List&lt;Language&gt; listLanguages() {&#x000A;        return em.createQuery("select l from Language l").getResultList();&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @PostConstruct&#x000A;    public void insertTestData() {&#x000A;        Language java = new Language();&#x000A;        java.setName("Java");&#x000A;        em.persist(java);</code>&#x000A;&#x000A;<code class="prettify">        Language ruby = new Language();&#x000A;        ruby.setName("Ruby");&#x000A;        em.persist(ruby);</code>&#x000A;&#x000A;<code class="prettify">        Language groovy = new Language();&#x000A;        groovy.setName("Groovy");&#x000A;        em.persist(groovy);&#x000A;    }&#x000A;}</code></pre>
-          <p>さて、テストクラスを作るときです。このチュートリアルの前半を実行していれば、次のコマンドは見慣れたものでしょう。</p>
-          <pre class="command"><code class="command">$ arquillian create-test --class demo.dao.LanguageDao.java --enableJPA</code></pre>
-          <pre class="output"><code class="output">Picked up type &lt;JavaResource&gt;: demo.dao.LanguageDemoTest&#x000A;Wrote /Users/paul/arquillian-demo/src/test/java/demo/dao/LanguageDemoTest.java</code></pre>
-          <p>ここでまた、新しいテストを作成し、persistence.xmlをデプロイメントに追加します。IDEでこのテストを開き、 <code>Language</code> エンティティをデプロイメントに追加します。</p>
-          <p>テストアサーションを記述します：</p>
-          <div class="filename">src/test/java/demo/dao/LanguageDaoTest.java</div>
-          <pre class="prettify"><code class="prettify">@Test&#x000A;public void testListLanguages() {&#x000A;	Assert.assertEquals(3, languagedao.listLanguages().size());&#x000A;}</code></pre>
-          <p><strong>おめでとう！</strong> Arquillianを使った二つ目の <strong class="greenbar">グリーンバー</strong> です！</p>
-          <h3 id="&#21029;&#12467;&#12531;&#12486;&#12490;&#12398;&#36861;&#21152;">別コンテナの追加</h3>
-          <p>コンテナを追加するのは、セットアップコマンドをまた実行するだけで、簡単です。例えば、Glassfishを追加します。</p>
-          <pre class="command"><code class="command">$ arquillian setup --container GLASSFISH_3_1_REMOTE</code></pre>
-          <p>Mavenプロファイルを変えると、コンテナが切り替わります。例えばForgeでは：</p>
-          <pre class="command"><code class="command">$ build test --profile glassfish-remote-3</code></pre>
-          <h3 id="&#12487;&#12503;&#12525;&#12452;&#12513;&#12531;&#12488;&#12497;&#12483;&#12465;&#12540;&#12472;&#12398;&#12456;&#12463;&#12473;&#12509;&#12540;&#12488;">デプロイメントパッケージのエクスポート</h3>
-          <p>ファイルにエクスポートすると、デバッグにとても便利です。Forgeでは、以下のように行います。</p>
-          <p>まず、Arquillianテストに移動します：</p>
-          <pre class="command"><code class="command">$ cd src/test/java/demo/MySimpleBeanTest.java</code></pre>
-          <p>デプロイメントをエクスポートします：</p>
-          <pre class="command"><code class="command">$ arquillian export</code></pre>
-          <p>アーカイブはプロジェクトのtargetディレクトリにエクスポートされています。</p>
-          <h3 id="share">Share the Knowledge</h3>
+            <h3 id="share">Share the Knowledge</h3>
           <p>Find this guide useful?</p>
           <p class="post_to_twitter"><a href="http://twitter.com/home/?status=Just%20read%20the%20%23Arquillian%20Get%20Started%20Faster%20with%20Forge%20guide%20and%20got%20a%20%23greenbar!%20Get%20yours.%20http://arquillian.org/guides/get_started_faster_with_forge_ja/"><img src="/images/post_to_twitter.png" alt="" /></a></p>
           <div class="g-plusone" data-size="tall"></div>
@@ -213,17 +142,17 @@
           <h4>Recent Changelog</h4>
           <ul>
             <li>
-              Apr 18, 2012:
+              Apr 19, 2012:
               Remove redundant metadata (internal change)
               <em>by Dan Allen</em>
             </li>
             <li>
-              Apr 04, 2012:
+              Apr 05, 2012:
               Add reference_rev prolog field for translations
               <em>by Dan Allen</em>
             </li>
             <li>
-              Apr 04, 2012:
+              Apr 05, 2012:
               Use description in prolog for guide summary
               <em>by Dan Allen</em>
             </li>
@@ -233,12 +162,12 @@
               <em>by Dan Allen</em>
             </li>
             <li>
-              Jan 29, 2012:
+              Jan 30, 2012:
               Add translator field to metadata
               <em>by Dan Allen</em>
             </li>
             <li>
-              Jan 29, 2012:
+              Jan 30, 2012:
               Add translator as author
               <em>by Takayuki Konishi</em>
             </li>
@@ -257,34 +186,13 @@
             <h3 class="chapter_header">Chapters</h3>
             <ol class="chapters">
               <li>
-                <a href="#&#21069;&#25552;" id="前提_link">前提</a>
-              </li>
-              <li>
-                <a href="#&#12503;&#12525;&#12472;&#12455;&#12463;&#12488;&#12434;&#20316;&#25104;&#12377;&#12427;" id="プロジェクトを作成する_link">プロジェクトを作成する</a>
-              </li>
-              <li>
-                <a href="#&#12473;&#12479;&#12540;&#12488;" id="スタート_link">スタート</a>
-              </li>
-              <li>
-                <a href="#&#12486;&#12473;&#12488;&#12434;&#26360;&#12367;" id="テストを書く_link">テストを書く</a>
-              </li>
-              <li>
-                <a href="#&#27704;&#32154;&#21270;&#12398;&#12486;&#12473;&#12488;" id="永続化のテスト_link">永続化のテスト</a>
-              </li>
-              <li>
-                <a href="#&#21029;&#12467;&#12531;&#12486;&#12490;&#12398;&#36861;&#21152;" id="別コンテナの追加_link">別コンテナの追加</a>
-              </li>
-              <li>
-                <a href="#&#12487;&#12503;&#12525;&#12452;&#12513;&#12531;&#12488;&#12497;&#12483;&#12465;&#12540;&#12472;&#12398;&#12456;&#12463;&#12473;&#12509;&#12540;&#12488;" id="デプロイメントパッケージのエクスポート_link">デプロイメントパッケージのエクスポート</a>
-              </li>
-              <li>
                 <a href="#share" id="share_link">Share the Knowledge</a>
               </li>
             </ol>
           </div>
         </div>
         <script>
-          $(window).load(function() { activateScrollingToc(['前提', 'プロジェクトを作成する', 'スタート', 'テストを書く', '永続化のテスト', '別コンテナの追加', 'デプロイメントパッケージのエクスポート', 'share']) })
+          $(window).load(function() { activateScrollingToc(['share']) })
         </script>
       </div>
     </div>

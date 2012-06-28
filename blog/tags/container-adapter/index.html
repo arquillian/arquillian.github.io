@@ -43,780 +43,694 @@
       </div>
     </header>
     <div id="main" role="main">
-      <div id="content-header">
-        <div class="container">
-          <h1>
-            <a href="/blog/">Arquillian Blog</a>
-          </h1>
-        </div>
-      </div>
-      <div class="container">
-        <div id="content">
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">The Danger of Embedded Containers</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/dcccd96c499963133f7f95e7ffa20c4e?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/dan.j.allen">Dan Allen</a></span>
-                <span class="dateinline">on Apr 13, 2012</span>
-                <div class="date"><abbr>Apr</abbr> 13</div>
-                <span class="comments">| <a href="/blog/2012/04/13/the-danger-of-embedded-containers/#disqus_thread" data-disqus-identifier="fd953a5cdc598baacef2611c6d2a964b183575d0">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>In the Arquillian project, we&#8217;re all about <em>real</em> tests. There&#8217;s a good reason for this philosophy. If you use mocks or a substitute container when testing code that uses a programming model (i.e., CDI), all you can be sure of is that you&#8217;ve faked out enough functionality to get the test to work. You can&#8217;t be certain that your code works&#8212;really, truly works.</p>
-              <p>Obviously, we provide adapters for embedded containers (i.e., substitute containers). The reason is, they often do a decent enough job of simultating the real environment that we are willing to make the trade-off for its variations when we are working in development. I would expect, though, that you are also running the same tests in CI using a real container&#8230;just to get that peace of mind.</p>
-              <h3>How do you know when <em>not</em> to use an embedded container?</h3>
-              <p>If you write a test that you are positive should work, but instead throws some wacky exception, <em>immediately stop and try the same test in a real container</em>. For example, if you are using Embedded GlassFish, I would advise running the test in managed or remote GlassFish. The latter two adapters both use an authentic GlassFish instance. If the test passes, then you have answered the question of this section.</p>
-              <p><strong>When the embedded container begins to act inconsistently, drop it.</strong></p>
-              <p>As with all things, there are exceptions to the rule. If the code really <em>should</em> work on the embedded container, then it may be worth exploring why it isn&#8217;t. That may lead you to the discovery of a bug in the library you&#8217;re using. If debugging the library is your main concern, chase it down. If you are just trying to get a test written for your application, stop using the embedded container (or save debugging it for a rainy day).</p>
-              <h3>Examples</h3>
-              <p>See <a href="https://community.jboss.org/message/729776">this thread</a> in the Seam 3 forums for an example where the Embedded GlassFish container was acting more of a hindrence than a help. The thread includes the steps I took to get a <strong class="greenbar">green bar</strong> using a different GlassFish container adapter.</p>
-              <p><a href="https://community.jboss.org/people/myfear">Markus Eisele</a> identifies another hazard. He points out in a <a href="http://blog.eisele.net/2012/01/arquillian-with-netbeans-glassfish_18.html">recent blog post</a> that testing JPA using Embedded GlassFish is problematic because JPA weaving (in EclipseLink) does not occur:</p>
-              <blockquote>
-              <p>[Weaving] only works when the entity classes to be weaved only exist in the application classloader. The combination of Embedded GlassFish, Arquillian and the Maven Surefire Plugin mix this up a bit and the end of the story is, that exactly none of your entities are enhanced at all.</p>
-              </blockquote>
-              <p>Again, testing on Embedded GlassFish is not serving us well in this scenario. Graduate.</p>
-              <h3>Closing thoughts</h3>
-              <p>Code that uses Solder works fine on GlassFish 3.1.2, but it does not play very nicely with Embedded GlassFish&#8212;it&#8217;s just a hostile environment for CDI because of the visibility issues that come with starting an embedded container inside an existing Java process. The same goes for JPA. You end up in a minefield of class visibility and access problems, and far from making any progress writing tests (your ultimate goal).</p>
-              <p>If you want the container to start automatically like with embedded, then switch to a managed container. It works almost exactly the same as the remote container, except that Arquillian will start the standalone process at the beginning of the test execution and stop it at the end. In other words:</p>
-              <p>managed &gt;&gt;&gt;&gt; embedded</p>
-              <p>It&#8217;s clean. It&#8217;s true.</p>
-              <p>For speed of development:</p>
-              <p>remote &gt; managed</p>
-              <p>With remote, you don&#8217;t have to wait for the container to start&#8230;and you can start it in debug mode very easily and keep it there. That&#8217;s why I say that the best container adapters for development are the remote adapters and the best adapters for CI are the managed adapters. I personally don&#8217;t like the embedded container adapters much (with the exception of embedded CDI since that&#8217;s mostly a pure standalone CDI environment).</p>
-              <p>Keep that advice in mind.</p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/best-practice/">best-practice</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
-            </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/03/26/arquillian-container-openshift-1-0-0-Beta1/">Arquillian Container OpenShift 1.0.0.Beta1 Released</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
-                <span class="dateinline">on Mar 26, 2012</span>
-                <div class="date"><abbr>Mar</abbr> 26</div>
-                <span class="comments">| <a href="/blog/2012/03/26/arquillian-container-openshift-1-0-0-Beta1/#disqus_thread" data-disqus-identifier="a2777934a99ebc33aae403e9333f770f8bcf56be">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.0.0.Beta1</em> release of the <em>Arquillian Container OpenShift</em> component!</p>
-              <h3>Some of the highlights in this release</h3>
-              <p>Better integration for usage in continous integration servers. You can now specify the path to the SSH identity file and disable SSH Strict host checking if needed:</p>
-              <div class="filename">arquillian.xml</div>
-              <pre class="prettify"><code class="prettify">&lt;arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;  xmlns="http://jboss.org/schema/arquillian"&#x000A;  xsi:schemaLocation="&#x000A;      http://jboss.org/schema/arquillian&#x000A;      http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;</code>&#x000A;&#x000A;<code class="prettify">  &lt;container qualifier="openshift"&gt;&#x000A;    &lt;configuration&gt;&#x000A;      &lt;!-- CAN BE SET VIA SSH_IDENTITYFILE environment variable as well --&gt;&#x000A;      &lt;property name="identityFile"&gt;/absolute/path/to/identity/file&lt;/property&gt;&#x000A;      &lt;property name="disableStrictHostChecking"&gt;true&lt;/true&gt;&#x000A;    &lt;/configuration&gt;&#x000A;  &lt;/container&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/arquillian&gt;</code></pre>
-              <p>Archive scanning now does not fail in case of linkage errors.</p>
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/openshift-express-container-adapter/">Arquillian Container OpenShift</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.0.0.Beta1
-                      <span class="label tag">
-                        <a href="https://github.com/arquillian/arquillian-container-openshift/commit/a62fd949128b5ecd0cc35c3660139a3c420d678d.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2012-03-26</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Aslak Knutsen</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>Arquillian Core &#8211; 1.0.0.CR7</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.container</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-openshift-express
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-openshift-express/1.0.0.Beta1/arquillian-openshift-express-1.0.0.Beta1.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-openshift-express/1.0.0.Beta1/arquillian-openshift-express-1.0.0.Beta1.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/03/26/arquillian-container-openshift-1-0-0-Beta1/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/openshift/">openshift</a>
-            </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/03/15/arquillian-container-glassfish-1-0-0-CR3/">Arquillian Container GlassFish 1.0.0.CR3 Released</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/4b94715e1349011b0529e81da45b06e7?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/vineet.reynolds">Vineet Reynolds</a></span>
-                <span class="dateinline">on Mar 15, 2012</span>
-                <div class="date"><abbr>Mar</abbr> 15</div>
-                <span class="comments">| <a href="/blog/2012/03/15/arquillian-container-glassfish-1-0-0-CR3/#disqus_thread" data-disqus-identifier="b95e23f68b449b98293400f35bf5ab75e795d77e">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.0.0.CR3</em> release of the <em>Arquillian Container GlassFish</em> component!</p>
-              <h3>Some of the highlights in this release</h3>
-              <ul>
-              	<li>Support for a managed GlassFish container.<br />
-                With this release, you can have Arquillian manage the lifecycle of the GlassFish container.</li>
-              </ul>
-              <ul>
-              	<li>Support for GlassFish 3.1.2.<br />
-                The release enables you to use Arquillian against a remote or a managed GlassFish 3.1.2 container.</li>
-              </ul>
-              <ul>
-              	<li>The sunResourcesXml property for the embedded GlassFish container, is now deprecated. It is preserved for backward compatibility. You are encouraged to use the resourcesXml property instead.</li>
-              </ul>
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>Arquillian Container GlassFish</td>
-                  </tr>
-                  <tr>
-                    <th>Modules</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>
-                          <a href="/modules/glassfish-managed-3.1-container-adapter/">Arquillian GlassFish Managed 3.1 Container Adapter</a>
-                        </li>
-                        <li>
-                          <a href="/modules/glassfish-remote-3.1-container-adapter/">Arquillian GlassFish Remote 3.1 Container Adapter</a>
-                        </li>
-                        <li>
-                          <a href="/modules/glassfish-embedded-3.1-container-adapter/">Arquillian GlassFish Embedded 3.1 Container Adapter</a>
-                        </li>
-                      </ul>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.0.0.CR3
-                      <span class="label tag">
-                        <a href="https://github.com/arquillian/arquillian-container-glassfish/commit/299414e5fbbd66c7fe755ad2710dd43bee3704fc.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2012-03-15</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Aslak Knutsen</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>Arquillian Core &#8211; 1.0.0.CR7</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.container</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-glassfish-common
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-glassfish-common/1.0.0.CR3/arquillian-glassfish-common-1.0.0.CR3.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-glassfish-common/1.0.0.CR3/arquillian-glassfish-common-1.0.0.CR3.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-glassfish-embedded-3.1
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-glassfish-embedded-3.1/1.0.0.CR3/arquillian-glassfish-embedded-3.1-1.0.0.CR3.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-glassfish-embedded-3.1/1.0.0.CR3/arquillian-glassfish-embedded-3.1-1.0.0.CR3.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-glassfish-managed-3.1
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-glassfish-managed-3.1/1.0.0.CR3/arquillian-glassfish-managed-3.1-1.0.0.CR3.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-glassfish-managed-3.1/1.0.0.CR3/arquillian-glassfish-managed-3.1-1.0.0.CR3.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-glassfish-remote-3.1
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-glassfish-remote-3.1/1.0.0.CR3/arquillian-glassfish-remote-3.1-1.0.0.CR3.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-glassfish-remote-3.1/1.0.0.CR3/arquillian-glassfish-remote-3.1-1.0.0.CR3.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="https://community.jboss.org/people/vineet.reynolds">Vineet Reynolds</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/dan.j.allen">Dan Allen</a>, <a href="https://github.com/piotrnowicki">Pedro Kowalski</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/03/15/arquillian-container-glassfish-1-0-0-CR3/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/glassfish/">glassfish</a>
-            </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/03/01/arquillian-container-osgi-1-0-2-Final/">Arquillian OSGi 1.0.2.Final Released</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/ddc41dadd5d79e396783e82ba8e862f6?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/thomas.diesler">Thomas Diesler</a></span>
-                <span class="dateinline">on Mar 01, 2012</span>
-                <div class="date"><abbr>Mar</abbr> 01</div>
-                <span class="comments">| <a href="/blog/2012/03/01/arquillian-container-osgi-1-0-2-Final/#disqus_thread" data-disqus-identifier="d0e49ebcfe84d1464841eb3cb1f4cd75478f6293">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.0.2.Final</em> release of the <em>Arquillian OSGi</em> component!</p>
-              
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>Arquillian OSGi</td>
-                  </tr>
-                  <tr>
-                    <th>Modules</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>
-                          <a href="/modules/osgi-embedded-container-adapter/">Arquillian OSGi Embedded Container Adapter</a>
-                        </li>
-                        <li>
-                          <a href="/modules/osgi-remote-container-adapter/">Arquillian OSGi Remote Container Adapter</a>
-                        </li>
-                      </ul>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.0.2.Final
-                      <span class="label tag">
-                        <a href="https://github.com/arquillian/arquillian-container-osgi/commit/ee57fcf6b8c75a5809e21accc4c90773a2b08b4a.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2012-03-01</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Thomas Diesler</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>Arquillian Core &#8211; 1.0.0.CR7</li>
-                        <li>ShrinkWrap Core &#8211; 1.0.0-cr-1</li>
-                        <li>JUnit &#8211; 4.8.1</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.container</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-osgi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/1.0.2.Final/arquillian-container-osgi-1.0.2.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/1.0.2.Final/arquillian-container-osgi-1.0.2.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-osgi-embedded
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-embedded/1.0.2.Final/arquillian-container-osgi-embedded-1.0.2.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-embedded/1.0.2.Final/arquillian-container-osgi-embedded-1.0.2.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-osgi-remote
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-remote/1.0.2.Final/arquillian-container-osgi-remote-1.0.2.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-remote/1.0.2.Final/arquillian-container-osgi-remote-1.0.2.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.protocol
-                  &raquo;
-                  arquillian-protocol-osgi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/1.0.2.Final/arquillian-protocol-osgi-1.0.2.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/1.0.2.Final/arquillian-protocol-osgi-1.0.2.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testenricher
-                  &raquo;
-                  arquillian-testenricher-osgi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-osgi/1.0.2.Final/arquillian-testenricher-osgi-1.0.2.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-osgi/1.0.2.Final/arquillian-testenricher-osgi-1.0.2.Final.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="https://community.jboss.org/people/thomas.diesler">Thomas Diesler</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/03/01/arquillian-container-osgi-1-0-2-Final/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/osgi/">osgi</a>
-            </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/02/27/arquillian-container-openshift-1-0-0-Alpha2/">Arquillian Container OpenShift 1.0.0.Alpha2 Released</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
-                <span class="dateinline">on Feb 27, 2012</span>
-                <div class="date"><abbr>Feb</abbr> 27</div>
-                <span class="comments">| <a href="/blog/2012/02/27/arquillian-container-openshift-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="d2439dafcacdc5edb38afd78193621da879b8130">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha2</em> release of the <em>Arquillian Container OpenShift</em> component!</p>
-              <h3>Some of the highlights in this release</h3>
-              <p>Application deployment timeout can be set up by user:</p>
-              <div class="filename">arquillian.xml</div>
-              <pre class="prettify"><code class="prettify">&lt;arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;  xmlns="http://jboss.org/schema/arquillian"&#x000A;  xsi:schemaLocation="&#x000A;      http://jboss.org/schema/arquillian&#x000A;      http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;</code>&#x000A;&#x000A;<code class="prettify">  &lt;container qualifier="openshift"&gt;&#x000A;    &lt;configuration&gt;&#x000A;      &lt;property name="deploymentTimeoutInSeconds"&gt;150&lt;/property&gt;&#x000A;    &lt;/configuration&gt;&#x000A;  &lt;/container&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/arquillian&gt;</code></pre>
-              <p>Improved archive scanning now honors application.xml and jboss-web.xml for figuring out<br />
-              deployment context root.</p>
-              <p>Support for deployment of ZipImport&#8217;ed archives.</p>
-              <p>Arquillian OpenShift Express Container no longer requires JBoss Maven Repository.</p>
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/openshift-express-container-adapter/">Arquillian Container OpenShift</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.0.0.Alpha2
-                      <span class="label tag">
-                        <a href="https://github.com/arquillian/arquillian-container-openshift/commit/bb3b344975e2589ce472d944039e83a07f92f027.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2012-02-27</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Aslak Knutsen</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>Arquillian Core &#8211; 1.0.0.CR7</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.container</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-openshift-express
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-openshift-express/1.0.0.Alpha2/arquillian-openshift-express-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-openshift-express/1.0.0.Alpha2/arquillian-openshift-express-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://github.com/papousek">Jan PapoušEk</a>, <a href="https://community.jboss.org/people/jharting">Jozef Hartinger</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/02/27/arquillian-container-openshift-1-0-0-Alpha2/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/openshift/">openshift</a>
-            </div>
-            
-                        <script type="text/javascript">
-                        var disqus_shortname = 'arquillian';
-                        (function () {
-                          var s = document.createElement('script'); s.async = true;
-                          s.src = "http://disqus.com/forums/arquillian/count.js";
-                          (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
-                        }());
-                        </script>
-          </article>
-          <ul class="pager">
-            <li class="previous">
-              <a href="/blog/tags/container-adapter/page/2/">&laquo; Older</a>
-            </li>
-            <li class="pages">Page 1 of 6</li>
-            <li class="disabled next">
-              <a href="#">Newer &raquo;</a>
-            </li>
-          </ul>
-        </div>
-        <aside id="sidebar" role="complementary">
-          <div class="subscribe">
-            <h2 class="icon news">
-              <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
-            </h2>
-            <p><em>Get the latest information on features, releases and events.</em></p>
-          </div>
-          <nav class="latest">
-            <h2>Latest Posts</h2>
-            <ul>
+  <div id="content-header">
+    <div class="container">
+      <h1>
+        <a href="/blog/">Arquillian Blog</a>
+      </h1>
+    </div>
+  </div>
+  <div class="container">
+    <div id="content">
+  <article class="post">
+  <header class="header">
+    <h2 class="title">
+      <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">The Danger of Embedded Containers</a>
+    </h2>
+    <div class="byline">
+      <img class="avatar" src="http://gravatar.com/avatar/dcccd96c499963133f7f95e7ffa20c4e?s=44" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/dan.j.allen">Dan Allen</a></span>
+      <span class="dateinline">on Apr 13, 2012</span>
+      <div class="date"><abbr>Apr</abbr> 13</div>
+      <span class="comments">| <a href="/blog/2012/04/13/the-danger-of-embedded-containers/#disqus_thread" data-disqus-identifier="fd953a5cdc598baacef2611c6d2a964b183575d0">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>In the Arquillian project, we&#8217;re all about <em>real</em> tests. There&#8217;s a good reason for this philosophy. If you use mocks or a substitute container when testing code that uses a programming model (i.e., CDI), all you can be sure of is that you&#8217;ve faked out enough functionality to get the test to work. You can&#8217;t be certain that your code works&#8212;really, truly works.</p>
+<p>Obviously, we provide adapters for embedded containers (i.e., substitute containers). The reason is, they often do a decent enough job of simultating the real environment that we are willing to make the trade-off for its variations when we are working in development. I would expect, though, that you are also running the same tests in CI using a real container&#8230;just to get that peace of mind.</p>
+<h3>How do you know when <em>not</em> to use an embedded container?</h3>
+<p>If you write a test that you are positive should work, but instead throws some wacky exception, <em>immediately stop and try the same test in a real container</em>. For example, if you are using Embedded GlassFish, I would advise running the test in managed or remote GlassFish. The latter two adapters both use an authentic GlassFish instance. If the test passes, then you have answered the question of this section.</p>
+<p><strong>When the embedded container begins to act inconsistently, drop it.</strong></p>
+<p>As with all things, there are exceptions to the rule. If the code really <em>should</em> work on the embedded container, then it may be worth exploring why it isn&#8217;t. That may lead you to the discovery of a bug in the library you&#8217;re using. If debugging the library is your main concern, chase it down. If you are just trying to get a test written for your application, stop using the embedded container (or save debugging it for a rainy day).</p>
+<h3>Examples</h3>
+<p>See <a href="https://community.jboss.org/message/729776">this thread</a> in the Seam 3 forums for an example where the Embedded GlassFish container was acting more of a hindrence than a help. The thread includes the steps I took to get a <strong class="greenbar">green bar</strong> using a different GlassFish container adapter.</p>
+<p><a href="https://community.jboss.org/people/myfear">Markus Eisele</a> identifies another hazard. He points out in a <a href="http://blog.eisele.net/2012/01/arquillian-with-netbeans-glassfish_18.html">recent blog post</a> that testing JPA using Embedded GlassFish is problematic because JPA weaving (in EclipseLink) does not occur:</p>
+<blockquote>
+<p>[Weaving] only works when the entity classes to be weaved only exist in the application classloader. The combination of Embedded GlassFish, Arquillian and the Maven Surefire Plugin mix this up a bit and the end of the story is, that exactly none of your entities are enhanced at all.</p>
+</blockquote>
+<p>Again, testing on Embedded GlassFish is not serving us well in this scenario. Graduate.</p>
+<h3>Closing thoughts</h3>
+<p>Code that uses Solder works fine on GlassFish 3.1.2, but it does not play very nicely with Embedded GlassFish&#8212;it&#8217;s just a hostile environment for CDI because of the visibility issues that come with starting an embedded container inside an existing Java process. The same goes for JPA. You end up in a minefield of class visibility and access problems, and far from making any progress writing tests (your ultimate goal).</p>
+<p>If you want the container to start automatically like with embedded, then switch to a managed container. It works almost exactly the same as the remote container, except that Arquillian will start the standalone process at the beginning of the test execution and stop it at the end. In other words:</p>
+<p>managed &gt;&gt;&gt;&gt; embedded</p>
+<p>It&#8217;s clean. It&#8217;s true.</p>
+<p>For speed of development:</p>
+<p>remote &gt; managed</p>
+<p>With remote, you don&#8217;t have to wait for the container to start&#8230;and you can start it in debug mode very easily and keep it there. That&#8217;s why I say that the best container adapters for development are the remote adapters and the best adapters for CI are the managed adapters. I personally don&#8217;t like the embedded container adapters much (with the exception of embedded CDI since that&#8217;s mostly a pure standalone CDI environment).</p>
+<p>Keep that advice in mind.</p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/best-practice/">best-practice</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
+      <a href="/blog/2012/03/26/arquillian-container-openshift-1-0-0-Beta1/">Arquillian Container OpenShift 1.0.0.Beta1 Released</a>
+    </h2>
+    <div class="byline">
+      <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
+      <span class="dateinline">on Mar 26, 2012</span>
+      <div class="date"><abbr>Mar</abbr> 26</div>
+      <span class="comments">| <a href="/blog/2012/03/26/arquillian-container-openshift-1-0-0-Beta1/#disqus_thread" data-disqus-identifier="a2777934a99ebc33aae403e9333f770f8bcf56be">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>The Arquillian team is proud to announce the <em>1.0.0.Beta1</em> release of the <em>Arquillian Container OpenShift</em> component!</p>
+<h3>Some of the highlights in this release</h3>
+<p>Better integration for usage in continous integration servers. You can now specify the path to the SSH identity file and disable SSH Strict host checking if needed:</p>
+<div class="filename">arquillian.xml</div>
+<pre class="prettify"><code class="prettify">&lt;arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;  xmlns="http://jboss.org/schema/arquillian"&#x000A;  xsi:schemaLocation="&#x000A;      http://jboss.org/schema/arquillian&#x000A;      http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;</code>&#x000A;&#x000A;<code class="prettify">  &lt;container qualifier="openshift"&gt;&#x000A;    &lt;configuration&gt;&#x000A;      &lt;!-- CAN BE SET VIA SSH_IDENTITYFILE environment variable as well --&gt;&#x000A;      &lt;property name="identityFile"&gt;/absolute/path/to/identity/file&lt;/property&gt;&#x000A;      &lt;property name="disableStrictHostChecking"&gt;true&lt;/true&gt;&#x000A;    &lt;/configuration&gt;&#x000A;  &lt;/container&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/arquillian&gt;</code></pre>
+<p>Archive scanning now does not fail in case of linkage errors.</p>
+<h3>What is Arquillian?</h3>
+<p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
+<h3>Release details</h3>
+<table class="table table-bordered table-striped">
+  <tbody>
+    <tr>
+      <th>Component</th>
+      <td>
+        <a href="/modules/openshift-express-container-adapter/">Arquillian Container OpenShift</a>
+      </td>
+    </tr>
+    <tr>
+      <th>Version</th>
+      <td>
+        1.0.0.Beta1
+        <span class="label tag">
+          <a href="https://github.com/arquillian/arquillian-container-openshift/commit/a62fd949128b5ecd0cc35c3660139a3c420d678d.html">view tag</a>
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <th>Release date</th>
+      <td>2012-03-26</td>
+    </tr>
+    <tr>
+      <th>Released by</th>
+      <td>Aslak Knutsen</td>
+    </tr>
+    <tr>
+      <th>Compiled against</th>
+      <td>
+        <ul class="unstyled">
+          <li>Arquillian Core &#8211; 1.0.0.CR7</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h3>
+  Release notes and resolved issues
+  <small>0</small>
+</h3>
+<p></p>
+<p>
+  Thanks to the following list of contributors:
+  <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
+</p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/03/26/arquillian-container-openshift-1-0-0-Beta1/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/openshift/">openshift</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
+      <a href="/blog/2012/03/16/arquillian-container-glassfish-1-0-0-CR3/">Arquillian Container GlassFish 1.0.0.CR3 Released</a>
+    </h2>
+    <div class="byline">
+      <img class="avatar" src="http://gravatar.com/avatar/4b94715e1349011b0529e81da45b06e7?s=44" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/vineet.reynolds">Vineet Reynolds</a></span>
+      <span class="dateinline">on Mar 16, 2012</span>
+      <div class="date"><abbr>Mar</abbr> 16</div>
+      <span class="comments">| <a href="/blog/2012/03/16/arquillian-container-glassfish-1-0-0-CR3/#disqus_thread" data-disqus-identifier="4cce427fe5a264995f640ea19da5236254507ea6">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>The Arquillian team is proud to announce the <em>1.0.0.CR3</em> release of the <em>Arquillian Container GlassFish</em> component!</p>
+<h3>Some of the highlights in this release</h3>
+<ul>
+	<li>Support for a managed GlassFish container.<br />
+  With this release, you can have Arquillian manage the lifecycle of the GlassFish container.</li>
+</ul>
+<ul>
+	<li>Support for GlassFish 3.1.2.<br />
+  The release enables you to use Arquillian against a remote or a managed GlassFish 3.1.2 container.</li>
+</ul>
+<ul>
+	<li>The sunResourcesXml property for the embedded GlassFish container, is now deprecated. It is preserved for backward compatibility. You are encouraged to use the resourcesXml property instead.</li>
+</ul>
+<h3>What is Arquillian?</h3>
+<p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
+<h3>Release details</h3>
+<table class="table table-bordered table-striped">
+  <tbody>
+    <tr>
+      <th>Component</th>
+      <td>Arquillian Container GlassFish</td>
+    </tr>
+    <tr>
+      <th>Modules</th>
+      <td>
+        <ul class="unstyled">
+          <li>
+            <a href="/modules/glassfish-managed-3.1-container-adapter/">Arquillian GlassFish Managed 3.1 Container Adapter</a>
+          </li>
+          <li>
+            <a href="/modules/glassfish-remote-3.1-container-adapter/">Arquillian GlassFish Remote 3.1 Container Adapter</a>
+          </li>
+          <li>
+            <a href="/modules/glassfish-embedded-3.1-container-adapter/">Arquillian GlassFish Embedded 3.1 Container Adapter</a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <th>Version</th>
+      <td>
+        1.0.0.CR3
+        <span class="label tag">
+          <a href="https://github.com/arquillian/arquillian-container-glassfish/commit/299414e5fbbd66c7fe755ad2710dd43bee3704fc.html">view tag</a>
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <th>Release date</th>
+      <td>2012-03-16</td>
+    </tr>
+    <tr>
+      <th>Released by</th>
+      <td>Aslak Knutsen</td>
+    </tr>
+    <tr>
+      <th>Compiled against</th>
+      <td>
+        <ul class="unstyled">
+          <li>Arquillian Core &#8211; 1.0.0.CR7</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h3>
+  Release notes and resolved issues
+  <small>0</small>
+</h3>
+<p>GlassFish Managed Container</p>
+<p>
+  Thanks to the following list of contributors:
+  <a href="https://community.jboss.org/people/vineet.reynolds">Vineet Reynolds</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/dan.j.allen">Dan Allen</a>, <a href="https://github.com/piotrnowicki">Pedro Kowalski</a>
+</p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/03/16/arquillian-container-glassfish-1-0-0-CR3/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/glassfish/">glassfish</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
+      <a href="/blog/2012/03/01/arquillian-container-osgi-1-0-2-Final/">Arquillian OSGi 1.0.2.Final Released</a>
+    </h2>
+    <div class="byline">
+      <img class="avatar" src="http://gravatar.com/avatar/ddc41dadd5d79e396783e82ba8e862f6?s=44" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/thomas.diesler">Thomas Diesler</a></span>
+      <span class="dateinline">on Mar 01, 2012</span>
+      <div class="date"><abbr>Mar</abbr> 01</div>
+      <span class="comments">| <a href="/blog/2012/03/01/arquillian-container-osgi-1-0-2-Final/#disqus_thread" data-disqus-identifier="d0e49ebcfe84d1464841eb3cb1f4cd75478f6293">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>The Arquillian team is proud to announce the <em>1.0.2.Final</em> release of the <em>Arquillian OSGi</em> component!</p>
+    
+    <h3>What is Arquillian?</h3>
+    <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
+    <h3>Release details</h3>
+    <table class="table table-bordered table-striped">
+      <tbody>
+        <tr>
+          <th>Component</th>
+          <td>Arquillian OSGi</td>
+        </tr>
+        <tr>
+          <th>Modules</th>
+          <td>
+            <ul class="unstyled">
               <li>
-                <div class="title">
-                  <a href="/blog/2012/06/05/arquillian-extension-byteman-1-0-0-Alpha2/">Arquillian Extension Byteman 1.0.0.Alpha2 Released</a>
-                </div>
-                <div class="meta">
-                  Jun 05, 2012
-                </div>
+                <a href="/modules/osgi-embedded-container-adapter/">Arquillian OSGi Embedded Container Adapter</a>
               </li>
               <li>
-                <div class="title">
-                  <a href="/blog/2012/06/01/arquillian-core-1-0-1-Final/">Arquillian Core 1.0.1.Final Released</a>
-                </div>
-                <div class="meta">
-                  Jun 01, 2012
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2012/05/27/arquillian-extension-warp-1-0-0-Alpha1/">Arquillian Warp Extension 1.0.0.Alpha1 Released</a>
-                </div>
-                <div class="meta">
-                  May 27, 2012
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2012/05/21/arquillian-extension-spring-1-0-0-Alpha1/">Arquillian Spring Framework Extension 1.0.0.Alpha1 Released</a>
-                </div>
-                <div class="meta">
-                  May 21, 2012
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2012/05/08/arquillian-extension-portal-1-0-0-Alpha1/">Arquillian Portal Extension 1.0.0.Alpha1 Released</a>
-                </div>
-                <div class="meta">
-                  May 08, 2012
-                </div>
+                <a href="/modules/osgi-remote-container-adapter/">Arquillian OSGi Remote Container Adapter</a>
               </li>
             </ul>
-            
-                        <div id="popularposts" class="dsq-widget">
-                          <h2 class="dsq-widget-title">Popular Posts</h2>
-                          <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
-                          <script>
-                            var ppw = document.getElementById("popularposts");
-                            if (ppw.getElementsByTagName('li').length == 0) {
-                              var p = document.createElement('p');
-                              p.className = 'noresults';
-                              p.appendChild(document.createTextNode('No popular posts reported.')); 
-                              ppw.appendChild(p);
-                            }
-                          </script>
-                          <noscript>
-                            <p>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">popular posts powered by Disqus</a>.</p>
-                          </noscript>
-                        </div>
-          </nav>
-          <nav class="tags">
-            <h2>Tags</h2>
-            <div class="tag-cloud">
-              <span class="tag tag-1">
-                <a href="/blog/tags/2010/">2010</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/2011/">2011</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/2012/">2012</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/ajocado/">ajocado</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/android/">android</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/announcement/">announcement</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/as7/">as7</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/awards/">awards</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/best-practice/">best-practice</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/byteman/">byteman</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/cdi/">cdi</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/community/">community</a>
-              </span>
-              <span class="tag tag-3">
-                <a href="/blog/tags/container-adapter/">container-adapter</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/contributors/">contributors</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/core/">core</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/dependencies/">dependencies</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/docs/">docs</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/drone/">drone</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/event/">event</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/examples/">examples</a>
-              </span>
-              <span class="tag tag-3">
-                <a href="/blog/tags/extension/">extension</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/forge/">forge</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/glassfish/">glassfish</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/graphene/">graphene</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/gsoc/">gsoc</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/guides/">guides</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/hackfest/">hackfest</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/jacoco/">jacoco</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/javaone/">javaone</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/jboss/">jboss</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/jbossas/">jbossas</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/jbosscentral/">jbosscentral</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/jbossworld/">jbossworld</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/jetty/">jetty</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/jpa/">jpa</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/judcon/">judcon</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/maven/">maven</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/migration/">migration</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/mission/">mission</a>
-              </span>
-              <span class="tag tag-2">
-                <a href="/blog/tags/nonrelease/">nonrelease</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/openejb/">openejb</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/openshift/">openshift</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/openwebbeans/">openwebbeans</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/osgi/">osgi</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/performance/">performance</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/persistence/">persistence</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/photos/">photos</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/platform/">platform</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/plugin/">plugin</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/portal/">portal</a>
-              </span>
-              <span class="tag tag-6">
-                <a href="/blog/tags/release/">release</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/roadmap/">roadmap</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/seam2/">seam2</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/spock/">spock</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/spring/">spring</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/stats/">stats</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/test-runner/">test-runner</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/testing/">testing</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/tip/">tip</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/tomcat/">tomcat</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/tool-plugin/">tool-plugin</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/video/">video</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/warp/">warp</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/website/">website</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/weld/">weld</a>
-              </span>
-              <span class="tag tag-1">
-                <a href="/blog/tags/wls/">wls</a>
-              </span>
-              <span class="tag tag-0">
-                <a href="/blog/tags/wrapup/">wrapup</a>
-              </span>
-            </div>
-          </nav>
-        </aside>
-      </div>
+          </td>
+        </tr>
+        <tr>
+          <th>Version</th>
+          <td>
+            1.0.2.Final
+            <span class="label tag">
+              <a href="https://github.com/arquillian/arquillian-container-osgi/commit/ee57fcf6b8c75a5809e21accc4c90773a2b08b4a.html">view tag</a>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <th>Release date</th>
+          <td>2012-03-01</td>
+        </tr>
+        <tr>
+          <th>Released by</th>
+          <td>Thomas Diesler</td>
+        </tr>
+        <tr>
+          <th>Compiled against</th>
+          <td>
+            <ul class="unstyled">
+              <li>JUnit &#8211; 4.8.1</li>
+              <li>ShrinkWrap Core &#8211; 1.0.0-cr-1</li>
+              <li>Arquillian Core &#8211; 1.0.0.CR7</li>
+            </ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      Thanks to the following list of contributors:
+      <a href="https://community.jboss.org/people/thomas.diesler">Thomas Diesler</a>
+    </p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/03/01/arquillian-container-osgi-1-0-2-Final/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/osgi/">osgi</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
+      <a href="/blog/2012/02/27/arquillian-container-openshift-1-0-0-Alpha2/">Arquillian Container OpenShift 1.0.0.Alpha2 Released</a>
+    </h2>
+    <div class="byline">
+      <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
+      <span class="dateinline">on Feb 27, 2012</span>
+      <div class="date"><abbr>Feb</abbr> 27</div>
+      <span class="comments">| <a href="/blog/2012/02/27/arquillian-container-openshift-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="d2439dafcacdc5edb38afd78193621da879b8130">Comments</a></span>
     </div>
+  </header>
+  <div class="body">
+    <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha2</em> release of the <em>Arquillian Container OpenShift</em> component!</p>
+<h3>Some of the highlights in this release</h3>
+<p>Application deployment timeout can be set up by user:</p>
+<div class="filename">arquillian.xml</div>
+<pre class="prettify"><code class="prettify">&lt;arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;  xmlns="http://jboss.org/schema/arquillian"&#x000A;  xsi:schemaLocation="&#x000A;      http://jboss.org/schema/arquillian&#x000A;      http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;</code>&#x000A;&#x000A;<code class="prettify">  &lt;container qualifier="openshift"&gt;&#x000A;    &lt;configuration&gt;&#x000A;      &lt;property name="deploymentTimeoutInSeconds"&gt;150&lt;/property&gt;&#x000A;    &lt;/configuration&gt;&#x000A;  &lt;/container&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/arquillian&gt;</code></pre>
+<p>Improved archive scanning now honors application.xml and jboss-web.xml for figuring out<br />
+deployment context root.</p>
+<p>Support for deployment of ZipImport&#8217;ed archives.</p>
+<p>Arquillian OpenShift Express Container no longer requires JBoss Maven Repository.</p>
+<h3>What is Arquillian?</h3>
+<p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
+<h3>Release details</h3>
+<table class="table table-bordered table-striped">
+  <tbody>
+    <tr>
+      <th>Component</th>
+      <td>
+        <a href="/modules/openshift-express-container-adapter/">Arquillian Container OpenShift</a>
+      </td>
+    </tr>
+    <tr>
+      <th>Version</th>
+      <td>
+        1.0.0.Alpha2
+        <span class="label tag">
+          <a href="https://github.com/arquillian/arquillian-container-openshift/commit/bb3b344975e2589ce472d944039e83a07f92f027.html">view tag</a>
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <th>Release date</th>
+      <td>2012-02-27</td>
+    </tr>
+    <tr>
+      <th>Released by</th>
+      <td>Aslak Knutsen</td>
+    </tr>
+    <tr>
+      <th>Compiled against</th>
+      <td>
+        <ul class="unstyled">
+          <li>Arquillian Core &#8211; 1.0.0.CR7</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h3>
+  Release notes and resolved issues
+  <small>0</small>
+</h3>
+<p></p>
+<p>
+  Thanks to the following list of contributors:
+  <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://github.com/papousek">Jan PapoušEk</a>, <a href="https://community.jboss.org/people/jharting">Jozef Hartinger</a>
+</p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/02/27/arquillian-container-openshift-1-0-0-Alpha2/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/openshift/">openshift</a>
+  </div>
+  
+              <script type="text/javascript">
+              var disqus_shortname = 'arquillian';
+              (function () {
+                var s = document.createElement('script'); s.async = true;
+                s.src = "http://disqus.com/forums/arquillian/count.js";
+                (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+              }());
+              </script>
+</article>
+<ul class="pager">
+  <li class="previous">
+    <a href="/blog/tags/container-adapter/page/2/">&laquo; Older</a>
+  </li>
+  <li class="pages">Page 1 of 8</li>
+  <li class="disabled next">
+    <a href="#">Newer &raquo;</a>
+  </li>
+</ul>
+</div>
+<aside id="sidebar" role="complementary">
+  <div class="subscribe">
+    <h2 class="icon news">
+      <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
+    </h2>
+    <p><em>Get the latest information on features, releases and events.</em></p>
+  </div>
+  <nav class="latest">
+    <h2>Latest Posts</h2>
+    <ul>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/06/27/arquillian-extension-drone-1-1-0-CR1/">Arquillian Drone Extension 1.1.0.CR1 Released</a>
+        </div>
+        <div class="meta">
+          Jun 27, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/06/05/arquillian-extension-byteman-1-0-0-Alpha2/">Arquillian Extension Byteman 1.0.0.Alpha2 Released</a>
+        </div>
+        <div class="meta">
+          Jun 05, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/06/01/arquillian-core-1-0-1-Final/">Arquillian Core 1.0.1.Final Released</a>
+        </div>
+        <div class="meta">
+          Jun 01, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/05/27/arquillian-extension-warp-1-0-0-Alpha1/">Arquillian Warp Extension 1.0.0.Alpha1 Released</a>
+        </div>
+        <div class="meta">
+          May 27, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/05/22/arquillian-extension-spring-1-0-0-Alpha1/">Arquillian Spring Framework Extension 1.0.0.Alpha1 Released</a>
+        </div>
+        <div class="meta">
+          May 22, 2012
+        </div>
+      </li>
+    </ul>
+    
+                <div id="popularposts" class="dsq-widget">
+                  <h2 class="dsq-widget-title">Popular Posts</h2>
+                  <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
+                  <script>
+                    var ppw = document.getElementById("popularposts");
+                    if (ppw.getElementsByTagName('li').length == 0) {
+                      var p = document.createElement('p');
+                      p.className = 'noresults';
+                      p.appendChild(document.createTextNode('No popular posts reported.')); 
+                      ppw.appendChild(p);
+                    }
+                  </script>
+                  <noscript>
+                    <p>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">popular posts powered by Disqus</a>.</p>
+                  </noscript>
+                </div>
+  </nav>
+  <nav class="tags">
+    <h2>Tags</h2>
+    <div class="tag-cloud">
+      <span class="tag tag-1">
+        <a href="/blog/tags/2010/">2010</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/2011/">2011</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/2012/">2012</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/ajocado/">ajocado</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/android/">android</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/announcement/">announcement</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/as7/">as7</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/awards/">awards</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/best-practice/">best-practice</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/byteman/">byteman</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/cdi/">cdi</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/community/">community</a>
+      </span>
+      <span class="tag tag-3">
+        <a href="/blog/tags/container-adapter/">container-adapter</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/contributors/">contributors</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/core/">core</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/dependencies/">dependencies</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/docs/">docs</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/drone/">drone</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/event/">event</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/examples/">examples</a>
+      </span>
+      <span class="tag tag-3">
+        <a href="/blog/tags/extension/">extension</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/forge/">forge</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/glassfish/">glassfish</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/graphene/">graphene</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/gsoc/">gsoc</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/guides/">guides</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/hackfest/">hackfest</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/jacoco/">jacoco</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/javaone/">javaone</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/jboss/">jboss</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/jbossas/">jbossas</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/jbosscentral/">jbosscentral</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/jbossworld/">jbossworld</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/jetty/">jetty</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/jpa/">jpa</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/judcon/">judcon</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/maven/">maven</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/migration/">migration</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/mission/">mission</a>
+      </span>
+      <span class="tag tag-2">
+        <a href="/blog/tags/nonrelease/">nonrelease</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/openejb/">openejb</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/openshift/">openshift</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/openwebbeans/">openwebbeans</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/osgi/">osgi</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/performance/">performance</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/persistence/">persistence</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/photos/">photos</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/platform/">platform</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/plugin/">plugin</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/portal/">portal</a>
+      </span>
+      <span class="tag tag-6">
+        <a href="/blog/tags/release/">release</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/roadmap/">roadmap</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/seam2/">seam2</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/spock/">spock</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/spring/">spring</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/stats/">stats</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/test-runner/">test-runner</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/testing/">testing</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/tip/">tip</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/tomcat/">tomcat</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/tool-plugin/">tool-plugin</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/video/">video</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/warp/">warp</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/website/">website</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/weld/">weld</a>
+      </span>
+      <span class="tag tag-1">
+        <a href="/blog/tags/wls/">wls</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="/blog/tags/wrapup/">wrapup</a>
+      </span>
+    </div>
+  </nav>
+</aside>
+  </div>
+</div>
     <footer>
       <div class="container">
         <div class="project">
