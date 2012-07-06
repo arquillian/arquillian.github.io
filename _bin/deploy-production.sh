@@ -81,11 +81,13 @@ if [ $CLEAN -eq 1 ]; then
 fi
 
 if [ $KEEP -eq 0 ]; then
-  rm -rf $SITE_DIR
-  rm -rf $SASS_CACHE_DIR
+  #rm -rf $SITE_DIR
+  #rm -rf $SASS_CACHE_DIR
+  awestruct --force -g -P production
+else
+  awestruct -P production -g
 fi
 
-awestruct -P production -g
 
 pushdq $DEPLOY_DIR
 git pull origin master
