@@ -29,7 +29,7 @@
 
 source :rubygems
 
-gem "awestruct", "0.2.15"
+gem "awestruct", "0.4.5"
 gem "rest-client", "1.6.7"
 gem "git", "1.2.5"
 gem "ri_cal", "0.8.8"
