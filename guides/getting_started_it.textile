@@ -18,41 +18,43 @@ guide_order: 10
 [shrinkwrap_home]http://jboss.org/shrinkwrap
 [m2e_home]http://eclipse.org/m2e
 
-This guide introduces you to Arquillian. After reading this guide, you'll be able to:
+Questa guida introduce Arquillian. Alla fine della lettura, potrai:
 
-* Add the Arquillian infrastructure to a Maven-based Java project
-* Write an Arquillian test that asserts the behavior of a CDI(Contexts and Dependency Injection) bean
-* Execute the Arquillian test in multiple compatible containers in both Maven and Eclipse
+* Aggiungere l'infrastruttura di Arquillian ad un progetto basato su Maven
+* Scrivere un test di Arquillian che lavora su un bean CDI(Contexts and Dependency Injection)
+* Eseguire i test di Arquillian su container multipli tramite Maven ed Eclipse
 
-You'll learn all of these skills by incorporating Arquillian into the test suite of a Java EE application built with Maven. We've designed this guide to be a _fast read_ to get you started quickly!
+Queste capacità verranno apprese incorporando Arquillian in una suite di test di un'applicazione Java EE basata su Maven. Abbiamo ideato questa guida in modo da essere di _semplice lettura_ per farti subito iniziare!
 
-h3. Assumptions
+h3. Presupposti
 
-The simplest way to get started with Arquillian is to incorporate it into the test suite of a project build that offers dependency management. Today, the most widely used build tool in this category is "Apache Maven":maven_home. This guide will navigate you to your first *(greenbar)green bar* using a new Maven project.
+Il modo più semplice di usare Arquillian è incorporarlo nella suite di test di un progetto usando un tool di build basato su dipendenze. Oggi, il più usato tool di questo tipo è "Apache Maven":maven_home. Questa guida vi porterà alla vostra prima *(greenbar)green bar* usando un progetto Maven.
 
-p(info). %Arquillian does not depend on Maven, or any specific build tool for that matter. It works just as well--if not better--when used in a project with an Ant or Gradle build. Ideally, the build tool should offer dependency management as it simplifies the task of including the Arquillian libraries since they are distributed in the "Maven Central repository":maven_search.%
+p(info). %Arquillian non è legato nè a Maven, nè ad alcun altro tool di building. Può lavorare anche--se non meglio--con progetti basati su Ant o Gradle. E' preferibile un tool di dependency management poichè semplifica l'inclusione delle librerie di Arquillian che sono già distribuite nel "Maven Central repository":maven_search.% 
 
 This guide assumes you have Maven available, either in your command shell or your IDE(Integrated Development Environment). If you don't, please "download and install Maven now":maven_download. You'll also need "JDK(Java Development Kit) 1.5":jdk_download or higher installed on your machine, though JDK 1.6 is preferred.
 
-h3. Create a New Project
+Questa guida presuppone che abbiate Maven disponibile nella shell dei comandi oppure nell'IDE(Integrated Development Environment). Altrimenti, eseguite il "download e installazione di Maven":maven_download. Avrete bisogno della "JDK(Java Development Kit) 1.5":jdk_download o superiore installata nella vostra macchina, sebbene sia preferibile la JDK 1.6.
 
-There are two ways we recommend you create a new Maven project:
+h3. Creare un Nuovo Progetto
 
-# "Generate a project from a Maven archetype":#generate_project_from_archetype
-# "Create and customize a project using JBoss Forge":#create_project_using_forge
+Ci sono due modi che raccomandiamo di usare per creare un nuovo progetto Maven:
 
-By far, "JBoss Forge":forge_home is the simpler approach, but this guide will offer both options in the event you aren't ready to adopt JBoss Forge. Select from one of the two options above to jump to the instructions.
+# "Generare un progetto da un Archetype di Maven":#generate_project_from_archetype
+# "Creare e personalizzare un progetto tramite JBoss Forge":#create_project_using_forge
 
-p(info). %If you already have a Maven project, you can use this section as review to ensure you have the proper dependencies before moving on.%
+"JBoss Forge":forge_home è di gran lunga il più semplice, ma questa guida offre entrambe le opzioni nel caso non vi sentiate pronti a usare JBoss Forge. Selezionate una delle due opzioni per saltare alle istruzioni.
 
-h4(#generate_project_from_archetype). Generate a Project from a Maven Archetype
+p(info). %Se avete un progetto Maven già pronto, potete usare questa sezione per confrontarlo e assicurarvi che tutte le dipendenze siano presenti prima di iniziare.%
 
-First, create a Maven-based Java project using the following command:
+h4(#generate_project_from_archetype). Generare un Progetto da un Archetype di Maven
+
+Per prima cosa, creiamo un progetto Java basato su Maven con il seguente comando:
 
 bc(command).. $ mvn archetype:generate -DarchetypeGroupId=net.avh4.mvn.archetype \
 -DarchetypeArtifactId=java-1.6-archetype
 
-p. _Copy the text after the @$@ and paste it into your command shell_. Respond to the prompts by entering the value shown after each double colon in the pane below. Hit the Enter key after each entry (as indicated by @<ENTER>@).
+p. _Copiate il testo dopo il @$@ e copiatelo nella vostra shell dei comandi_. Al prompt, inserite il valore mostrato dopo ogni virgoletta nel pannello in basso. Premete Enter dopo ogni valore (come indicato da @<ENTER>@).
 
 bc(output). Define value for property 'groupId': : org.arquillian.example <ENTER>
 Define value for property 'artifactId': : arquillian-tutorial <ENTER>
@@ -65,26 +67,26 @@ version: 1.0-SNAPSHOT
 package: org.arquillian.example
 Y: : <ENTER>
 
-p. This command generated a Maven-based Java project inside the current directory in a new folder named @arquillian-tutorial@. Switch to that directory. The file structure of the project is shown below.
+p. Il comando ha creato un progetto Maven dentro la directory corrente in una nuova directory chiamata @arquillian-tutorial@. Entriamo in questa nuova directory. La struttura dei file del progetto è mostrata in basso.
 
 (filetree)* src/
 ** main/
-*** java/ - Place all application Java source files here (under Java package)
-*** resources/ - Place all application configuration files here
+*** java/ - Quì vanno tutti i file sorgenti Java dell'applicazione (sotto il package Java)
+*** resources/ - Quì vanno tutti i file di configurazione dell'applicazione
 ** test/
-*** java/ - Place all test Java source files heres (under Java package)
-*** resources/ - Place all test configuration files here (e.g., arquillian.xml)
-* pom.xml - The Maven build file. Tells Maven how your project should be built.
+*** java/ - Quì vanno tutti i sorgenti Java delle classi di test (sotto il package Java)
+*** resources/ - Quì vanno tutti i file di configurazione dei test (p.es., arquillian.xml)
+* pom.xml - Il file di build di Maven. Istruisce Maven su come deve essere costruito il progetto.
 
-The project generator also created a Java package named @org.arquillian.example@ underneath the two @java@ folders. You should put your Java source files in this package rather than at the root of the @java@ folder.
+Il generatore del progetto ha creato anche un package Java con nome @org.arquillian.example@ sotto le due directory @java@. Quì dovrete mettere tutti i sorgenti Java invece di usare la root come directory @java@.
 
-Go ahead and open up the @pom.xml@ in your editor. You should see an XML file containing basic project information, a build section and a dependencies section.
+Andiamo avanti e apriamo il @pom.xml@ nel nostro editor. Dovreste vedere un file XML contenente le informazioni base del progetto, una sezione build e una sezione dependencies.
 
-p(info). %You'll notice the project is configured to use Java 1.6 and JUnit 4.8, the minimum recommended versions of Java and JUnit for using Arquillian, respectively.%
+p(info). %Noterete che il progetto è configurato con Java 1.6 e JUnit 4.8, rispettivamente le versioni minime di Java e JUnit raccomandate da Arquillian.%
 
-p(warning). %Arquillian also supports TestNG 5. However, we'll be using JUnit throughout this guide.%
+p(warning). %Arquillian supporta anche TestNG 5 ma in questa guida ci limiteremo a usare JUnit%
 
-*You can remove all the @<dependency>@ elements below the JUnit dependency as they aren't required.* After making this change, the file should match the contents below (slightly formatted):
+*Tutti gli elementi @<dependency>@ sotto la dependency JUnit possono essere rimosse se non richieste.* Dopo questa modifica, il file dovrebbe diventare uguale al contenuto quì in basso (leggermente riformattato):
 
 div(filename). pom.xml
 
@@ -130,9 +132,9 @@ bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
     </dependencies>
 </project>
 
-p. We're going to be writing Java EE 6 components. Therefore, we need to add the Java EE 6 API to the classpath so we can compile these components.
+p. Iniziamo ora a scrivere i componenti Java EE 6. Abbiamo quindi bisogno di aggiungere le API Java EE 6 al classpath in modo da poterli compilare.
 
-Open up the @pom.xml@ file once again and add the following XML fragment directly inside the @<dependencies>@ element. Here's how the @<dependencies>@ element should look once you're done:
+Apriamo nuovamente il file @pom.xml@ e aggiungiamo il seguente frammento XML direttamente dentro l'elemento @<dependencies>@. Quì in basso vediamo come dovrebbe diventare l'elemento @<dependencies>@ una volta terminato:
 
 div(filename). pom.xml
 
@@ -154,29 +156,31 @@ bc(prettify).. <!-- clip -->
 </dependencies>
 <!-- clip -->
 
-p(important). %The @org.jboss.spec:jboss-javaee-6.0@ artifact is comprised of only standard Java EE 6 APIs. We *strongly* recommend that you *do not use* the Java EE API artifact with coordinates @javax:javaee-api@. The latter artifact contains classes with stripped method bodies, which will cause your application to throw obscure Absent Code errors if present on the classpath at runtime (even when running tests). "Read this FAQ":https://community.jboss.org/wiki/WhatsTheCauseOfThisExceptionJavalangClassFormatErrorAbsentCode for more details.%
+p(important). %L'artifact @org.jboss.spec:jboss-javaee-6.0@ contiene soltanto le API standard di Java EE 6. Raccomandiamo *fortemente* di *non usare* l'artifact delle API Java EE con coordinate @javax:javaee-api@. L'ultimo artifact contiene classi con il corpo dei metodi ridotto all'osso, le quali causano all'applicazione di lanciare errori oscuri di codice assente se aggiunte a runtime nel classpath (perfino durante l'esecuzione dei test). "Leggete queste FAQ":https://community.jboss.org/wiki/WhatsTheCauseOfThisExceptionJavalangClassFormatErrorAbsentCode per più dettagli.%
 
-p. The foundation of your project is now ready! Skip to the next section, "Open the Project in Eclipse":#open_the_project_in_eclipse, so we can start writing some code!
+p. La base del progetto è pronta! Saltiamo alla sezione, "Aprire il Progetto con Eclipse":#open_the_project_in_eclipse, in modo da iniziare a scrivere codice!
 
-h4(#create_project_using_forge). Create a Project Using Forge
+h4(#create_project_using_forge). Creare un Progetto Con Forge
 
-"JBoss Forge":forge_home is a command shell for rapid-application development in a standards-based environment. Another way to think of it is that it's like Maven Archetypes on steroids.
+"JBoss Forge":forge_home è una shell di comandi per creare rapidamente applicazioni in modo standard. Possiamo considerarlo un Maven Archetypes con gli steroidi.
 
 Installing Forge is a relatively short process, and this guide will take you through the fundamentals. Follow these simple steps to get Forge installed:
 
-# "Download Forge":forge_download
-# Unzip the distribution into a folder on your harddrive, which we'll call @$FORGE_HOME@
-  We'll assume you extracted the distribution to a folder named @forge@ in your home directory
-# Add @$FORGE_HOME/bin@ to your path (Windows, Linux or Mac OSX)
+L'installazione di Forge è molto rapida, e questa guida ne spiegherà i passi fondamentali. Seguite questi semplici passaggi per installare Forge:
 
-On Unix based operating systems, adding Forge to your path typically means editing your $HOME/.bashrc or $HOME/.profile; you will need to set the following environment variables:
+# "Scarichiamo Forge":forge_download
+# Eseguiamo l'unzip della distribuzione in una directory del nostro harddrive, che chiameremo @$FORGE_HOME@
+  Presupponiamo che la distribuzione sia stata estratta in una directory con nome @forge@
+# Aggiungiamo @$FORGE_HOME/bin@ nel nostro path (Windows, Linux o Mac OSX)
+
+Su sistemi operativi basati su Unix, aggiungere Forge al path significa solitamente di editare i file $HOME/.bashrc o $HOME/.profile; avremo bisogno di aggiungere le seguenti variabili di ambiente:
 
 bc(command). $ export FORGE_HOME=$HOME/forge/
 $ export PATH=$PATH:$FORGE_HOME/bin
 
-p(info). %On Windows, you'll need to right-click on open the "Control Panel", then click "System Properties", open the "Advanced" tab, then click "Environment Variables" and add these two entries visually. We recommended setting User variables for Forge, unless you have placed the unzipped distribution in a folder where all users can access it.%
+p(info). %Su Windows, bisogna aprire il "Pannello di Controllo", cliccare su "Proprietà di Sistema", aprire il tab "Avanzate", cliccare su "Variabili d'Ambiente" e aggiungere visualmente le due variabili. Raccomandiamo di impostare queste variabili per Forge, a meno che non venga fatto l'unzip della distribuzione in una directory accessibile a tutti gli utenti.%
 
-Now that Forge is installed (i.e., extracted), open a command prompt (a shell) and run the @forge@ command:
+Ora che Forge è installato (o meglio, estratto), accediamo ad un prompt dei comandi della shell e lanciamo il comando @forge@:
 
 bc(command).. $ forge
    _____                    
@@ -188,46 +192,46 @@ bc(command).. $ forge
  
 [no project] ~ $
 
-p. That's it! You've got Forge up and running. Now it's time to create the project.
+p. Questo è tutto! Abbiamo lanciato e attivato Forge. Ora è tempo di creare il progetto.
 
-Inside the Forge shell, execute the following command to create a blank project, much like we created a project using the Maven Archetype above:
+Nella shell di Forge, eseguiamo il seguente comando per creare un progetto vuoto, molto simile a come abbiamo creato precedentemente il progetto con Maven Archetype:
 
 bc(command). $ new-project --named arquillian-tutorial --topLevelPackage org.arquillian.example
 
-p. This command generates a Maven-based Java project inside a new folder named @arquillian-tutorial@ under the current directory.
+p. Questo comando genera un progetto basato su Maven in una nuova directory con nome @arquillian-tutorial@ sotto la directory corrente.
 
-The file structure of the project Forge generates is shown below:
+La struttura dei file del progetto generato da Forge è mostrato in basso: 
 
 (filetree)* src/
 ** main/
-*** java/ - Place all application Java source files here (under Java package)
-*** resources/ - Place all application configuration files here
+*** java/ - Quì vanno tutti i file sorgenti Java dell'applicazione (sotto il package Java)
+*** resources/ - Quì vanno tutti i file di configurazione dell'applicazione
 **** META-INF/
-***** forge.xml - An empty Forge settings file
+***** forge.xml - Il file di configurazione di Forge vuoto
 ** test/
-*** java/ - Place all test Java source files heres (under Java package)
-*** resources/ - Place all test configuration files here (e.g., arquillian.xml)
-* pom.xml - The Maven build file. Tells Maven how your project should be built.
+*** java/ - Quì vanno tutti i sorgenti Java delle classi di test (sotto il package Java)
+*** resources/ - Quì vanno tutti i file di configurazione dei test (p.es., arquillian.xml)
+* pom.xml - Il file di build di Maven. Istruisce Maven su come deve essere costruito il progetto.
 
-Forge also makes the project folder your current directory within the Forge shell.
+Forge fa in modo che la directory del progetto diventi la directory corrente all'interno della shell. 
 
 bc(command). [arquillian-tutorial] arquillian-tutorial $ 
 
-By default, Forge sets up the project to use Java 1.6, the minimum recommended version of Java for using Arquillian, a nice convenience.
+Per default, Forge configura il progetto con Java 1.6, la versione minima di Java raccomandata da Arquillian, piuttosto comodo.
 
-What we need to add now is the Java EE APIs. That's done using the @project add-dependency@ command below:
+Bisogna ora aggiungere le API di Java EE. Viene fatto tramite il comando @project add-dependency@ mostrato quì in basso:
 
 bc(command). $ project add-dependency org.jboss.spec:jboss-javaee-6.0:1.0.0.Final:provided:pom
 
-You'll also need to add JUnit 4.8, the minimum required version of JUnit to use Arquillian, as a test-scoped dependency:
+Bisogna anche aggiungere la dipendenza di JUnit 4.8, la versione minima richiesta da Arquillian, con scope di tipo test:
 
 bc(command). $ project add-dependency junit:junit:4.8.1:test
 
-Forge adds the JBoss Community repository to the pom.xml file. This repository is not required to use Arquillian. (However, you can keep it if you are using other libraries only available in the JBoss Community repository). If you do decide to remove the repository, you can easily do so using the following Forge command:
+Forge aggiunge il repository della Community JBoss nel file pom.xml. Questo repository non è indispensabile per Arquillian. (E' preferibile comunque mantenerlo se si necessitano altre librerie della Community JBoss). Se si vuole rimuovere il repository, è sufficiente usare il seguente comando di Forge:
 
 bc(command). $ project remove-repository http://repository.jboss.org/nexus/content/groups/public 
 
-The result of the pom.xml that Forge generates is shown below:
+Il risultato del pom.xml generato da Forge è mostrato quì in basso:
 
 div(filename). pom.xml
 
@@ -271,15 +275,15 @@ bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
     </build>
 </project>
 
-p. The foundation of your project is now ready! Let's now open the project in Eclipse so we can start writing some code!
+p. Il progetto base è pronto! Apriamo ora il progetto con Eclipse in modo da iniziare a scrivere del codice!
 
-h3. Open the Project in Eclipse
+h3. Aprire il Progetto con Eclipse
 
-When developing a Java project, you'll likely use an IDE such as Eclipse. That's why Arquillian has been designed to be IDE friendly. You can run Arquillian tests from the IDE without any special configuration. Let's start taking advantage of the IDE immediately.
+Quando si sviluppa un progetto Java, è preferibile usare un IDE come Eclipse. Questo perchè Arquillian è progettato per essere IDE friendly. Si possono lanciare i test di Arquillian dall'IDE senza configurazioni particolari. Diamo subito uno sguardo ai vantaggi forniti dall'IDE.
 
-Begin by launching Eclipse. Since this is a Maven project, you need the "Maven Integration for Eclipse":m2e_home (m2e) plugin installed in order to open the project.
+Prima di Lanciare Eclipse, siccome il nostro è un progetto Maven, abbiamo bisogno di installare il plugin "Maven Integration for Eclipse":m2e_home (m2e), se non presente. 
 
-h4. Installing the m2e plugin
+h4. Installare il plugin m2e
 
 If you don't already have the m2e plugin installed, the simplest way to get it is to install "JBoss Tools":tools_home. Follow these steps to install it from the Eclipse Marketplace (sort of like the app store for Eclipse).
 
