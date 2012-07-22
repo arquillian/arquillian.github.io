@@ -599,26 +599,26 @@ Torniamo ora al test.
 
 h3. Lanciare il Test di Arquillian
 
-Once you add all the necessary Arquillian libraries to the classpath, you can run an Arquillian test just like a unit test, whether you are running it from the IDE, the build script or any other test plugin. Let's run the test in Eclipse.
+Una volta che tutte le librerie necessarie ad Arquillian sono aggiunte nel classpath, si può lanciare il test sotto forma di test unitario da Eclipse, da uno script di build o da qualunque altro plugin predisposto ai test. Lanciamolo ora da Eclipse. 
 
-From the IDE window, right click on the GreeterTest.java file in the Package Explorer (or in the editor) and select Run As > JUnit Test from the context menu.
+Dalla finestra dell'IDE, tasto destro sul file GreeterTest.java nel Package Explorer (o nell'editor) e selezionate Run As > JUnit Test dal menù.
 
 !/images/guides/arquillian_tutorial_run_junit_test.png!
 
-When you run the test, you should see the following lines printed to the console:
+Quando lanciate il test, dovreste vedere le seguenti linee nella console:
 
 bc(output). 21 [main] INFO org.jboss.weld.Version - WELD-000900 1.1.5 (Final)
 Hello, Earthling!
 
-You should then see the JUnit view appear, revealing a *(greenbar)green bar*!
+Dovreste poi veder apparire la vista di JUnit con una *(greenbar)barra verde*!
 
 !/images/guides/arquillian_tutorial_junit_green_bar.png!
 
-You can also run the test on the commandline using Maven:
+Il test si può lanciare anche con Maven da linea di comando:
 
 bc(command). $ mvn test
 
-You should see the following lines printed to the console:
+Dovreste vedere le seguenti linee nella console:
 
 bc(output). -------------------------------------------------------
 T E S T S
@@ -628,13 +628,13 @@ Running org.arquillian.example.GreeterTest
 Hello, Earthling!
 Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.907 sec
 
-*Congratulations!* You've earned your first *(greenbar)green bar* with Arquillian!
+*Congratulazioni!* E' comparsa la prima *(greenbar)barra verde* di Arquillian!
 
-h3. A Closer Look
+h3. Uno sguardo più da vicino
 
-How do you know that CDI really worked? For all you know, Arquillian created a new instance of the @Greeter@ class and injected it into the test without any involvement from CDI. Let's prove it's there.
+Come sappiamo che CDI lavora realmente? Per quello che sappiamo ora, Arquillian ha creato un'istanza della classe @Greeter@ ed ereditata dentro un test senza alcuna prova che sia stato eseguita un'implementazione CDI. Verifichiamo.
 
-Create a new CDI bean named @PhraseBuilder@ in the @org.arquillian.example@ package that can create phrases from templates.
+Creiamo un nuovo bean CDI con nome @PhraseBuilder@ nel package @org.arquillian.example@. La nuova classe crea delle frasi partendo da un template. 
 
 div(filename). src/main/java/org/arquillian/example/PhraseBuilder.java
 
@@ -659,7 +659,7 @@ public class PhraseBuilder {
     }
 }
 
-p. Next, open up the @Greeter@ class and create a new constructor that will inject @PhraseBuilder@ using constructor injection. Then, delegate the task of creating the greeting to the injected bean.
+p. Ora, apriamo la classe @Greeter@ e creiamo un nuovo costruttore che erediterà il @PhraseBuilder@ tramite l'injection del costruttore. Deleghiamo poi il compito di creare il saluto al nuovo bean ereditato.
 
 div(filename). src/main/java/org/arquillian/example/Greeter.java
 
@@ -686,45 +686,45 @@ public class Greeter {
     }
 }
 
-p. Now, in order for the test to work, an instance of @PhraseBuilder@ must be created, its @@PostConstruct@ method must be invoked and it must be injected into the constructor of @Greeter@ when an instance of @Greeter@ is created. We can be certain CDI is working if all that comes together.
+p. Ora, per far si che il test funzioni, un'istanza del @PhraseBuilder@ deve essere creata, il suo metodo @@PostConstruct@ deve essere invocato ed ereditato dentro il costruttore del @Greeter@ al momento della creazione di un'istanza del @Greeter@. Se tutto questo avviene, siamo certi che CDI lavora come dovrebbe.
 
-p. One last step. Because we created a new class, we must be sure that it gets add to the test archive returned by the test's @@Deployment@ method. Simply change this line:
+p. Come ultimo passaggio, dato che abbiamo creato una nuova classe, dobbiamo assicurarci che venga aggiunta all'archivio di test tramite il metodo @@Deployment@. Semplicemente dobbiamo cambiare questa linea:
 
 bc(prettify).. .addClass(Greeter.class)
 
-p. ...to this one:
+p. ...con:
 
 bc(prettify).. .addClasses(Greeter.class, PhraseBuilder.class)
 
-p. Run the test again. You should get another *(greenbar)green bar*! Feels good, doesn't it?
+p. Lanciamo nuovamente il test. Si dovrebbe vedere nuovamente la *(greenbar)barra verde*! Non male, vero?
 
-h3. Debug the Test
+h3. Debug del Test
 
-This is going to be a short chapter. Why? Because an Arquillian test is so straightforward that you debug it exactly how you debug a unit test. Just add a breakpoint anywhere--either in the test or in the application code. Then right click on the file and select Debug As > JUnit Test. You're now debugging in the container! Have fun poking around!
-
+Questo sarà un capitolomolto breve. Perchè? Perchè un test Arquillian si mette in debug esattamente come un qualsiasi test unitario. Semplicemente aggiungiamo un breakpoint nel codice del test o di un altro componente dell'applicazione. Dopodichè clicchiamo con il tasto destro sul progetto e selezioniamo Debug As > JUnit Test. In questo modo stiamo eseguendo il debug nel container! Provatelo quanto volete!
+  
 !/images/guides/arquillian_tutorial_debugging_test.png!
 
-p(warning). %If you're using a remote container, Debug As does not cause breakpoints to be activated. Instead, you need to start the container in debug mode and attach the debugger. That's because the test is run in a different JVM than the original test runner.%
+p(warning). %Se si sta usando un container remoto, il Debug As non attiverà i breakpoint. Sarà invece necessario lanciare il container in modalità debug e agganciare manualmente il debugger. Questo perchè il test viene lanciato da una nuova JVM%
 
-As you've just witnessed, Arquillian is the ideal tool for testing CDI applications. It takes care of loading the CDI environment and injecting beans directly into the test. Best of all, when using an embedded CDI container, the test runs just as quickly as a unit test. If that's all you need, then you can exit the tutorial now and start writing tests.
+Come avete visto, Arquillian è il tool ideale per testare applicazioni CDI. Cura il caricamento dell'ambiente CDI ed eredita i bean CDI direttamente nei test. Meglio ancora, quando si usa un container CDI integrato, il test gira come un normale test unitario. Se questo è tutto quello di cui avete bisogno, potete uscire dal tutorial e iniziare a scrivere i vostri test.
 
-*But wait!* Is the embedded container telling the whole story? Will the component work if running inside a full container?
+*Ma un momento!* Parliamo soltanto del container integrato? Il componente girerà dietro un container completo?
 
-One of the perks of Arquillian is that you can run the same test in different compatible containers, whether it's another embedded container or a standalone container. If you intend to use a real container, read on.
+Una delle perle di Arquillian è che il test può girare su differenti container, sia integrati che standalone. Se vogliamo provare un container più realistico, continuiamo a leggere questo documento.
 
-h3. Add More Containers
+h3. Aggiungere nuovi Container
 
-As you learned earlier, Arquillian selects the container based on which container adapter is on the classpath. To switch to another container, you just change which container adapter is on the classpath before you run the test.
+Come abbiamo visto in precedenza, Arquilian seleziona il container a seconda dell'adapter che si trova nel classpath. Per cambiare container, è sufficiente cambiare il container adapter nel classpath prima di lanciare il test.
 
-p(important). %You can only have one container adapter on the classpath at a time. Arquillian will abort execution of the test if it detects multiple adapters.%
+p(important). %Si può usare soltanto un container adapter alla volta. Se ci sono più container adapter nel classpath, Arquillian bloccherà l'esecuzione del test pichè determinerà un numero eccessivo di container adapter%
 
-One way to swap the libraries on the classpath is to manually edit the dependencies defined in @pom.xml@. But that's just tedious. The recommended approach is to use Maven profiles.
+Un modo per eseguire lo switch del container adapter è quello di modificare le dependencies di Maven viste in precedenza nel @pom.xml@. Ma è piuttosto faticoso. L'approccio raccomandatoè di usare i profili Maven.
 
-h4. Setting up Maven profiles
+h4. Configurare i profili di Maven
 
-Maven profiles allow you to partition your dependencies into groups, one group for each container adapter and its related artifacts. When running the tests, you activate one of those groups, which in turn selects a target container. The profile is activated either using either a commandline flag (-P) or a preference in the IDE.
+I profili di Maven permettono di suddividere le dipendenze in gruppi, un gruppo per ogni container adapter e i suoi artifact correlati. Quando si lanciano i test, verrà attivato uno di questi gruppi, che selezionerà il relativo container. Il profilo può essere attivato sia dalla linea di comando tramite il flag (-P) che dalle preferenze dell'IDE.  
 
-Open up the @pom.xml@ and create a new profile for Weld EE embedded by inserting the following XML directly under the @<dependencies>@ element:
+Apriamo il @pom.xml@ e creiamo un nuovo profilo per il Weld EE embedded inserendo il seguente frammento XML direttamente sotto all'elemento @<dependencies>@:
 
 div(filename). pom.xml
 
@@ -763,7 +763,7 @@ bc(prettify).. <!-- clip -->
 </profiles>
 <!-- clip -->
 
-p. Next, *remove* the @jboss-javaee-6.0@ dependency and the dependencies for the Weld EE embedded container adapter from the main @<dependencies>@ section. Here's how the @<dependencies>@ and @<profiles>@ sections should look when you're done:
+p. *Rimuoviamo* poi la dependency @jboss-javaee-6.0@ e le altre dependency legate al Weld EE embedded container adapter dalla sezione @<dependencies>@. Una volta rimosse, le sezioni @<dependencies>@ e @<profiles>@ risulteranno simili al codice quì in basso:
 
 div(filename). pom.xml
 
@@ -815,9 +815,9 @@ bc(prettify).. <!-- clip -->
 </profiles>
 <!-- clip -->
 
-p(info). %The Java EE API dependency has been moved to the profile since some containers, like Embedded GlassFish, already provide these libraries. Having both on the classpath at the same time results in conflicts. Therefore, we have to play this classpath dance.%
+p(info). %La dipendenza Java EE API viene spostata nel profilo dal momento che alcuni container, come il GlassFish integrato, già integrano queste librerie. Avere le stesse librerie in entrambi i unti provoca conflitti. Bisogna perciò giocare con il classpath.%
 
-We'll now include two additional profiles in the @pom.xml@ inside the @<profiles>@ element, the first for "Embedded GlassFish":http://embedded-glassfish.java.net:
+Includiamo ora due nuovi profili nel @pom.xml@ dentro l'elemento @<profiles>@, il primo per il "GlassFish integrato":http://embedded-glassfish.java.net:
 
 div(filename). pom.xml
 
@@ -841,7 +841,7 @@ bc(prettify).. <!-- clip -->
 </profile>
 <!-- clip -->
 
-p. and the other for JBoss AS managed:
+p. e l'altro per JBoss AS:
 
 div(filename). pom.xml
 
