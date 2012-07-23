@@ -42,7 +42,7 @@
         </div>
       </div>
     </header>
-    <div id="main" role="main">
+    <div role="main" id="main">
   <div id="content-header">
     <div class="container">
       <h1>
@@ -67,7 +67,7 @@
     </div>
   </header>
   <div class="body">
-    <p><img alt="" src="/images/blog/arquillian_icon_jpa.png" style="float: right; margin-left: 1em; margin-top: -10px;" class="graphic" /> A while ago, <a href="http://blogs.oracle.com/arungupta">Arun Gupta</a> proposed a recipe for testing JPA 2 (JPQL &amp; Criteria) using Embedded GlassFish in one of his notable Tips of The Day (<a href="http://blogs.sun.com/arungupta/entry/totd_133_jpa2_jpql_criteria">TOTD #133</a>). Embedded containers such as GlassFish certainly make testing Java EE APIs achievable. But I want to challenge Arun&#8217;s conclusion that using Embedded GlassFish programmatically is the <em>perfect</em> recipe for testing.</p>
+    <p><img alt="" class="graphic" src="/images/blog/arquillian_icon_jpa.png" style="float: right; margin-left: 1em; margin-top: -10px;" /> A while ago, <a href="http://blogs.oracle.com/arungupta">Arun Gupta</a> proposed a recipe for testing JPA 2 (JPQL &amp; Criteria) using Embedded GlassFish in one of his notable Tips of The Day (<a href="http://blogs.sun.com/arungupta/entry/totd_133_jpa2_jpql_criteria">TOTD #133</a>). Embedded containers such as GlassFish certainly make testing Java EE APIs achievable. But I want to challenge Arun&#8217;s conclusion that using Embedded GlassFish programmatically is the <em>perfect</em> recipe for testing.</p>
 <p>In this entry, I&#8217;ll show that the test can be further simplified. By throwing the complexity of managing the container over the wall, you can focus solely on the task at hand, testing (and experimenting with) JPA 2. Not only does the test get simpler, it also becomes portable, so you are not locked into running it on Embedded GlassFish. Any compliant Java EE container, such as JBoss AS, or even a standalone JPA runtime will do. That&#8217;s a lot of flexibility.</p>
 <p><em>The secret ingredient:</em> <a href="http://arquillian.org">Arquillian</a></p>
 <p>As in Arun&#8217;s TOTD, our test will:</p>
@@ -96,7 +96,7 @@
 <pre class="prettify"><code class="prettify">package com.acme.jpa;</code>&#x000A; &#x000A;<code class="prettify">import java.io.Serializable;&#x000A;import javax.persistence.Entity;&#x000A;import javax.persistence.GeneratedValue;&#x000A;import javax.persistence.Id;&#x000A;import javax.validation.constraints.NotNull;&#x000A;import javax.validation.constraints.Size;</code>&#x000A; &#x000A;<code class="prettify">@Entity&#x000A;public class Game implements Serializable {&#x000A;    private Long id;&#x000A;    private String title;</code>&#x000A; &#x000A;<code class="prettify">    public Game() {}</code>&#x000A; &#x000A;<code class="prettify">    public Game(String title) {&#x000A;        this.title = title;&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">    @Id @GeneratedValue&#x000A;    public Long getId() {&#x000A;        return id;&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">    public void setId(Long id) {&#x000A;        this.id = id;&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">    @NotNull&#x000A;    @Size(min = 3, max = 50)&#x000A;    public String getTitle() {&#x000A;        return title;&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">    public void setTitle(String name) {&#x000A;        this.title = name;&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">    @Override&#x000A;    public String toString() {&#x000A;        return "Game@" + hashCode() + "[id = " + id + "; title = " + title + "]";&#x000A;    }&#x000A;}</code></pre>
 <p>The primary key is defined using the <code>@Id</code> annotation on the field. Additional columns are derived automatically from bean properties (standard getter/setter convention). You can use the <code>@Column</code> annotation to explicitly set the name of the column. Otherwise, the column name is determined by removing the &#8220;get&#8221; prefix from the bean property&#8217;s read method and lowercasing the first character of the remainder (e.g., getTitle() =&gt; title).</p>
 <p>We are also using standard Bean Validation annotations to enforce constraints. Here, a title must be provided and it must be between 3 and 50 characters long. That would make a good test.</p>
-<p>Let&#8217;s create a new JUnit 4 Arquillian test case, <code>GamePersistenceTestCase</code>, and prepare it to test our JPA operations. We&#8217;ll leverage <a href="http://docs.jboss.org/cdi/spec/1.0/html" title="JSR-299">CDI</a> to supply us with the resources we need via dependency injection. (We&#8217;ll look at an alternative way to accomplish this using a utility EJB in a follow-up post).</p>
+<p>Let&#8217;s create a new JUnit 4 Arquillian test case, <code>GamePersistenceTestCase</code>, and prepare it to test our JPA operations. We&#8217;ll leverage <a title="JSR-299" href="http://docs.jboss.org/cdi/spec/1.0/html">CDI</a> to supply us with the resources we need via dependency injection. (We&#8217;ll look at an alternative way to accomplish this using a utility EJB in a follow-up post).</p>
 <div class="filename">src/test/java/com/acme/jpa/test/GamePersistenceTestCase.java</div>
 <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;public class GamePersistenceTestCase {&#x000A;    @Deployment&#x000A;    public static Archive&lt;?&gt; createDeployment() {&#x000A;        return ShrinkWrap.create(WebArchive.class, "test.war")&#x000A;            .addPackage(Game.class.getPackage())&#x000A;            .addManifestResource("test-persistence.xml", "persistence.xml")&#x000A;            .addWebResource(EmptyAsset.INSTANCE, "beans.xml");&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">    private static final String[] GAME_TITLES = {&#x000A;        "Super Mario Brothers",&#x000A;        "Mario Kart",&#x000A;        "F-Zero"&#x000A;    };</code>&#x000A;    &#x000A;<code class="prettify">    @PersistenceContext&#x000A;    EntityManager em;</code>&#x000A;    &#x000A;<code class="prettify">    @Inject&#x000A;    UserTransaction utx;</code>&#x000A; &#x000A;<code class="prettify">    // tests go here&#x000A;}</code></pre>
 <p>Let&#8217;s work from top to bottom to understand what&#8217;s going on here before we get to the tests.</p>
@@ -188,7 +188,7 @@ Let&#8217;s add a helper method that enters the sample records into the database
   </li>
 </ul>
 </div>
-<aside id="sidebar" role="complementary">
+<aside role="complementary" id="sidebar">
   <div class="subscribe">
     <h2 class="icon news">
       <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
@@ -200,10 +200,10 @@ Let&#8217;s add a helper method that enters the sample records into the database
     <ul>
       <li>
         <div class="title">
-          <a href="/blog/2012/07/18/arquillian-extension-drone-1-1-0-CR2/">Arquillian Drone Extension 1.1.0.CR2 Released</a>
+          <a href="/blog/2012/07/23/arquillian-extension-drone-1-1-0-CR2/">Arquillian Drone Extension 1.1.0.CR2 Released</a>
         </div>
         <div class="meta">
-          Jul 18, 2012
+          Jul 23, 2012
         </div>
       </li>
       <li>
