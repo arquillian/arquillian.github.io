@@ -42,7 +42,7 @@
         </div>
       </div>
     </header>
-    <div id="main" role="main">
+    <div role="main" id="main">
   <div id="content-header">
     <div class="container">
       <h1>
@@ -55,15 +55,178 @@
   <article class="post">
   <header class="header">
     <h2 class="title">
+      <a href="/blog/2012/03/01/arquillian-extension-android-1-0-0-Alpha1/">Arquillian Android Extension 1.0.0.Alpha1 Released</a>
+    </h2>
+    <div class="byline">
+      <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
+      <span class="dateinline">on Mar 01, 2012</span>
+      <div class="date"><abbr>Mar</abbr> 01</div>
+      <span class="comments">| <a data-disqus-identifier="4d4cdef0231946df2308ee669697c4a033780eb3" href="/blog/2012/03/01/arquillian-extension-android-1-0-0-Alpha1/#disqus_thread">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha1</em> release of the <em>Arquillian Android Extension</em> component!</p>
+<p>The Arquillian Android extension allows you to use the Android SDK in your Arquillian tests. Most notably, it allows you to start an Android Virtual device or connect to a real device. A part of the Android Extension for Arquillian is the Android Drone Extension. This extension allows you to easily configure WebDriver based tests which will be executed directly in an emulator device.</p>
+<p>When testing your application, you can then easily switch between desktop and mobile UI or develop mobile specific tests.</p>
+<h4>How to use it?</h4>
+<p>First, download the Android SDK from <a href="http://developer.android.com/sdk/index.html">developer.android.com</a> and point the ANDROID_HOME system variable to the directory where you extracted the SDK. You can then update and install specific SDK versions by running the `android` command.</p>
+<p>Next, add Android extension to dependencies. This depchain will add both Arquillian Android and Android Drone extensions.</p>
+<pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.extension&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-android-depchain&lt;/artifactId&gt;&#x000A;    &lt;version&gt;1.0.0.Alpha1&lt;/version&gt;&#x000A;    &lt;type&gt;pom&lt;/type&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
+<p><em>Note: Make sure you do <strong>NOT</strong> have the Arquillian Drone Selenium Server on classpath, as it will collide with the Android SDK unless configured to run on a different port. If you can&#8217;t remove it from classpath, you should disable it in <code>arquillian.xml</code></em></p>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="selenium-server"&gt;&#x000A;    &lt;!-- this must be skipped, we run /wd/hub on emulator --&gt;&#x000A;    &lt;property name="skip"&gt;true&lt;/property&gt;&#x000A;&lt;/extension&gt;</code></pre>
+<p>Download the Android Server APK to be installed to you mobile device from <a href="http://code.google.com/p/selenium/downloads/list">code.google.com</a>. Use <strong>android-server-2.6.0.apk</strong> for devices including Android 2.3.4, latest version for Android 3.0 and newer.</p>
+<p>Set up WebDriver in arquillian.xml</p>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="webdriver"&gt;&#x000A;    &lt;!-- this makes WebDriver connect hub on Android device --&gt;&#x000A;    &lt;property name="remoteAddress"&gt;http://localhost:14444/wd/hub&lt;/property&gt;&#x000A;&lt;/extension&gt;</code></pre>
+<p>Set up Android in arquillian.xml</p>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="android"&gt;&#x000A;    &lt;!-- this is optional, can be set via ANDROID_HOME property --&gt;&#x000A;    &lt;property name="home"&gt;/home/kpiwko/apps/android-sdk-linux_x86&lt;/property&gt;&#x000A;    &lt;!-- Nexus S --&gt;&#x000A;    &lt;!-- &lt;property name="serialId"&gt;3233E8EDB21700EC&lt;/property&gt;--&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;property name="verbose"&gt;true&lt;/property&gt;&#x000A;    &lt;property name="apiLevel"&gt;13&lt;/property&gt;&#x000A;    &lt;property name="avdName"&gt;SnapshotEnabled&lt;/property&gt;&#x000A;    &lt;property name="emulatorBootupTimeoutInSeconds"&gt;180&lt;/property&gt;&#x000A;&lt;/extension&gt;</code></pre>
+<p>Properties explained, required in <strong>bold</strong>:</p>
+<ul>
+	<li><strong>home</strong> &#8211; Android SDK home, can be ommited if set via <code>ANDROID_HOME</code> property</li>
+	<li><strong>avdName</strong> &#8211; name of the Android Virtual Device. It will be either created or reused</li>
+	<li>apiLevel &#8211; (10) denotates API level, use <code>android list target</code> to get more variants</li>
+	<li>serialId &#8211; replaces avdName if set and available, represents a real device. Use <code>adb devices</code> to get the list</li>
+	<li>skip &#8211; (false) skip execution</li>
+	<li>verbose &#8211; (false) be verbose</li>
+	<li>force &#8211; (false) force emulator recreationg</li>
+	<li>sdSize &#8211; (128M) SD card size for emulator</li>
+	<li>emulatorBootupTimeoutInSeconds &#8211; (180) maximal time to get emulator started, use Snapshot enabled device if it takes too long</li>
+	<li>emulatorOptions &#8211; emulator options</li>
+</ul>
+<p>Emulators are created by default in <code>${basedir}/${avdName}</code>.</p>
+<p>Set up Android Drone in arquillian.xml</p>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="android-drone"&gt;&#x000A;    &lt;property name="androidServerApk"&gt;android-server-2.16.apk&lt;/property&gt;&#x000A;&lt;/extension&gt;</code></pre>
+<p>Properties explained, required in <strong>bold</strong>:</p>
+<ul>
+	<li><strong>androidServerApk</strong> &#8211; path to the Android Server APK you&#8217;ve downloaded</li>
+	<li>skip &#8211; (false) skip execution</li>
+	<li>verbose &#8211; (false) be verbose</li>
+	<li>webdriverPortHost &#8211; (14444) port on Host connected with port on device</li>
+	<li>webdriverPortGuest &#8211; (8080) port on Guest connected with port on Host</li>
+</ul>
+<p>Big thanks go to Jan Papousek (@jan_papousek) for improving and testing this release!</p>
+<h3>What is Arquillian?</h3>
+<p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
+<h3>Release details</h3>
+<table class="table table-bordered table-striped">
+  <tbody>
+    <tr>
+      <th>Component</th>
+      <td>
+        <a href="/modules/android-extension/">Arquillian Android Extension</a>
+      </td>
+    </tr>
+    <tr>
+      <th>Version</th>
+      <td>
+        1.0.0.Alpha1
+        <span class="label tag">
+          <a href="https://github.com/arquillian/arquillian-extension-android/commit/9bbfa36938f9f94ad2ad885415595552c643c392.html">view tag</a>
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <th>Release date</th>
+      <td>2012-03-01</td>
+    </tr>
+    <tr>
+      <th>Released by</th>
+      <td>Aslak Knutsen</td>
+    </tr>
+    <tr>
+      <th>Compiled against</th>
+      <td>
+        <ul class="unstyled">
+          <li>Arquillian Core &#8211; 1.0.0.CR7</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h3>
+  Published artifacts
+  <small>org.jboss.arquillian.extension</small>
+</h3>
+<ul>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-android-api
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-api/1.0.0.Alpha1/arquillian-android-api-1.0.0.Alpha1.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-api/1.0.0.Alpha1/arquillian-android-api-1.0.0.Alpha1.pom">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-android-bom
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-bom/1.0.0.Alpha1/arquillian-android-bom-1.0.0.Alpha1.pom">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-android-configuration
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-configuration/1.0.0.Alpha1/arquillian-android-configuration-1.0.0.Alpha1.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-configuration/1.0.0.Alpha1/arquillian-android-configuration-1.0.0.Alpha1.pom">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-android-depchain
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-depchain/1.0.0.Alpha1/arquillian-android-depchain-1.0.0.Alpha1.pom">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-android-drone
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-drone/1.0.0.Alpha1/arquillian-android-drone-1.0.0.Alpha1.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-drone/1.0.0.Alpha1/arquillian-android-drone-1.0.0.Alpha1.pom">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-android-impl
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-impl/1.0.0.Alpha1/arquillian-android-impl-1.0.0.Alpha1.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-impl/1.0.0.Alpha1/arquillian-android-impl-1.0.0.Alpha1.pom">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-android-spi
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-spi/1.0.0.Alpha1/arquillian-android-spi-1.0.0.Alpha1.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-spi/1.0.0.Alpha1/arquillian-android-spi-1.0.0.Alpha1.pom">pom</a>
+  </li>
+</ul>
+<h3>
+  Release notes and resolved issues
+  <small>1</small>
+</h3>
+<p>Initial Support for Android via Drone WebDriver</p>
+<p>
+  Thanks to the following list of contributors:
+  <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://github.com/papousek">Jan PapoušEk</a>
+</p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/03/01/arquillian-extension-android-1-0-0-Alpha1/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/android/">android</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
       <a href="/blog/2012/03/01/arquillian-container-osgi-1-0-2-Final/">Arquillian OSGi 1.0.2.Final Released</a>
     </h2>
     <div class="byline">
-      <img src="http://gravatar.com/avatar/ddc41dadd5d79e396783e82ba8e862f6?s=44" class="avatar" />
+      <img class="avatar" src="http://gravatar.com/avatar/ddc41dadd5d79e396783e82ba8e862f6?s=44" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/thomas.diesler">Thomas Diesler</a></span>
       <span class="dateinline">on Mar 01, 2012</span>
       <div class="date"><abbr>Mar</abbr> 01</div>
-      <span class="comments">| <a href="/blog/2012/03/01/arquillian-container-osgi-1-0-2-Final/#disqus_thread" data-disqus-identifier="d0e49ebcfe84d1464841eb3cb1f4cd75478f6293">Comments</a></span>
+      <span class="comments">| <a data-disqus-identifier="d0e49ebcfe84d1464841eb3cb1f4cd75478f6293" href="/blog/2012/03/01/arquillian-container-osgi-1-0-2-Final/#disqus_thread">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -112,8 +275,8 @@
           <th>Compiled against</th>
           <td>
             <ul class="unstyled">
-              <li>Arquillian Core &#8211; 1.0.0.CR7</li>
               <li>JUnit &#8211; 4.8.1</li>
+              <li>Arquillian Core &#8211; 1.0.0.CR7</li>
               <li>ShrinkWrap Core &#8211; 1.0.0-cr-1</li>
             </ul>
           </td>
@@ -129,36 +292,36 @@
         org.jboss.arquillian.container
         &raquo;
         arquillian-container-osgi
-        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/1.0.2.Final/arquillian-container-osgi-1.0.2.Final.jar" target="_blank" class="artifact">jar</a>
-        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/1.0.2.Final/arquillian-container-osgi-1.0.2.Final.pom" target="_blank" class="artifact">pom</a>
+        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/1.0.2.Final/arquillian-container-osgi-1.0.2.Final.jar">jar</a>
+        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/1.0.2.Final/arquillian-container-osgi-1.0.2.Final.pom">pom</a>
       </li>
       <li>
         org.jboss.arquillian.container
         &raquo;
         arquillian-container-osgi-embedded
-        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-embedded/1.0.2.Final/arquillian-container-osgi-embedded-1.0.2.Final.jar" target="_blank" class="artifact">jar</a>
-        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-embedded/1.0.2.Final/arquillian-container-osgi-embedded-1.0.2.Final.pom" target="_blank" class="artifact">pom</a>
+        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-embedded/1.0.2.Final/arquillian-container-osgi-embedded-1.0.2.Final.jar">jar</a>
+        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-embedded/1.0.2.Final/arquillian-container-osgi-embedded-1.0.2.Final.pom">pom</a>
       </li>
       <li>
         org.jboss.arquillian.container
         &raquo;
         arquillian-container-osgi-remote
-        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-remote/1.0.2.Final/arquillian-container-osgi-remote-1.0.2.Final.jar" target="_blank" class="artifact">jar</a>
-        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-remote/1.0.2.Final/arquillian-container-osgi-remote-1.0.2.Final.pom" target="_blank" class="artifact">pom</a>
+        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-remote/1.0.2.Final/arquillian-container-osgi-remote-1.0.2.Final.jar">jar</a>
+        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-remote/1.0.2.Final/arquillian-container-osgi-remote-1.0.2.Final.pom">pom</a>
       </li>
       <li>
         org.jboss.arquillian.protocol
         &raquo;
         arquillian-protocol-osgi
-        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/1.0.2.Final/arquillian-protocol-osgi-1.0.2.Final.jar" target="_blank" class="artifact">jar</a>
-        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/1.0.2.Final/arquillian-protocol-osgi-1.0.2.Final.pom" target="_blank" class="artifact">pom</a>
+        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/1.0.2.Final/arquillian-protocol-osgi-1.0.2.Final.jar">jar</a>
+        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/1.0.2.Final/arquillian-protocol-osgi-1.0.2.Final.pom">pom</a>
       </li>
       <li>
         org.jboss.arquillian.testenricher
         &raquo;
         arquillian-testenricher-osgi
-        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-osgi/1.0.2.Final/arquillian-testenricher-osgi-1.0.2.Final.jar" target="_blank" class="artifact">jar</a>
-        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-osgi/1.0.2.Final/arquillian-testenricher-osgi-1.0.2.Final.pom" target="_blank" class="artifact">pom</a>
+        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-osgi/1.0.2.Final/arquillian-testenricher-osgi-1.0.2.Final.jar">jar</a>
+        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-osgi/1.0.2.Final/arquillian-testenricher-osgi-1.0.2.Final.pom">pom</a>
       </li>
     </ul>
     <p>
@@ -171,7 +334,7 @@
     |
     <i class="icon-tags"></i>
     tagged as
-    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/container-adapter/" class="tag">container-adapter</a> <a href="/blog/tags/osgi/" class="tag">osgi</a>
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/osgi/">osgi</a>
   </div>
 </article>
 <article class="post">
@@ -180,12 +343,12 @@
       <a href="/blog/2012/02/27/arquillian-container-openshift-1-0-0-Alpha2/">Arquillian Container OpenShift 1.0.0.Alpha2 Released</a>
     </h2>
     <div class="byline">
-      <img src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" class="avatar" />
+      <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
       <span class="dateinline">on Feb 27, 2012</span>
       <div class="date"><abbr>Feb</abbr> 27</div>
-      <span class="comments">| <a href="/blog/2012/02/27/arquillian-container-openshift-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="d2439dafcacdc5edb38afd78193621da879b8130">Comments</a></span>
+      <span class="comments">| <a data-disqus-identifier="d2439dafcacdc5edb38afd78193621da879b8130" href="/blog/2012/02/27/arquillian-container-openshift-1-0-0-Alpha2/#disqus_thread">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -245,8 +408,8 @@ deployment context root.</p>
     org.jboss.arquillian.container
     &raquo;
     arquillian-openshift-express
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-openshift-express/1.0.0.Alpha2/arquillian-openshift-express-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-openshift-express/1.0.0.Alpha2/arquillian-openshift-express-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-openshift-express/1.0.0.Alpha2/arquillian-openshift-express-1.0.0.Alpha2.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-openshift-express/1.0.0.Alpha2/arquillian-openshift-express-1.0.0.Alpha2.pom">pom</a>
   </li>
 </ul>
 <h3>
@@ -254,16 +417,6 @@ deployment context root.</p>
   <small>7</small>
 </h3>
 <p></p>
-<dl>
-  <dt>Bug</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-621">ARQ-621</a> -         openshift container - unable to deploy zip assets</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-781">ARQ-781</a> -         openshift container - improve deployment url detection</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-789">ARQ-789</a> -         Deployment scanning for JAR archives is broken</li>
-    </ul>
-  </dd>
-</dl>
 <dl>
   <dt>Component  Upgrade</dt>
   <dd>
@@ -281,6 +434,16 @@ deployment context root.</p>
     </ul>
   </dd>
 </dl>
+<dl>
+  <dt>Bug</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-621">ARQ-621</a> -         openshift container - unable to deploy zip assets</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-781">ARQ-781</a> -         openshift container - improve deployment url detection</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-789">ARQ-789</a> -         Deployment scanning for JAR archives is broken</li>
+    </ul>
+  </dd>
+</dl>
 <p>
   Thanks to the following list of contributors:
   <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://github.com/papousek">Jan PapoušEk</a>, <a href="https://community.jboss.org/people/jharting">Jozef Hartinger</a>
@@ -291,7 +454,7 @@ deployment context root.</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/container-adapter/" class="tag">container-adapter</a> <a href="/blog/tags/openshift/" class="tag">openshift</a>
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/openshift/">openshift</a>
   </div>
 </article>
 <article class="post">
@@ -300,12 +463,12 @@ deployment context root.</p>
       <a href="/blog/2012/02/23/very-large-active-development-team/">Very large, active development team</a>
     </h2>
     <div class="byline">
-      <img src="http://gravatar.com/avatar/dcccd96c499963133f7f95e7ffa20c4e?s=44" class="avatar" />
+      <img class="avatar" src="http://gravatar.com/avatar/dcccd96c499963133f7f95e7ffa20c4e?s=44" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/dan.j.allen">Dan Allen</a></span>
       <span class="dateinline">on Feb 23, 2012</span>
       <div class="date"><abbr>Feb</abbr> 23</div>
-      <span class="comments">| <a href="/blog/2012/02/23/very-large-active-development-team/#disqus_thread" data-disqus-identifier="9763143d43045749c7907c0ea76c8d643a5cec7d">Comments</a></span>
+      <span class="comments">| <a data-disqus-identifier="9763143d43045749c7907c0ea76c8d643a5cec7d" href="/blog/2012/02/23/very-large-active-development-team/#disqus_thread">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -323,7 +486,7 @@ deployment context root.</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a href="/blog/tags/stats/" class="tag">stats</a> <a href="/blog/tags/contributors/" class="tag">contributors</a> <a href="/blog/tags/2012/" class="tag">2012</a> <a href="/blog/tags/nonrelease/" class="tag">nonrelease</a>
+    <a class="tag" href="/blog/tags/stats/">stats</a> <a class="tag" href="/blog/tags/contributors/">contributors</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
   </div>
 </article>
 <article class="post">
@@ -332,12 +495,12 @@ deployment context root.</p>
       <a href="/blog/2012/02/23/arquillian-container-tomcat-1-0-0-CR3/">Arquillian Container Tomcat 1.0.0.CR3 Released</a>
     </h2>
     <div class="byline">
-      <img src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" class="avatar" />
+      <img class="avatar" src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a></span>
       <span class="dateinline">on Feb 23, 2012</span>
       <div class="date"><abbr>Feb</abbr> 23</div>
-      <span class="comments">| <a href="/blog/2012/02/23/arquillian-container-tomcat-1-0-0-CR3/#disqus_thread" data-disqus-identifier="61546cb3d7f97cfcf69c1844178ddf4df5571573">Comments</a></span>
+      <span class="comments">| <a data-disqus-identifier="61546cb3d7f97cfcf69c1844178ddf4df5571573" href="/blog/2012/02/23/arquillian-container-tomcat-1-0-0-CR3/#disqus_thread">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -415,50 +578,50 @@ deployment context root.</p>
     org.jboss.arquillian.container
     &raquo;
     arquillian-tomcat-common
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-common/1.0.0.CR3/arquillian-tomcat-common-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-common/1.0.0.CR3/arquillian-tomcat-common-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-common/1.0.0.CR3/arquillian-tomcat-common-1.0.0.CR3.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-common/1.0.0.CR3/arquillian-tomcat-common-1.0.0.CR3.pom">pom</a>
   </li>
   <li>
     org.jboss.arquillian.container
     &raquo;
     arquillian-tomcat-embedded-6
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-6/1.0.0.CR3/arquillian-tomcat-embedded-6-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-6/1.0.0.CR3/arquillian-tomcat-embedded-6-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-6/1.0.0.CR3/arquillian-tomcat-embedded-6-1.0.0.CR3.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-6/1.0.0.CR3/arquillian-tomcat-embedded-6-1.0.0.CR3.pom">pom</a>
   </li>
   <li>
     org.jboss.arquillian.container
     &raquo;
     arquillian-tomcat-embedded-7
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-7/1.0.0.CR3/arquillian-tomcat-embedded-7-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-7/1.0.0.CR3/arquillian-tomcat-embedded-7-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-7/1.0.0.CR3/arquillian-tomcat-embedded-7-1.0.0.CR3.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-7/1.0.0.CR3/arquillian-tomcat-embedded-7-1.0.0.CR3.pom">pom</a>
   </li>
   <li>
     org.jboss.arquillian.container
     &raquo;
     arquillian-tomcat-managed-5.5
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-5.5/1.0.0.CR3/arquillian-tomcat-managed-5.5-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-5.5/1.0.0.CR3/arquillian-tomcat-managed-5.5-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-5.5/1.0.0.CR3/arquillian-tomcat-managed-5.5-1.0.0.CR3.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-5.5/1.0.0.CR3/arquillian-tomcat-managed-5.5-1.0.0.CR3.pom">pom</a>
   </li>
   <li>
     org.jboss.arquillian.container
     &raquo;
     arquillian-tomcat-managed-6
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-6/1.0.0.CR3/arquillian-tomcat-managed-6-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-6/1.0.0.CR3/arquillian-tomcat-managed-6-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-6/1.0.0.CR3/arquillian-tomcat-managed-6-1.0.0.CR3.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-6/1.0.0.CR3/arquillian-tomcat-managed-6-1.0.0.CR3.pom">pom</a>
   </li>
   <li>
     org.jboss.arquillian.container
     &raquo;
     arquillian-tomcat-managed-7
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-7/1.0.0.CR3/arquillian-tomcat-managed-7-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-7/1.0.0.CR3/arquillian-tomcat-managed-7-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-7/1.0.0.CR3/arquillian-tomcat-managed-7-1.0.0.CR3.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-7/1.0.0.CR3/arquillian-tomcat-managed-7-1.0.0.CR3.pom">pom</a>
   </li>
   <li>
     org.jboss.arquillian.container
     &raquo;
     arquillian-tomcat-remote-6
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-remote-6/1.0.0.CR3/arquillian-tomcat-remote-6-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-remote-6/1.0.0.CR3/arquillian-tomcat-remote-6-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-remote-6/1.0.0.CR3/arquillian-tomcat-remote-6-1.0.0.CR3.jar">jar</a>
+    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-remote-6/1.0.0.CR3/arquillian-tomcat-remote-6-1.0.0.CR3.pom">pom</a>
   </li>
 </ul>
 <h3>
@@ -467,18 +630,18 @@ deployment context root.</p>
 </h3>
 <p>Small bug fix</p>
 <dl>
-  <dt>Bug</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-630">ARQ-630</a> -         The default charset is used to encode the HTTP BASIC AUTH credentials string into a sequence of bytes. ISO-8859-1 should be used for Tomcat</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
   <dt>Feature Request</dt>
   <dd>
     <ul class="unstyled">
       <li><a href="https://issues.jboss.org/browse/ARQ-744">ARQ-744</a> -         All Managed containers should be able to read JAVA_HOME from current JVM if not defined</li>
+    </ul>
+  </dd>
+</dl>
+<dl>
+  <dt>Bug</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-630">ARQ-630</a> -         The default charset is used to encode the HTTP BASIC AUTH credentials string into a sequence of bytes. ISO-8859-1 should be used for Tomcat</li>
     </ul>
   </dd>
 </dl>
@@ -492,190 +655,7 @@ deployment context root.</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/container-adapter/" class="tag">container-adapter</a> <a href="/blog/tags/tomcat/" class="tag">tomcat</a>
-  </div>
-</article>
-<article class="post">
-  <header class="header">
-    <h2 class="title">
-      <a href="/blog/2012/02/23/arquillian-container-jbossas-1-0-0-CR3/">Arquillian Container JBoss AS 1.0.0.CR3 Released</a>
-    </h2>
-    <div class="byline">
-      <img src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" class="avatar" />
-      <span class="author">Posted by
-      <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a></span>
-      <span class="dateinline">on Feb 23, 2012</span>
-      <div class="date"><abbr>Feb</abbr> 23</div>
-      <span class="comments">| <a href="/blog/2012/02/23/arquillian-container-jbossas-1-0-0-CR3/#disqus_thread" data-disqus-identifier="4fcf4abffc5a8ced138284a1114eaf859fbc8fd5">Comments</a></span>
-    </div>
-  </header>
-  <div class="body">
-    <p>The Arquillian team is proud to announce the <em>1.0.0.CR3</em> release of the <em>Arquillian Container JBoss AS</em> component!</p>
-<h3>Some of the highlights in this release</h3>
-<p><strong>JavaHome</strong> configuration option now default to the Arquillian running JVM</p>
-<p>Add configuration support for <strong>portSet</strong> to JBoss AS 5.1/6 Managed containers</p>
-<div class="filename">arquillian.xml</div>
-<pre class="prettify"><code class="prettify">&lt;arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;  xmlns="http://jboss.org/schema/arquillian"&#x000A;  xsi:schemaLocation="&#x000A;      http://jboss.org/schema/arquillian&#x000A;      http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;</code>&#x000A;&#x000A;<code class="prettify">  &lt;container qualifier="jboss"&gt;&#x000A;    &lt;property name="portSet"&gt;ports-01&lt;/property&gt;&#x000A;  &lt;/container&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/arquillian&gt;</code></pre>
-<p>Setting the <code>portSet</code> will automatically set the http and rmi ports to be use based on the pre defined sets in the JBoss AS configuration.</p>
-<p>Add configuration support for <strong>partition</strong> to JBoss AS 4.2/5.1/6 Managed containers</p>
-<div class="filename">arquillian.xml</div>
-<pre class="prettify"><code class="prettify">&lt;arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;  xmlns="http://jboss.org/schema/arquillian"&#x000A;  xsi:schemaLocation="&#x000A;      http://jboss.org/schema/arquillian&#x000A;      http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;</code>&#x000A;&#x000A;<code class="prettify">  &lt;group qualifier="cluster"&gt;&#x000A;    &lt;container qualifier="jboss-1"&gt;&#x000A;      &lt;property name="partition"&gt;X-1&lt;/property&gt;&#x000A;    &lt;/container&gt;&#x000A;    &lt;container qualifier="jboss-2"&gt;&#x000A;      &lt;property name="partition"&gt;X-1&lt;/property&gt;&#x000A;    &lt;/container&gt;&#x000A;  &lt;/group&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/arquillian&gt;</code></pre>
-<p>Using the same <code>partition</code> id on a <code>group</code> of <code>containers</code> defined in <code>arquillian.xml</code> will allow them to form a cluster.</p>
-<h3>What is Arquillian?</h3>
-<p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
-<h3>Release details</h3>
-<table class="table table-bordered table-striped">
-  <tbody>
-    <tr>
-      <th>Component</th>
-      <td>Arquillian Container JBoss AS</td>
-    </tr>
-    <tr>
-      <th>Modules</th>
-      <td>
-        <ul class="unstyled">
-          <li>
-            <a href="/modules/jbossas-managed-4.2-container-adapter/">Arquillian JBoss AS Managed 4.2.x Container Adapter</a>
-          </li>
-          <li>
-            <a href="/modules/jbossas-remote-4.2-container-adapter/">Arquillian JBoss AS Remote 4.2.x Container Adapter</a>
-          </li>
-          <li>
-            <a href="/modules/jbossas-remote-5-container-adapter/">Arquillian JBoss AS Remote 5.x Container Adapter</a>
-          </li>
-          <li>
-            <a href="/modules/jbossas-managed-5.1-container-adapter/">Arquillian JBoss AS Managed 5.1.x Container Adapter</a>
-          </li>
-          <li>
-            <a href="/modules/jbossas-remote-5.1-container-adapter/">Arquillian JBoss AS Remote 5.1.x Container Adapter</a>
-          </li>
-          <li>
-            <a href="/modules/jbossas-embedded-6-container-adapter/">Arquillian JBoss AS Embedded 6.x Container Adapter</a>
-          </li>
-          <li>
-            <a href="/modules/jbossas-managed-6-container-adapter/">Arquillian JBoss AS Managed 6.x Container Adapter</a>
-          </li>
-          <li>
-            <a href="/modules/jbossas-remote-6-container-adapter/">Arquillian JBoss AS Remote 6.x Container Adapter</a>
-          </li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <th>Version</th>
-      <td>
-        1.0.0.CR3
-        <span class="label tag">
-          <a href="https://github.com/arquillian/arquillian-container-jbossas/commit/2ffd4affe75caef178275ab32c0ca49345c122e8.html">view tag</a>
-        </span>
-      </td>
-    </tr>
-    <tr>
-      <th>Release date</th>
-      <td>2012-02-23</td>
-    </tr>
-    <tr>
-      <th>Released by</th>
-      <td>Aslak Knutsen</td>
-    </tr>
-    <tr>
-      <th>Compiled against</th>
-      <td>
-        <ul class="unstyled">
-          <li>Arquillian Core &#8211; 1.0.0.CR7</li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-<h3>
-  Published artifacts
-  <small>org.jboss.arquillian.container</small>
-</h3>
-<ul>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-jbossas-embedded-6
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-embedded-6/1.0.0.CR3/arquillian-jbossas-embedded-6-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-embedded-6/1.0.0.CR3/arquillian-jbossas-embedded-6-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-jbossas-managed-4.2
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-managed-4.2/1.0.0.CR3/arquillian-jbossas-managed-4.2-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-managed-4.2/1.0.0.CR3/arquillian-jbossas-managed-4.2-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-jbossas-managed-5.1
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-managed-5.1/1.0.0.CR3/arquillian-jbossas-managed-5.1-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-managed-5.1/1.0.0.CR3/arquillian-jbossas-managed-5.1-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-jbossas-managed-6
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-managed-6/1.0.0.CR3/arquillian-jbossas-managed-6-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-managed-6/1.0.0.CR3/arquillian-jbossas-managed-6-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-jbossas-remote-4.2
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-remote-4.2/1.0.0.CR3/arquillian-jbossas-remote-4.2-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-remote-4.2/1.0.0.CR3/arquillian-jbossas-remote-4.2-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-jbossas-remote-5
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-remote-5/1.0.0.CR3/arquillian-jbossas-remote-5-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-remote-5/1.0.0.CR3/arquillian-jbossas-remote-5-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-jbossas-remote-5.1
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-remote-5.1/1.0.0.CR3/arquillian-jbossas-remote-5.1-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-remote-5.1/1.0.0.CR3/arquillian-jbossas-remote-5.1-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-jbossas-remote-6
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-remote-6/1.0.0.CR3/arquillian-jbossas-remote-6-1.0.0.CR3.jar" target="_blank" class="artifact">jar</a>
-    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-jbossas-remote-6/1.0.0.CR3/arquillian-jbossas-remote-6-1.0.0.CR3.pom" target="_blank" class="artifact">pom</a>
-  </li>
-</ul>
-<h3>
-  Release notes and resolved issues
-  <small>4</small>
-</h3>
-<p>Small bug fix</p>
-<dl>
-  <dt>Feature Request</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-476">ARQ-476</a> -         Support portOffset in JBoss ContainerConfiguration</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-717">ARQ-717</a> -         JBoss AS managed containers should support setting partition</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-744">ARQ-744</a> -         All Managed containers should be able to read JAVA_HOME from current JVM if not defined</li>
-    </ul>
-  </dd>
-</dl>
-<p>
-  Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/davided80">Davide D'alto</a>, <a href="https://community.jboss.org/people/maschmid">Marek Schmidt</a>
-</p>
-  </div>
-  <div class="footer">
-    <a href="/blog/2012/02/23/arquillian-container-jbossas-1-0-0-CR3/">permalink</a>
-    |
-    <i class="icon-tags"></i>
-    tagged as
-    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/container-adapter/" class="tag">container-adapter</a> <a href="/blog/tags/jbossas/" class="tag">jbossas</a>
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/tomcat/">tomcat</a>
   </div>
   
               <script type="text/javascript">
@@ -697,7 +677,7 @@ deployment context root.</p>
   </li>
 </ul>
 </div>
-<aside id="sidebar" role="complementary">
+<aside role="complementary" id="sidebar">
   <div class="subscribe">
     <h2 class="icon news">
       <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
@@ -707,6 +687,14 @@ deployment context root.</p>
   <nav class="latest">
     <h2>Latest Posts</h2>
     <ul>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/">Arquillian Spring Framework Extension 1.0.0.Alpha2 Released</a>
+        </div>
+        <div class="meta">
+          Jul 24, 2012
+        </div>
+      </li>
       <li>
         <div class="title">
           <a href="/blog/2012/07/24/arquillian-testrunner-spock-1-0-0-Alpha2/">Arquillian TestRunner Spock 1.0.0.Alpha2 Released</a>
@@ -739,17 +727,9 @@ deployment context root.</p>
           Jun 05, 2012
         </div>
       </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2012/06/01/arquillian-core-1-0-1-Final/">Arquillian Core 1.0.1.Final Released</a>
-        </div>
-        <div class="meta">
-          Jun 01, 2012
-        </div>
-      </li>
     </ul>
     
-                <div id="popularposts" class="dsq-widget">
+                <div class="dsq-widget" id="popularposts">
                   <h2 class="dsq-widget-title">Popular Posts</h2>
                   <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
                   <script>
@@ -931,7 +911,7 @@ deployment context root.</p>
       <span class="tag tag-1">
         <a href="/blog/tags/spock/">spock</a>
       </span>
-      <span class="tag tag-0">
+      <span class="tag tag-1">
         <a href="/blog/tags/spring/">spring</a>
       </span>
       <span class="tag tag-0">
