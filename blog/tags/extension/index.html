@@ -42,7 +42,7 @@
         </div>
       </div>
     </header>
-    <div role="main" id="main">
+    <div id="main" role="main">
   <div id="content-header">
     <div class="container">
       <h1>
@@ -63,20 +63,18 @@
       <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a></span>
       <span class="dateinline">on Jul 24, 2012</span>
       <div class="date"><abbr>Jul</abbr> 24</div>
-      <span class="comments">| <a data-disqus-identifier="7559a727726beea6f0de6f3aab0ce87ed8a5abfe" href="/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/#disqus_thread">Comments</a></span>
+      <span class="comments">| <a href="/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="7559a727726beea6f0de6f3aab0ce87ed8a5abfe">Comments</a></span>
     </div>
   </header>
   <div class="body">
     <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha2</em> release of the <em>Arquillian Spring Framework Extension</em> component!</p>
-<p>This release has some major improvements on the extension and also introduced completely new features.</p>
+<p>This release contain many improvements on the existing extension, but also some new features.</p>
 <h3 class="highlights">Some of the highlights in this release</h3>
 <p><i class="icon-star"></i> Warp Spring MVC Extension<br />
 <i class="icon-star"></i> Spring Embedded Container<br />
 <i class="icon-star"></i> Separated the integration capabilities</p>
 <h3>Testing Spring MVC with Warp</h3>
-<p><a href="/modules/warp-extension/">Arquillian Warp</a> is a powerful tool that let you run the functional test against your web front end <br />
-and at the same time verify the internal state of your application. With this release we are introducing the Warp extension for testing <br />
-Spring MVC applications that run in a real servlet container.</p>
+<p><a href="/modules/warp-extension/">Arquillian Warp</a> is a powerful tool that let you run the functional test against your web front end and at the same time verify the internal state of your application. With this release we are introducing the Warp extension for testing Spring MVC applications that run in a real servlet container.</p>
 <p>Let&#8217;s dive into an example of how to test a Spring MVC application using Arquillian Warp. First we need to prepare the application descriptor.</p>
 <div class="filename">web.xml</div>
 <pre class="prettify"><code class="prettify">&lt;web-app xmlns="http://java.sun.com/xml/ns/javaee"&#x000A;         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"&#x000A;         version="3.0"&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;servlet&gt;&#x000A;        &lt;servlet-name&gt;welcome&lt;/servlet-name&gt;&#x000A;        &lt;servlet-class&gt;org.jboss.arquillian.warp.extension.spring.servlet.WarpDispatcherServlet&lt;/servlet-class&gt;&#x000A;        &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;&#x000A;    &lt;/servlet&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;servlet-mapping&gt;&#x000A;        &lt;servlet-name&gt;welcome&lt;/servlet-name&gt;&#x000A;        &lt;url-pattern&gt;*.do&lt;/url-pattern&gt;&#x000A;    &lt;/servlet-mapping&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/web-app&gt;</code></pre>
@@ -84,27 +82,19 @@ Spring MVC applications that run in a real servlet container.</p>
 <p>And the testing code:</p>
 <div class="filename">LoginControllerTestCase.java</div>
 <pre class="prettify"><code class="prettify">@WarpTest&#x000A;@RunWith(Arquillian.class)&#x000A;public class LoginControllerTestCase {</code>&#x000A;&#x000A;<code class="prettify">    @Drone&#x000A;    WebDriver browser;</code>&#x000A;&#x000A;<code class="prettify">    @ArquillianResource&#x000A;    URL contextPath;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    @RunAsClient&#x000A;    public void testLoginValidationErrors() {&#x000A;        browser.navigate().to(contextPath + "login.do");</code>&#x000A;&#x000A;<code class="prettify">        Warp.execute(new ClientAction() {</code>&#x000A;&#x000A;<code class="prettify">            @Override&#x000A;            public void action() {</code>&#x000A;&#x000A;<code class="prettify">                browser.findElement(By.id("loginForm")).submit();&#x000A;            }&#x000A;        }).verify(new LoginControllerValidationErrorsVerification());&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    @RunAsClient&#x000A;    public void testLoginSuccess() {&#x000A;        browser.navigate().to(contextPath + "login.do");&#x000A;        browser.findElement(By.id("login")).sendKeys("warp");&#x000A;        browser.findElement(By.id("password")).sendKeys("warp");</code>&#x000A;&#x000A;<code class="prettify">        Warp.execute(new ClientAction() {</code>&#x000A;&#x000A;<code class="prettify">            @Override&#x000A;            public void action() {</code>&#x000A;&#x000A;<code class="prettify">                browser.findElement(By.id("loginForm")).submit();&#x000A;            }&#x000A;        }).verify(new LoginSuccessVerification());&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    public static class LoginControllerValidationErrorsVerification extends ServerAssertion {</code>&#x000A;&#x000A;<code class="prettify">            private static final long serialVersionUID = 1L;</code>&#x000A;&#x000A;<code class="prettify">            @SpringMvcResource&#x000A;            private ModelAndView modelAndView;</code>&#x000A;&#x000A;<code class="prettify">            @SpringMvcResource&#x000A;            private Errors errors;</code>&#x000A;&#x000A;<code class="prettify">            @AfterServlet&#x000A;            public void testGetLogin() {</code>&#x000A;&#x000A;<code class="prettify">                assertEquals("login", modelAndView.getViewName());&#x000A;                assertNotNull(modelAndView.getModel().get("userCredentials"));&#x000A;                assertEquals("Two errors were expected.", 2, errors.getAllErrors().size());&#x000A;                assertTrue("The login hasn't been validated.", errors.hasFieldErrors("login"));&#x000A;                assertTrue("The password hasn't been validated.", errors.hasFieldErrors("password"));&#x000A;            }&#x000A;        }</code>&#x000A;&#x000A;<code class="prettify">    public static class LoginSuccessVerification extends ServerAssertion {</code>&#x000A;&#x000A;<code class="prettify">        private static final long serialVersionUID = 1L;</code>&#x000A;&#x000A;<code class="prettify">        @SpringMvcResource&#x000A;        private ModelAndView modelAndView;</code>&#x000A;&#x000A;<code class="prettify">        @SpringMvcResource&#x000A;        private Errors errors;</code>&#x000A;&#x000A;<code class="prettify">        @AfterServlet&#x000A;        public void testGetLogin() {</code>&#x000A;&#x000A;<code class="prettify">            assertEquals("welcome", modelAndView.getViewName());&#x000A;            assertFalse(errors.hasErrors());&#x000A;        }&#x000A;    }&#x000A;}</code></pre>
-<p>In the above example we are using <a href="/modules/drone-extension/">Arquillian Drone</a> to navigate to the login page of our application and then <br />
-filling in the login form with our user credentials.</p>
-<p>The internal state of the DispatcherServlet is caught in a SpringMvcResult object which can be injected into the<br />
-ServerAssertion. We can also inject other required objects like the ModelAndView.</p>
+<p>In the above example we are using <a href="/modules/drone-extension/">Arquillian Drone</a> to navigate to the login page of our application and then filling in the login form with our user credentials.</p>
+<p>The internal state of the DispatcherServlet is caught in a SpringMvcResult object which can be injected into the ServerAssertion. We can also inject other required objects like the ModelAndView.</p>
 <h3>Spring Embedded Container</h3>
-<p>Each development cycle may end in repeatedly re-running the integration tests, each time taking significant amount<br />
-of time. The embedded container was thought to aid this situation. Running the tests embedded will decrease the<br />
-execution time from seconds to milliseconds. It will help testing business objects, but since it&#8217;s not a full servlet<br />
-container you won&#8217;t be able to use it for testing servlet requests in a web application.</p>
+<p>Each development cycle may end in repeatedly re-running the integration tests, each time taking significant amount of time. The embedded container was thought to aid this situation. Running the tests embedded will decrease the execution time from seconds to milliseconds. It will help testing business objects, but since it&#8217;s not a full servlet container you won&#8217;t be able to use it for testing servlet requests in a web application.</p>
 <h3>Migrating from 1.0.0.Alpha1</h3>
 <p>1.0.0.Alpha2 comes with a couple significant changes from the previous version.</p>
 <ul>
-	<li>The Spring integration functionality has been separated out to its own module and is now part of the arquillian-service-integration-spring-inject module,<br />
-  and additional the arquillian-service-integration-spring-inject and the arquillian-service-integration-spring-javaconfig that<br />
-  does not target any specific Spring version, but rather provide functionality like XML or Java-based configuration.</li>
+	<li>The Spring integration functionality has been separated out to its own module and is now part of the arquillian-service-integration-spring-inject module, and additional the arquillian-service-integration-spring-inject and the arquillian-service-integration-spring-javaconfig that does not target any specific Spring version, but rather provide functionality like XML or Java-based configuration.</li>
 	<li>The arquillian-service-deployer-spring module&#8217;s can still be used for autopackging the Spring artifacts.</li>
 	<li>The @SpringAnnotatedConfiguration has been renamed to @SpringAnnotationConfiguration.</li>
 </ul>
 <h3>Roadmap</h3>
-<p>The next release is planned to include Spring transaction support and will introduce even better Warp integration<br />
-on the client side in order make REST testing even simpler.</p>
+<p>The next release is planned to include Spring transaction support and will introduce even better Warp integration on the client side in order make REST testing even simpler.</p>
 <p>We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
 <h3>What is Arquillian?</h3>
 <p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
@@ -154,64 +144,64 @@ on the client side in order make REST testing even simpler.</p>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-container-spring
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-container-spring/1.0.0.Alpha2/arquillian-container-spring-1.0.0.Alpha2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-container-spring/1.0.0.Alpha2/arquillian-container-spring-1.0.0.Alpha2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-container-spring/1.0.0.Alpha2/arquillian-container-spring-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-container-spring/1.0.0.Alpha2/arquillian-container-spring-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-service-deployer-spring-2.5
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Alpha2/arquillian-service-deployer-spring-2.5-1.0.0.Alpha2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Alpha2/arquillian-service-deployer-spring-2.5-1.0.0.Alpha2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Alpha2/arquillian-service-deployer-spring-2.5-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Alpha2/arquillian-service-deployer-spring-2.5-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-service-deployer-spring-3
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Alpha2/arquillian-service-deployer-spring-3-1.0.0.Alpha2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Alpha2/arquillian-service-deployer-spring-3-1.0.0.Alpha2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Alpha2/arquillian-service-deployer-spring-3-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Alpha2/arquillian-service-deployer-spring-3-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-service-deployer-spring-common
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Alpha2/arquillian-service-deployer-spring-common-1.0.0.Alpha2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Alpha2/arquillian-service-deployer-spring-common-1.0.0.Alpha2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Alpha2/arquillian-service-deployer-spring-common-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Alpha2/arquillian-service-deployer-spring-common-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-service-integration-spring
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Alpha2/arquillian-service-integration-spring-1.0.0.Alpha2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Alpha2/arquillian-service-integration-spring-1.0.0.Alpha2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Alpha2/arquillian-service-integration-spring-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Alpha2/arquillian-service-integration-spring-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-service-integration-spring-inject
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Alpha2/arquillian-service-integration-spring-inject-1.0.0.Alpha2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Alpha2/arquillian-service-integration-spring-inject-1.0.0.Alpha2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Alpha2/arquillian-service-integration-spring-inject-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Alpha2/arquillian-service-integration-spring-inject-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-service-integration-spring-javaconfig
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Alpha2/arquillian-service-integration-spring-javaconfig-1.0.0.Alpha2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Alpha2/arquillian-service-integration-spring-javaconfig-1.0.0.Alpha2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Alpha2/arquillian-service-integration-spring-javaconfig-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Alpha2/arquillian-service-integration-spring-javaconfig-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-warp-spring
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Alpha2/arquillian-warp-spring-1.0.0.Alpha2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Alpha2/arquillian-warp-spring-1.0.0.Alpha2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Alpha2/arquillian-warp-spring-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Alpha2/arquillian-warp-spring-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-warp-spring-ftest
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring-ftest/1.0.0.Alpha2/arquillian-warp-spring-ftest-1.0.0.Alpha2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring-ftest/1.0.0.Alpha2/arquillian-warp-spring-ftest-1.0.0.Alpha2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring-ftest/1.0.0.Alpha2/arquillian-warp-spring-ftest-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring-ftest/1.0.0.Alpha2/arquillian-warp-spring-ftest-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
   </li>
 </ul>
 <h3>
@@ -247,7 +237,7 @@ on the client side in order make REST testing even simpler.</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/gsoc/">gsoc</a> <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/spring/">spring</a>
+    <a href="/blog/tags/gsoc/" class="tag">gsoc</a> <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/spring/" class="tag">spring</a>
   </div>
 </article>
 <article class="post">
@@ -261,7 +251,7 @@ on the client side in order make REST testing even simpler.</p>
       <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
       <span class="dateinline">on Jul 23, 2012</span>
       <div class="date"><abbr>Jul</abbr> 23</div>
-      <span class="comments">| <a data-disqus-identifier="238272126eafc3769c05a89332127657e4f5d94d" href="/blog/2012/07/23/arquillian-extension-drone-1-1-0-CR2/#disqus_thread">Comments</a></span>
+      <span class="comments">| <a href="/blog/2012/07/23/arquillian-extension-drone-1-1-0-CR2/#disqus_thread" data-disqus-identifier="238272126eafc3769c05a89332127657e4f5d94d">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -318,68 +308,68 @@ It&#8217;s a pleasure to work with you guys!</p>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-api
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR2/arquillian-drone-api-1.1.0.CR2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR2/arquillian-drone-api-1.1.0.CR2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR2/arquillian-drone-api-1.1.0.CR2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR2/arquillian-drone-api-1.1.0.CR2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-bom
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-bom/1.1.0.CR2/arquillian-drone-bom-1.1.0.CR2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-bom/1.1.0.CR2/arquillian-drone-bom-1.1.0.CR2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-configuration
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR2/arquillian-drone-configuration-1.1.0.CR2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR2/arquillian-drone-configuration-1.1.0.CR2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR2/arquillian-drone-configuration-1.1.0.CR2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR2/arquillian-drone-configuration-1.1.0.CR2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-impl
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR2/arquillian-drone-impl-1.1.0.CR2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR2/arquillian-drone-impl-1.1.0.CR2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR2/arquillian-drone-impl-1.1.0.CR2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR2/arquillian-drone-impl-1.1.0.CR2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-selenium
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR2/arquillian-drone-selenium-1.1.0.CR2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR2/arquillian-drone-selenium-1.1.0.CR2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR2/arquillian-drone-selenium-1.1.0.CR2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR2/arquillian-drone-selenium-1.1.0.CR2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-selenium-depchain
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-depchain/1.1.0.CR2/arquillian-drone-selenium-depchain-1.1.0.CR2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-depchain/1.1.0.CR2/arquillian-drone-selenium-depchain-1.1.0.CR2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-selenium-server
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR2/arquillian-drone-selenium-server-1.1.0.CR2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR2/arquillian-drone-selenium-server-1.1.0.CR2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR2/arquillian-drone-selenium-server-1.1.0.CR2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR2/arquillian-drone-selenium-server-1.1.0.CR2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-spi
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR2/arquillian-drone-spi-1.1.0.CR2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR2/arquillian-drone-spi-1.1.0.CR2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR2/arquillian-drone-spi-1.1.0.CR2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR2/arquillian-drone-spi-1.1.0.CR2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-webdriver
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR2/arquillian-drone-webdriver-1.1.0.CR2.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR2/arquillian-drone-webdriver-1.1.0.CR2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR2/arquillian-drone-webdriver-1.1.0.CR2.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR2/arquillian-drone-webdriver-1.1.0.CR2.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-webdriver-depchain
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver-depchain/1.1.0.CR2/arquillian-drone-webdriver-depchain-1.1.0.CR2.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver-depchain/1.1.0.CR2/arquillian-drone-webdriver-depchain-1.1.0.CR2.pom" target="_blank" class="artifact">pom</a>
   </li>
 </ul>
 <h3>
@@ -410,7 +400,7 @@ It&#8217;s a pleasure to work with you guys!</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/drone/">drone</a>
+    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/drone/" class="tag">drone</a>
   </div>
 </article>
 <article class="post">
@@ -424,7 +414,7 @@ It&#8217;s a pleasure to work with you guys!</p>
       <a href="https://github.com/papousek">Jan PapoušEk</a></span>
       <span class="dateinline">on Jun 27, 2012</span>
       <div class="date"><abbr>Jun</abbr> 27</div>
-      <span class="comments">| <a data-disqus-identifier="da6e582677f297dffeb846275396c3aaf51de052" href="/blog/2012/06/27/arquillian-extension-drone-1-1-0-CR1/#disqus_thread">Comments</a></span>
+      <span class="comments">| <a href="/blog/2012/06/27/arquillian-extension-drone-1-1-0-CR1/#disqus_thread" data-disqus-identifier="da6e582677f297dffeb846275396c3aaf51de052">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -513,68 +503,68 @@ It&#8217;s a pleasure to work with you guys!</p>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-api
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR1/arquillian-drone-api-1.1.0.CR1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR1/arquillian-drone-api-1.1.0.CR1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR1/arquillian-drone-api-1.1.0.CR1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR1/arquillian-drone-api-1.1.0.CR1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-bom
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-bom/1.1.0.CR1/arquillian-drone-bom-1.1.0.CR1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-bom/1.1.0.CR1/arquillian-drone-bom-1.1.0.CR1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-configuration
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR1/arquillian-drone-configuration-1.1.0.CR1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR1/arquillian-drone-configuration-1.1.0.CR1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR1/arquillian-drone-configuration-1.1.0.CR1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR1/arquillian-drone-configuration-1.1.0.CR1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-impl
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR1/arquillian-drone-impl-1.1.0.CR1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR1/arquillian-drone-impl-1.1.0.CR1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR1/arquillian-drone-impl-1.1.0.CR1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR1/arquillian-drone-impl-1.1.0.CR1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-selenium
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR1/arquillian-drone-selenium-1.1.0.CR1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR1/arquillian-drone-selenium-1.1.0.CR1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR1/arquillian-drone-selenium-1.1.0.CR1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR1/arquillian-drone-selenium-1.1.0.CR1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-selenium-depchain
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-depchain/1.1.0.CR1/arquillian-drone-selenium-depchain-1.1.0.CR1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-depchain/1.1.0.CR1/arquillian-drone-selenium-depchain-1.1.0.CR1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-selenium-server
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR1/arquillian-drone-selenium-server-1.1.0.CR1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR1/arquillian-drone-selenium-server-1.1.0.CR1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR1/arquillian-drone-selenium-server-1.1.0.CR1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR1/arquillian-drone-selenium-server-1.1.0.CR1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-spi
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR1/arquillian-drone-spi-1.1.0.CR1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR1/arquillian-drone-spi-1.1.0.CR1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR1/arquillian-drone-spi-1.1.0.CR1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR1/arquillian-drone-spi-1.1.0.CR1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-webdriver
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR1/arquillian-drone-webdriver-1.1.0.CR1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR1/arquillian-drone-webdriver-1.1.0.CR1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR1/arquillian-drone-webdriver-1.1.0.CR1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR1/arquillian-drone-webdriver-1.1.0.CR1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-drone-webdriver-depchain
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver-depchain/1.1.0.CR1/arquillian-drone-webdriver-depchain-1.1.0.CR1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver-depchain/1.1.0.CR1/arquillian-drone-webdriver-depchain-1.1.0.CR1.pom" target="_blank" class="artifact">pom</a>
   </li>
 </ul>
 <h3>
@@ -592,20 +582,20 @@ It&#8217;s a pleasure to work with you guys!</p>
   </dd>
 </dl>
 <dl>
+  <dt>Sub-task</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-927">ARQ-927</a> -         Configuration for RemoteWebDriver Drone extension</li>
+    </ul>
+  </dd>
+</dl>
+<dl>
   <dt>Feature Request</dt>
   <dd>
     <ul class="unstyled">
       <li><a href="https://issues.jboss.org/browse/ARQ-847">ARQ-847</a> -         Support OperaDriver in Drone</li>
       <li><a href="https://issues.jboss.org/browse/ARQ-926">ARQ-926</a> -         Fast development turnaround using Selenium Server and RemoteWebDriver session reusal</li>
       <li><a href="https://issues.jboss.org/browse/ARQ-995">ARQ-995</a> -         Allow Arquillian Drone configuration to map java.util.Map for property values</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
-  <dt>Sub-task</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-927">ARQ-927</a> -         Configuration for RemoteWebDriver Drone extension</li>
     </ul>
   </dd>
 </dl>
@@ -619,7 +609,7 @@ It&#8217;s a pleasure to work with you guys!</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/drone/">drone</a>
+    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/drone/" class="tag">drone</a>
   </div>
 </article>
 <article class="post">
@@ -633,7 +623,7 @@ It&#8217;s a pleasure to work with you guys!</p>
       <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a></span>
       <span class="dateinline">on Jun 05, 2012</span>
       <div class="date"><abbr>Jun</abbr> 05</div>
-      <span class="comments">| <a data-disqus-identifier="beb56875f711cf0056720742698ea2b376d6e79e" href="/blog/2012/06/05/arquillian-extension-byteman-1-0-0-Alpha2/#disqus_thread">Comments</a></span>
+      <span class="comments">| <a href="/blog/2012/06/05/arquillian-extension-byteman-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="beb56875f711cf0056720742698ea2b376d6e79e">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -686,8 +676,8 @@ It&#8217;s a pleasure to work with you guys!</p>
         org.jboss.arquillian.extension
         &raquo;
         arquillian-extension-byteman
-        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-extension-byteman/1.0.0.Alpha2/arquillian-extension-byteman-1.0.0.Alpha2.jar">jar</a>
-        <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-extension-byteman/1.0.0.Alpha2/arquillian-extension-byteman-1.0.0.Alpha2.pom">pom</a>
+        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-extension-byteman/1.0.0.Alpha2/arquillian-extension-byteman-1.0.0.Alpha2.jar" target="_blank" class="artifact">jar</a>
+        <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-extension-byteman/1.0.0.Alpha2/arquillian-extension-byteman-1.0.0.Alpha2.pom" target="_blank" class="artifact">pom</a>
       </li>
     </ul>
     <h3>
@@ -713,7 +703,7 @@ It&#8217;s a pleasure to work with you guys!</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/byteman/">byteman</a>
+    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/byteman/" class="tag">byteman</a>
   </div>
 </article>
 <article class="post">
@@ -727,7 +717,7 @@ It&#8217;s a pleasure to work with you guys!</p>
       <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a></span>
       <span class="dateinline">on May 27, 2012</span>
       <div class="date"><abbr>May</abbr> 27</div>
-      <span class="comments">| <a data-disqus-identifier="f070adb2628ea7eed9b4ed2f74d89f35c562d692" href="/blog/2012/05/27/arquillian-extension-warp-1-0-0-Alpha1/#disqus_thread">Comments</a></span>
+      <span class="comments">| <a href="/blog/2012/05/27/arquillian-extension-warp-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="f070adb2628ea7eed9b4ed2f74d89f35c562d692">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -857,56 +847,56 @@ It&#8217;s a pleasure to work with you guys!</p>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-warp-api
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-api/1.0.0.Alpha1/arquillian-warp-api-1.0.0.Alpha1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-api/1.0.0.Alpha1/arquillian-warp-api-1.0.0.Alpha1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-api/1.0.0.Alpha1/arquillian-warp-api-1.0.0.Alpha1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-api/1.0.0.Alpha1/arquillian-warp-api-1.0.0.Alpha1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-warp-bom
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-bom/1.0.0.Alpha1/arquillian-warp-bom-1.0.0.Alpha1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-bom/1.0.0.Alpha1/arquillian-warp-bom-1.0.0.Alpha1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-warp-build-resources
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-build-resources/1.0.0.Alpha1/arquillian-warp-build-resources-1.0.0.Alpha1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-build-resources/1.0.0.Alpha1/arquillian-warp-build-resources-1.0.0.Alpha1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-build-resources/1.0.0.Alpha1/arquillian-warp-build-resources-1.0.0.Alpha1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-build-resources/1.0.0.Alpha1/arquillian-warp-build-resources-1.0.0.Alpha1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-warp-ftest
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-ftest/1.0.0.Alpha1/arquillian-warp-ftest-1.0.0.Alpha1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-ftest/1.0.0.Alpha1/arquillian-warp-ftest-1.0.0.Alpha1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-ftest/1.0.0.Alpha1/arquillian-warp-ftest-1.0.0.Alpha1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-ftest/1.0.0.Alpha1/arquillian-warp-ftest-1.0.0.Alpha1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-warp-impl
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-impl/1.0.0.Alpha1/arquillian-warp-impl-1.0.0.Alpha1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-impl/1.0.0.Alpha1/arquillian-warp-impl-1.0.0.Alpha1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-impl/1.0.0.Alpha1/arquillian-warp-impl-1.0.0.Alpha1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-impl/1.0.0.Alpha1/arquillian-warp-impl-1.0.0.Alpha1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-warp-phaser
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-phaser/1.0.0.Alpha1/arquillian-warp-phaser-1.0.0.Alpha1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-phaser/1.0.0.Alpha1/arquillian-warp-phaser-1.0.0.Alpha1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-phaser/1.0.0.Alpha1/arquillian-warp-phaser-1.0.0.Alpha1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-phaser/1.0.0.Alpha1/arquillian-warp-phaser-1.0.0.Alpha1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-warp-phaser-ftest
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-phaser-ftest/1.0.0.Alpha1/arquillian-warp-phaser-ftest-1.0.0.Alpha1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-phaser-ftest/1.0.0.Alpha1/arquillian-warp-phaser-ftest-1.0.0.Alpha1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-phaser-ftest/1.0.0.Alpha1/arquillian-warp-phaser-ftest-1.0.0.Alpha1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-phaser-ftest/1.0.0.Alpha1/arquillian-warp-phaser-ftest-1.0.0.Alpha1.pom" target="_blank" class="artifact">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-warp-spi
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spi/1.0.0.Alpha1/arquillian-warp-spi-1.0.0.Alpha1.jar">jar</a>
-    <a class="artifact" target="_blank" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spi/1.0.0.Alpha1/arquillian-warp-spi-1.0.0.Alpha1.pom">pom</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spi/1.0.0.Alpha1/arquillian-warp-spi-1.0.0.Alpha1.jar" target="_blank" class="artifact">jar</a>
+    <a href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spi/1.0.0.Alpha1/arquillian-warp-spi-1.0.0.Alpha1.pom" target="_blank" class="artifact">pom</a>
   </li>
 </ul>
 <h3>
@@ -914,15 +904,6 @@ It&#8217;s a pleasure to work with you guys!</p>
   <small>9</small>
 </h3>
 <p>First Release of Warp Extension</p>
-<dl>
-  <dt>Feature Request</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-578">ARQ-578</a> -         Create a Extension for handling Server State assertion during normal Servlet/JSF requests</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-957">ARQ-957</a> -         Add Warp Showcase sample</li>
-    </ul>
-  </dd>
-</dl>
 <dl>
   <dt>Enhancement</dt>
   <dd>
@@ -943,6 +924,15 @@ It&#8217;s a pleasure to work with you guys!</p>
     </ul>
   </dd>
 </dl>
+<dl>
+  <dt>Feature Request</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-578">ARQ-578</a> -         Create a Extension for handling Server State assertion during normal Servlet/JSF requests</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-957">ARQ-957</a> -         Add Warp Showcase sample</li>
+    </ul>
+  </dd>
+</dl>
 <p>
   Thanks to the following list of contributors:
   <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/kenfinni">Ken Finnigan</a>
@@ -953,7 +943,7 @@ It&#8217;s a pleasure to work with you guys!</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/warp/">warp</a>
+    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/warp/" class="tag">warp</a>
   </div>
   
               <script type="text/javascript">
@@ -975,7 +965,7 @@ It&#8217;s a pleasure to work with you guys!</p>
   </li>
 </ul>
 </div>
-<aside role="complementary" id="sidebar">
+<aside id="sidebar" role="complementary">
   <div class="subscribe">
     <h2 class="icon news">
       <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
@@ -1027,7 +1017,7 @@ It&#8217;s a pleasure to work with you guys!</p>
       </li>
     </ul>
     
-                <div class="dsq-widget" id="popularposts">
+                <div id="popularposts" class="dsq-widget">
                   <h2 class="dsq-widget-title">Popular Posts</h2>
                   <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
                   <script>
