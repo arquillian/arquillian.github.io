@@ -1,0 +1,47 @@
+---
+---
+h3. Some of the highlights in this release
+
+* *Configure* @Arquillian@ using *properties* - Adding @-Dproperty.name=value@ to the command line can now add or override values defined in @arquillian.xml@.
+
+bc(prettify).. arq.container.[qualifier].mode
+arq.container.[qualifier].default
+arq.container.[qualifier].configuration.[property_name]
+arq.container.[qualifier].protocol.[type].[property_name]
+
+arq.group.[qualifier].default
+arq.group.[qualifier].container.[qualifier].configuration.[property_name]
+arq.group.[qualifier].container.[qualifier].protocol.[type].[property_name]
+
+arq.extension.[qualifier].[property_name]
+
+arq.defaultprotocol.[type]
+arq.defaultprotocol.[type].[property_name]
+
+arq.engine.[property_name]
+
+p. Example:
+
+bc(prettify).. -Darq.container.production.configuration.jbossHome=/opt/jbossas/
+
+p. You can add these in a properties file as well. Default @Arquillian@ will look for a file called @arquillian.properties@ on classpath or on disk, same with @arquillian.xml@. If you want to configure a different filename, you can use either @-Darquillian.properties=name@ or @-Darquillian.xml=name@
+
+Since the xml file is read first, the properties will add / override the xml values. In the case where you have a container defined as default in xml, but want to override the default in properties, you can add -Darquillian.launch to specify which container/group configuration to use.
+
+* *@OperateOnDeployment* on @@ArquillianResource@ injection points
+
+  URL, InitialContext and Context on the client side can be qualified with the @OperateOnDeployment annotation.
+
+bc(prettify).. @Deployment(name = "X")
+public WebArchive appX() { ... }
+
+@Deployment(name = "Y")
+public WebArchive appX() { ... }
+
+@Test @OperateOnDeployment("X")
+public void shouldBeInjected(
+      @ArquillianResource URL appXUrl,
+      @ArquillianResource @OperateOnDeployment("Y") URL appYUrl)
+{
+  // ...
+}

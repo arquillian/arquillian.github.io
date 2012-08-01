@@ -1,0 +1,36 @@
+---
+layout: post
+title: Save time! Drastically trim the dependency graph when testing on JBoss AS 6
+author: mojavelinux
+tags: [ maven, jbossas, dependencies, tip ]
+---
+Great news! We've drastically cut down the number of dependencies that Maven has to download in order to use the JBoss AS 6 remote container adapter Arquillian. You no longer have to download Hibernate just to connect to a remote or managed (standalone) JBoss AS instance ~:)
+
+To cut to the chase, replace this dependency:
+
+bc(prettify). <dependency>
+   <groupId>org.jboss.jbossas</groupId>
+   <artifactId>jboss-as-client</artifactId>
+   <version>6.0.0.Final</version>
+   <type>pom</type>
+</dependency>
+
+with this one:
+
+bc(prettify). <dependency>
+  <groupId>org.jboss.jbossas</groupId>
+  <artifactId>jboss-as-profileservice-client</artifactId>
+  <version>6.0.0.Final</version>
+  <type>pom</type>
+</dependency>
+
+The number of dependencies drops from _*318*_ to just *28*! That should save you a heaps of time. Now, Maven doesn't have download these extra dependenices on the first run, and doesn't have to resolve the graph on subsequent invocations. You also cut out this unresolved pom warning:
+
+pre. [WARNING] The POM for ws-commons:policy:jar:1.0 is invalid, transitive dependencies
+(if any) will not be available, enable debug logging for more details
+
+To make a long story short, the JBoss AS team publishes a stack POM (i.e., BOM) to identify all the dependencies used in JBoss AS. The client POM is a little too well linked and ends up depending on JBoss AS itself somewhere down the line. As you can imagine, this pulls in a lot of transitive dependencies.
+
+The profile service client POM is a trimmed down version that grabs only the libraries needed for communicating with a remote (standalone) JBoss AS instance using the @DeploymentManager@, which is accessed via the "ProfileService":http://anonsvn.jboss.org/repos/jbossas/projects/profileservice/tags/0.2.2/core/src/main/java/org/jboss/profileservice/.
+
+Cut the internet a break and update your POM today ~:)

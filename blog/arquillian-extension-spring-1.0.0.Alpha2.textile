@@ -1,0 +1,151 @@
+---
+tags: [ gsoc ]
+date: 2012-07-24
+---
+
+This release contain many improvements on the existing extension, but also some new features.
+
+h3(highlights). Some of the highlights in this release
+
+<i class="icon-star"></i> Warp Spring MVC Extension
+<i class="icon-star"></i> Spring Embedded Container
+<i class="icon-star"></i> Separated the integration capabilities
+
+
+h3. Testing Spring MVC with Warp
+
+p. "Arquillian Warp":/modules/warp-extension/ is a powerful tool that let you run the functional tests against your web front end and at the same time verify the internal state of your application. With this release we are introducing the Warp extension for testing Spring MVC applications that run in a real servlet container.
+
+Let's dive into an example of how to test a Spring MVC application using Arquillian Warp. First we need to prepare the application descriptor.
+
+div(filename). web.xml
+
+bc(prettify).. <web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+
+    <servlet>
+        <servlet-name>welcome</servlet-name>
+        <servlet-class>org.jboss.arquillian.warp.extension.spring.servlet.WarpDispatcherServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>welcome</servlet-name>
+        <url-pattern>*.do</url-pattern>
+    </servlet-mapping>
+
+</web-app>
+
+
+p. You'll notice that instead of using Spring's DispatcherServlet we instead use the WarpDispatcherServlet.
+
+p. And the testing code:
+
+div(filename). LoginControllerTestCase.java
+
+bc(prettify).. @WarpTest
+@RunWith(Arquillian.class)
+public class LoginControllerTestCase {
+
+    @Drone
+    WebDriver browser;
+
+    @ArquillianResource
+    URL contextPath;
+
+    @Test
+    @RunAsClient
+    public void testLoginValidationErrors() {
+        browser.navigate().to(contextPath + "login.do");
+
+        Warp.execute(new ClientAction() {
+
+            @Override
+            public void action() {
+
+                browser.findElement(By.id("loginForm")).submit();
+            }
+        }).verify(new LoginControllerValidationErrorsVerification());
+    }
+
+    @Test
+    @RunAsClient
+    public void testLoginSuccess() {
+        browser.navigate().to(contextPath + "login.do");
+        browser.findElement(By.id("login")).sendKeys("warp");
+        browser.findElement(By.id("password")).sendKeys("warp");
+
+        Warp.execute(new ClientAction() {
+
+            @Override
+            public void action() {
+
+                browser.findElement(By.id("loginForm")).submit();
+            }
+        }).verify(new LoginSuccessVerification());
+    }
+
+    public static class LoginControllerValidationErrorsVerification extends ServerAssertion {
+
+            private static final long serialVersionUID = 1L;
+
+            @SpringMvcResource
+            private ModelAndView modelAndView;
+
+            @SpringMvcResource
+            private Errors errors;
+
+            @AfterServlet
+            public void testGetLogin() {
+
+                assertEquals("login", modelAndView.getViewName());
+                assertNotNull(modelAndView.getModel().get("userCredentials"));
+                assertEquals("Two errors were expected.", 2, errors.getAllErrors().size());
+                assertTrue("The login hasn't been validated.", errors.hasFieldErrors("login"));
+                assertTrue("The password hasn't been validated.", errors.hasFieldErrors("password"));
+            }
+        }
+
+    public static class LoginSuccessVerification extends ServerAssertion {
+
+        private static final long serialVersionUID = 1L;
+
+        @SpringMvcResource
+        private ModelAndView modelAndView;
+
+        @SpringMvcResource
+        private Errors errors;
+
+        @AfterServlet
+        public void testGetLogin() {
+
+            assertEquals("welcome", modelAndView.getViewName());
+            assertFalse(errors.hasErrors());
+        }
+    }
+}
+
+
+p. In the above example we are using "Arquillian Drone":/modules/drone-extension/ to navigate to the login page of our application and then filling in the login form with our user credentials.
+
+p. The internal state of the DispatcherServlet is caught in a SpringMvcResult object which can be injected into the ServerAssertion. We can also inject other required objects like the ModelAndView.
+
+h3. Spring Embedded Container
+
+p. Each development cycle may end in repeatedly re-running the integration tests, each time taking significant amount of time. The embedded container was thought to aid this situation. Running the tests embedded will decrease the execution time from seconds to milliseconds. It will help testing business objects, but since it's not a full servlet container you won't be able to use it for testing servlet requests in a web application.
+
+h3. Migrating from 1.0.0.Alpha1
+
+p. 1.0.0.Alpha2 comes with a couple significant changes from the previous version.
+
+* The Spring integration functionality has been separated out to its own module and is now part of the arquillian-service-integration-spring-inject module, and additional the arquillian-service-integration-spring-inject and the arquillian-service-integration-spring-javaconfig that does not target any specific Spring version, but rather provide functionality like XML or Java-based configuration.
+* The arquillian-service-deployer-spring module's can still be used for autopackging the Spring artifacts.
+* The @SpringAnnotatedConfiguration has been renamed to @SpringAnnotationConfiguration.
+
+h3. Roadmap
+
+The next release is planned to include Spring transaction support and will introduce even better Warp integration on the client side in order make REST testing even simpler.
+
+We look forward to hearing your feedback about this release in the "community forums":#{site.project_space}!

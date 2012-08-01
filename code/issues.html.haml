@@ -1,0 +1,41 @@
+---
+layout: default
+title: Issue Activity
+javascripts: [ /javascripts/siphon-20120407.js ]
+---
+#content
+  %p Below is a feed of the latest activity stream from the Arquillian issue tracker.
+  %script#issues-tmpl(type='text/x-jsquery')
+    %tr
+      %td
+        %p{:style=>'margin-bottom: 1em;'}
+          %a{:href=>'{{:link}}'} {{:title}}
+        %p{:style=>'margin-bottom: .5em; border-left: 3px solid #ccc; font-style: italic; padding-left: 5px'} {{:contentSnippet}}
+  %table#issues.table.table-striped
+    %tbody
+  %p
+    %a{:href=>site.issue_tracker} See more activity by visiting the Arquillian issue tracker &raquo;
+
+:javascript
+  Date.prototype.monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
+  Date.prototype.getUTCMonthName = function() {
+    return this.monthNames[this.getUTCMonth()];
+  };
+  Date.prototype.getUTCShortMonthName = function() {
+    return this.getUTCMonthName().substr(0, 3);
+  };
+  $.jGFeed(encodeURI('http://issues.jboss.org/activity?streams=key+IS+#{site.jira_key}'),
+    function(feeds) {
+      if (!feeds) {
+        return false;
+      }
+      $.each(feeds.entries, function(idx, entry) {
+        var d = new Date(entry.publishedDate);
+        entry.publishedDateMonth = d.getUTCShortMonthName();
+        entry.publishedDateOfMonth = d.getUTCDate();
+        if (entry.publishedDateOfMonth < 10) {
+          entry.publishedDateOfMonth = '0' + entry.publishedDateOfMonth;
+        }
+      });
+      $('#issues tbody').html($('#issues-tmpl').render(feeds.entries));
+    }, 15);

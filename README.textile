@@ -1,0 +1,350 @@
+h1. !{vertical-align:middle}https://github.com/arquillian/arquillian.github.com/raw/develop/images/arquillian_icon_64.png! Arquillian Website Source
+
+This repository contains the source of the Arquillian website (hosted using "github pages":http://pages.github.com), to which the "arquillian.org":arquillian.org hostname resolves.
+
+The website is built using "Awestruct":awestruct.org. The develop branch contains the unprocessed website source. From that content, Awestruct generates a static website under the @_site@ directory. The website is published to the public site by pushing the contents of the @_site@ directory to the master branch.
+
+h2. Setting Up Awestruct
+
+You need to have Awestruct installed on your machine to preview the website locally. Awestruct is a available as Ruby gem in the GemCutter repository. You can install it into either a native Ruby or a JRuby installation. The instructions here will cover setting up Awestruct in both native Ruby and JRuby installation for Linux environment.
+
+Begin by installing the package for Ruby and RubyGems.
+
+h3. Installing Ruby and RubyGems on Ubuntu
+
+If you have Ubuntu, use this command to install Ruby and RubyGems:
+
+bc. $ sudo apt-get install rubygems
+
+Ubuntu does not currently add the RubyGems bin directory to your path. Put the following files in your shell configuration file (.bashrc) and restart the shell.
+
+bc. $ export GEM_HOME=/var/lib/gems/1.8 \ 
+export PATH=$PATH:$GEM_HOME/bin
+
+Now the executables for any gem you install will be available on your path.
+
+h3. Installing JRuby on Ubuntu
+
+It might happen that you will face "similar problem":https://gist.github.com/1392032 while trying to install awestruct using Ruby on Ubuntu. In that case using JRuby as an alternative might solve it.
+
+First, download and unpack latest stable version of JRuby: (The one available in Ubuntu repositories is too old and does not support Awestruct) 
+
+bc. $ wget http://jruby.org.s3.amazonaws.com/downloads/1.6.7/jruby-bin-1.6.7.tar.gz \
+tar -xzvf jruby-bin-1.6.7.tar.gz  
+
+Optionally, you can copy it to @/usr/lib/jvm@ and create symbolic link for convenience:
+
+bc. $ sudo mv jruby-1.6.7/ /usr/lib/jvm \
+cd /usr/lib/jvm/ \
+sudo ln -s jruby-1.6.7/ jruby 
+
+Last step is adding JRuby to path (for instance in @.bashrc@)
+
+bc. $ export JRUBY_HOME=/usr/lib/jvm/jruby \
+export PATH="$JRUBY_HOME/bin:$PATH"
+
+Also, make sure to unset GEM_HOME for your session or else JRuby will try to install gems into your system installation.
+
+bc. $ unset GEM_HOME
+
+That's it. Just install all required gems described in subsequent sections and you are ready to run awestruct backed by JRuby!
+
+*NOTE:* Use @jgem@ instead of @sudo gem@ for this purpose.
+
+h3. Installing Ruby and RubyGems on Fedora
+
+If you have Fedora, use this command to install Ruby and RubyGems:
+
+bc. $ sudo yum install ruby ruby-devel ruby-irb rubygems
+
+Optionally, you can install RubyGems manually to use a newer version (was once a requirement for installing Awestruct, but has since been fixed):
+
+bc.. $ wget -q http://production.cf.rubygems.org/rubygems/rubygems-1.8.15.tgz \
+tar xzf rubygems-1.8.15.tgz \
+cd rubygems-1.8.15 \
+sudo ruby setup.rb
+
+p. In Fedora, RubyGems properly links applications such as awestruct to /usr/bin when the corresponding gem is installed, so no need for messing with the PATH.
+
+h3. Installing the Awestruct Gem
+
+Now you are ready to install awestruct. The remainder of the commands work on any Ruby installation. If you're using JRuby, remember to use @jgem@ instead of @sudo gem@.
+
+Use this command to install the awestruct gem and its dependencies:
+
+bc. $ sudo gem install awestruct
+
+If you get a compiler error when RedCloth is installing, use this command instead:
+
+bc. $ sudo gem install awestruct -- --with-cflags=\"-O2 -pipe -march=native -Wno-unused-but-set-variable\"
+
+You're all set!
+
+If you've previously installed awestruct, make sure you have Awestruct >= 0.2.15. You can update it update it using this command:
+
+bc. $ sudo gem update awestruct
+
+*IMPORTANT:* If you're using JRuby, you'll need to update your RedCloth gem to support international characters. Follow these steps:
+
+* Download https://github.com/downloads/mojavelinux/redcloth/redcloth_scan.jar
+* Copy it to $JRUBY_HOME/lib/ruby/gems/*/gems/RedCloth-4.2.9-java/lib/ (overwrite existing file)
+
+h3. Additional Required Gems
+
+As the website matures, more gems will be required. This section documents the required third-party gems not already installed by Awestruct.
+
+Install these Gems using the @sudo gem install@ command (or @jgem install@ command for JRuby) as you did above.
+
+* rest-client
+* git
+* vpim
+* jruby-openssl (if using jruby)
+* rb-inotify (if using linux)
+
+h3. Installing Awestruct and Required Gems using Bundler
+
+Now there's an even easier way to get setup. First, make sure you have the Bundler gem installed:
+
+bc. $ sudo gem install bundler
+
+Now Bundler can handle the rest of the setup automatically:
+
+bc. $ sudo bundle install
+
+At this point, you are ready to pull down the site and run it.
+
+h2. Previewing the Site Locally
+
+Now that you have awestruct installed, you can preview the website locally by running it in development mode. Development mode uses a file monitor to automatically update the site when you make a change to the source files.
+
+To run the site, you first need the source code. Begin by cloning the website source code from git:
+
+bc. git clone git://github.com/arquillian/arquillian.github.com.git
+
+Then, switch to the develop branch (the master branch holds the published site only):
+
+bc. git checkout develop
+
+Run the following command to launch the preview server:
+
+bc. awestruct -d
+
+Visit the following page in your browser:
+
+"http://localhost:4242":http://localhost:4242
+
+You're now awestruct!
+
+If you only want to generate once when you start the server, use this command:
+
+bc. awestruct --server -P development
+
+Add the @--force@ flag to either command to regenerate the site from scratch. You can also remove the _tmp and _site directories to clean the generated files.
+
+h2. Conventions
+
+"Haml":http://haml-lang.com is the preferred abstract HTML markup language.
+
+* "Haml Reference":http://haml-lang.com/docs/yardoc/file.HAML_REFERENCE.html
+
+ "Textile":http://redcloth.org/textile is the preferred text markup language.
+
+* "Textile Reference":http://redcloth.org/textile
+
+"Sass":http://sass-lang.com and "Compass":http://compass-style.org are the preferred CSS frameworks.
+
+* "Sass Reference":http://sass-lang.com/docs/yardoc/file.SASS_REFERENCE.html
+* "Compass Reference":http://compass-style.org/reference/compass
+
+Source files are indented using 2 spaces. Haml files require the same indentation size throughout. Ruby hashes should have no leading or trailing spaces and options such be seperated by a comma followed by a space (e.g., @{:href=>"http://arquillian.org", title=>"Arquillian Project Site"}@).
+
+Note: In a HAML document, if you use the equals seperator (=) rather than a greater than equals (=>) in a hash key-value assignment, Awestruct will crash.
+
+h2. Page structure
+
+* #banner
+** h2#logo
+** #navigation
+* #main
+** #intro
+*** .hgroup
+**** h1
+*** .aside
+** #content
+*** .post
+**** .header
+***** h2.title
+***** .byline
+**** .body
+**** .footer
+** #sidebar
+* #footer
+
+#intro
+#content
+  section#primary
+  aside
+
+h2. Writing a Blog Entry
+
+Writing a blog entry is very easy. All you have to do is fill in a brief prolog at the top of the file, then just type your content. The rest is handled for you.
+
+h3. Filename
+
+To write a blog entry, create a new textile document with the file extension .textile in the blog/ folder. The name of the file is important. It determines the date of the blog entry and the URL. The syntax is:
+
+bq. YYYY-MM-DD-URL.textile
+
+You cannot use dots or spaces in the URL segment.
+
+For example:
+
+bq. 2011-10-02-announcing-arquillian-1-0.textile
+
+h3. Prolog
+
+The prolog is a set of name/value pairs defined at the top of the file in between two lines containing three dashes. In this section you define the following metadata:
+
+* layout (always "blog")
+* title (use sentence capitalization)
+* author (use github id)
+* tags (array structure, limit to 5, use singular forms as in "release")
+
+Here's an example (refer to HTML output):
+
+pre. ---
+layout: blog
+title: Ike is our hero
+author: aslakknutsen
+tags: [ announcements, ike ]
+--- << only copy the hyphens and the lines of text between them
+
+If you want the post to appear in the JBoss Central view in JBoss Tools, add jbosscentral to the list of tags.
+
+h3. Content
+
+Below the prolog, you just type in textile format.
+
+h3. Code
+
+*NOTE:* Please follow the "JBoss Community syntax conventions":https://github.com/jboss/ide-config#readme when formatting the code (to ensure all posts look consistent).
+
+To insert syntax highlighted code, followed by paragraph text, use the following syntax (refer to HTML output of this guide):
+
+bc(prettify).. public class Alien {
+    public String getName() {
+        return "Ike";
+    }
+}
+
+p. This sentence will appear below the code. The language is detected automatically.
+
+You don't normally need to use the p. prefix to enter a paragrah. However, it's required after a code block to indicate to the parser that the code snippet has ended. If the content following the code is not paragraph text (for instance, a list item), use notextile. instead of p., but include one space at the end of the line.
+
+If you are running awestruct in preview mode, you need to touch the blog/index.html.haml file to see the blog show up in the index (likely a bug).
+
+h3. Images
+
+Images should be put in the images/blog/ folder. An image should be no more than 600px wide.
+
+h2. Writing a Release Note
+
+p. Writing a release note is even easier than blog post. There is a template file created for this purpose @blog/_github-release-template.textile@. 
+
+p. Simply name your file using following convention @[repository-name]-[versionId].textile@ (eg. @arquillian-core-1.0.0.CR6.textile@). Fill in the most important features which are part of this particular release.
+
+p. Other things like JIRA tasks are picked up automatically.
+
+p. If for some reason you are not able to see your release notes on @blog/@ aggregator page, perform following steps:
+
+p. Delete where tag/release information is read from:
+
+bc. rm -rf _tmp/repos/[repo-that-contain-release]
+
+p. Delete the overview from JIRA that contains all released versions:
+
+bc. rm -rf _tmp/jira/jira-ARQ.json
+
+p. Then restart awestruct and everything should work nicely.
+
+h2. Writing a Guide
+
+Writing a guide is much like writing a blog entry (and, as such, just as easy). You need to supply some prolog information, a header stating what the guide covers and content partitioned using level 3 (h3) headings. The rest is handled for you, including the table of contents and listing in the index.
+
+*IMPORTANT:* When committing a guide, put it in a commit by itself and use a commit message that describes to a reader what changed. Commit messages are used as the guide's changelog.
+
+h3. Filename
+
+To write a blog entry, create a new textile document with the file extension .textile in the guides/ folder. The name of the file will become the last path in the guide's URL and thus should closely match the guide's title. Since it's part of the URL, the filename should not contain spaces.
+
+h3. Prolog
+
+The prolog is a set of name/value pairs defined at the top of the file in between two lines containing three dashes. In this section you define the following metadata:
+
+* layout (always "guide")
+* title (use title capitalization)
+* authors (comma seperated list of original authors of the guide)
+* translators (comma seperated list, for translations only)
+* tags (comma seperated list)
+* guide_summary (summary text to be used in the guide index)
+* guide_group (numeric; 1 = beginner, 2 = intermediate, 3 = advanced)
+* guide_order (numeric weight; less is more)
+
+Here's an example (refer to HTML output):
+
+pre. ---
+layout: guide
+title: Getting Started
+authors: [Dan Allen]
+tags: [cdi, weld, maven, forge, eclipse]
+guide_summary: Learn how to add Arquillian to the test suite of your project and write your first Arquillian test.
+guide_group: 1
+guide_order: 10
+--- << only copy the hyphens and the lines of text between them
+
+h3. Content
+
+Below the prolog, you type in textile format. (Don't use an h2. heading for the title, it will be inserted automatically.)
+
+You should begin each guide with a summary that lays out what the guide covers. It should be regular paragraph text surrounding a list of topics.
+
+The remainder of the content should be divided into level 3 (h3) headings. The heading title should be no more than 20 characters and use title capitalization.
+
+*NOTE:* Currently, you cannot use acronyms in the heading of a guide section.
+
+h3. Code
+
+Refer to the instruction for writing a blog entry to learn how to enter code.
+
+h3. Images
+
+Images should be put in the images/guides/ folder.
+
+h2. Textile Extensions
+
+You can add emoticons by immediately preceding any of the following smile symbols with tilde (~):
+
+- :) := smile
+- ;) := wink
+- :S := confused
+- :D := happy
+
+Here's an example ~;)
+
+h2. Style Classes
+
+- .last := Defines the last column, used to remove the margin & padding to the right
+- .first := Defines the first of something, used to remove the margin & padding from the top
+- .bottom := Defines the last paragraph, used to remove the margin & padding from the bottom
+
+h2. Resources
+
+* Social Media Icons: http://icondock.com/free/vector-social-media-icons
+* Currently using Google Prettify, could use "jQuery wrapper":http://balupton.github.com/jquery-syntaxhighlighter
+* Icons from Faenza Gnome icon theme
+* A pure CSS sticky footer technique: http://ryanfait.com/sticky-footer/
+* Font typography: http://www.dev-archive.net/articles/typograph1-en.html#Ch23
+* Ideas for textile plugins: http://octopress.org/docs/plugins/
+* HTML/CSS/JS 'fiddle' tool: http://jsfiddle.net
+* Sass resources: http://thesassway.com/
+* Language codes: http://joeclark.org/book/sashay/serialization/AppendixB.html

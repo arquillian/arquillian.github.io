@@ -1,0 +1,69 @@
+---
+layout: guide-base
+---
+- page.site_title = 'Arquillian Guides'
+- page.body_class = 'guide'
+- page.bottom_javascripts = [ '/javascripts/jquery-scroll.js', 'http://apis.google.com/js/plusone.js' ]
+- groups = [['beg', 'First Steps'], ['int', 'More Coverage'], ['adv', 'Enhance']]
+#content{:lang=>page.language ? page.language.code : nil}
+  %h2= page.title
+  - if page.authors
+    .authors<
+      %strong= "Author#{page.authors.size > 1 ? 's' : ''}:"
+      = ' '.concat(page.authors.map{|u| site.identities.lookup(u).to_link} * ', ')
+      - if page.translators
+        %strong{:style=>'padding-left: 10px;'}= "Translator#{page.translators.size > 1 ? 's' : ''}:"
+        = ' '.concat(page.translators.map{|u| site.identities.lookup(u).to_link} * ', ')
+        %strong{:style=>'padding-left: 10px;'} Language:
+        %img.flag{:src=>page.language.flag_icon, :rel=>'tooltip', :title=>"#{page.language.display_name_local} (#{page.language.code})"}
+      - if page.languages
+        %strong{:style=>'padding-left: 10px;'} Translations:
+        - for translation in page.languages
+          - if translation.language != page.guide.language
+            %a{ :href=>translation.url }<
+              %img.flag{:src=>translation.language.flag_icon, :rel=>'tooltip', :title=>"#{translation.language.display_name_local} (#{translation.language.code})"}
+      %br
+      - if page.guide.group
+        %strong Level:
+        = ' '.concat(groups[page.guide.group - 1][1])
+      - if page.tags
+        %strong{:style=>"padding-left: #{page.guide.group ? 10 : 0}px;"} Tags:
+        = ' '.concat(page.tags * ', ')
+      %strong{:style=>"padding-left: #{page.guide.group || page.tags ? 10 : 0}px;"} Last Update:
+      = ' '.concat(page.guide.changes[0].date.strftime('%b %d, %Y'))
+  ~ content
+  :textile
+    h3. Share the Knowledge
+
+    Find this guide useful?
+
+    p(post_to_twitter). ["!/images/post_to_twitter.png!":http://twitter.com/home/?status=#{URI.escape("Just read the #Arquillian #{page.title} guide and got a #greenbar! Get yours. #{site.base_url}#{page.url}")}]
+
+    <div class="g-plusone" data-size="tall"></div>
+
+    There's a lot more about Arquillian to cover. If you're ready to learn more, check out the "other available guides":/guides.
+
+    h4. Feedback
+
+    Find a bug in the guide? Something missing? You can fix it by "forking this website":http://github.com/arquillian/arquillian.github.com, making the correction and "sending a pull request":http://help.github.com/send-pull-requests. If you're just plain stuck, feel free to ask a question in the "user discussion forum":#{site.user_forum}.
+  - if page.guide.changes
+    %h4 Recent Changelog
+    %ul
+      - for change in page.guide.changes
+        %li
+          #{change.date.strftime('%b %d, %Y')}:
+          &= change.message
+          %em by #{change.author} 
+    %p
+      -# FIXME make me a function
+      %a{:href=>"#{site.website_source_repo}/commits/develop#{page.relative_source_path}"} See full history &raquo;
+- if page.guide
+  #sidebar
+    #toc
+      %h3.chapter_header Chapters
+      %ol.chapters
+        - page.guide.chapters.each do |chapter|
+          %li
+            %a{:id=>"#{chapter.link_id}_link", :href=>"##{chapter.link_id}"}= chapter.text
+  %script
+    $(window).load(function() { activateScrollingToc([#{page.guide.chapters.map{|c| "'#{c.link_id}'"} * ', '}]) })

@@ -1,0 +1,47 @@
+---
+layout: invasion
+title: Press
+javascripts: [ /javascripts/siphon-20120407.js ]
+---
+%script#diigo-tmpl(type='text/x-jsquery')
+  .entry
+    .header
+      %h2.title
+        %a(href='{{:link}}') {{:title}}
+      %p.meta
+        Posted {{:publishedDateMonth}} {{:publishedDateOfMonth}} on
+        %a(href='{{:link}}') {{:source}}
+    .body {{:content}}
+    %hr.taper
+#diigo.feed
+%div
+  %a(href='http://diigo.com/user/jbosstesting/arquillian') See all Arquillian community press on diigo.com &raquo;
+
+:javascript
+  Date.prototype.monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
+  Date.prototype.getUTCMonthName = function() {
+    return this.monthNames[this.getUTCMonth()];
+  };
+  Date.prototype.getUTCShortMonthName = function() {
+    return this.getUTCMonthName().substr(0, 3);
+  };
+  $.jGFeed('http://www.diigo.com/rss/user/jbosstesting',
+    function(feeds) {
+      if (!feeds) {
+        return false;
+      }
+      $.each(feeds.entries, function(idx, entry) {
+        entry.source = entry.link.match(/https?:\/\/([^\/]+)/)[1];
+        var d = new Date(entry.publishedDate);
+        // years are totally wrong
+        entry.publishedDateYear = d.getFullYear();
+        entry.publishedDateYear = d.getUTCFullYear();
+        entry.publishedDateMonth = d.getUTCShortMonthName();
+        entry.publishedDateOfMonth = d.getUTCDate();
+        if (entry.publishedDateOfMonth < 10) {
+          entry.publishedDateOfMonth = '0' + entry.publishedDateOfMonth;
+        }
+        entry.content = entry.content.replace(/Tags:/, 'tagged as ');
+      });
+      $('#diigo').html($('#diigo-tmpl').render(feeds.entries));
+    }, 15);

@@ -1,0 +1,937 @@
+---
+layout: guide
+title: 快速入门
+authors: [mojavelinux]
+translators: [hantsy]
+tags: [cdi, weld, maven, forge, eclipse]
+description: 学习如何将 Arquillian 添加到你的项目的 test suite 中，并编写第一个 Arquillian 测试。
+reference_rev: 52f8fbd2ff5f00fbbd70729a40f1d6ab124e600e
+---
+[forge_home]http://jboss.org/forge
+[forge_download]https://repository.jboss.org/nexus/service/local/artifact/maven/redirect?r=releases&g=org.jboss.forge&a=forge-distribution&v=1.0.0.Final&e=zip
+[maven_home]http://maven.apache.org
+[maven_download]http://maven.apache.org/download.html
+[maven_search]http://search.maven.org
+[jdk_download]http://www.oracle.com/technetwork/java/javase/downloads
+[as7_download]http://jboss.org/jbossas/downloads
+[tools_home]http://jboss.org/tools
+[shrinkwrap_home]http://jboss.org/shrinkwrap
+[m2e_home]http://eclipse.org/m2e
+
+这篇教程向你介绍 Arquillian。阅读本教程后，你能够掌握：
+
+* 向基于 Maven 的 Java 项目中添加 Arquillian 
+* 编写一个 Arquillian 测试用例来验证 CDI(Contexts and Dependency Injection) bean 的行为
+* 在多个兼容的容器中运行 Arquillian 测试用例
+
+你将会通过一个基于 Maven 的 Java EE 应用程序中使用 Arquillian 来学习以上技巧，我定位这篇教程为 _快速阅读_ 就是为让你快速入门！
+
+h3. 预备知识
+
+学习 Arquillian 最简单的方法就是将它整合到能够提供依赖管理的项目构建体系中。当今，这一领域广为使用就是 "Apache Maven":maven_home 。本教程将通过一个 Maven 样例项目，让你看到第一个 *(greenbar)绿条* 。
+
+p(info). %Arquillian 并不依赖 Maven， 或其它特定的构建工具。当在项目中使用 Ant 或者 Gradle 构建时，效果一样。理想情况下，构建工具应该提供依赖管理，这样简化包含 Arquillian 依赖库的工作，因为它们已经发布到 "Maven 中心仓库":maven_search 。%
+
+本教程假定你已经在使用 Maven，不管是通过命令行，还是 IDE(Integrated Development Environment)。如果还没使用，请 "安装 Maven":maven_download 。另外，你的机器必须安装 "JDK(Java Development Kit) 1.5":jdk_download 或以上版本。
+
+h3. 创建新项目
+
+这里推荐两种方法创建一个新的 Maven 项目:
+
+# "使用 Maven archetype 生成一个项目":#generate_project_from_archetype
+# "使用 JBoss Forge 创建和定制项目":#create_project_using_forge
+
+到目前为止，使用 "JBoss Forge":forge_home 是比较简单的方法，但是本教程依然提供两个选项，考虑到你可能还没有采用 JBoss Forge。可以选择上面两者之一直接跳到相应的介绍章节。
+
+p(info). %如果你已经创建好一个项目，你可以把本节当成一个审查步骤，这样可以保证你在进行下一步之前你已经设置了正确的依赖。%
+
+h4(#generate_project_from_archetype). 使用 Maven archetype 生成一个项目
+
+首先使用以下命令创建一个基于 Maven 的 Java 项目。 
+
+bc(command).. $ mvn archetype:generate -DarchetypeGroupId=net.avh4.mvn.archetype \
+-DarchetypeArtifactId=java-1.6-archetype
+
+p. _复制 @$@ 后面文字，粘贴到你的命令行窗口中。_ 回答相应的提示，在下面每个双冒号后面输入设定值。换行敲击 Enter（已经标志为 @<ENTER>@）。
+
+bc(output). Define value for property 'groupId': : org.arquillian.example <ENTER>
+Define value for property 'artifactId': : arquillian-tutorial <ENTER>
+Define value for property 'version': : <ENTER>
+Define value for property 'package': : <ENTER>
+Confirm properties configuration:
+groupId: org.arquillian.example
+artifactId: arquillian-tutorial
+version: 1.0-SNAPSHOT
+package: org.arquillian.example
+Y: : <ENTER>
+
+p. 这个会在当前目录中生成一个基于 Maven 的 Java 项目，文件夹名为 @arquillian-tutorial@ 。项目的文件结构如下：
+
+(filetree)* src/
+** main/
+*** java/ - Place all application Java source files here (under Java package)
+*** resources/ - Place all application configuration files here
+** test/
+*** java/ - Place all test Java source files heres (under Java package)
+*** resources/ - Place all test configuration files here (e.g., arquillian.xml)
+* pom.xml - The Maven build file. Tells Maven how your project should be built.
+
+p(info). %项目已经预先配置了使用 Java 1.6 和 JUnit 4.8 ，这也是使用 Arquillian 必需的 Java 和 JUnit 最低版本。%
+
+生成工具还同时在两个 @java@ 文件夹下创建一个名为 @org.arquillian.example@ 的 Java 包。你应该把你的 Java 源文件放到这个包中，而不是 @java@ 文件夹的根目录下。
+
+p(warning). %Arquillian 同样支持 TestNG 5。但是，本教程中使用 JUnit。%
+
+在编辑器打开 @pom.xml@ 。你应该可以看到一个 XML 文件包含了最基本的项目信息，一个 build 片段，还有一个 dependencies 片段。 *你可以删除所有 JUnit 下的 @<dependency>@ 元素，它们并不是必需的。*
+
+修改完后，最后你应该可以看到如下内容：
+
+div(filename). pom.xml
+
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://maven.apache.org/POM/4.0.0
+        http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.arquillian.example</groupId>
+    <artifactId>arquillian-tutorial</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>arquillian-tutorial</name>
+    <url>http://arquillian.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
+
+p. 下面准备写些 Java EE 6 组件。然而，我们需要添加 Java EE 6 API 到 classpath 中，这样我们才能编译这些组件。
+
+打开 @pom.xml@ 文件，在 @<dependencies>@ 中添加下面 XML 代码片段。完成后，你可以看到如下内容：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependencies>
+    <dependency>
+        <groupId>org.jboss.spec</groupId>
+        <artifactId>jboss-javaee-6.0</artifactId>
+        <version>1.0.0.Final</version>
+        <type>pom</type>
+        <scope>provided</scope>
+    </dependency>
+    <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.8.1</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+<!-- clip -->
+
+p(important). %我们强烈建议 *不要使用* 坐标为  @javax:javaee-api@ 的 Java EE API。这个包包含压缩过的方法体，如果你在运行时（甚至运行测试时）将它添加到 classpath 中，可能导致诡异的 Absent Code 错误。更详细的信息，请阅读 "这条 FAQ":http://community.jboss.org/wiki/WhatsTheCauseOfThisExceptionJavalangClassFormatErrorAbsentCode 。%
+
+p. 项目的基础已经准备就绪！跳转到 "在 Eclipse 中打开项目":#open_project_in_eclipse 我们开始写些代码！
+
+h4(#create_project_using_forge). 使用 Forge 创建项目
+
+"JBoss Forge":forge_home 是一个命令行工具，用于标准环境中快速应用开发。你可以将看成多个 Maven Archetype 结合体。
+
+安装 Forge 不需要太多时间，本教程会教你从基础学起。按照下面的步骤来安装：
+
+# "下载 Forge":forge_download 并解压到硬盘的一个文件夹中，我们称之为 @$FORGE_HOME@
+  这里假设你已经将压缩解压你的用户目录下，名为 @forge@ 
+# 将 @$FORGE_HOME/bin@ 添加到你的系统变量 path （Windows, Linux 或 Mac OSX）中
+
+在基于 Unix 的系统上，可以编辑当前用户的 $HOME/.bashrc 或 $HOME/.profile 文件将它添加到 Path 中。你需要设置以下环境变量：
+
+bc(command). $ export FORGE_HOME=$HOME/forge/
+$ export PATH=$PATH:$FORGE_HOME/bin
+
+p(info). %Windows 系统上，你可以用鼠标右击打开 “控制面板”，然后点击“系统属性”，打开“高级”标签，然后打开“环境变量”，添加以上两项。建议设置到用户变量中，除非你已经设置所有用户都可以访问解压的目录。%
+
+Forge 已经安装完毕，打开一个命令行窗口，运行 @forge@ 命令：
+
+bc(command).. $ forge
+   _____                    
+  |  ___|__  _ __ __ _  ___ 
+  | |_ / _ \| `__/ _` |/ _ \  \\
+  |  _| (_) | | | (_| |  __/  //
+  |_|  \___/|_|  \__, |\___| 
+                  |___/      
+ 
+[no project] ~ $
+
+p. 没错，Forge 已经运行起来了。下面开始创建项目。
+
+在 Forge shell 中，执行以下命令创建一个空项目，与前面使用 Maven Archetype 创建一个项目非常相似： 
+
+bc(command). $ new-project --named arquillian-tutorial --topLevelPackage org.arquillian.example
+
+p. 这个命令会在当前目录中生成一个基于 Maven 的 Java 项目，文件夹名为 @arquillian-tutorial@ 。
+
+Forge 生成的项目文件结构如下：
+
+(filetree)* src/
+** main/
+*** java/ - Place all application Java source files here (under Java package)
+*** resources/ - Place all application configuration files here
+**** META-INF/
+***** forge.xml - An empty Forge settings file
+** test/
+*** java/ - Place all test Java source files heres (under Java package)
+*** resources/ - Place all test configuration files here (e.g., arquillian.xml)
+* pom.xml - The Maven build file. Tells Maven how your project should be built.
+
+在 Forge shell 中， Forge 切换到项目目录为当前目录。
+
+bc(command). [arquillian-tutorial] arquillian-tutorial $ 
+
+默认情况下，Forge 会设置项目使用 Java 1.6，也就是 Arquillian 要求的最低 Java 版本。
+
+现在要做是添加 Java EE API 。这可以通过 @project add-dependency@ 命令来完成：
+
+bc(command). $ project add-dependency org.jboss.spec:jboss-javaee-6.0:1.0.0.Final:pom:provided
+
+你还需要添加 JUnit 4.8，也是 Arquillian 要求的最低 JUnit 版本，添加为 test-scoped dependency：
+
+bc(command). $ project add-dependency junit:junit:4.8.1:test
+
+Forge 生成的最终 pom.xml 文件内容如下：
+
+div(filename). pom.xml
+
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xsi:schemaLocation="
+        http://maven.apache.org/POM/4.0.0
+        http://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.arquillian.example</groupId>
+    <artifactId>arquillian-tutorial</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <version>1.0.0.Final</version>
+            <type>provided</type>
+            <scope>pom</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <repositories>
+      <repository>
+          <id>JBOSS_NEXUS</id>
+          <url>http://repository.jboss.org/nexus/content/groups/public</url>
+      </repository>
+    </repositories>
+    <build>
+        <finalName>arquillian-tutorial</finalName>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+p(info). %Arquillian 已经通过 Maven 中心仓库发布，所以 pom.xml 中的 JBoss Public 仓库声明不是必须的，可以删除。但是请记住，你可能需要它获取一些不在  Maven 中心仓库中的 JBoss 软件。%
+
+p(warning). %如果你不想显式在 pom.xml 中定义这些仓库，请阅读 JBoss 官网的 "Maven 入门":http://community.jboss.org/wiki/MavenGettingStarted-Users ，在你的 settings.xml 文件中全局启用它。%
+
+p. 项目的基础已经准备就绪！跳转到 "在 Eclipse 中打开项目":#open_project_in_eclipse 我们开始写些代码！
+
+h3. 在 Eclipse 中打开项目
+
+开发 Java 项目时，你可能要用到 IDE，比如 Eclipse。Arquillian 设计时已经考虑到 IDE 友好性，这就意味你在 IDE 中运行 Arquillian 测试时不需要一些特殊的修改。接下来我们马上就使用 IDE。 
+
+打开 Eclipse。既然是一个 Maven 项目，你就需要安装 "Maven Integration for Eclipse":m2e_home (m2e) 插件来打开这个项目。如果你还没安装，最简单的方法就是安装 "JBoss Tools":tools_home 。按照下步骤从 Eclipse Marketplace （有点像 Eclipse 应用商店）中安装。
+
+# 从主菜单中选择 @Help > Eclipse Marketplace...@ 
+# 在输入框中输入“jboss tools”（不含引号），按 Enter 键
+# 点击 JBoss Tools (Indigo) 旁边的 Install 按钮 
+# 完成安装向导，根据提示重启 Eclipse
+
+JBoss Tools 为 Java EE 开发提供了一个很好的环境，包含 CDI 支持。不用担心，这不是什么超重量级的插件。
+
+但是，如果你只想安装 Maven 集成，而不需要其它 JBoss Tools 插件，可以按以下步骤进行：
+
+# 从主菜单中选择 @Help > Eclipse Marketplace...@ 
+# 在输入框中输入“maven”（不含引号），按 Enter 键
+# 点击 Maven Integration for Eclipse 旁边的 Install 按钮
+# 完成安装向导，根据提示重启 Eclipse
+# 重复这些步骤安装 Maven Integration for Eclipse WTP
+
+一旦你安装了 Maven Integration 插件，可以按以下几步打开项目：
+
+# 从主菜单中选择 @File > Import...@ 
+# 在输入框中输入“existing maven” 
+# 选择 Existing Maven Projects，然后点击 Next 按钮
+# 点击 Browse... 按钮
+# 查找系统中项目文件夹，然后点击 OK 按钮
+# 点击 Finish 按钮打开项目
+
+Eclipse 会识别 Maven 项目，在 Project Navigator 打开。如果展开项目，如图所示：
+
+!/images/guides/arquillian_tutorial_eclipse_project.png!
+
+现在可以开始干正事了！
+
+h3. 创建组件
+
+要写一个 Arquillian 测试，我还需要一个用于测试的组件。我们先从创建一个最基本的组件开始，来学习如何运行 Arquillian 测试。后面，我们再探讨一些更复杂的场景。
+
+在 IDE 中的 @org.arquillian.example@ 包中创建一个名为 @Greeter@ 的 Java 类。将文件内容替换成如下：
+
+div(filename). src/main/java/org/arquillian/example/Greeter.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.io.PrintStream;
+
+/**
+ * A component for creating personal greetings.
+ */
+public class Greeter {
+    public void greet(PrintStream to, String name) {
+        to.println(createGreeting(name));
+    }
+
+    public String createGreeting(String name) {
+        return "Hello, " + name + "!";
+    }
+}
+
+p. 我们要验证在调用 CDI(Contexts and Dependency Injection) 时它是否运行正确。当然，我们可以简单写一个单元测试。但我们假设这个 Bean 使用了其它服务组件，例如依赖注入和消息，这些必须在容器内进行测试。（除此之外，这样也是为了给它扩展空间 ~;)）
+
+要使用 CDI bean，我们使用 @@Inject@ 将它注入测试用例中。这样就可以在 Arquillian 测试调用了！现在该往项目中添加 Arquillian API ！
+
+h3. 添加 Arquillian API
+
+在编辑器打开 @pom.xml@ 文件，它位于项目根目录中。我们必须告诉 Maven 使用的 artifact 的版本。在 @<build>@ 元素上面直接插入下面 XML 片段来导入 BOM(Bill of Materials)，解决 Arquillian 传递性依赖。
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.arquillian</groupId>
+            <artifactId>arquillian-bom</artifactId>
+            <version>#{site.components['arquillian-core'].latest_version}</version>
+            <scope>import</scope>
+            <type>pom</type>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+<!-- clip -->
+
+p. 接下来，在最后一个  @<dependency>@ 元素后面添加以下 XML 片段来添加 Arquillian JUnit 集成：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependency>
+    <groupId>org.jboss.arquillian.junit</groupId>
+    <artifactId>arquillian-junit-container</artifactId>
+    <scope>test</scope>
+</dependency>
+<!-- clip -->
+
+p. Arquillian JUnit 会添加 Arquillian 和 ShrinkWrap API 到 test classpath中。你需要这些库文件来编写和编译一个 JUnit Arquillian 测试。
+
+p(info). %要使用 TestNG 替代 JUnit，只要将 Arquillian JUnit 成 Arquillian TestNG 集成。%
+
+p. 如果此时遇到 pom.xml 麻烦，你可以直接下载 "这个 gist":https://gist.github.com/1263892 。
+
+*万事俱备，只欠东风！*
+
+h3. 编写 Arquillian 测试
+
+Arquillian 测试看起来与普通单元测试没两样，仅仅是需要额外的约定。我们返回 IDE 。
+
+p(warning). %如果你看到警告信息“Project configuration is out of date with pom.xml”，右键点击项目，选择 Project > Maven > Update Project Configuration 来同步项目配置。%
+
+在 src/test/java 下面的 @org.arquillian.example@ 包中创建一个名为 @GreeterTest@ 的 JUnit 测试。你不必创建 setup 和 teardown 方法，因为 Arquillian 会揽起这些重活。这是目前的内容：
+
+div(filename). src/test/java/org/arquillian/example/GreeterTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+public class GreeterTest {
+    @Test
+    public void should_create_greeting() {
+        Assert.fail("Not yet implemented");
+    }
+}
+
+p. 至于提到的额外的约定。一个 Arquillian 测试用例有三个必要条件：
+
+# 在测试类上使用 @@RunWith(Arquillian.class)@ 
+# 一个使用 @@Deployment@ 的 static 方法，返回一个 ShrinkWrap 归档文件
+# 至少有一个使用 @@Test@ 的方法
+
+@@RunWith@ 告诉 JUnit 使用 Arquillian 作为测试控制器。 Arquillian 然后会查找一个使用 @@Deployment@ 的 static 方法来获取测试归档文件（譬如微部署）。然后奇迹发生了，每一个 @@Test@ 方法在容器环境中运行。
+
+h4. 什么是测试归档?
+
+测试归档的目的是将测试要使用类和资源与余下的 classpath 中隔离开来。与普通的单元测试不同的是，Arquillian 并不是简单的使用完整的 classpath 。相反，你只要包含测试要用的那些（也可能是完整的 classpath，如果你断定那是你需要的）。归档使用  "ShrinkWrap":shrinkwrap_home 定义，它是一组 Java API，用于创建归档文件（例如，jar, war, ear）。微部署策略让你更专注于自己要测试的类，让你的测试保持苗条。
+
+p(info). %ShrinkWrap 还支持解析 Maven artifacts （库文件），编程式的创建配置文件，然后可以添加到测试文件中。 详细介绍，请阅读 "ShrinkWrap 简介":/guides/shrinkwrap_introduction  。%
+
+现在开始添加 Arquillian 约定：
+
+div(filename). src/test/java/org/arquillian/example/GreeterTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(Arquillian.class)
+public class GreeterTest {
+
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap.create(JavaArchive.class)
+            .addClass(Greeter.class)
+            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @Test
+    public void should_create_greeting() {
+        Assert.fail("Not yet implemented");
+    }
+}
+
+p. 利用 ShrinkWrap，我们定义了一个 Java 归档文件（jar）作为部署文件，包括了测试要调用的 @Greeter@ 类，以及一个空的 beans.xml 文件（位于 META-INF 目录），用于在这个归档中激活 CDI 。
+
+现在我们要做的是在测试方法上面将  @Greeter@  直接注入到一个字段中，将未实现的测试方法替换成一个 Bean 行为的断言。为了看起来更直接，我们将 greeting 信息直接打印到控制台中。
+
+div(filename). src/test/java/org/arquillian/example/GreeterTest.java
+
+bc(prettify).. // clip
+import javax.inject.Inject;
+// clip
+
+@Inject
+Greeter greeter;
+
+@Test
+public void should_create_greeting() {
+    Assert.assertEquals("Hello, Earthling!",
+        greeter.createGreeting("Earthling"));
+    greeter.greet(System.out, "Earthling");
+}
+
+p. 这是完整的测试。
+
+div(filename). src/test/java/org/arquillian/example/GreeterTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import javax.inject.Inject;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.Test;
+import org.junit.Assert;
+import org.junit.runner.RunWith;
+
+@RunWith(Arquillian.class)
+public class GreeterTest {
+
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap.create(JavaArchive.class)
+            .addClass(Greeter.class)
+            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @Inject
+    Greeter greeter;
+
+    @Test
+    public void should_create_greeting() {
+        Assert.assertEquals("Hello, Earthling!",
+            greeter.createGreeting("Earthling"));
+        greeter.greet(System.out, "Earthling");
+    }
+}
+
+p. 你已经写好了第一个 Arquillian 测试！
+
+但你可能想知道怎么运行测试 ~:S 如果你是这样想的， “和单元测试一样”，一点也没错！然而，我们首先要做的是添加一个容器适配器（container adapter）到 classpath 中。
+
+h3. 添加容器适配器（Container Adapter）
+
+前面已经讨论了很多有关容器内测试，但目前还没提及是哪一个容器。因为它是运行时的决策。
+
+Arquillian 根据 test classpath 中提供的容器适配器来选择要使用的容器。这就是说，我们还要向项目中添加一些额外的库文件。
+
+Arquillian 测试可以运行在任何与编程模型兼容的容器中（只要这个容器有相应的  Arquillian 适配器）。我们测试使用 CDI 编程模型，所以我们必须使用任何支持 CDI 的容器。在开发时，为了快速的响应，我们先使用 Weld EE 嵌入式容器。
+
+打开 @pom.xml@ 文件，在其他 @<dependency>@ 元素下面，直接添加下面一组依赖：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependency>
+    <groupId>org.jboss.arquillian.container</groupId>
+    <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+    <version>1.0.0.CR3</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.jboss.weld</groupId>
+    <artifactId>weld-core</artifactId>
+    <version>1.1.5.Final</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>slf4j-simple</artifactId>
+    <version>1.6.4</version>
+    <scope>test</scope>
+</dependency>
+<!-- clip -->
+
+p. 总结一下，这里需要三个库文件来运行 Arquillian（使用JUnit 时）：
+
+# Arquillian JUnit 集成
+# Arquillian 容器适配器来指定目标容器
+# 容器运行环境（嵌入式容器）或者容器客户端（远程容器）
+
+在本例中，我使用了一个嵌入式容器，所以我还需要容器运行时依赖， Weld。
+
+返回到测试。
+
+h3. 运行 Arquillian 测试
+
+一旦将所有必须的 Arquillian 库添加到  classpath，你就可以像运行单元测试那样来运行 Arquillian 测试，不管你是从 IDE 中运行，还是构建脚本或者是其他测试插件。下面我们从 Eclipse 中运行测试。
+
+在 IDE 窗口中，在  Package Explorer （或者在编辑器）中右键点击 GreeterTest.java 文件，弹出菜单中选择 Run As > JUnit Test 。
+
+!/images/guides/arquillian_tutorial_run_junit_test.png!
+
+当你运行测试，你应该可以看到控制台中打印出下面的信息：
+
+bc(output). 21 [main] INFO org.jboss.weld.Version - WELD-000900 1.1.5 (Final)
+Hello, Earthling!
+
+然后你应该会看到 JUnit 视图弹出来了，显示一个 *(greenbar)绿条*!
+
+!/images/guides/arquillian_tutorial_junit_green_bar.png!
+
+你也可以使用 Maven 在命令行中运行这个测试：
+
+bc(command). $ mvn test
+
+你应该可以看控制中打印出下面的信息：
+
+bc(output). -------------------------------------------------------
+T E S T S
+-------------------------------------------------------
+Running org.arquillian.example.GreeterTest
+19 [main] INFO org.jboss.weld.Version - WELD-000900 1.1.5 (Final)
+Hello, Earthling!
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.907 sec
+
+*恭喜你!* 你已经用 Arquillian 赚到第一个 *(greenbar)绿条* !
+
+h3. 深入介绍
+
+你怎么知道 CDI 在起作用？你已经知道，Arquillian 创建了 @Greeter@ 实例，并在没有 CDI 参与的情况下将它注入测试中。我们下面会证明它的确存在。
+
+在  @org.arquillian.example@ 包中创建一个名为 @PhraseBuilder@ 的  CDI bean ，用于从模板创建短语。
+
+div(filename). src/main/java/org/arquillian/example/PhraseBuilder.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.PostConstruct;
+
+public class PhraseBuilder {
+    private Map<String, String> templates;
+
+    public String buildPhrase(String id, Object... args) {
+        return MessageFormat.format(templates.get(id), args);
+    }
+
+    @PostConstruct
+    public void initialize() {
+        templates = new HashMap<String, String>();
+        templates.put("hello", "Hello, {0}!");
+    }
+}
+
+p. 下一步，打开 @Greeter@ 类，创建一个新的构造器，使用构造器注入的方式注入 @PhraseBuilder@ 。然后，将创建 Greeting短语的任务丢给注入的 bean。
+
+div(filename). src/main/java/org/arquillian/example/Greeter.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.io.PrintStream;
+import javax.inject.Inject;
+
+public class Greeter {
+
+    private PhraseBuilder phraseBuilder;
+
+    @Inject
+    public Greeter(PhraseBuilder phraseBuilder) {
+        this.phraseBuilder = phraseBuilder;
+    }
+
+    public void greet(PrintStream to, String name) {
+        to.println(createGreeting(name));
+    }
+
+    public String createGreeting(String name) {
+        return phraseBuilder.buildPhrase("hello", name);
+    }
+}
+
+p. 现在，要让测试运行，必须创建一个 @PhraseBuilder@ 实例， @@PostConstruct@ 方法会被调用，当创建一个 @Greeter@ 实例时，它会被到 @Greeter@ 的构造器中。如果这些加到一起，可以确信是 CDI 在起作用。
+
+p. 最后一步，因为我创建一个新类，在测试的 @@Deployment@ 方法返回的归档文件必须添加这个类。将下面这行 :
+
+bc(prettify).. .addClass(Greeter.class)
+
+p. ...修改为:
+
+bc(prettify).. .addClasses(Greeter.class, PhraseBuilder.class)
+
+p. 再次运行测试，你又得到一个 *(greenbar)绿条*! 感觉很好，是不是？
+
+h3. 调试测试
+
+这里不打算长篇大论。为什么呢，因为 Arquillian 测试是如此直接，就如你调试一个单元测试一样，只需要在任何地方（测试代码或者是程序代码）添加一个断点。然后右键点击文件，选择 Debug As > JUnit Test 。你现在是在一个容器中进行调试。 
+
+!/images/guides/arquillian_tutorial_debugging_test.png!
+
+p(warning). %如果你在使用远程容器，Debug As 并不会激活断点。相反，你必须以 debug 模式启动容器，并连接到调试器上。这是因为测试会在一个不同 JVM 中运行，而不是先前的测试运行环境中。%
+
+如你所见，Arquillian 是测试 CDI 程序的理想工具。它负责加载 CDI 环境，将 Bean 直接注入测试中。最棒的是，使用一个嵌入式容器时，测试运行和单元测试一样快。如果这就是你要的，你可以退出本教程，开始写测试了。
+
+*但是!* 嵌入式容器代表所有的场景了吗？如果在一个全功能的容器中运行，组件会没问题吗？
+
+Arquillian 一个引以自豪的地方就你可以在各种的兼容的容器中运行同一测试，不管是嵌入式的容器还是独立的容器。如果你要使用多个容器，请继续往下阅读。
+
+h3. 添加其他容器
+
+前面已经学习了， Arquillian 是根据 classpath 中的容器适配器来选择容器。要切换到其他容器，你只要在运行测试前将容器适配器添加到 classpath 中。
+
+p(important). %运行过程中，classpath 中只能包含唯一的容器适配器。%
+
+切换 classpath 中库文件一种方法是每次手动编辑定义在 @pom.xml@ 中依赖。但这会让人发狂，这儿有一种更好的方法。 
+
+我们可以利用 Maven 的 profile 将依赖分组，每一个组管理一种容器适配器及相应的工件（库文件），运行测试时，你可以使用命令行参数（-P）或 IDE 的偏好设置，来决定要激活使用哪一个组。
+
+打开 @pom.xml@ 文件，为  Weld EE 嵌入式容器创建一个新的 profile，在 @<dependencies>@ 元素下面直接插入下面 XML 片断：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<profiles>
+    <profile>
+        <id>arquillian-weld-ee-embedded</id>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.spec</groupId>
+                <artifactId>jboss-javaee-6.0</artifactId>
+                <version>1.0.0.Final</version>
+                <type>pom</type>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+                <version>1.0.0.CR3</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-core</artifactId>
+                <version>1.1.5.Final</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>1.6.4</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </profile>
+</profiles>
+<!-- clip -->
+
+p. 接下来，从主  @<dependencies>@ 部分删除 @jboss-javaee-6.0@ 依赖及 Weld EE embedded 容器适配器。下面是完成时 @<dependencies>@ 和 @<profiles>@ 部分的代码：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependencies>
+    <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.8.1</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.arquillian.junit</groupId>
+        <artifactId>arquillian-junit-container</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+<profiles>
+    <profile>
+        <id>arquillian-weld-ee-embedded</id>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.spec</groupId>
+                <artifactId>jboss-javaee-6.0</artifactId>
+                <version>1.0.0.Final</version>
+                <type>pom</type>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+                <version>1.0.0.CR3</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-core</artifactId>
+                <version>1.1.5.Final</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>1.6.4</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </profile>
+</profiles>
+<!-- clip -->
+
+p(info). %Java EE API 依赖已经移到这个 profile 中，因为一些容器，比如 Embedded GlassFish，已经提供这些库文件，同时包含在 classpath 中会引起冲突，所以不得不在 classpath 上多花点心思。%
+
+现在我们  @pom.xml@ 的 @<profiles>@ 添加另外两个 profile，首先是使用 "Embedded GlassFish":http://embedded-glassfish.java.net :
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<profile>
+    <id>arquillian-glassfish-embedded</id>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-glassfish-embedded-3.1</artifactId>
+            <version>1.0.0.CR2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.main.extras</groupId>
+            <artifactId>glassfish-embedded-all</artifactId>
+            <version>3.1.2</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</profile>
+<!-- clip -->
+
+p. 还有一个是针对托管的 JBoss AS：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<profile>
+    <id>arquillian-jbossas-managed</id>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <version>1.0.0.Final</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-arquillian-container-managed</artifactId>
+            <version>7.1.1.Final</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</profile>
+<!-- clip -->
+
+p. 现在你可以选择在三种容器之一中来运行测试。
+
+p. 如果此时 pom.xml 遇到问题，可以直接下载 "这个 gist":https://gist.github.com/1263934 。
+
+h3. 跨容器测试
+
+当你在 Eclipse 中刷新项目，你会发现它不再构建。这是因为你必须激活一个容器 profile 。我们激活 Weld EE embedded profile 恢复到原来的状态。
+
+在 Eclipse 中有两种方法可以激活一个 Maven profile：
+
+# 手动配置（标准方法）
+# Maven profile selector （JBoss Tools 中提供）
+
+h4. 设置活动的 Maven profile: 手动配置
+
+手动设置一个活动的 profile，按照以下步骤进行：
+
+# 右键点击项目，选择 Properties
+# 选择 Maven 属性标签
+# 在 Active Maven Profiles 中输入 profile id（如， @arquillian-weld-ee-embedded@ ）
+# 点击 OK 按照，接受项目修改
+
+这是 profile 已经激活时 Maven 属性屏幕快照：
+
+!/images/guides/arquillian_tutorial_maven_properties.png!
+
+h4. 设置活动的 Maven profile: Maven profile selector
+
+如果你安装了 JBoss Tools ，选择活动的 profile 就简单得多：
+
+# 右键点击项目，选择 Maven > Select Active Profiles...
+（你也可以使用快捷键 Ctrl+Shift+P 或者工具栏上的按钮）
+# 选择你要激活的 Profile 旁边的复选框（如， @arquillian-weld-ee-embedded@ ）
+# 点击 OK 按钮
+
+这是 Profile 已经激活时 Maven profile selector 对话框：
+
+!/images/guides/arquillian_tutorial_maven_profile_selector.png!
+
+一旦你激活了 profile，你就可以再次成功运行测试。
+
+你已经掌握了在 Weld EE Embedded 中进行测试。重复以上步骤，我们切换到 GlassFish embedded，这次只要激活 @arquillian-glassfish-embedded@ profile。再次运行测试，再次运行测试你会看到控制台中 GlassFish 开始启动，接着你又看到 *(greenbar)绿条*!
+
+现在你已经在两个不同的容器（ CDI 容器（Weld）和 Java EE 容器（GlassFish））中运行了同样的测试。执行过程类似。要保证组件在真实的容器运行，我们需要一个独立的容器。下面我们切换到 JBoss AS。
+
+要在独立 JBoss AS 实例中运行测试，你首先要进行设置。你可以：
+
+# 下载并解压到项目外的一个位置，或者
+# 在构建阶段由 Maven 代劳。
+
+按照以下步骤在项目外设置 JBoss AS 7 ：
+
+# "下载 JBoss AS 7":as7_download
+（确认你选择的版本与 @pom.xml@ 文件中 @<artifactId>jboss-as-arquillian-container-managed</artifactId>@ 定义的版本一致）
+# 解压
+# （可选步骤）设置 @JBOSS_HOME@ 环境变量，值为解压后的目录路径
+
+如果想利用 Maven 来完成，在 @arquillian-jbossas-managed@ profile 的  @<id>@ 下面添加下面的 XML 代码片断：
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<build>
+    <plugins>
+        <plugin>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>unpack</id>
+                    <phase>process-test-classes</phase>
+                    <goals>
+                        <goal>unpack</goal>
+                    </goals>
+                    <configuration>
+                        <artifactItems>
+                            <artifactItem>
+                                <groupId>org.jboss.as</groupId>
+                                <artifactId>jboss-as-dist</artifactId>
+                                <version>7.1.1.Final</version>
+                                <type>zip</type>
+                                <overWrite>false</overWrite>
+                                <outputDirectory>target</outputDirectory>
+                            </artifactItem>
+                        </artifactItems>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build> 
+<!-- clip -->
+
+p. 要使用托管的 JBoss AS 7 实例，你还要少许 Arquillian 配置。创建下面配置文件，指定 @jbossHome@ 属性，值为 JBoss AS 7 安装的位置。如果你使用了 Maven dependency 插件，位置为 @target/jboss-as-7.1.1.Final@ 。
+
+div(filename). src/test/resources/arquillian.xml
+
+bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+    <container qualifier="jbossas-managed" default="true">
+        <configuration>
+            <property name="jbossHome">target/jboss-as-7.1.1.Final</property>
+        </configuration>
+    </container>
+</arquillian>
+
+p. 现在将活动的 Maven profile 更改为 @arquillian-jbossas-managed@ ，再次运行测试。你应该可以看控制台中  JBoss AS 正在运行，当然你又看到一个 *(greenbar)绿条*!
+
+p(info). %使用 System.out 打印的信息写入了服务器日志，而不控制台。%
+
+这是 _同一_ 测试，这次是在标准（非嵌入式）Java EE 容器中运行。 Arquillian 负责打包，以 Java EE 归档形式部署到容器中，远程的执行测试，收集执行结果，反馈给 Eclipse JUnit 结果视图（或者写入 Maven surefire 测试报告中）。
