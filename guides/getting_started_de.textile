@@ -940,3 +940,42 @@ p(info). %Die Meldungen von System.out werden direkt ins Server log und nicht au
 
 Das ist _der gleiche_ Test. Nur diesmal in einem alleinstehend (nicht eingebetteten) Javva EE Container. Arquillian packt das Test Archiv, deployt es auf den Container als Java EE Archiv und führt den Test remote durch. Erfasst dann die Ergebnisse und stellt sie der Eclipse JUnit Ergebnis View (oder Maven Surefire) zur Verfügung.
 
+p(important). %Soll JDK 7 eingesetzt werden ist es nötig -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.KQueueSelectorProvider unter MAC OSX und -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.EPollSelectorProvider für Linux Systeme zu setzen.%
+
+p. Beispiel haft hier für ein MAC OS:
+
+div(filename). src/test/resources/arquillian.xml
+
+bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+    <container qualifier="jbossas-managed" default="true">
+        <configuration>
+            <property name="jbossHome">target/jboss-as-7.1.1.Final</property>
+			<property name="javaVmArguments">-Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.KQueueSelectorProvider</property>
+        </configuration>
+    </container>
+</arquillian>
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<build>
+    <plugins>
+        <plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-surefire-plugin</artifactId>
+			<version>2.12</version>
+			<configuration>
+				<jvm>${settings.JAVA_HOME_7}/bin/java</jvm>
+				<forkMode>once</forkMode>
+				<argLine>-XX:-UseSplitVerifier -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.KQueueSelectorProvider</argLine>
+			</configuration>
+		</plugin>
+    </plugins>
+</build> 
+<!-- clip -->
+
+p(important). %Damit die Unit Tests in Eclipse ausgeführt werden können muss auch hier der -Djava.nio.channels.spi.SelectorProvider gesetzt werden. Am leichtesten geht dies über die Default VM arguments, konfigurierbar unter dem JDK.%
