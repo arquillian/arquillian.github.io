@@ -12,14 +12,14 @@ TODO: ["use utility EJB to handle transaction boundaries?"]
 
 * 创建一个包含 JPA 描述文件(persistence.xml) 测试归档文件
 * 在测试中注入 EntityManager 和 UserTransaction 
-* 保存实体数据及通过 JPQL 和 JPA 2 Criteria API 来读取实体数据
-* 使用不同 JPA 实现运行测试
+* 保存实体数据以及使用 JPQL 和 JPA 2 Criteria API 来读取实体数据
+* 使用不同 JPA 厂商实现来运行测试
 
-你很快会发现 Arquillian 提供了完美的方案，让你测试 JPA 或者仅仅是体验它是如何运行的。我们设计些教程的初衷就是为了方便学习，这样任何使用你使用 JPA 时都可以回过头参考。 
+你很快会发现 Arquillian 提供了完美的方案，不管你是出于测试 JPA 还是仅仅想体验一下它是如何运行的。我们设计些本教程的初衷就是为了方便学习，这样你在使用过程中用到 JPA 时都可以回过头来参考。 
 
 h3. 预备知识
 
-我们假设你已经阅读了 "入门":/guides/getting_started guide 或者 "入门：使用 Forge":/guides/get_started_faster_with_forge 教程，并且准备好了 Arquillian 测试套件的一个Maven 项目。删除项目中已有的 Java 类，开始新课程。 我们将会添加一个 JPA 实体类到测试中，创建一个基本的 JPA 测试。 触类旁通，你可以将这步骤应用到其它你要测试的实体类上。
+我们假设你已经阅读了 "入门":/guides/getting_started  或者 "入门：使用 Forge":/guides/get_started_faster_with_forge 教程，并且准备好了 Arquillian 测试套件的一个Maven 项目。删除项目中已有的 Java 类，开始学习新教程。 我们将会添加一个 JPA 实体类到测试中，创建一个基本的 JPA 测试。 触类旁通，你可以将这步骤应用到其它你要测试的实体类上。
 
 本教程中这些步骤是针对一个 Maven 项目，但仍然要强调的是 Arquillian 并没强制要求你使用 Maven。 我们将会在 Embedded GlassFish 和一个本地 JBoss AS 7 实例中运行测试。你也可以使用任何 Arquillian 支持的提供了 JPA 环境的容器。
 
@@ -38,11 +38,11 @@ h3. 目的
 * 使用 JPQL 查询数据库
 * 使用 JPA 2 Criteria API 查询数据库
 
-完整的代码存放在 github 上， "Arquillian examples project":http://github.com/arquillian/arquillian-examples/tree/master/arquillian-persistence-tutorial。要看运行情况，要做的是运行下面的命令(请保持耐心，等待 Maven 下载相关依赖)。
+完整的代码存放在 github 上， "Arquillian examples project":http://github.com/arquillian/arquillian-examples/tree/master/arquillian-persistence-tutorial 。要看运行情况，要做的是运行下面的命令(请保持耐心，等待 Maven 下载相关依赖)。
 
 bc(command). mvn test
 
-下面深入研究它如何运行的。.
+下面探讨一下它是如何运行的。
 
 h3. 项目结构
 
@@ -74,9 +74,9 @@ h3. 项目结构
 **** test-persistence.xml
 * pom.xml
 
-@Game@ 是 JPA 实体类，test-persistence.xml 是一个修改版本的 persistence.xml，提供测试环境的 Persistence Unit 定义。 注意，这里有两个文件中包含了 test-persistence.xml 文件，每个都是针对不同的容器。后面我们介绍如何进行选择。
+@Game@ 是 JPA 实体类，test-persistence.xml 是一个修改版本的 persistence.xml，提供测试环境的 Persistence Unit 定义。 注意，这里有两个文件中包含了 test-persistence.xml 文件，每个都是针对不同的容器环境。后面我们介绍如何进行选择。
 
-我们建议最好使用一个专用 的 JPA 描述文件用于测试，这样测试和产品环境中可以使用不同的 DataSource 配置。 例如，在测试环境中，你可能想应用 "drop-and-create-tables" 策略来管理 DataSource。 你还可能想看到数据库查询的日志输出。 这些配置可以在 test-persistence.xml 中激活，而不影响主程序，下面你将会看到。 我们另外保留一份 persistence.xml，它是用于产品环境的定义文件。
+我们建议最好使用一个专用 的 JPA 描述文件用于测试，这样测试和生产环境中可以使用不同的 DataSource 配置。 例如，在测试环境中，你可能想应用 "drop-and-create-tables" 策略来管理 DataSource。 你还可能想看到数据库查询的日志输出。 这些配置可以在 test-persistence.xml 中激活，而不影响主程序运行，下面你将会看到。 我们另外保留一份 persistence.xml，它是用于生产环境的定义文件。
 
 这是 @Game@ 实体类的源文件，添加了 @@Entity@ Annotation：
 
@@ -133,7 +133,7 @@ p. 主键由字段上 @@Id@ 来定义。 其他列自动从 Bean 属性(标准�
 
 h3. 编写测试
 
-谈到测试，我们先创建一个 JUnit 4 Arquillian 测试用例， @GamePersistenceTest@, 准备它用来测试 JPA 操作。 我们利用 "CDI (JSR-299)":http://docs.jboss.org/cdi/spec/1.0/html 来注入要使用的资源。(可行方法，你也可以使用一个 EJB 工具来处理事务边界，我们将以后的教程中介绍)。
+谈到测试，我们先创建一个 JUnit 4 Arquillian 测试用例，名为 @GamePersistenceTest@, 准备它用来测试 JPA 操作。 我们利用 "CDI (JSR-299)":http://docs.jboss.org/cdi/spec/1.0/html 来注入要用到的资源。(候选方法，你也可以使用一个 EJB 工具来处理事务边界，我们将在后续的教程中介绍)。
 
 div(filename). src/test/java/org/arquillian/example/GamePersistenceTest.java
 
@@ -177,7 +177,7 @@ public class GamePersistenceTest {
     // tests go here
 }
 
-p. 我们从上到下来讲解这个测试的细节。
+p. 我们从上到下来一一讲解这个测试的细节。
 
 - @RunWith(Arquillian.class) := 告诉 JUnit 将运行测试的任务委派给 Arquillian runner。这样 Arquillian 可以提供为你的测试提供一套组件模型，包括容器的生命周期，依赖注入，及其它提升。注意，这里并没要求你继承一个基类，为其它用途留有余地。 
 - @Deployment 方法 := 使用 "ShrinkWrap":http://jboss.org/shrinkwrap 创建和返回一个微部署归档文件。 Arquillian 部署这个归档文件(还包含测试用例及额外的基础架构)到容器中。 然后测试作为这个小程序中一个组件开始运行。归档文件为测试提供了一个孤立环境。
@@ -243,9 +243,9 @@ public void commitTransaction() throws Exception {
     utx.commit();
 }
 
-p. Arquillian 分别在测试方法运行前后在容器内运行 @@Before@ 和 @@After@ 方法。methods inside the container, before and after each test method, respectively. T @@Before@ 方法是在注入操作之后运行。
+p. Arquillian 分别在测试方法运行前后在容器内运行 @@Before@ 和 @@After@ 方法。 @@Before@ 方法是在注入操作之后运行。
 
-注意我们不得不在 JTA 事务中显式的调用 @EntityManager@。 这一步必不可少，因为我们在使用两个不想干的资源。如果你是 EJB 中使用 JPA，参与是自动进行的，这里可能看起来有点诡异。
+注意我们不得不在 JTA 事务中显式的调用 @EntityManager@。 这一步必不可少，因为我们在使用两个不想干的资源。如果你是在 EJB 中使用 JPA，参与事务是自动进行的，这里可能看起来有点诡异。
 
 h4. 使用 JPQL 进行查询
 
@@ -270,7 +270,7 @@ public void shouldFindAllGamesUsingJpqlQuery() throws Exception {
     assertContainsAllGames(games);
 }
 
-p. 在这个测试结尾处调用 @assertContainsAllGames@。 这是一个自定义断言语句的方法，用来验证返回集合中包含所有存储在数据库中的 Title。
+p. 在这个测试结尾处调用 @@assertContainsAllGames@。 这是一个自定义断言语句的方法，用来验证返回集合中包含所有存储在数据库中的 Title。
 
 bc(prettify).. <!-- clip -->
 import java.util.Arrays;
@@ -677,7 +677,7 @@ h3. 在 JBoss AS 7 上运行测试
 
 首先需要一个不同的 Persistence Unit 定义，指定用于 JBoss AS 上的  Datasource(还可以选择性地设置一些 Hibernate 配置)。 
 
-如果你下在使用 JBoss AS 7.0, 你可以必须 " 在JBoss AS 配置中手动设置一个 DataSource":https://docs.jboss.org/author/display/AS7/Admin+Guide#AdminGuide-Datasources 或者使用内置 DataSource, java:jboss/datasources/ExampleDS。 这里的 针对  JBoss AS 7.0 的 Persistence Unit 描述文件就是内置的 DataSource。
+如果你正在使用 JBoss AS 7.0, 你可以必须 " 在JBoss AS 配置中手动配置一个 DataSource":https://docs.jboss.org/author/display/AS7/Admin+Guide#AdminGuide-Datasources 或者使用内置 DataSource, java:jboss/datasources/ExampleDS。 这里的 针对  JBoss AS 7.0 的 Persistence Unit 描述文件就是内置的 DataSource。
 
 div(filename). src/test/resources-jbossas-managed/test-persistence.xml
 
@@ -698,9 +698,9 @@ bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
 
 Hibernate 特有的属性 hibernate.hbm2ddl.auto 和 hibernate.show_sql 扮演着与前面描述的 EclipseLink 属性相同的角色。
 
-如果你正在使用 JBoss AS 7.1, 也就是我们推荐的版本，你可以添加一个 DataSource 描述文件动态的注册一个新 DataSource (例如, 一个以 -ds.xml 结尾的文件)，可以包含一个或多个 DataSource 定义，放在 Java归档文件的 META-INF 目录或者 web 归档文件 WEB-INF 目录。
+如果你正在使用 JBoss AS 7.1, 也就是我们推荐的版本，你可以添加一个 DataSource 描述文件动态的注册一个新 DataSource (例如, 一个以 -ds.xml 结尾的文件)，可以包含一个或多个 DataSource 定义，放在 Java 归档文件的 META-INF 目录或者 web 归档文件 WEB-INF 目录。
 
-这是一个定义 H2 DataSource 的描述文件，JNDI名为 jdbc/arquillian (与先前针对 GlassFish 定义的 JNDI 名相同):
+这是一个定义 H2 DataSource 的描述文件，JNDI 名为 jdbc/arquillian (与先前针对 GlassFish 定义的 JNDI 名相同):
 
 div(filename). src/test/resources/jbossas-ds.xml
 
@@ -718,7 +718,7 @@ bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
     </datasource>
 </datasources>
 
-p(info). %JBoss AS 7.1 内置支持 H2 数据。要使用其他数据，你必须将相应的数据库驱动放在安装位置，参见 "DataSources chapter of the JBoss AS 7.1 reference guide":https://docs.jboss.org/author/display/AS71/Admin+Guide#AdminGuide-Datasources.%
+p(info). %JBoss AS 7.1 内置支持 H2 数据库。要使用其他数据库，你必须将相应的数据库驱动放到安装位置，参见 "DataSources chapter of the JBoss AS 7.1 reference guide":https://docs.jboss.org/author/display/AS71/Admin+Guide#AdminGuide-Datasources.%
 
 现在更新 Persistence Unit 引用新的 DataSource:
 
@@ -745,7 +745,7 @@ bc(prettify). .addAsWebInfResource("jbossas-ds.xml")
 
 归档文件中包含这个文件不影响在 Embedded GlassFish 上运行。现在 DataSource 和 Persistence Unit 都准备好了。
 
-接下来，我们定义一个 Maven profile，将JBoss AS container adapter和JBoss AS resources 文件夹添加到 Classpath上：
+接下来，我们定义一个 Maven profile，将 JBoss AS container adapter 和JBoss AS resources 文件夹添加到 Classpath 上：
 
 div(filename). pom.xml
 
@@ -790,10 +790,10 @@ bc(prettify). <!-- clip -->
 
 bc(command). $ mvn clean test -Parquillian-jbossas-managed
 
-p(warning). %请确认 JBOSS_HOME 环境变更指向了 JBoss AS 7.1.1.Final 安装位置。 你可以指定在arquillian.xml设置 jbossHome 属性。%
+p(warning). %请确认 JBOSS_HOME 环境变量指向了 JBoss AS 7.1.1.Final 安装位置。 你也可以指定在 arquillian.xml 设置 jbossHome 属性。%
 
-Here's the kicker. 你也可以在 IDE 运行测试！只需要导入项目，激活 arquillian-jbossas-managed Maven profile (同时不要激活 arquillian-glassfish-embedded profile), 打开测试用例，最后选择 "Run As > JUnit Test"。 哇塞! 运行和其他 JUnit 测试一样。*(greenbar)绿条*!
+Here's the kicker. 你也可以在 IDE 运行测试！只需要导入项目，激活 arquillian-jbossas-managed Maven profile (同时不要激活 arquillian-glassfish-embedded profile), 打开测试用例，最后选择 "Run As > JUnit Test"。 哇塞! 运行和其他 JUnit 测试一样。 *(greenbar)绿条*!
 
-*心情的享受完美的 JPA 测试方案吧!*
+*尽情的享受完美的 JPA 测试方案吧!*
 
-p(info). %这篇教程中配置较多，也可以看出，我们能够想到全部列出来了。让你知道 Arquillian 的好处，就看在测试用例是多么简单。还要提醒你的是，它不受任何 Java EE6 容器或JPA2 实现的限制。%
+p(info). %这篇教程中配置较多，也可以看出，我们把能够想到的全部罗列出来了。让你知道 Arquillian 的好处，就看看测试用例是多么简单。还要提醒你的是，它不受任何 Java EE6 容器或 JPA2 厂商实现的限制。%
