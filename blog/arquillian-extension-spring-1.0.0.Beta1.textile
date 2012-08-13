@@ -1,0 +1,107 @@
+---
+tags: [ gsoc ]
+---
+
+This is the first Beta release of the Arquillian Spring extension.
+
+h3(highlights). Some of the highlights in this release
+
+<i class="icon-star"></i> Client side application context registration.
+<i class="icon-star"></i> Spring transaction support.
+
+h3. Client side tests with Spring
+
+p. Prior this release the extension allowed only to register the application context and inject beans in tests that were
+deployed to the container. We wanted to bring the same functionality to the client side. With two new annotations
+@SpringClientConfiguration and @SpringClientAnnotationConfiguration it is possible to set up the application context
+and inject beans into Arquillian tests that are running outside the container.
+
+.p An particular example of usage could be testing a REST service through Spring configured client.
+
+bc(prettify).. @RunWith(Arquillian.class)
+@SpringClientConfiguration("applicationContext-rest.xml")
+public class ClientRestServiceTestCase {
+
+    @Deployment
+    @OverProtocol("Servlet 3.0")
+    public static Archive createTestArchive() {
+        return Deployments.createWebApplication()
+                .addAsWebInfResource("mvc/web.xml", "web.xml")
+                .addAsWebInfResource("service-servlet.xml");
+    }
+
+    @ArquillianResource
+    private URL contextPath;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Test
+    @RunAsClient
+    public void testGetEmployees() {
+
+        Employee result = restTemplate.getForObject(contextPath + "/Employees/1", Employee.class);
+
+        assertEquals("The returned employee has invalid name.", "John Smith", result.getName());
+    }
+}
+
+h3. Spring transaction support
+
+.p The recent release of the transaction extension allowed to facilitate it within this extension and introduce build in
+support for Spring transactions. The set up is done in standard manner by defining a transaction manager in Spring
+context.
+
+div(filename). applicationContext.xml
+
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:context="http://www.springframework.org/schema/context"
+      xmlns:tx="http://www.springframework.org/schema/tx"
+      xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd">
+
+   <!-- Creates local entity manager factory -->
+   <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalEntityManagerFactoryBean">
+       <property name="persistenceUnitName" value="ArquillianTestUnit"/>
+   </bean>
+
+   <!-- Enables the declarative transaction support -->
+   <tx:annotation-driven transaction-manager="txManager"/>
+
+   <!-- Creates transaction manager -->
+   <bean id="txManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+       <property name="entityManagerFactory" ref="entityManagerFactory"/>
+   </bean>
+
+</beans>
+
+p. The definition of which manager should be used is done by specific the it's name through the @Transactional
+annotation.
+
+bc(prettify).. @RunWith(Arquillian.class)
+@Transactional(manager = "txManager")
+@SpringConfiguration("applicationContext.xml")
+public class JpaEmployeeRepositoryTestCase {
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Test
+    public void testSave() {
+
+        Employee employee = new Employee();
+        employee.setName("Test employee");
+
+        employeeRepository.save(employee);
+
+        List<Employee> result = entityManager.createQuery("from Employee").getResultList();
+
+        assertEquals("Two employees were expected.", 1, result.size());
+    }
+}
+
+We look forward to hearing your feedback about this release in the "community forums":#{site.project_space}!
