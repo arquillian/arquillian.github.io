@@ -23,7 +23,7 @@ h3. 预备知识
 
 本教程中这些步骤是针对一个 Maven 项目，但仍然要强调的是 Arquillian 并没强制要求你使用 Maven。 我们将会在 Embedded GlassFish 和一个本地 JBoss AS 7 实例中运行测试。你也可以使用任何 Arquillian 支持的提供了 JPA 环境的容器。
 
-p(warning). %你无法在本教程中使用 arquillian-weld-ee-embedded profile，因为 Weld 并没提供 JPA 服务(Weld 仅提供了CDI)。%
+p(warning). %你无法在本教程中使用 arquillian-weld-ee-embedded profile， 因为 Weld 并没提供 JPA 服务(Weld 仅提供了CDI)。%
 
 h3. 目的
 
@@ -38,7 +38,7 @@ h3. 目的
 * 使用 JPQL 查询数据库
 * 使用 JPA 2 Criteria API 查询数据库
 
-完整的代码存放在 github 上， "Arquillian examples project":http://github.com/arquillian/arquillian-examples/tree/master/arquillian-persistence-tutorial 。要看运行情况，要做的是运行下面的命令(请保持耐心，等待 Maven 下载相关依赖)。
+完整的代码托管存放在 github 上， "Arquillian examples project":http://github.com/arquillian/arquillian-examples/tree/master/arquillian-persistence-tutorial 。要看运行情况，要做的是运行下面的命令(请保持耐心，等待 Maven 下载相关依赖)。
 
 bc(command). mvn test
 
@@ -76,7 +76,7 @@ h3. 项目结构
 
 @Game@ 是 JPA 实体类，test-persistence.xml 是一个修改版本的 persistence.xml，提供测试环境的 Persistence Unit 定义。 注意，这里有两个文件中包含了 test-persistence.xml 文件，每个都是针对不同的容器环境。后面我们介绍如何进行选择。
 
-我们建议最好使用一个专用 的 JPA 描述文件用于测试，这样测试和生产环境中可以使用不同的 DataSource 配置。 例如，在测试环境中，你可能想应用 "drop-and-create-tables" 策略来管理 DataSource。 你还可能想看到数据库查询的日志输出。 这些配置可以在 test-persistence.xml 中激活，而不影响主程序运行，下面你将会看到。 我们另外保留一份 persistence.xml，它是用于生产环境的定义文件。
+我们建议最好使用一个专用 的 JPA 描述文件用于测试，这样测试和生产环境中可以使用不同的 DataSource（数据源）配置。 例如，在测试环境中，你可能想应用 "drop-and-create-tables" 策略来管理 DataSource。 你还可能想看到数据库查询的日志输出。 这些配置可以在 test-persistence.xml 中激活，而不影响主程序运行，下面你将会看到。 我们另外保留一份 persistence.xml，它是用于生产环境的定义文件。
 
 这是 @Game@ 实体类的源文件，添加了 @@Entity@ Annotation：
 
@@ -133,7 +133,7 @@ p. 主键由字段上 @@Id@ 来定义。 其他列自动从 Bean 属性(标准�
 
 h3. 编写测试
 
-谈到测试，我们先创建一个 JUnit 4 Arquillian 测试用例，名为 @GamePersistenceTest@, 准备它用来测试 JPA 操作。 我们利用 "CDI (JSR-299)":http://docs.jboss.org/cdi/spec/1.0/html 来注入要用到的资源。(候选方法，你也可以使用一个 EJB 工具来处理事务边界，我们将在后续的教程中介绍)。
+谈到测试，我们先创建一个 JUnit 4 Arquillian 测试用例，名为 @GamePersistenceTest@, 准备它用来测试 JPA 操作。 我们利用 "CDI (JSR-299)":http://docs.jboss.org/cdi/spec/1.0/html 来注入要用到的资源。(作为可选方式，你也可以使用一个 EJB 工具来处理事务边界，我们将在后续的教程中介绍)。
 
 div(filename). src/test/java/org/arquillian/example/GamePersistenceTest.java
 
@@ -179,13 +179,13 @@ public class GamePersistenceTest {
 
 p. 我们从上到下来一一讲解这个测试的细节。
 
-- @RunWith(Arquillian.class) := 告诉 JUnit 将运行测试的任务委派给 Arquillian runner。这样 Arquillian 可以提供为你的测试提供一套组件模型，包括容器的生命周期，依赖注入，及其它提升。注意，这里并没要求你继承一个基类，为其它用途留有余地。 
+- @RunWith(Arquillian.class) := 告诉 JUnit 将运行测试的任务委派给 Arquillian runner。这样 Arquillian 可以提供为你的测试提供一套组件模型，包括容器的生命周期，依赖注入，及其它方面加强。注意，这里并没要求你继承一个基类，这样为其它用途留有余地。 
 - @Deployment 方法 := 使用 "ShrinkWrap":http://jboss.org/shrinkwrap 创建和返回一个微部署归档文件。 Arquillian 部署这个归档文件(还包含测试用例及额外的基础架构)到容器中。 然后测试作为这个小程序中一个组件开始运行。归档文件为测试提供了一个孤立环境。
 - GAME_TITLES constant := 测试数据
 - @PersistenceContext EntityManager := 直接在测试中注入 persistence context (i.e., @EntityManager@)， 将测试看作一个"managed bean":http://download.oracle.com/javaee/6/api/javax/annotation/ManagedBean.html 。
 - @Inject UserTransaction := 直接在测试中注入 JTA 事务，由 (JSR-299) 提供服务。
 
-绕开JPA 相关设置造成的困扰，我们引入拦截方法，在测试运行之前和之后运行。下面看一下这些拦截相关的代码。
+绕开 JPA 相关设置造成的困扰，我们引入拦截方法，在测试运行之前和之后运行。下面看一下这些拦截相关的代码。
 
 @@Before@ 方法，每个测试运行之前执行，完成下面几个任务：
 
@@ -453,7 +453,7 @@ java.util.logging.ConsoleHandler.formatter=java.util.logging.SimpleFormatter
 java.util.logging.SimpleFormatter.format=%4$s: %5$s%n
 java.util.logging.ConsoleHandler.level=FINEST
 
-p. test-persistence.xml 中Persistence Unit引用的 DataSource 名为 jdbc/arquillian。它在哪里定义？这需要在 Arquillian 容器适配器中进行设置。
+p. test-persistence.xml 中 Persistence Unit 引用的 DataSource 名为 jdbc/arquillian。它在哪里定义? 这需要在 Arquillian 容器适配器中进行设置。
 
 我们想利用 GlassFish API 来创建一个 JDBC 连接池及相应的资源。我们不想直接写在代码里，而想通过声明方式。 Arquillian 可以做到这一点。 
 
@@ -609,9 +609,9 @@ bc(prettify). <!-- clip -->
 </profile>
 <!-- clip -->
 
-我们显式的将 src/test/resources-glassfish-embedded 目录添加为一个 Maven test resource 目录，这样 test-persistence.xml 已经位于 classpath 中。我们还配置了 surefire plugin，传递 Java Logging 配置文件给后续的 Java 进程，以便 SQL 日志正常动作。最后，我们将 Derby 日志导出到 build output 目录，这样 clean 项目时，它同样会一同清除干净。
+我们显式的将 src/test/resources-glassfish-embedded 目录添加为一个 Maven test resource 目录，这样 test-persistence.xml 已经位于 classpath 中。我们还配置了 surefire plugin，传递 Java Logging 配置文件给后续的 Java 进程，以便 SQL 日志正常工作。最后，我们将 Derby 日志导出到 build output 目录，这样 clean 项目时，它同样会一同清除干净。
 
-p(info). %如果你不打算使用不同的容器进行测试，你不必在同一个 profile 中包装以上配置。%
+p(info). %如果你不打算使用不同的容器进行测试，你不必在同一个 profile 中包含以上配置。%
 
 h3. 在 GlassFish 上运行测试
 
@@ -792,7 +792,7 @@ bc(command). $ mvn clean test -Parquillian-jbossas-managed
 
 p(warning). %请确认 JBOSS_HOME 环境变量指向了 JBoss AS 7.1.1.Final 安装位置。 你也可以指定在 arquillian.xml 设置 jbossHome 属性。%
 
-轮到你了。 你也可以在 IDE 运行测试！只需要导入项目，激活 arquillian-jbossas-managed Maven profile (同时不要激活 arquillian-glassfish-embedded profile), 打开测试用例，最后选择 "Run As > JUnit Test"。 哇塞! 运行和其他 JUnit 测试一样。 *(greenbar)绿条*!
+轮到你了。 你也可以在 IDE 运行测试！只需要导入项目，激活 arquillian-jbossas-managed Maven profile (同时禁用掉 arquillian-glassfish-embedded profile), 打开测试用例，最后选择 "Run As > JUnit Test"。 哇塞! 运行结果和其他 JUnit 测试一样。 *(greenbar)绿条*!
 
 *尽情的享受完美的 JPA 测试方案吧!*
 
