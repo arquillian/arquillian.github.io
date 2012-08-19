@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <title>Creating Deployable Archives with ShrinkWrap &#183; Arquillian Guides</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <meta content="Learn how to leverage ShrinkWrap to declare Arquillian deployments." name="description" />
+    <meta content="Arquillianのデプロイメントを宣言するために、どのようにShrinkWrapを利用するか学びます。" name="description" />
     <link href="/blog/atom.xml" type="application/atom+xml" title="Arquillian blog Atom feed" rel="alternate" />
     <link href="/stylesheets/screen.css" rel="stylesheet" />
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
@@ -122,48 +122,48 @@
     </div>
   </div>
   <div class="container" id="guide">
-    <div id="content">
+    <div lang="ja" id="content">
             <div class="header">
               <div class="header">
               <h2>Creating Deployable Archives with ShrinkWrap</h2>
               <div class="authors"><strong>Author:</strong>
    <a href="https://community.jboss.org/people/alrubinger">Andrew Lee Rubinger</a>
-  <strong style="padding-left: 10px;">Translations:</strong>
-  <a href="/guides/shrinkwrap_introduction_ja/"><img title="日本 (ja)" class="flag" rel="tooltip" src="/images/flags/ja.png" /></a>
+  <strong style="padding-left: 10px;">Translator:</strong>
+   <a href="https://community.jboss.org/people/tkonishi">Takayuki Konishi</a>
+  <strong style="padding-left: 10px;">Language:</strong>
+  <img title="日本 (ja)" class="flag" rel="tooltip" src="/images/flags/ja.png" />
   <br />
-  <strong>Level:</strong>
-   First Steps
-  <strong style="padding-left: 10px;">Tags:</strong>
+  <strong style="padding-left: 0px;">Tags:</strong>
    shrinkwrap, arquillian
-  <strong style="padding-left: 10px;">Last Update:</strong> Apr 05, 2012</div>
-              <p>ShrinkWrap is the simplest way to create archives in Java, and it powers the Arquillian deployment mechanism.  This guide serves as a crash course in creating the objects which will come to represent your deployments.  We&#8217;ll cover:</p>
+  <strong style="padding-left: 10px;">Last Update:</strong> Feb 14, 2012</div>
+              <p>ShrinkWrapは、Javaでアーカイブを作成する、もっとも簡単な方法で、Arquillianのデプロイメントメカニズムに力を与えます。このガイドでは、デプロイメントを表すことになるオブジェクト作成の速習コースを提供します。以下を含みます：</p>
               <ul>
-	<li>The motivation behind and benefits of ShrinkWrap over traditional file-based archives</li>
-	<li>Creation of a new archive from scratch</li>
-	<li>Various mechanisms used to add content</li>
-	<li>Importing archives from existing File structures</li>
+	<li>伝統的なファイルベースのアーカイブを越えた、ShrinkWrapの背後にある動機と利益</li>
+	<li>スクラッチからの新しいアーカイブ作成</li>
+	<li>コンテンツを追加するための様々なメカニズム</li>
+	<li>既存のファイル構成からアーカイブをインポートする</li>
 </ul>
               </div>
               </div>
-            <h3 id="justification">Justification</h3>
-<p>From the onset, ShrinkWrap was born from a need to more easily test Java Enterprise deployments.  Traditionally defined as flat-file archives adhering to the ZIP standard, these have necessitated the introduction of some build step to package up all application resources.  And a build step takes time:</p>
-<pre class="output"><code class="output">$ mvn clean install&#x000A;... terrifying output trace ...&#x000A;[INFO] ------------------------------------------------------------------------&#x000A;[INFO] BUILD SUCCESS&#x000A;[INFO] ------------------------------------------------------------------------&#x000A;[INFO] Total time: 1:13.492s&#x000A;[INFO] ------------------------------------------------------------------------</code></pre>
-<p>But as developers, we live in our coding environments.  Switching out of that mindset to run a build is wasteful.</p>
-<p>So we asked: &#8220;What if we could declare, in Java, an object to represent that archive?&#8221;</p>
-<p>What resulted was a Java API analouge to the &#8220;jar&#8221; tool, a virtual filesystem with an intuitive syntax.</p>
-<div class="filename">Creating a ShrinkWrap Archive</div>
+            <h3 id="&#29702;&#30001;">理由</h3>
+<p>当初、ShrinkWrapは、Javaエンタープライズデプロイメントをより簡単にテストするために生まれました。ZIPの標準に従ったフラットファイルのアーカイブという伝統的な定義は、アプリケーションリソースをすべてまとめるビルドの手順で必要とされてきました。そしてビルドステップは時間を要します：</p>
+<pre class="output"><code class="output">[alr@alr-laptop shrinkwrap]$ mvn clean install&#x000A;... terrifying output trace ...&#x000A;[INFO] ------------------------------------------------------------------------&#x000A;[INFO] BUILD SUCCESS&#x000A;[INFO] ------------------------------------------------------------------------&#x000A;[INFO] Total time: 1:13.492s&#x000A;[INFO] ------------------------------------------------------------------------</code></pre>
+<p>しかしデベロッパーとして、私達はコーディング環境で生活しています。マインドセットをビルド実行に切り替えるのは無駄です。</p>
+<p>それで、問いかけました：“Javaにおいて、オブジェクトをアーカイブとして表せたらどうなる？”</p>
+<p>その結果は、“jar”ツールに似た、Java APIで、直感的な書式を持つ仮想的なファイルシステムでした。</p>
+<div class="filename">ShrinkWrapアーカイブを作成する</div>
 <pre class="prettify"><code class="prettify">JavaArchive archive = ShrinkWrap.create(JavaArchive.class,"myarchive.jar") &#x000A;   .addClasses(MyClass.class, MyOtherClass.class)&#x000A;   .addResource("mystuff.properties");</code></pre>
-<p>What resulted was a way to take advantage of the IDE&#8217;s incremental compilation features, allowing us to skip the build.</p>
+<p>その結果は、IDEの継続的なコンパイル機能の利点を享受するための方法で、ビルドをスキップできます。</p>
 <p><img alt="" src="/images/guides/shrinkwrap_incremental_compilation.png" /></p>
-<p>What resulted was a way to run tests straight from the IDE.</p>
+<p>その結果は、テストをIDEから直接実行するやり方でした。</p>
 <p><img alt="" src="/images/guides/shrinkwrap_runas_junit.png" /></p>
-<p>What resulted was ShrinkWrap.</p>
-<h3 id="getting_started">Getting Started</h3>
-<p>The first step is getting your hands on the ShrinkWrap binaries.  The Core is composed of three pieces:</p>
+<p>その結果は、ShrinkWrapでした。</p>
+<h3 id="&#12473;&#12479;&#12540;&#12488;">スタート</h3>
+<p>最初のステップは、ShrinkWrapのバイナリを入手することです。コアは3つのピースからなります：</p>
 <table>
 	<tr>
-		<th>Name</th>
-		<th>Maven Coordinates</th>
+		<th>名称</th>
+		<th>Mavenコーディネート</th>
 	</tr>
 	<tr>
 		<td>API</td>
@@ -178,142 +178,142 @@
 		<td>org.jboss.shrinkwrap:shrinkwrap-impl-base</td>
 	</tr>
 </table>
-<p>Only the API should be available upon your compilation ClassPath, while the SPI and the Implementation modules are both required for the runtime.  This is to enforce good sepatation between classes intended for direct use and the project&#8217;s internals.</p>
-<p>In Maven, these may be brought in under the proper scopes easily by using the ShrinkWrap Dependency Chain POM, available in Maven Central:</p>
-<div class="filename">Your Project&#8217;s pom.xml</div>
+<p>APIは、コンパイル時のクラスパスでのみ、利用できるべきで、SPIと実装モジュールは、実行時に必要です。これは、直接使用することを目的としたクラスと、プロジェクト内部で使用することを目的としたクラスの良好な分離を強制するためです。</p>
+<p>Mavenでは、ShrinkWrap依存チェーンPOMを利用することで簡単に適切なスコープの元で、利用できます。これは、Maven Centralで入手できます：</p>
+<div class="filename">ユーザーのプロジェクトのpom.xml</div>
 <pre class="prettify"><code class="prettify">&lt;project xmlns="http://maven.apache.org/POM/4.0.0"&#x000A;  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;  xsi:schemaLocation="&#x000A;  http://maven.apache.org/POM/4.0.0&#x000A;  http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;&#x000A;  &lt;!-- snip --&gt;</code>&#x000A;  &#x000A;<code class="prettify">  &lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.shrinkwrap&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;shrinkwrap-depchain&lt;/artifactId&gt;&#x000A;    &lt;version&gt;${version.shrinkwrap}&lt;/version&gt;&#x000A;    &lt;type&gt;pom&lt;/type&gt;&#x000A;  &lt;/dependency&gt;</code>&#x000A;&#x000A;<code class="prettify">  &lt;!-- snip --&gt;&#x000A;&lt;/project&gt;</code></pre>
-<p>For projects outside use of the Maven repository system, the ShrinkWrap Distribution makes all modules available as a download, and you may set up the dependencies manually to suit your needs.</p>
-<h4>Prerequisites</h4>
+<p>Mavenリポジトリシステムを使用しないプロジェクトのためにShrinkWrapディストリビューションでは、すべてのモジュールをダウンロードできるようになっていて、ユーザーは必要に応じて手動で依存性を設定できます。</p>
+<h4>必須条件</h4>
 <ul>
-	<li>JRE5+ Runtime</li>
-	<li>No additional dependencies</li>
+	<li>JRE5以上のランタイム</li>
+	<li>他の依存性は無し</li>
 </ul>
-<p>ShrinkWrap may run on any Java5 runtime or higher, but requires at least JDK6 for compilation.</p>
-<h4>API Documentation</h4>
-<p>JavaDoc for each release is located <a href="http://docs.jboss.org/shrinkwrap">here</a> .</p>
-<h4>Open Source Coding</h4>
-<p>Fork us and get involved with <a href="http://github.com/shrinkwrap/shrinkwrap">Development</a> .</p>
-<h3 id="archive_creation">Archive Creation</h3>
-<p>The primary entry point to the ShrinkWrap library is the <code>org.jboss.shrinkwrap.api.ShrinkWrap</code> class.  From here you may call the <code>create</code> method to make a new <code>Archive</code>, the a generic view of the virtual filesystem which allows the addition of content called <code>Asset</code> s into a location called an <code>ArchivePath</code>.  The following table more easily shows ShrinkWrap nomenclature next to more common terms:</p>
+<p>ShrinkWrapはJava5以上のランタイムであれば実行できますが、コンパイルには少なくともJDK6が必要です。</p>
+<h4>APIドキュメント</h4>
+<p>各リリースのJavaDocは、 <a href="http://docs.jboss.org/shrinkwrap">ここ</a> にあります。</p>
+<h4>オープンソースコーディング</h4>
+<p>フォークして <a href="http://github.com/shrinkwrap/shrinkwrap">開発</a> に参加してください。</p>
+<h3 id="&#12450;&#12540;&#12459;&#12452;&#12502;&#12398;&#20316;&#25104;">アーカイブの作成</h3>
+<p>ShrinkWrapライブラリの最初の入り口は、 <code>org.jboss.shrinkwrap.api.ShrinkWrap</code> クラスです。ここから、新しい <code>Archive</code> を作るために、 <code>create</code> メソッドを呼べます。 <code>Archive</code> はアセットと呼ばれるコンテンツをArchivePathと呼ばれる場所への追加を許可する仮想ファイル・システムについての一般的なビューです。以下の表では、ShrinkWrapの用語とより一般的な用語を、より簡単に示します：</p>
 <table>
 	<tr>
-		<th>Common Term</th>
-		<th>ShrinkWrap Class</th>
-		<th>Description</th>
+		<th>一般用語</th>
+		<th>ShrinkWrapクラス</th>
+		<th>定義</th>
 	</tr>
 	<tr>
-		<td>Archive</td>
+		<td>アーカイブ</td>
 		<td><code>org.jboss.shrinkwrap.api.Archive</code></td>
-		<td>A collection of resources, essentially a virtual filesystem</td>
+		<td>リソースのコレクション。本質的には、仮想ファイルシステム</td>
 	</tr>
 	<tr>
-		<td>File</td>
+		<td>ファイル</td>
 		<td><code>org.jboss.shrinkwrap.api.Node</code></td>
-		<td>An entry in an <code>Archive</code>; may represent content or a directory</td>
+		<td><code>Archive</code> に登録されたもの。コンテンツまたはディレクトリ</td>
 	</tr>
 	<tr>
-		<td>Path</td>
+		<td>パス</td>
 		<td><code>org.jboss.shrinkwrap.api.ArchivePath</code></td>
-		<td>Location in an <code>Archive</code> under which a <code>Node</code> lives</td>
+		<td><code>Archive</code> 内で、 <code>Node</code> がある場所</td>
 	</tr>
 	<tr>
-		<td>Asset</td>
+		<td>アセット</td>
 		<td><code>org.jboss.shrinkwrap.api.Asset</code></td>
-		<td>Byte-based content within a <code>Node</code></td>
+		<td><code>Node</code> 内のバイトベースのコンテンツ</td>
 	</tr>
 </table>
-<p>Additionally, <code>Archive</code> s have many views, and you won&#8217;t typically be dealing with the <code>Archive</code> class directly.  Instead, ShrinkWrap supplies a few <code>Archive</code> extensions which offer helpful ways of manipulating content relevant to their type.</p>
+<p>これに加えて、 <code>Archive</code> にはたくさんのビューがあります。そして、一般的には、 <code>Archive</code> クラスを直接扱うのは好まれません。その代わり、ShrinkWrapは、それらのタイプに応じてコンテンツを操作する便利な方法である、いくつかの <code>Archive</code> 拡張を提供しています。</p>
 <table>
 	<tr>
-		<th>Archive Type</th>
-		<th>Description</th>
+		<th>アーカイブタイプ</th>
+		<th>定義</th>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.GenericArchive</code></td>
-		<td>Simplest type of concrete user-view of an <code>Archive</code>; supports generic operations</td>
+		<td>もっとも簡単な <code>Archive</code> の具象的なユーザービューの型です。一般的な操作をサポートします。</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.spec.JavaArchive</code></td>
-		<td>JAR type; allows addition of <code>Class</code> es, <code>Package</code> s, and Manifest operations</td>
+		<td>JAR型で、 <code>Class</code> や <code>Package</code> の追加やマニフェストの操作が許可されています。</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.spec.EnterpriseArchive</code></td>
-		<td>Java EE EAR type; supports Manifest and related spec operations</td>
+		<td>Java EE EAR型で、マニフェストと関連する規格の操作をサポートします。</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.spec.WebArchive</code></td>
-		<td>Java EE WAR type; supports operations common to web application deployments</td>
+		<td>Java EE WAR型で、ウェブアプリケーションのデプロイメントに一般的な操作をサポートします。</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.spec.ResourceAdaptorArchive</code></td>
-		<td>Java EE RAR type; supports operations common to resource adaptor deployments</td>
+		<td>Java EE RAR型で、リソースアダプタのデプロイメントに一般的な操作をサポートします。</td>
 	</tr>
 </table>
-<p>To create an <code>Archive</code>, simply choose your desired archive type and optionally supply a name to the static <code>ShrinkWrap:create</code> method:</p>
+<p><code>Archive</code> を作成するには、シンプルに <code>ShrinkWrap:create</code> スタティックメソッドに必要なアーカイブ型と、オプションで名前を渡します：</p>
 <pre class="prettify"><code class="prettify">GenericArchive myArchive = ShrinkWrap.create(GenericArchive.class,"myArchive.jar");</code></pre>
-<p>That&#8217;s it!  You&#8217;ve got your first ShrinkWrap archive!</p>
-<h3 id="adding_content">Adding Content</h3>
-<p>Of course, an object representing an empty archive is pretty useless.  So let&#8217;s have a look at adding in some content.  As we noted before, content is modeled by the <code>Asset</code> class, so let&#8217;s first take a look at some of the <code>Asset</code> implementations provided by ShrinkWrap:</p>
+<p>これだけです！最初のShrinkWrapアーカイブができました！</p>
+<h3 id="&#12467;&#12531;&#12486;&#12531;&#12484;&#12398;&#36861;&#21152;">コンテンツの追加</h3>
+<p>もちろん、空のアーカイブとしてのオブジェクトはほとんど無意味です。それでは、コンテンツの追加を見てみましょう。前述のように、コンテンツは、 <code>Asset</code> クラスとしてモデル化されているので、最初にShrinkWrapが提供している <code>Asset</code> 実装を調べてみましょう：</p>
 <table>
 	<tr>
-		<th>Asset</th>
-		<th>Represents</th>
+		<th>アセット</th>
+		<th>表すもの</th>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.asset.ArchiveAsset</code></td>
-		<td>Nested <code>Archive</code> content</td>
+		<td>ネストした <code>Archive</code> コンテンツ</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.asset.ByteArrayAsset</code></td>
-		<td><code>byte[]</code> or <code>InputStream</code> content </td>
+		<td><code>byte[]</code> または <code>InputStream</code> コンテンツ</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.asset.ClassAsset</code></td>
-		<td>Java <code>Class</code> content</td>
+		<td>Java <code>Class</code> コンテンツ</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.asset.ClassLoaderAsset</code></td>
-		<td>A resource which can be loaded by an optionally-specified <code>ClassLoader</code></td>
+		<td>オプションで設定された <code>ClassLoader</code> でロードされるリソース</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.asset.FileAsset</code></td>
-		<td><code>File</code> content</td>
+		<td><code>File</code> コンテンツ</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.asset.StringAsset</code></td>
-		<td><code>String</code> content</td>
+		<td><code>String</code> コンテンツ</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.asset.UrlAsset</code></td>
-		<td>Content located at a given <code>URL</code></td>
+		<td>与えられた <code>URL</code> によって指し示されるコンテンツ</td>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.asset.EmptyAsset</code></td>
-		<td>Empty (0-byte) content</td>
+		<td>空(0バイト)のコンテンツ</td>
 	</tr>
 </table>
-<p>Additionally, because <code>Asset</code> is an interface, you may provide your own implementation to supply any byte-based content that may be represented as an <code>InputStream</code> .  For instance, the snippet below shows how to present an Activation Framework <code>DataSource</code> as an <code>Asset</code> :</p>
-<pre class="prettify"><code class="prettify">final DataSource dataSource = null; // Assume you have this&#x000A;  Asset asset = new Asset() {&#x000A;  @Override&#x000A;  public InputStream openStream() {&#x000A;    try {&#x000A;      return dataSource.getInputStream();&#x000A;    } catch (final IOException e) {&#x000A;      throw new RuntimeException(e);&#x000A;    }&#x000A;  }&#x000A;};</code></pre>
-<p>The <code>Archive:add</code> method allows us to pass in some <code>Asset</code> content and add it under an <code>ArchivePath</code>.</p>
+<p>これに加えて、 <code>Asset</code> はインターフェースなので、ユーザーが <code>InputStream</code> として表せるバイトベースとのコンテンツを追加するための、独自の実装を提供できます。例えば、以下のスニペットは、 <code>DataSource</code> のアクティベーションフレームワークをどのようにを <code>Asset</code> として提供できるか、示します：</p>
+<pre class="prettify"><code class="prettify">final DataSource dataSource = null; // すでにこれは持っていると仮定します&#x000A;  Asset asset = new Asset() {&#x000A;  @Override&#x000A;  public InputStream openStream() {&#x000A;    try {&#x000A;      return dataSource.getInputStream();&#x000A;    } catch (final IOException e) {&#x000A;      throw new RuntimeException(e);&#x000A;    }&#x000A;  }&#x000A;};</code></pre>
+<p><code>Archive:add</code> メソッドを使うと、 <code>Asset</code> コンテンツを渡して、 <code>ArchivePath</code> 以下に追加することができます。</p>
 <pre class="prettify"><code class="prettify">myArchive.add(myAsset,"path/to/content");&#x000A;System.out.println(myArchive.toString(true));</code></pre>
-<p>Passing a <code>true</code> verbosity flag into the <code>toString</code> method of <code>Archive</code> creates a recursive <code>"ls -l"</code> -style output:</p>
+<p><code>true</code> 冗長化フラグを <code>Archive</code> の <code>toString</code> メソッドに渡すと、再帰的に <code>"ls -l"</code> スタイルで出力します：</p>
 <pre class="output"><code class="output">myArchive.jar:&#x000A;/path/&#x000A;/path/to/&#x000A;/path/to/content</code></pre>
-<p>The <code>Archive</code> views we covered before are also really helpful, depending upon the type of content you&#8217;re working with.  For instance, a standard JAR file typically contains <code>.class</code> files and other resources, so the <code>JavaArchive</code> type lets you add these.</p>
-<p>ShrinkWrap supports a simple mechanism allowing you to switch &#8220;views&#8221; of your archive, and it&#8217;s provided by the <code>as</code> method of the <code>org.jboss.shrinkwrap.api.Assignable</code> interface; each view in turn extends <code>Assignable</code>. So in order to get your archive to use the <code>JavaArchive</code> view in order to easily add <code>Class</code> resources, you could simply:</p>
+<p>また、以前に触れた <code>Archive</code> ビューは、ユーザーが利用しているコンテンツの種類に応じて、とても有用です。たとえば、標準のJARファイルは、通常、 <code>.class</code> ファイルや他のリソースが含まれており、JavaArchiveタイプは、これらを追加することができるように。</p>
+<p>ShrinkWrapは、アーカイブのビューを変更する単純なメカニズムをサポートし、それは <code>org.jboss.shrinkwrap.api.Assignable</code> インターフェースの <code>as</code> メソッドとして提供されます。 それぞれのビューは、 <code>Assignable</code> を継承しています。それで、簡単に <code>Class</code> リソースを追加するために、アーカイブを <code>JavaArchive</code> として使うためには、単純に以下のようにできます：</p>
 <pre class="prettify"><code class="prettify">myArchive.as(JavaArchive.class).addClasses(String.class, Integer.class);&#x000A;System.out.println(myArchive.toString(true));</code></pre>
 <pre class="output"><code class="output">archive.jar:&#x000A;/java/&#x000A;/java/lang/&#x000A;/java/lang/String.class&#x000A;/java/lang/Integer.class</code></pre>
-<p>Using this mechanism is central to keeping ShrinkWrap&#8217;s usage clean and intuitive, while providing for a versatility typically found in true multiple-inheritence languages.</p>
-<h3 id="working_with_file_content">Working with File Content</h3>
-<p>While ShrinkWrap has its roots in Java EE and close ties to the Arquillian Testing Platform, it&#8217;s certainly not limited to these domains.  In fact, ShrinkWrap on its own intentionally scoped to go no further than act as a virtual filesystem for archives.  As such, it provides a simple mechanism for playing nicely with flat-file structures.</p>
-<p>Borrowing from our example above, perhaps we&#8217;d like to use ShrinkWrap to packageup all of the <code>.class</code> files in the current package and output these as a standard JAR in ZIP format.  The code for that would actually be pretty simple:</p>
+<p>このメカニズムを使うことは、一般的に真の多重継承言語に見られる多様性を提供しながら、ShrinkWrapの使い方をクリーンで直感的な状態のまま保つための核心部です。</p>
+<h3 id="&#12501;&#12449;&#12452;&#12523;&#12467;&#12531;&#12486;&#12531;&#12484;&#12434;&#25201;&#12358;">ファイルコンテンツを扱う</h3>
+<p>ShrinkWrapはそのルーツをJava EEに持ち、Arquillianテストプラットフォームと強く結びついているものの、これらのドメインには確実に限定されていません。実際、ShrinkWrapは意図的にアーカイブ用の仮想ファイルシステムを越えません。そのように、それはフラットファイル構成でうまく遊べる、単純なメカニズムを提供します。</p>
+<p>上のサンプルから借りてくると、おそらくShrinkWrapには現在のパッケージのすべての <code>.class</code> ファイルをまとめて、ZIPフォーマットの標準的なJARとして出力してもらいたいでしょう。そのためのコードは実際にはとても簡単です：</p>
 <pre class="prettify"><code class="prettify">JavaArchive archive = ShrinkWrap.create(JavaArchive.class,&#x000A;  "myPackage.jar").addPackage(this.getClass().getPackage());&#x000A;  System.out.println(archive.toString(true));&#x000A;  archive.as(ZipExporter.class).exportTo(&#x000A;    new File("/home/alr/Desktop/myPackage.jar"), true);</code></pre>
 <pre class="output"><code class="output">javalang.jar:&#x000A;/org/&#x000A;/org/alr/&#x000A;/org/alr/test/&#x000A;/org/alr/test/TestClass.class</code></pre>
-<p>So let&#8217;s see what&#8217;s going on here.  First we create a <code>JavaArchive</code> and add all contents of the current <code>Class</code> &#8216;s <code>Package</code> . Then we dump the output to the console, just to see what&#8217;s included.  In the final line, we again use the <code>Assignable</code> facilities of the <code>JavaArchive</code> view to get us into a new view: one capable of exporting to ZIP format.  In this case we use the appropriately-named <code>ZipExporter</code>, allowing us to export to a <code>File</code>, <code>OutputStream</code>, or even get the contents as an <code>InputStream</code> so we can deal with the bytes ourselves.</p>
-<p>There are 3 types of exporters which ship with ShrinkWrap:</p>
+<p>ここで何が起きているのか見てみましょう。初めに、 <code>JavaArchive</code> を作成し、現在の <code>Class</code> が属する <code>Package</code> のすべてのコンテンツを加えます。それからなにが含まれているかちょっと見るために、コンソールに出力をダンプします。最後の行で、新しいビュー、一つの出力可能な形式であるZIPフォーマット、を得るために、また <code>JavaArchive</code> ビューの <code>Assignable</code> ファシリティを使います。今回は、 <code>ZipExporter</code> という名前のものを使います。これは、 <code>File</code> や <code>OutputStream</code> として出力したり、あるいはコンテンツを <code>InputStream</code> として受け取り、それ自身をバイト列として操作することもできます。</p>
+<p>3種類のエクスポーターがShrinkWrapには含まれています：</p>
 <table>
 	<tr>
-		<th>Exporter</th>
-		<th>Output Format</th>
+		<th>エクスポーター</th>
+		<th>出力フォーマット</th>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.exporter.TarExporter</code></td>
@@ -328,11 +328,11 @@
 		<td>ZIP</td>
 	</tr>
 </table>
-<p>Of course, we can also obtain a ShrinkWrap archive from a flat-file in a similar fashion by using one of the standard importers:</p>
+<p>もちろん、標準のインポーターを使って同じ形式のフラットファイルから、ShrinkWrapアーカイブを得ることもできます：</p>
 <table>
 	<tr>
-		<th>Importer</th>
-		<th>Output Format</th>
+		<th>インポーター</th>
+		<th>出力フォーマット</th>
 	</tr>
 	<tr>
 		<td><code>org.jboss.shrinkwrap.api.importer.TarImporter</code></td>
@@ -347,13 +347,13 @@
 		<td>ZIP</td>
 	</tr>
 </table>
-<p>The code for running an import to roundtrip the previous example might look like this:</p>
+<p>前の例の <code>JavaArchive</code> に戻すコードは、以下のようになるでしょう：</p>
 <pre class="prettify"><code class="prettify">JavaArchive roundtrip = ShrinkWrap&#x000A;  .create(ZipImporter.class, "myPackageRoundtrip.jar")&#x000A;  .importFrom(new File("/home/alr/Desktop/myPackage.jar"))&#x000A;  .as(JavaArchive.class);</code></pre>
-<p>Note how we can pass <code>ZipImporter</code> into the <code>ShrinkWrap.create</code> method, as it&#8217;s <code>Assignable</code> as well!  Beginning to notice a theme here?</p>
-<p>This concludes our brief introduction into manipulating archive content with ShrinkWrap.  We hope you&#8217;ll find the API to be intuitive and consistent, and welcome you to our community.</p>
+<p>どのように <code>ZipImporter</code> を <code>ShrinkWrap.create</code> に渡すかという点が、 <code>Assignable</code> と同様であることに注意してください！ここのテーマに気づき始めましたか？</p>
+<p>これで、シュリンクラップでアーカイブの内容を操作する、簡単な紹介を終わります。APIが直感的で一貫性があるとユーザーが判断してくれることを期待し、我々のコミュニティに歓迎します。</p>
   <h3 id="share">Share the Knowledge</h3>
   <p>Find this guide useful?</p>
-  <p class="post_to_twitter"><a href="http://twitter.com/home/?status=Just%20read%20the%20%23Arquillian%20Creating%20Deployable%20Archives%20with%20ShrinkWrap%20guide%20and%20got%20a%20%23greenbar!%20Get%20yours.%20http://localhost:4242/guides/shrinkwrap_introduction/"><img alt="" src="/images/post_to_twitter.png" /></a></p>
+  <p class="post_to_twitter"><a href="http://twitter.com/home/?status=Just%20read%20the%20%23Arquillian%20Creating%20Deployable%20Archives%20with%20ShrinkWrap%20guide%20and%20got%20a%20%23greenbar!%20Get%20yours.%20http://localhost:4242/guides/shrinkwrap_introduction_ja/"><img alt="" src="/images/post_to_twitter.png" /></a></p>
   <div class="g-plusone" data-size="tall"></div>
   <p>There&#8217;s a lot more about Arquillian to cover. If you&#8217;re ready to learn more, check out the <a href="/guides">other available guides</a>.</p>
   <h4>Feedback</h4>
@@ -361,18 +361,13 @@
   <h4>Recent Changelog</h4>
   <ul>
     <li>
-      Apr 05, 2012:
-      Use description in prolog for guide summary
-      <em>by Dan Allen</em>
-    </li>
-    <li>
-      Apr 01, 2012:
-      Fixes to styles, footer placement, atom feed, build, optimizations
-      <em>by Dan Allen</em>
+      Feb 14, 2012:
+      Translation &quot;creating deployable archives with shrinkwrap&quot; jp
+      <em>by Takayuki Konishi</em>
     </li>
   </ul>
   <p>
-    <a href="https://github.com/arquillian/arquillian.github.com/commits/develop/guides/shrinkwrap_introduction.textile">See full history &raquo;</a>
+    <a href="https://github.com/arquillian/arquillian.github.com/commits/develop/guides/shrinkwrap_introduction_ja.textile">See full history &raquo;</a>
   </p>
 </div>
 <div id="sidebar">
@@ -380,19 +375,19 @@
     <h3 class="chapter_header">Chapters</h3>
     <ol class="chapters">
       <li>
-        <a href="#justification" id="justification_link">Justification</a>
+        <a href="#&#29702;&#30001;" id="理由_link">理由</a>
       </li>
       <li>
-        <a href="#getting_started" id="getting_started_link">Getting Started</a>
+        <a href="#&#12473;&#12479;&#12540;&#12488;" id="スタート_link">スタート</a>
       </li>
       <li>
-        <a href="#archive_creation" id="archive_creation_link">Archive Creation</a>
+        <a href="#&#12450;&#12540;&#12459;&#12452;&#12502;&#12398;&#20316;&#25104;" id="アーカイブの作成_link">アーカイブの作成</a>
       </li>
       <li>
-        <a href="#adding_content" id="adding_content_link">Adding Content</a>
+        <a href="#&#12467;&#12531;&#12486;&#12531;&#12484;&#12398;&#36861;&#21152;" id="コンテンツの追加_link">コンテンツの追加</a>
       </li>
       <li>
-        <a href="#working_with_file_content" id="working_with_file_content_link">Working with File Content</a>
+        <a href="#&#12501;&#12449;&#12452;&#12523;&#12467;&#12531;&#12486;&#12531;&#12484;&#12434;&#25201;&#12358;" id="ファイルコンテンツを扱う_link">ファイルコンテンツを扱う</a>
       </li>
       <li>
         <a href="#share" id="share_link">Share the Knowledge</a>
@@ -401,7 +396,7 @@
   </div>
 </div>
 <script>
-  $(window).load(function() { activateScrollingToc(['justification', 'getting_started', 'archive_creation', 'adding_content', 'working_with_file_content', 'share']) })
+  $(window).load(function() { activateScrollingToc(['理由', 'スタート', 'アーカイブの作成', 'コンテンツの追加', 'ファイルコンテンツを扱う', 'share']) })
 </script>
   </div>
 </div>
