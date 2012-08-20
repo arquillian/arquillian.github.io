@@ -1,0 +1,557 @@
+---
+layout: guide
+title: "Guida Introduttiva: Rispolveriamo e Ripetiamo"
+authors: [mojavelinux]
+translators: [flashboss]
+description: Parte 2 della Guida Introduttiva. Rivediamo i nostri progressi esplorando un esempio più complesso e impariamo a usare container remoti.
+guide_group: 1
+guide_order: 20
+TODO: ["port configuration and arquillian.launch", "expected deployment error"]
+---
+In questa seconda parte della "Guida Introduttiva":/guides/getting_started guide, proseguiremo il lavoro visto su Arquillian esplorando un esempio leggermente più complesso. Terminata la lettura di questa guida saremo in grado di:
+
+* Scrivere un test Arquillian che usa insieme CDI(Contexts and Dependency Injection) e EJB(Enterprise JavaBeans)
+* Eseguire un test Arquillian in un container remoto
+* Fare il debugging di un test dentro un container remoto
+
+Per ottenere ciò, dobbiamo aggiungere dei nuovi profili al nostro build. Una volta attivi, permetteranno di usare Arquillian in un container remoto (p.es., application server). Testeremo quindi la _situazione reale_ senza i mock. E a runtime! E dal momento che la maggiorparte del lavoro è stata fatta nella prima guida, non impiegheremo molto tempo a farlo.
+
+h3. Prerequisiti
+
+La guida richiede che sia già stata aggiunta l'infrastruttura di Arquillian nel progetto e che sia stato aggiunto ed eseguito almeno un test con Arquillian. Se non è ancora stato fatto, guardate prima la "Guida Introduttiva":/guides/getting_started per ottenere familiarità con le basi di Arquillian. Assicuratevi anche di avere già tutto il software menzionato in quella guida.
+
+h3. Creare i Componenti
+
+In questa guida, creeremo un backend molto basilare per un'applicazione di shopping. Useremo un componente carrello per registrare gli oggetti selezionati dal visitatore e un componente repository per registrare e ricevere gli ordini fatti. Implementeremo questi componenti usando CDI ed EJB rispettivamente. Possiamo iniziare subito usando questi due modelli dal momento che abbiamo già la Java EE 6 API nel classpath. (Riferitevi alla "Guida Introduttiva":/guides/getting_started per le istruzioni su come aggiungere queste API nel progetto).
+
+Iniziamo con il componente che mette gli ordini nello storage di persistenza. Seguendo le best practice per scrivere un buon software, e per rendere più semplici i test, iniziamo a definire un'interfaccia di contratto. Nel nostro IDE, creiamo una nuova interfaccia locale per l'EJB chiamata @OrderRepository@ e popoliamola con i seguenti contenuti:
+
+div(filename). src/main/java/org/arquillian/example/OrderRepository.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.util.List;
+import javax.ejb.Local;
+
+@Local
+public interface OrderRepository {
+    void addOrder(List<String> order);
+    List<List<String>> getOrders();
+    int getOrderCount();
+}
+
+p. Ci preoccuperemo dell'implementazione più tardi. Vediamo ora in che modo useremo il contratto.
+
+Quando i visitatori navigheranno nel sito, dovranno poter fare le compere con il carrello. Per questo scenario, useremo un bean CDI associato alla sessione HTTP del visitatore. Questo componente delegherà le operazioni all'EJB @OrderRepository@ durante le compere.
+
+Nel nostro IDE, creiamo una classe con nome @Basket@ e agganciamola al contesto della sessione tramite l'annotazione @@SessionScoped@, come mostrato in basso:
+
+div(filename). src/main/java/org/arquillian/example/Basket.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
+import javax.enterprise.context.SessionScoped;
+
+@SessionScoped
+public class Basket implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private List<String> items;
+    
+    @EJB
+    private OrderRepository repo;
+    
+    public void addItem(String item) {
+        items.add(item);
+    }
+    
+    public List<String> getItems() {
+        return Collections.unmodifiableList(items);
+    }
+    
+    public int getItemCount() {
+        return items.size();
+    }
+    
+    public void placeOrder() {
+        repo.addOrder(items);
+        items.clear();
+    }
+    
+    @PostConstruct
+    void initialize() {
+        items = new ArrayList<String>();
+    }
+}
+
+p. Come si può vedere, abbiamo agganciato l'EJB a un bean CDI, precisamente l'integrazione che vogliamo testare!
+
+h3. Fase di implementazione
+
+Non possiamo ancora scrivere il test visto che ancora non abbiamo l'implementazione del @OrderRepository@.
+
+Supponiamo che l'@OrderRepository@ è stato implementato da un'altro team (o in una fase differente). La funzionalità di micro-deploy di Arquillian sarà assolutamente estranea a questa parte. Possiamo per esempio creare un'implementazione in-memory sotto forma di singleton EJB e impacchetarlo nell'archivio di test per ottenere un'applicazione funzionante in brevissimo tempo. (Possiamo anche decidere di mantenere questa nostra implementazione utilizzabile solo per i test)
+
+Creiamo la classe @SingletonOrderRepository@ nel nostro _classpath di test_ e popoliamola con il codice mostrato in basso:
+
+div(filename). src/test/java/org/arquillian/example/SingletonOrderRepository.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
+import javax.ejb.Singleton;
+
+@Singleton
+@Lock(LockType.READ)
+public class SingletonOrderRepository implements OrderRepository {
+    private List<List<String>> orders;
+    
+    @Override
+    @Lock(LockType.WRITE)
+    public void addOrder(List<String> order) {
+        orders.add(order);
+    }
+    
+    @Override
+    public List<List<String>> getOrders() {
+        return Collections.unmodifiableList(orders);
+    }
+    
+    @Override
+    public int getOrderCount() {
+        return orders.size();
+    }
+    
+    @PostConstruct
+    void initialize() {
+        orders = new ArrayList<List<String>>();
+    }
+}
+
+p. Una buona cosa di quest'esempio è che possiamo giocare con le nuove funzionalità degli EJB 3.1 (la Singleton) dentro la sandbox di Arquillian. Ci piace ribadire che Arquillian è un ottimo ambiente per studiare e imparare oltre che per testare.
+
+Ora siamo pronti per scrivere il test Arquillian.
+
+h3. Scrivere un Test
+
+Stiamo per scrivere un test che simula l'aggiunta degli oggetti in un'istanza di @Basket@ sotto forma di ordini e che verifica che l'ordine sia processato e registrato nell'istanza dell'@OrderR
+epository@.
+
+p(info). %Naturalmente, testeremo soltanto l'implementazione in-memory. Se volete vedere come testare un'applicazione che usa il database potete consultare la guida "Testare la Persistenza Java":/guides/testing_java_persistence guide. Potrete poi tornare in questa guida e modificarne l'implementazione.%
+
+Creiamo la classe @BasketTest@ e annotiamola con @@RunWith(Arquillian.class)@ per trasformarla in un test Arquillian:
+
+div(filename). src/test/java/org/arquillian/example/BasketTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import org.jboss.arquillian.junit.Arquillian;
+import org.junit.runner.RunWith;
+
+@RunWith(Arquillian.class)
+public class BasketTest {
+}
+
+p. Definiamo poi un archivio di test che include il carrello, l'interfaccia order repository e l'implementazione singleton. Abbiamo anche bisogno di un file beans.xml vuoto per attivare la parte CDI (L'EJB è attivato automaticamente). Da notare come abbiamo il controllo completo del classpath definendo esplicitamente cosa mettere nell'archivio.
+
+div(filename). src/test/java/org/arquillian/example/BasketTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.runner.RunWith;
+
+@RunWith(Arquillian.class)
+public class BasketTest {
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap.create(JavaArchive.class, "test.jar")
+            .addClasses(Basket.class, OrderRepository.class, SingletonOrderRepository.class)
+            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+}
+
+p. Ora rimane da fare fare l'injection del carrello e dell'order repository nel test ed eseguirlo. Eseguiremo l'injection dell'interfaccia EJB, non dell'implementazione. Il container EJB automaticamente troverà l'implementazione dell'interfaccia da usare.
+
+Per default in JUnit, i metodi @@Test@ sono eseguiti in un ordine non definito. L'integrazione di JUnit su Arquillian prevede un'annotazione @@InSequence@ che può essere usata per definire l'ordine di esecuzione. Noi useremo il @@InSequence@ in questo test per eseguire prima l'inserimento di due ordini nel primo metodo di test, e poi assicurarsi che il repository conterrà questi due oggetti nel secondo metodo di test.
+
+div(filename). src/test/java/org/arquillian/example/BasketTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import javax.ejb.EJB;
+import javax.inject.Inject;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit.InSequence;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(Arquillian.class)
+public class BasketTest {
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap.create(JavaArchive.class, "test.jar")
+            .addClasses(Basket.class, OrderRepository.class, SingletonOrderRepository.class)
+            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+    
+    @Inject
+    Basket basket;
+    
+    @EJB
+    OrderRepository repo;
+    
+    @Test
+    @InSequence(1)
+    public void place_order_should_add_order() {
+        basket.addItem("sunglasses");
+        basket.addItem("suit");
+        basket.placeOrder();
+        Assert.assertEquals(1, repo.getOrderCount());
+        Assert.assertEquals(0, basket.getItemCount());
+        
+        basket.addItem("raygun");
+        basket.addItem("spaceship");
+        basket.placeOrder();
+        Assert.assertEquals(2, repo.getOrderCount());
+        Assert.assertEquals(0, basket.getItemCount());
+    }
+    
+    @Test
+    @InSequence(2)
+    public void order_should_be_persistent() {
+        Assert.assertEquals(2, repo.getOrderCount());
+    }
+}
+
+p. Il test è stato scritto. Ora dobbiamo configurarlo e lanciarlo.
+
+h3. Aggiungere i Container remoti
+
+Il test che abbiamo scritto usa sia CDI che EJB. Questa combinazione è utilizzabile in un ambiente integrato (Come per esempio Weld Embedded o OpenEJB Embedded). E' comunque più semplice usare direttamente un container EE compliant. In più, ci permette di eseguire test più realistici. Quindi al momento mettiamo da parte i container integrati.
+
+Nella guida precedente, abbiamo usato entrambi i container di tipo embedded e managed. In entrambi i casi, Arquillian deve lanciare il container quando viene eseguita la suite di test e deve fermarlo quando i test sono terminati. Cosa fare se abbiamo già un container attivo (o vogliamo lanciarne uno a scopo di test)? Quello è sicuramente il modo più rapido per lanciare i test. Anche se il container è molto veloce a partire, un container già avviato è sicuramente più rapido.
+
+I container remoti forniscono un ambiente di sviluppo ideale per i test di integrazione. Permettono anche di eseguire il debug in modo molto semplice, come vedremo più avanti. Dal momento che non ci sono referenze al container direttamente nel test, è possibile usare un container remoto durante gli sviluppi. In questo caso configureremo il container managed che è tralaltro la soluzione migliore negli ambienti di continous integration.
+
+p(warning). %Il termine _remoto_ si riferisce ad un processo separato, non necessariamente a una macchina separata, sebbene siano supportati entrambi gli scenari.%
+
+Un container remoto è un processo standalone in cui Arquillian esegue il deploy tramite delle API client. Perciò abbiamo bisogno delle seguenti librerie:
+
+* API dei modelli (che possono semplicemnete essere aggiunti al pacchetto se il container non le fornisce già)
+* Il remote container adapter di Arquillian
+* Le API client per il deploy per comunicare con il processo del container
+
+Nel nostro file pom.xml, aggiungiamo due nuovi profili all'interno dell'elemento @<profiles>@. Il primo profilo usa il container remoto di Boss AS 7.1:
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<profile>
+    <id>arquillian-jbossas-remote</id>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <version>1.0.0.Final</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-arquillian-container-remote</artifactId>
+            <version>7.1.1.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.protocol</groupId>
+            <artifactId>arquillian-protocol-servlet</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</profile>
+<!-- clip -->
+
+p(info). %Di default, JBoss AS 7 usa il protocollo JMX per ricevere gli archivi di test. Noi siamo andati oltre e abbiamo aggiunto una dipendenza al protocollo Servlet nel profilo @arquillian-jbossas-managed@ che potrà essere usato in futuro. Per istruzioni su come passare da JMX a Servlet rimandiamo a "queste FAQ":https://community.jboss.org/wiki/WhyDoIGetNoActiveContextsForScopeTypeWhenTestingOnJBossAS7.%
+
+p. Il secondo profilo usa il container remoto di GlassFish 3.1.2:
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<profile>
+    <id>arquillian-glassfish-remote</id>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-6.0</artifactId>
+            <version>1.0.0.Final</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-api</artifactId>
+            <version>1.1.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-glassfish-remote-3.1</artifactId>
+            <version>1.0.0.CR3</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</profile>
+<!-- clip -->
+
+p(info). %L'adapter remoto di GlassFish usa Jersey per comunicare con il container tramite JAX-RS (REST), che è integrato come dipendenza transitiva. Sono richieste le API Weld per gestire le eccezioni dei test all'interno del container.%
+
+Una volta aggiunti i profili nel pom.xml, clicchiamo con il tasto destro sul progetto in Eclipse e selezioniamo Maven > Update Project Configuration. Se il progetto mostra errori di compilazione, dobbiamo attivare uno dei due profili.
+
+Ricordiamoci che ci sono due modi per attivare un profilo Maven in Eclipse (presupponendo che stiamo usando il plugin "Maven Integration for Eclipse":http://www.eclipse.org/m2e):
+
+# Configurazione manuale (approccio standard)
+# selettore del profilo Maven (JBoss Tools)
+
+Riferitevi alla "Guida Introduttiva":/guides/getting_started#test_across_containers per istruzioni su come attivare un profilo. Una volta che il profilo è attivato, il progetto dovrebbe compilare con successo.
+
+Gli adapter per il container remoto si aspettano che il container sia avviato. Perciò, diamo un'occhiata alla configurazione dei container in modo che possiamo lanciarli comodamente dal nostro IDE prima di far partire i test.
+
+h3. Configurazione dei Server
+
+Il modo più semplice per gestire i container remoti è di configurarli all'interno dell'IDE. Se vi sentite più a vostro agio con la riga di comando, potete saltare questo passaggio e lanciare il server utilizzando il rispettivo script di lancio.
+
+Mostriamo ora come aggiungere i controlli del server (container) in Eclipse. Il processo è simile per gli altri IDE. Con Eclipse, abbiamo bisogno sia di "JBoss Tools":http://jboss.org/tools che di "GlassFish Java EE Application Server Plugin":http://marketplace.eclipse.org/content/glassfish-java-ee-application-server-plugin-eclipse/metrics, entrambi disponibili nel MarketPlace di Eclipse.
+
+Da Eclipse, selezioniamo Window > Show View > Servers dalla barra principale. Una volta aperta la finestra, tasto destro e selezioniamo New > Server. Creiamo un controllore del server per JBoss AS 7.1:
+
+!/images/guides/arquillian_tutorial_2_new_jbossas_server.png!
+
+e un'altro per GlassFish 3.1.2:
+
+!/images/guides/arquillian_tutorial_2_new_glassfish_server.png!
+
+p(info). %Il wizard per JBoss AS richiede di selezionare un'installazione già esistente. Il wizard di Glassfish 3.1.2 fornisce un'opzione automatica per il download e l'estrazione della distribuzione.%
+
+Una volta completato il wizard per il container, dovrebbe comparire questo nella finestra dei server:
+
+!/images/guides/arquillian_tutorial_2_servers_view.png!
+
+Per lanciare un server, selezioniamo il blocco (mostrato graficamente) e clicchiamo sul tasto di play nella toolbar.
+
+p(info). %Arquillian presuppone che i container vengano lanciati sulle porte di default. Se avete cambiato le porte, si può configurare il file arquillian.xml per specificare le porte usate per ogni container. Consultate la "reference guide":https://docs.jboss.org/author/display/ARQ/Container+adapters per maggiori dettagli.%
+
+Ora che i container sono pronti e in attesa, è tempo di lanciare il test.
+
+h3. Lanciare il Test Arquillian
+
+Per lanciare il test Arquillian, sono necessari tre passaggi:
+
+# Lanciare il container remoto
+# Attivare il profilo Maven che aggiunge il corrispondente container adapter al classpath
+# Lanciare il test
+
+Eseguiamo un test con JBoss AS.
+
+h4. Eseguire il Test su JBoss AS
+
+Per lanciare il test su JBoss AS, dobbiamo lanciare prima il container JBoss AS. Apriamo la finestra Servers, selezioniamo JBoss AS 7.1, e clicchiamo sul bottone verde play. Attendiamo che finisca lo start (non dovrebbe impiegare molto tempo).
+
+Una volta che JBoss è avviato, attiviamo il profilo Maven @arquillian-jbossas-remote@ tramite le proprietà di Maven o il selettore del profilo di JBoss Tools. L'editor del profilo in basso mostra la selezione corretta.
+
+!/images/guides/arquillian_tutorial_2_jbossas_profile_selection.png!
+
+Infine, tasto destro sulla classe @BasketTest@ e selezioniamo Run As > JUnit Test. Si dovrebbe vedere una serie di attività nella Console e poi...una *(greenbar)barra verde* nella vista di JUnit!
+
+E' anche possibile lanciare il test dalla riga di comando con Maven:
+
+bc(command). $ mvn test -Parquillian-jbossas-remote -Dtest=BasketTest
+
+Vedremo le seguenti righe stampate nella console:
+
+bc(output). -------------------------------------------------------
+T E S T S
+-------------------------------------------------------
+Running org.arquillian.example.BasketTest
+...
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.844 sec
+
+*Congratulazioni!* E' stata eseguita la nostra prima  *(greenbar)barra verde* con Arquillian usando un container remoto.
+
+p(info). %E' possibile ereditare l'EJB @OrderRepository@ usando l'annotazione @@Inject@ oltre che la @@EJB@. Provate!.%
+
+Se vogliamo verificare che il singleton sta facendo il suo lavoro, andiamo avanti e rimuoviamo l'annotazione @@Singleton@ dalla classe @SingletonOrderRepository@ e sostituiamolo con uno @@Stateful@. Si dovrebbe vedere un'errore di asserzione durante l'esecuzione del test. Rimettiamo la vecchia annotazione e la barra ritornerà verde.
+
+Abbiamo terminato la prova con JBoss AS, ora clicchiamo sulla finestra Servers per fermare il server. Eseguiamo ora il test su GlassFish 3.1.2.
+
+h4. Lanciare il Test su GlassFish
+
+Per lanciare il test sul server standalone GlassFish, lanciamo per prima cosa il server. Apriamo la finestra Servers, selezioniamo GlassFish 3.1.2 e clicchiamo sul bottone verde play. Attendiamo la fine dello start.
+
+Una volta che GlassFish è avviato, attiviamo il profilo Maven @arquillian-glassfish-remote@ tramite le proprietà di Maven o il selettore del profilo di JBoss Tools. L'editor del profilo in basso mostra la selezione corretta.
+
+!/images/guides/arquillian_tutorial_2_glassfish_profile_selection.png!
+
+Infine, tasto destro sulla classe @BasketTest@ e selezioniamo Run As > JUnit Test. Si dovrebbe vedere una serie di attività nella Console e poi...una *(greenbar)barra verde* nella vista di JUnit!
+
+E' anche possibile lanciare il test dalla riga di comando con Maven:
+
+bc(command). $ mvn test -Parquillian-glassfish-remote -Dtest=BasketTest
+
+Vedremo le seguenti righe stampate nella console:
+
+bc(output). -------------------------------------------------------
+T E S T S
+-------------------------------------------------------
+Running org.arquillian.example.BasketTest
+...
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.549 sec
+
+*Congratulazioni!* Ecco un'altra *(greenbar)barra verde*
+
+Dovremmo aver modo di lanciare il test anche sul profilo Embedded GlassFish configurato nella guida precedente. Proviamo ad eseguirlo. E' anche possibile eseguire il debug molto facilmente.
+
+Naturalmente, il debug di un test in un container integrato è semplice perchè gira all'interno dello stesso processo del test. Ma come fare con un container remoto?
+
+h3. Debug del Test Arquillian
+
+Eseguire il debug del test in un container remoto? Sembra arduo. Sorpresa! Non lo è. Bisogna solo fare una correzione al debug visto nella guida precedente e aggiungerne uno nuovo:
+
+# *Debug del container remoto*
+# Attivare il profilo Maven che aggiunge il corrispondente container adapter al classpath
+# *Mettere un breakpoint*
+# Lanciare il test
+
+Nella finestra Servers, noteremo che c'è un'icona di un insetto subito accanto al bottone verde play. Clicchiamo sul bottone per lanciare il server in modalità debug. Eclipse automaticamente connettterà il suo debugger al container.
+
+Mettiamo un breakpoint sul metodo @addOrder()@ del bean @SingletonOrderRepository@. Lanciamo nuovamente il test cliccando col tasto destro e selezionando Run As > JUnit Test.
+
+p(warning). %Non c'è bisogno di usare Debug As > JUnit Test. Il codice del test è eseguito dentro al container, che si trova già in modalità debug.%
+
+Il test dovrebbe fermarsi al breakpoint. Se si sta usando JBoss AS, si può aprire la console di amministrazione e verificare che l'applicazione di test sia correntemente installata sul server.
+
+Se usiamo il browser dello stack trace nella finestra di Debug di Eclipse, noteremo che il server è controllato con un protocollo remoto (JMX o Servlet) e che JUnit è stato lanciato dentro il container.
+
+!/images/guides/arquillian_tutorial_2_debug_remote_test.png!
+
+Stiamo usando il server dal nostro IDE.
+
+p(warning). %Se vedete il messaggio "Source not found" nell'editor quando il debugger si ferma al breakpoint, è necessario aggiungere il progetto alla configurazione del debug. Clicchiamo su "Edit Source Lookup Path...", poi su "Add...", selezioniamo il progetto Java, mettiamo il check sul box vicino al progetto e clicchiamo su "OK". Voila! Codice sorgente.%
+
+h4. Sorgenti prelevabili da Librerie Esterne
+
+Se nel nostro test usiamo delle classi fornite da una libreria esterna (codice fuori dall'applicazione), abbiamo bisogno di aggiungere il codice sorgente della libreria.
+
+p(info). %Questa configurazione non è necessaria se usiamo un progetto Maven e i sorgenti della libreria sono disponibili in un repository Maven. Quando arriviamo ad un breakpoint su di una libreria non ancora disponibile localmente, attendiamo un pò di tempo per il download e il codice sorgente apparirà. Se non appare, probabilmente il sorgente non è nel repository e ci sarà bisogno di aggiungerlo a mano .%
+
+Quì i passi necessari per aggiungere il sorgente della libreria nella configurazione del debug:
+
+# Selezioniamo @Run > Debug Configurations...@ dalla barra principale
+# Selezioniamo il nome della classe di test nella categoria JUnit (o TestNG)
+# Selezioniamo il tab Source
+# Clicchiamo sul bottonr Add... a destra
+# Se il codice sorgente è in un altro progetto:
+## Selezioniamo Java Project
+## Selezioniamo il progetto che contiene la classe su cui eseguire il debug
+## Clicchiamo su OK sulla finestra di Selezine del Progetto
+# Se il codice sorgente è in una Libreria:
+## Selezioniamo External Archive
+## Navighiamo fino all'archivio che contiene il codice sorgente (che naturalmente deve essere già stato scaricato)
+# Clicchiamo su Close dalla finestra di Configurazione del Debug
+
+Dovranno essere eseguiti questi passi per ogni classe di test che vogliamo usare per il debug, sebbene nel nostro caso lo facciamo solo una volta (la configurazione del debug va raffinata pezzo per pezzo).
+
+h3. Debug di un Managed Server
+
+E' possibile eseguire il debug su un managed container? Si! Abbiamo solo bisogno di una configurazione extra.
+
+Dal momento che Arquillian interagisce sullo start e stop del container, dobbiamo istruire Arquillian per lanciare il container in modalità debug. Si tratta di configurazioni della JVM che Arquillian dovrà passare al server, che noi faremo tramite le proprietà di configurazione del container.
+
+Prima di fare ciò, dobbiamo pensare a come connetterci al debugger. A meno che siamo superveloci a usare il mouse, è una vera impresa connettersi al debugger prima che Arquillian inizia il lancio dei test. Fortunatamente, possiamo dire alla JVM di attendere il connettore del debug prima di eseguire l'applicazione, nel nostro caso JBoss AS. Questo ci darà il tempo di cliccare sul bottone debug dell'IDE per connetterci al processo.
+
+Quì c'è la configurazione che dobbiamo aggiungere al descrittore di Arquillian, arquillian.xml, per far si che Arquillian lanci il server in modalità debug: (Assicuriamoci che non ci siano spazi subito dopo i tag @<property>@)
+
+div(filename). src/test/resources/arquillian.xml
+
+bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+    <container qualifier="jbossas-managed" default="true">
+        <configuration>
+            <property name="jbossHome">target/jboss-as-7.1.1.Final</property>
+            <property name="javaVmArguments">-Xmx512m -XX:MaxPermSize=128m
+                -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y
+            </property>
+        </configuration>
+    </container>
+</arquillian>
+
+p. Da notare il flag @suspend=y@. Dice al processo di attendere che il debugger si connetta. Abbiamo configurato la porta su 8787, che dovremo poi mettere nella configurazione del debugger. Ecco i passi per lanciare il test:
+
+# Attiviamo il profilo Maven @arquillian-jbossas-managed@ (riferitevi alla "Guida Introduttiva":/guides/getting_started guide)
+# Lanciamo il test
+
+Nella Console, dovremmo vedere che Arquillian ha lanciato un'istanza di JBoss AS e che sta in attesa che il debugger si connetta:
+
+bc(output). Listening for transport dt_socket at address: 8787
+
+Tutto quello che ora dobbiamo fare è connettere il debugger. Quì vediamo come configurare e lanciare il debugger su Eclipse:
+
+# Selezioniamo @Run > Debug Configurations...@ dal menù principale
+# Tasto destro su Remote Java Application e selezioniamo New
+# Nel campo Name, inseriamo "Debug JBoss AS"
+# Nel campo Port mettiamo "8787"
+# Clicchiamo sul bottone Debug
+
+Questo è lo screenshot della configurazione che abbiamo creato:
+
+!/images/guides/arquillian_tutorial_2_eclipse_debug_configuration.png!
+
+Una volta cliccato sul bottone Debug, JBoss AS dovrebbe continuare l'esecuzione, e si fermerà una volta raggiunto il breakpoint del test. Voila! Abbiamo eseguito il debug del managed container!
+
+h3. Esportazione del Deployment
+
+A volte è necessario avere fisicamente il pacchetto di deploy disponibile per processi di deploy più elaborati o soltanto per avere un maggior controllo sulle risorse inserite. Fortunatamente, Arquillian fornisce un modo per esportare l'archivio prima di eseguire il deploy. E' sufficiente assegnare una directory assoluta o relativa nella proprietà @deploymentExportPath@ dell'elemento @<engine>@ nel arquillian.xml e Arquillian esporterà l'archivio in quella directory ad ogni avvio del test.
+
+div(filename). src/test/resources/arquillian.xml
+
+bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+    <engine>
+        <property name="deploymentExportPath">target/deployments</property>
+    </engine>
+</arquillian>
+
+p. Per attivare l'esportazione su un singolo test, si può usare l'argomento @arquillian.deploymentExportPath@ da passare alla VM. Per esempio: @-Darquillian.deploymentExportPath=target/deployments/@.
+
+Ora avviamo un test e verifichiamo la directory target/deployments. Si dovrebbe vedere un file con estensione .jar, .war o .ear. (Arquillian potrebbe mettere un archivio definito nel test dentro qualche altro archivio se lo si desidera). Possiamo vedere il contenuto di questi file usando un qualunque gestore di archivi. Sperando che in questo modo sia più facile risolvere eventuali problemi di classi non trovate o risorse mancanti.
+
+Giunti a questo punto, abbiamo imparato come lanciare e fare il debug su container integrati, remoti e managed. Non c'è altro da vedere per ora. DIvertitevi a scrivere _test reali_ e siatene orgogliosi!
