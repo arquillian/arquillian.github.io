@@ -1,0 +1,35 @@
+---
+date: 2012-07-25
+---
+
+Another little maintenance release in the Arquillian 1.0 series.
+
+p. The @@Deployment@ can now be defined on private and protected methods. The same package and protected support is applicable to the SPI level for service and observer implementations.
+
+bc(prettify).. @Deployment
+static JavaArchive createDeployment() {
+   ...
+}
+
+
+p. Using environment variables in @arquillian.xml@ is now possible via the property expression @ENV.name@
+
+bc(prettify).. <container qualifier="example">
+   <property name="jbossHome">${ENV.JBOSS_HOME}</property>
+</container>
+
+
+p. Ever run into this exception? "UnsupportedOperationException: Multiple WebArchives found in X.ear. Can not determine which to enrich."
+The exception happens when the @Servlet Protocol@ in Arquillian attempts to enrich an @EnterpriseArchive@ for @in-container@ testing, but multiple @WebArchives@ were found in the Deployment, and it can't determine which you want to test. With the help of "Robert Panzer":profile://robertpanzer this is now supported. You can give a @Protocol@ a hint to which @Archive@ is under test by using the new @Testable.archiveToTest(Archive)@ method. 
+
+bc(prettify).. @Deployment
+static EnterpriseArchive create() {
+   return ShrinkWrap.create(EnterpriseArchive.class)
+      .addAsModule(...some..war..)
+      .addAsModule(
+         Testable.archiveToTest(
+            ShrinkWrap.create(WebArchive.class)
+               .addXYZ(...)
+         )
+      );
+}
