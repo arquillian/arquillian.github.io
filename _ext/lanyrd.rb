@@ -135,7 +135,7 @@ module Awestruct::Extensions::Lanyrd
             type = meta.search('strong').inner_html
             meta.search('strong').remove()
             session.event = meta.inner_text.strip if type.eql? 'Event'
-            session.event_url = "#{@base}#{meta.at('a').attributes['href']}" if type.eql? 'Event'
+            session.event_url = "#{meta.at('a').attributes['href']}" if type.eql? 'Event'
             
             if type.eql? 'Speakers'
               session.speaker_names = meta.inner_text.strip.split(', ')
