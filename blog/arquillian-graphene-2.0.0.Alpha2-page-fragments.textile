@@ -1,0 +1,240 @@
+---
+layout: blog
+title: Introducing Arquillian Graphene Page Fragments
+author: jhuska
+---
+Nowadays tools like _Arquillian Graphene_, _WebDriver_ or just plain _Selenium_  and concepts like "Page Objects":http://code.google.com/p/selenium/wiki/PageObjects can pretty much help you with automated functional (integration, whatever...) testing of your web UI. The advantages which brings _Arquillian Graphene_ "were already introduced":http://arquillian.org/blog/tags/graphene/.
+
+h5. Consider following snippet from Arquillian Graphene functional test <br /> for "simple page":http://showcase.richfaces.org/richfaces/component-sample.jsf?demo=autocomplete&sample=modes&skin=blueSky, which contains three Autocomplete widgets.
+
+bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest {
+
+    private JQueryLocator minCharInput = jq("input[type=text]:eq(0)");
+    private JQueryLocator multipleSelectionInput = jq("input[type=text]:eq(1)");
+    private JQueryLocator selectFirstFalseInput = jq("input[type=text]:eq(2)");
+    private JQueryLocator selection = jq("div.rf-au-itm");
+
+    @Test
+    public void testFirstAutocomplete() {
+
+        graphene.keyPress(minCharInput, 'a');
+
+        assertFalse(graphene.isElementPresent(selection),
+            "The suggestion list should not be visible, since there is only one char!");
+
+        String keys = "ar";
+        graphene.focus(minCharInput);
+        selenium.type(minCharInput, keys);
+        guardXhr(graphene).fireEvent(minCharInput, Event.KEYPRESS);
+
+        assertTrue(graphene.isVisible(selection), 
+            "The suggestion list should be visible, since there are two chars!");
+
+        String actualArizona = graphene.getText(jq(selection.getRawLocator() + ":eq(0)"));
+        assertEquals(actualArizona, "Arizona", "The provided suggestion should be Arizona!");
+
+        String actualArkansas = graphene.getText(jq(selection.getRawLocator() + ":eq(1)"));
+        assertEquals(actualArkansas, "Arkansas", "The provided suggestion should be Arkansas!");
+
+    }
+
+    @Test
+    public void testSecondAutocomplete() {
+
+        char key = 'a';
+        selenium.focus(multipleSelectionInput);
+        guardXhr(selenium).keyPress(multipleSelectionInput, key);
+
+        assertTrue(selenium.isVisible(selection),
+            "The suggestion list should be visible, since there is correct starting char!");
+
+        selenium.keyPressNative(KeyEvent.VK_ENTER);
+
+        key = ' ';
+        selenium.keyPress(multipleSelectionInput, key);
+
+        key = 'w';
+
+        selenium.focus(multipleSelectionInput);
+        guardXhr(selenium).keyPress(multipleSelectionInput, key);
+
+        assertTrue(selenium.isVisible(selection),
+            "The suggestion list should be visible, since there is correct starting char!");
+
+        selenium.keyPressNative(KeyEvent.VK_ENTER);
+
+        String actualContentOfInput = selenium.getValue(multipleSelectionInput);
+        assertEquals(actualContentOfInput, "Alabama Washington", "The input should contain something else!");
+    }
+
+    @Test
+    public void testThirdAutocomplete() {
+        //similar autocomplete interactions as in the previous tests
+    }
+}
+
+h3. Now, could you ask yourself the following questions.
+
+_Do you find these tests less robust than for example unit testing of persistence layer ?_
+
+_Do you think that when underlying HTML code will change that these tests will pass?_
+
+_Have you noticed the same code repeated on many places in these tests ?_
+
+p. Well, in my opinion all these questions should have affirmative answers. You are probably aware of the fact that tests should be loosely coupled with the underlying HTML structure of the application under test. It makes tests more robust and a likely change in the HTML structure of the page will no more affect tests.
+
+p. Fine, let's use "Page Objects":http://code.google.com/p/selenium/wiki/PageObjects pattern, to split up these two things. The Page Object will encapsulate all the HTML structure, so the change will be introduced only in your Page Objects.
+
+p. _But what when I am testing another application with Autocomplete widgets ?_ I will need to copy lot of LOC which handle the interaction between test and the Autocomplete widget. As you know, it is major DRY violation. Is there something out there to improve this ?
+
+*Yes, it is. Arquillian Graphene Page Fragments are here to help you!*
+
+h3. What is it ?
+
+* Page Fragments stands for any part of the tested page, any widget, web component, etc.
+* A concept of encapsulation of these parts into completely reusable pieces across all your tests.
+* Powerful mechanism for creating own page fragments, like Autocomplete (Calendar, Login, etc.) page fragment.
+* A concept which differentiate each fragment by its root element and make other parts referenced from it.
+* A solution which leverages Selenium WebDriver under the hood together with all Graphene killer features.
+* Set of utilities which simplify using of this feature in tests, together with better support for Page Objects.
+
+h3. Let's look how such page fragment can be defined.
+
+p. Note that it is just snippet from the whole implementation of RichFaces Autocomplete component.
+
+bc(prettify).. public class AutocompleteFragment<T> {
+
+    @Root
+    WebElement root;
+
+    @FindBy(css = "input[type='text']")
+    WebElement inputToWrite;
+
+    public static final String CLASS_NAME_SUGGESTION = "rf-au-itm";
+
+    public List<Suggestion<T>> getAllSuggestions(SuggestionParser<T> parser) {
+        List<Suggestion<T>> allSugg = new ArrayList<Suggestion<T>>();
+
+        if (areSuggestionsAvailable()) {
+            WebElement rightSuggList = getRightSuggestionList();
+            List<WebElement> suggestions = rightSuggList.findElements(By.className(CLASS_NAME_SUGGESTION));
+
+            for (WebElement suggestion : suggestions) {
+                allSugg.add(parser.parse(suggestion));
+            }
+        }
+
+        return allSugg;
+    }
+
+    public List<Suggestion<T>> type(String value, SuggestionParser<T> parser) {
+        List<Suggestion<T>> suggestions = new ArrayList<Suggestion<T>>();
+
+        inputToWrite.sendKeys(value);
+        try {
+            waitForSuggestions();
+        } catch (TimeoutException ex) {
+            // no suggestions available
+            return suggestions;
+        }
+
+        suggestions = getAllSuggestions(parser);
+        return suggestions;
+    }
+
+    //other handy encapsulation of Autocomplete services
+}
+
+p. Notice the @@Root@ annotation. The value for that field is automatically injected by Graphene to reference all defined @@FindBy@ elements from it. Such fragment implementation is pretty generic and therefore reusable in all tests for different applications. Finally it would encapsulate all the services which this fragment provides, but it does not have to be all. You can for example encapsulate browser specific interactions with this fragment. There are no boundaries!
+
+h3. Let's rewrite the previous tests with using of Page Fragments together with support for Page Objects pattern.
+
+p. Firstly define a Page Object which will contain the structure of the tested page.
+
+bc(prettify).. public class TestPage {
+    
+    @FindBy(css = "div[class=\"rf-au\"]:nth-of-type(1)")
+    private AutocompleteFragment<String> autocomplete1;
+
+    @FindBy(css = "div[class=\"rf-au\"]:nth-of-type(2)")
+    private AutocompleteFragment<String> autocomplete2;
+
+    @FindBy(css = "div[class=\"rf-au\"]:nth-of-type(3)")
+    private AutocompleteFragment<String> autocomplete3;
+
+    @FindBy(xpath = "//*[contains(@id,'sh1')]")
+    private WebElement viewSourceLink;
+
+    //all getters for the fields
+
+    //other handy methods which you find useful when testing those three Autocomplete widgets
+}
+
+p. Declaring Page Fragments in the Page Object is one of the options (the preferred one, the other is to declare Page Fragments directly in tests) to go with. *It is done just by using WebDriver @@FindBy@ annotation with reference to the root of the component.* So simple! 
+
+*Indeed you can combine Page Fragments and plain WebElements on the same Page Object.* Graphene will differentiates between these two and initializes them properly. Just to note that all this *initialization is done automatically*, so no need to initialize Page Fragments or Page Objects in @@Before@ methods of your tests.
+
+Finally following snippet showcases the actual autocomplete widgets tests.
+
+bc(prettify).. public class TestWhichUsesPageFragments extend AbstractTest {
+
+    @Page
+    private TestPage testPage;
+
+    @Test
+    public void testFirstAutocomplete {
+        AutocompleteFragment<String> autocomplete = testPage.getAutocomplete1();
+        
+        autocomplete.type("a");
+
+        assertFalse(autocomplete.areSuggestionsAvailable(), 
+            "The suggestion list should not be visible, since there is only one char!");
+
+        String keys = "ar";
+        autocomplete.type(keys);
+
+        assertTrue(autocomplete.areSuggestionsAvailable(), 
+            "The suggestion list should be visible, since there are two chars!");
+
+        List<Suggestion<String>> expectedSuggestions = new ArrayList<Suggestion<String>>();
+        expectedSuggestions.add(new Suggestion<String>("Arizona"));
+        expectedSuggestions.add(new Suggestion<String>("Arkansas"));
+
+        assertEquals(autocomplete.getAllSuggestions(new StringSuggestionParser()), expectedSuggestions, 
+            "Suggestions are wrong!");
+    }
+
+    @Test
+    public void testSecondAutocomplete() {
+        AutocompleteFragment<String> autocomplete = testPage.getAutocomplete2();
+
+        String key = "a";
+        autocomplete.type(key);
+        
+        String errorMsg = "The suggestion list should be visible, since there was typed correct char ";
+        assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);
+
+        autocomplete.autocomplete(autocomplete.getFirstSuggestion());
+
+        autocomplete.type(" ");
+
+        key = "w"
+        autocomplete.type(key);
+
+        assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);
+
+        autocomplete.autocomplete(autocomplete.getFirstSuggestion());        
+
+        String actualContentOfInput = autocomplete.getInputValue();
+        assertEquals(actualContentOfInput, "Alabama Washington", "The input should contain something else!");
+    }
+
+    @Test
+    public void testThirdAutocomplete() {
+        //similar autocomplete interactions as in the previous tests
+    }
+}
+
+p. Notice integration with Page Object pattern, which is achieved by @@Page@ annotation. As your application will grow, the only what you will need to change will be root references of your Page Fragments. Last but not least you will be able to reuse this Autocomplete Page Fragment in other tests for maybe different applications.
+
+To try Page Fragments by ourselves, just check it out the Graphene 2.0.0.Alpha2 release. Some of the getting start information can be also found in the documentation for Graphene 2, "here":https://docs.jboss.org/author/display/ARQGRA2/Page+Abstractions.
