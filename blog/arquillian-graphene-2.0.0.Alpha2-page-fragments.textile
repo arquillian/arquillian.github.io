@@ -1,0 +1,175 @@
+Nowadays tools like _Arquillian Graphene_, _WebDriver_ or just plain _Selenium_  and concepts like "Page Objects":http://code.google.com/p/selenium/wiki/PageObjects can pretty much help you with automated functional (integration, whatever...) testing of your web UI. The advantages which brings _Arquillian Graphene_ "were already introduced":http://arquillian.org/blog/tags/graphene/.
+
+h3. Consider please following snippet from Arquillian Graphene functional test for "simple page":http://showcase.richfaces.org/richfaces/component-sample.jsf?demo=autocomplete&sample=modes&skin=blueSky ,which contains three Autocomplete widgets.
+
+bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest {
+
+    private JQueryLocator minCharInput = jq("input[type=text]:eq(0)");
+    private JQueryLocator multipleSelectionInput = jq("input[type=text]:eq(1)");
+    private JQueryLocator selectFirstFalseInput = jq("input[type=text]:eq(2)");
+    private JQueryLocator selection = jq("div.rf-au-itm");
+
+    @Test
+    public void testFirstAutocomplete() {
+
+        graphene.keyPress(minCharInput, 'a');
+
+        assertFalse(graphene.isElementPresent(selection),
+            "The selection should not be visible, since there is only one char!");
+
+        String keys = "ar";
+        graphene.focus(minCharInput);
+        selenium.type(minCharInput, keys);
+        guardXhr(graphene).fireEvent(minCharInput, Event.KEYPRESS);
+
+        assertTrue(graphene.isVisible(selection), "The selection should be visible, since there are two chars!");
+
+        String actualArizona = graphene.getText(jq(selection.getRawLocator() + ":eq(0)"));
+        assertEquals(actualArizona, "Arizona", "The provided option should be Arizona");
+
+        String actualArkansas = graphene.getText(jq(selection.getRawLocator() + ":eq(1)"));
+        assertEquals(actualArkansas, "Arkansas", "The provided option should be Arkansas");
+
+    }
+
+    @Test
+    public void testSecondAutocomplete() {
+
+        char key = 'a';
+        selenium.focus(multipleSelectionInput);
+        guardXhr(selenium).keyPress(multipleSelectionInput, key);
+
+        assertTrue(selenium.isVisible(selection),
+            "The selection should be visible, since there is correct starting char!");
+
+        selenium.keyPressNative(KeyEvent.VK_ENTER);
+
+        key = ' ';
+        selenium.keyPress(multipleSelectionInput, key);
+
+        key = 'w';
+
+        selenium.focus(multipleSelectionInput);
+        guardXhr(selenium).keyPress(multipleSelectionInput, key);
+
+        assertTrue(selenium.isVisible(selection),
+            "The selection should be visible, since there is correct starting char!");
+
+        selenium.keyPressNative(KeyEvent.VK_ENTER);
+
+        String actualContentOfInput = selenium.getValue(multipleSelectionInput);
+        assertEquals(actualContentOfInput, "Alabama Washington", "The input should contain something else!");
+    }
+
+    @Test
+    public void testThirdAutocomplete() {
+        //similar autocomplete interactions as in the previous tests
+    }
+}
+
+h3. Ask yourself the following questions.
+
+_Do you find these tests less robust than for example unit testing of persistence layer ?_
+
+_Do you think that when underlaying HTML code will change that these tests will pass?_
+
+_Have you noticed the same code repeated on many places in these tests ?_
+
+p. Well, in my opinion all these questions should have affirmative answers. You are probably aware of the fact that tests should be loosly coupled with the underlaying HTML structure of the application under test. It makes tests more robust and a likely change in the HTML structure of page will no more affects tests.
+
+p. Fine, let's use "Page Objects":http://code.google.com/p/selenium/wiki/PageObjects pattern, to split up these two things. The Page Object will encapsulate all the HTML structure, so the change will be introduced only in page objects.
+
+p. _But what when I am testing another application with Autocomplete widgets ?_ I will need to copy lot of LOC which handle the interaction between test and the Autocomplete widget. As you know, it is major DRY violation. Is there something out there to improve this ?
+
+*Arquillian Graphene Page Fragments are here to help you!*
+
+h3. What is it ?
+
+* Page Fragments stands for any part of the tested page, any widget, web component, etc.
+* Powerful mechanism for creating own page fragments, like Autocomplete (Calendar, Login, etc.) page fragment.
+* A concept which differentiate each fragment by its root element and make other parts referenced from it.
+* A solution which leverages Selenium WebDriver under the hood together with all Graphene killer features.
+* Set of utilities which simplify using of this feature in tests.
+
+h3. Let's look how such page fragment can be defined.
+
+p. Note that it is just snippet from the whole implementation.
+
+bc(prettify).. public class AutocompleteFragment<T> {
+
+    public static final String CLASS_NAME_SUGGESTION = "rf-au-itm";
+    public static final String CSS_INPUT = "input[type='text']";
+
+    @Root
+    WebElement root;
+
+    @FindBy(css = CSS_INPUT)
+    WebElement inputToWrite;
+
+    public List<Suggestion<T>> getAllSuggestions(SuggestionParser<T> parser) {
+        List<Suggestion<T>> allSugg = new ArrayList<Suggestion<T>>();
+
+        if (areSuggestionsAvailable()) {
+            WebElement rightSuggList = getRightSuggestionList();
+            List<WebElement> suggestions = rightSuggList.findElements(By.className(CLASS_NAME_SUGGESTION));
+
+            for (WebElement suggestion : suggestions) {
+                allSugg.add(parser.parse(suggestion));
+            }
+        }
+
+        return allSugg;
+    }
+
+    public List<Suggestion<T>> type(String value, SuggestionParser<T> parser) {
+        List<Suggestion<T>> suggestions = new ArrayList<Suggestion<T>>();
+
+        inputToWrite.sendKeys(value);
+        try {
+            waitForSuggestions();
+        } catch (TimeoutException ex) {
+            // no suggestions available
+            return suggestions;
+        }
+
+        suggestions = getAllSuggestions(parser);
+        return suggestions;
+    }
+
+    //other handy encapsulation of Autocomplete services
+}
+
+p. Notice the @@Root@ annotation. The value for that field is automatically injected by Graphene to reference all defined @@FindBy@ elements from it. Such fragment implementation is pretty generic and therefore reusable in all tests for different applications.
+
+h3. Tests with using of such Page Fragments is showcased in the following example.
+
+bc(prettify).. @RunWith(Arquillian.class)
+public class TestWhichUsesPageFragments extend AbstractTest {
+
+    @FindBy(xpath = "//div[@id='rootElement']")
+    private Autocomplete autocomplete;
+
+    @FindBy(xpath = "//input")
+    private WebElement otherNonPageFragment;
+
+    @Page
+    private TestPage testPage;
+
+    @Test
+    public void testAutocomplete {
+        autocomplete.type("foo");
+        assertFalse("No suggestions should be available!", autocomplete.areSuggestionsAvailable());
+
+        String input = "B";
+        StringSuggestionParser parser = new StringSuggestionParser();
+
+        List<Suggestion<String>> suggestions = autocomplete.type(input, parser);
+        assertTrue("Suggestions for input: " + input + " are wrong!", suggestions.contains(new Suggestion<String>("Brno")));
+
+        //other autocomplete API calls, asserts, etc.
+    }
+}
+
+p. See how easily is Page Fragment declared in tests. Just by using WebDriver @@FindBy@ annotation with reference to the root of the component. Other @WebElement@ objects are initialised as usually. Also notice integration with Page Object pattern, which is achieved by @@Page@ annotation. Such a page can contain other Page Fragments. Notice that all this initialization is done automatically, so no need to initialize these elements in @@Before@ methods.
+
+To try Page Fragments by ourselves, just check it out the Graphene 2.0.0.Alpha2 release. Some of the getting start information can be also found in the documentation for Graphene 2, "here":https://docs.jboss.org/author/display/ARQGRA2/Page+Abstractions
