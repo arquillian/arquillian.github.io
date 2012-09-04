@@ -15,14 +15,14 @@ bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest
         graphene.keyPress(minCharInput, 'a');
 
         assertFalse(graphene.isElementPresent(selection),
-            "The selection of suggestions should not be visible, since there is only one char!");
+            "The suggestion list should not be visible, since there is only one char!");
 
         String keys = "ar";
         graphene.focus(minCharInput);
         selenium.type(minCharInput, keys);
         guardXhr(graphene).fireEvent(minCharInput, Event.KEYPRESS);
 
-        assertTrue(graphene.isVisible(selection), "The selection of suggestions should be visible, since there are two chars!");
+        assertTrue(graphene.isVisible(selection), "The suggestion list should be visible, since there are two chars!");
 
         String actualArizona = graphene.getText(jq(selection.getRawLocator() + ":eq(0)"));
         assertEquals(actualArizona, "Arizona", "The provided suggestion should be Arizona!");
@@ -40,7 +40,7 @@ bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest
         guardXhr(selenium).keyPress(multipleSelectionInput, key);
 
         assertTrue(selenium.isVisible(selection),
-            "The selection of suggestions should be visible, since there is correct starting char!");
+            "The suggestion list should be visible, since there is correct starting char!");
 
         selenium.keyPressNative(KeyEvent.VK_ENTER);
 
@@ -53,7 +53,7 @@ bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest
         guardXhr(selenium).keyPress(multipleSelectionInput, key);
 
         assertTrue(selenium.isVisible(selection),
-            "The selection of suggestions should be visible, since there is correct starting char!");
+            "The suggestion list should be visible, since there is correct starting char!");
 
         selenium.keyPressNative(KeyEvent.VK_ENTER);
 
@@ -67,7 +67,7 @@ bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest
     }
 }
 
-h3. Ask yourself the following questions.
+h3. Could you please ask yourself the following questions.
 
 _Do you find these tests less robust than for example unit testing of persistence layer ?_
 
@@ -75,7 +75,7 @@ _Do you think that when underlaying HTML code will change that these tests will 
 
 _Have you noticed the same code repeated on many places in these tests ?_
 
-p. Well, in my opinion all these questions should have affirmative answers. You are probably aware of the fact that tests should be loosly coupled with the underlaying HTML structure of the application under test. It makes tests more robust and a likely change in the HTML structure of page will no more affects tests.
+p. Well, in my opinion all these questions should have affirmative answers. You are probably aware of the fact that tests should be loosly coupled with the underlaying HTML structure of the application under test. It makes tests more robust and a likely change in the HTML structure of the page will no more affects tests.
 
 p. Fine, let's use "Page Objects":http://code.google.com/p/selenium/wiki/PageObjects pattern, to split up these two things. The Page Object will encapsulate all the HTML structure, so the change will be introduced only in page objects.
 
@@ -86,6 +86,7 @@ p. _But what when I am testing another application with Autocomplete widgets ?_ 
 h3. What is it ?
 
 * Page Fragments stands for any part of the tested page, any widget, web component, etc.
+* A concept of encapsulation of these parts into completely reusable pieces across all your tests.
 * Powerful mechanism for creating own page fragments, like Autocomplete (Calendar, Login, etc.) page fragment.
 * A concept which differentiate each fragment by its root element and make other parts referenced from it.
 * A solution which leverages Selenium WebDriver under the hood together with all Graphene killer features.
@@ -97,14 +98,13 @@ p. Note that it is just snippet from the whole implementation of RichFaces Autoc
 
 bc(prettify).. public class AutocompleteFragment<T> {
 
-    public static final String CLASS_NAME_SUGGESTION = "rf-au-itm";
-    public static final String CSS_INPUT = "input[type='text']";
-
     @Root
     WebElement root;
 
-    @FindBy(css = CSS_INPUT)
+    @FindBy(css = "input[type='text']")
     WebElement inputToWrite;
+
+    public static final String CLASS_NAME_SUGGESTION = "rf-au-itm";
 
     public List<Suggestion<T>> getAllSuggestions(SuggestionParser<T> parser) {
         List<Suggestion<T>> allSugg = new ArrayList<Suggestion<T>>();
@@ -159,19 +159,18 @@ bc(prettify).. public class TestPage {
     @FindBy(xpath = "//*[contains(@id,'sh1')]")
     private WebElement viewSourceLink;
 
-    //all the getters methods for fields
+    //all getters for the fields
 
     //other handy methods which you find useful when testing those three Autocomplete widgets
 }
 
 p. Declaring Page Fragments in the Page Object is one of the options (the preffered one, the other is to declare Page Fragments directly in tests) to go with. *It is done just by using WebDriver @@FindBy@ annotation with reference to the root of the component.* So simple! 
 
-*Indeed you can combine Page Fragments and plain WebElements on the same Page Object.* Graphene will differentiate between these two and initialize them properly. Just to note that all this *initialization is done automatically*, so no need to initialize Page Fragments or Page Objects in @@Before@ methods of your tests.
+*Indeed you can combine Page Fragments and plain WebElements on the same Page Object.* Graphene will differentiates between these two and initializes them properly. Just to note that all this *initialization is done automatically*, so no need to initialize Page Fragments or Page Objects in @@Before@ methods of your tests.
 
 Finally following snippet showcases the actual autocomplete widgets tests.
 
-bc(prettify)..
-public class TestWhichUsesPageFragments extend AbstractTest {
+bc(prettify).. public class TestWhichUsesPageFragments extend AbstractTest {
 
     @Page
     private TestPage testPage;
@@ -182,12 +181,12 @@ public class TestWhichUsesPageFragments extend AbstractTest {
         
         autocomplete.type("a");
 
-        assertFalse(autocomplete.areSuggestionsAvailable(), "The selection of suggestions should not be visible, since there is only one char!");
+        assertFalse(autocomplete.areSuggestionsAvailable(), "The suggestion list should not be visible, since there is only one char!");
 
         String keys = "ar";
         autocomplete.type(keys);
 
-        assertTrue(autocomplete.areSuggestionsAvailable(), "The selection of suggestions should be visible, since there are two chars!");
+        assertTrue(autocomplete.areSuggestionsAvailable(), "The suggestion list should be visible, since there are two chars!");
 
         List<Suggestion<String>> expectedSuggestions = new ArrayList<Suggestion<String>>();
         expectedSuggestions.add(new Suggestion<String>("Arizona"));
@@ -203,7 +202,7 @@ public class TestWhichUsesPageFragments extend AbstractTest {
         String key = "a";
         autocomplete.type(key);
         
-        String errorMsg = "The selection of suggestions should be visible, since there was typed correct char ";
+        String errorMsg = "The suggestion list should be visible, since there was typed correct char ";
         assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);
 
         autocomplete.autocomplete(autocomplete.getFirstSuggestion());
