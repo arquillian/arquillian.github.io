@@ -22,7 +22,8 @@ bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest
         selenium.type(minCharInput, keys);
         guardXhr(graphene).fireEvent(minCharInput, Event.KEYPRESS);
 
-        assertTrue(graphene.isVisible(selection), "The suggestion list should be visible, since there are two chars!");
+        assertTrue(graphene.isVisible(selection), 
+            "The suggestion list should be visible, since there are two chars!");
 
         String actualArizona = graphene.getText(jq(selection.getRawLocator() + ":eq(0)"));
         assertEquals(actualArizona, "Arizona", "The provided suggestion should be Arizona!");
@@ -67,17 +68,17 @@ bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest
     }
 }
 
-h3. Could you please ask yourself the following questions.
+h3. Now, could you please ask yourself the following questions.
 
 _Do you find these tests less robust than for example unit testing of persistence layer ?_
 
-_Do you think that when underlaying HTML code will change that these tests will pass?_
+_Do you think that when underlying HTML code will change that these tests will pass?_
 
 _Have you noticed the same code repeated on many places in these tests ?_
 
-p. Well, in my opinion all these questions should have affirmative answers. You are probably aware of the fact that tests should be loosly coupled with the underlaying HTML structure of the application under test. It makes tests more robust and a likely change in the HTML structure of the page will no more affects tests.
+p. Well, in my opinion all these questions should have affirmative answers. You are probably aware of the fact that tests should be loosely coupled with the underlying HTML structure of the application under test. It makes tests more robust and a likely change in the HTML structure of the page will no more affect tests.
 
-p. Fine, let's use "Page Objects":http://code.google.com/p/selenium/wiki/PageObjects pattern, to split up these two things. The Page Object will encapsulate all the HTML structure, so the change will be introduced only in page objects.
+p. Fine, let's use "Page Objects":http://code.google.com/p/selenium/wiki/PageObjects pattern, to split up these two things. The Page Object will encapsulate all the HTML structure, so the change will be introduced only in your Page Objects.
 
 p. _But what when I am testing another application with Autocomplete widgets ?_ I will need to copy lot of LOC which handle the interaction between test and the Autocomplete widget. As you know, it is major DRY violation. Is there something out there to improve this ?
 
@@ -139,7 +140,7 @@ bc(prettify).. public class AutocompleteFragment<T> {
     //other handy encapsulation of Autocomplete services
 }
 
-p. Notice the @@Root@ annotation. The value for that field is automatically injected by Graphene to reference all defined @@FindBy@ elements from it. Such fragment implementation is pretty generic and therefore reusable in all tests for different applications.
+p. Notice the @@Root@ annotation. The value for that field is automatically injected by Graphene to reference all defined @@FindBy@ elements from it. Such fragment implementation is pretty generic and therefore reusable in all tests for different applications. Finally it would encapsulates all the services which this fragment provides, but it does not have to all. You can for example encapsulate browser specific interactions with this fragment. There are no boundaries!
 
 h3. Let's rewrite the previous tests with using of Page Fragments together with support for Page Objects pattern.
 
@@ -164,7 +165,7 @@ bc(prettify).. public class TestPage {
     //other handy methods which you find useful when testing those three Autocomplete widgets
 }
 
-p. Declaring Page Fragments in the Page Object is one of the options (the preffered one, the other is to declare Page Fragments directly in tests) to go with. *It is done just by using WebDriver @@FindBy@ annotation with reference to the root of the component.* So simple! 
+p. Declaring Page Fragments in the Page Object is one of the options (the preferred one, the other is to declare Page Fragments directly in tests) to go with. *It is done just by using WebDriver @@FindBy@ annotation with reference to the root of the component.* So simple! 
 
 *Indeed you can combine Page Fragments and plain WebElements on the same Page Object.* Graphene will differentiates between these two and initializes them properly. Just to note that all this *initialization is done automatically*, so no need to initialize Page Fragments or Page Objects in @@Before@ methods of your tests.
 
@@ -181,18 +182,21 @@ bc(prettify).. public class TestWhichUsesPageFragments extend AbstractTest {
         
         autocomplete.type("a");
 
-        assertFalse(autocomplete.areSuggestionsAvailable(), "The suggestion list should not be visible, since there is only one char!");
+        assertFalse(autocomplete.areSuggestionsAvailable(), 
+            "The suggestion list should not be visible, since there is only one char!");
 
         String keys = "ar";
         autocomplete.type(keys);
 
-        assertTrue(autocomplete.areSuggestionsAvailable(), "The suggestion list should be visible, since there are two chars!");
+        assertTrue(autocomplete.areSuggestionsAvailable(), 
+            "The suggestion list should be visible, since there are two chars!");
 
         List<Suggestion<String>> expectedSuggestions = new ArrayList<Suggestion<String>>();
         expectedSuggestions.add(new Suggestion<String>("Arizona"));
         expectedSuggestions.add(new Suggestion<String>("Arkansas"));
 
-        assertEquals(autocomplete.getAllSuggestions(new StringSuggestionParser()), expectedSuggestions, "Suggestions are wrong!");
+        assertEquals(autocomplete.getAllSuggestions(new StringSuggestionParser()), expectedSuggestions, 
+            "Suggestions are wrong!");
     }
 
     @Test
@@ -226,6 +230,6 @@ bc(prettify).. public class TestWhichUsesPageFragments extend AbstractTest {
     }
 }
 
-p. Notice integration with Page Object pattern, which is achieved by @@Page@ annotation. As your application will grow, the only what you will need to change will be root references of your Page Fragments. Isn't it awesome ?
+p. Notice integration with Page Object pattern, which is achieved by @@Page@ annotation. As your application will grow, the only what you will need to change will be root references of your Page Fragments. Last but not least you will be able to reuse this Autocomplete Page Fragment in other tests for maybe different applications. Isn't it awesome ?
 
 To try Page Fragments by ourselves, just check it out the Graphene 2.0.0.Alpha2 release. Some of the getting start information can be also found in the documentation for Graphene 2, "here":https://docs.jboss.org/author/display/ARQGRA2/Page+Abstractions.
