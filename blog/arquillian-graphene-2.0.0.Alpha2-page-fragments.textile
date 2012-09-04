@@ -1,6 +1,6 @@
 Nowadays tools like _Arquillian Graphene_, _WebDriver_ or just plain _Selenium_  and concepts like "Page Objects":http://code.google.com/p/selenium/wiki/PageObjects can pretty much help you with automated functional (integration, whatever...) testing of your web UI. The advantages which brings _Arquillian Graphene_ "were already introduced":http://arquillian.org/blog/tags/graphene/.
 
-h3. Consider please following snippet from Arquillian Graphene functional test <br /> for "simple page":http://showcase.richfaces.org/richfaces/component-sample.jsf?demo=autocomplete&sample=modes&skin=blueSky ,which contains three Autocomplete widgets.
+h3. Consider please following snippet from Arquillian Graphene functional test <br /> for "simple page":http://showcase.richfaces.org/richfaces/component-sample.jsf?demo=autocomplete&sample=modes&skin=blueSky, which contains three Autocomplete widgets.
 
 bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest {
 
@@ -15,20 +15,20 @@ bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest
         graphene.keyPress(minCharInput, 'a');
 
         assertFalse(graphene.isElementPresent(selection),
-            "The selection should not be visible, since there is only one char!");
+            "The selection of suggestions should not be visible, since there is only one char!");
 
         String keys = "ar";
         graphene.focus(minCharInput);
         selenium.type(minCharInput, keys);
         guardXhr(graphene).fireEvent(minCharInput, Event.KEYPRESS);
 
-        assertTrue(graphene.isVisible(selection), "The selection should be visible, since there are two chars!");
+        assertTrue(graphene.isVisible(selection), "The selection of suggestions should be visible, since there are two chars!");
 
         String actualArizona = graphene.getText(jq(selection.getRawLocator() + ":eq(0)"));
-        assertEquals(actualArizona, "Arizona", "The provided option should be Arizona");
+        assertEquals(actualArizona, "Arizona", "The provided suggestion should be Arizona!");
 
         String actualArkansas = graphene.getText(jq(selection.getRawLocator() + ":eq(1)"));
-        assertEquals(actualArkansas, "Arkansas", "The provided option should be Arkansas");
+        assertEquals(actualArkansas, "Arkansas", "The provided suggestion should be Arkansas!");
 
     }
 
@@ -40,7 +40,7 @@ bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest
         guardXhr(selenium).keyPress(multipleSelectionInput, key);
 
         assertTrue(selenium.isVisible(selection),
-            "The selection should be visible, since there is correct starting char!");
+            "The selection of suggestions should be visible, since there is correct starting char!");
 
         selenium.keyPressNative(KeyEvent.VK_ENTER);
 
@@ -53,7 +53,7 @@ bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest
         guardXhr(selenium).keyPress(multipleSelectionInput, key);
 
         assertTrue(selenium.isVisible(selection),
-            "The selection should be visible, since there is correct starting char!");
+            "The selection of suggestions should be visible, since there is correct starting char!");
 
         selenium.keyPressNative(KeyEvent.VK_ENTER);
 
@@ -89,11 +89,11 @@ h3. What is it ?
 * Powerful mechanism for creating own page fragments, like Autocomplete (Calendar, Login, etc.) page fragment.
 * A concept which differentiate each fragment by its root element and make other parts referenced from it.
 * A solution which leverages Selenium WebDriver under the hood together with all Graphene killer features.
-* Set of utilities which simplify using of this feature in tests.
+* Set of utilities which simplify using of this feature in tests, together with better support for Page Objects.
 
 h3. Let's look how such page fragment can be defined.
 
-p. Note that it is just snippet from the whole implementation.
+p. Note that it is just snippet from the whole implementation of RichFaces Autocomplete component.
 
 bc(prettify).. public class AutocompleteFragment<T> {
 
@@ -141,35 +141,92 @@ bc(prettify).. public class AutocompleteFragment<T> {
 
 p. Notice the @@Root@ annotation. The value for that field is automatically injected by Graphene to reference all defined @@FindBy@ elements from it. Such fragment implementation is pretty generic and therefore reusable in all tests for different applications.
 
-h3. Tests with using of such Page Fragments is showcased in the following example.
+h3. Let's rewrite the previous tests with using of Page Fragments together with support for Page Objects pattern.
 
-bc(prettify).. @RunWith(Arquillian.class)
+p. Firstly define a Page Object which will contain the structure of the tested page.
+
+bc(prettify).. public class TestPage {
+    
+    @FindBy(css = "div[class=\"rf-au\"]:nth-of-type(1)")
+    private AutocompleteFragment<String> autocomplete1;
+
+    @FindBy(css = "div[class=\"rf-au\"]:nth-of-type(2)")
+    private AutocompleteFragment<String> autocomplete2;
+
+    @FindBy(css = "div[class=\"rf-au\"]:nth-of-type(3)")
+    private AutocompleteFragment<String> autocomplete3;
+
+    @FindBy(xpath = "//*[contains(@id,'sh1')]")
+    private WebElement viewSourceLink;
+
+    //all the getters methods for fields
+
+    //other handy methods which you find useful when testing those three Autocomplete widgets
+}
+
+p. Declaring Page Fragments in the Page Object is one of the options (the preffered one, the other is to declare Page Fragments directly in tests) to go with. *It is done just by using WebDriver @@FindBy@ annotation with reference to the root of the component.* So simple! 
+
+*Indeed you can combine Page Fragments and plain WebElements on the same Page Object.* Graphene will differentiate between these two and initialize them properly. Just to note that all this *initialization is done automatically*, so no need to initialize Page Fragments or Page Objects in @@Before@ methods of your tests.
+
+Finally following snippet showcases the actual autocomplete widgets tests.
+
+bc(prettify)..
 public class TestWhichUsesPageFragments extend AbstractTest {
-
-    @FindBy(xpath = "//div[@id='rootElement']")
-    private Autocomplete autocomplete;
-
-    @FindBy(xpath = "//input")
-    private WebElement otherNonPageFragment;
 
     @Page
     private TestPage testPage;
 
     @Test
-    public void testAutocomplete {
-        autocomplete.type("foo");
-        assertFalse("No suggestions should be available!", autocomplete.areSuggestionsAvailable());
+    public void testFirstAutocomplete {
+        AutocompleteFragment<String> autocomplete = testPage.getAutocomplete1();
+        
+        autocomplete.type("a");
 
-        String input = "B";
-        StringSuggestionParser parser = new StringSuggestionParser();
+        assertFalse(autocomplete.areSuggestionsAvailable(), "The selection of suggestions should not be visible, since there is only one char!");
 
-        List<Suggestion<String>> suggestions = autocomplete.type(input, parser);
-        assertTrue("Suggestions for input: " + input + " are wrong!", suggestions.contains(new Suggestion<String>("Brno")));
+        String keys = "ar";
+        autocomplete.type(keys);
 
-        //other autocomplete API calls, asserts, etc.
+        assertTrue(autocomplete.areSuggestionsAvailable(), "The selection of suggestions should be visible, since there are two chars!");
+
+        List<Suggestion<String>> expectedSuggestions = new ArrayList<Suggestion<String>>();
+        expectedSuggestions.add(new Suggestion<String>("Arizona"));
+        expectedSuggestions.add(new Suggestion<String>("Arkansas"));
+
+        assertEquals(autocomplete.getAllSuggestions(new StringSuggestionParser()), expectedSuggestions, "Suggestions are wrong!");
+    }
+
+    @Test
+    public void testSecondAutocomplete() {
+        AutocompleteFragment<String> autocomplete = testPage.getAutocomplete2();
+
+        String key = "a";
+        autocomplete.type(key);
+        
+        String errorMsg = "The selection of suggestions should be visible, since there was typed correct char ";
+        assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);
+
+        autocomplete.autocomplete(autocomplete.getFirstSuggestion());
+
+        autocomplete.type(" ");
+
+        key = "w"
+        autocomplete.type(key);
+
+        assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);
+
+        autocomplete.autocomplete(autocomplete.getFirstSuggestion());        
+
+        String actualContentOfInput = autocomplete.getInputValue();
+        assertEquals(actualContentOfInput, "Alabama Washington", "The input should contain something else!");
+    }
+
+    @Test
+    public void testThirdAutocomplete() {
+        //similar autocomplete interactions as in the previous tests
     }
 }
 
-p. See how easily is Page Fragment declared in tests. Just by using WebDriver @@FindBy@ annotation with reference to the root of the component. Other @WebElement@ objects are initialised as usually. Also notice integration with Page Object pattern, which is achieved by @@Page@ annotation. Such a page can contain other Page Fragments. Notice that all this initialization is done automatically, so no need to initialize these elements in @@Before@ methods.
+p. Notice integration with Page Object pattern, which is achieved by @@Page@ annotation. As your application will grow, the only what you will need to change will be root references of your Page Fragments. Isn't it awesome ?
 
 To try Page Fragments by ourselves, just check it out the Graphene 2.0.0.Alpha2 release. Some of the getting start information can be also found in the documentation for Graphene 2, "here":https://docs.jboss.org/author/display/ARQGRA2/Page+Abstractions.
