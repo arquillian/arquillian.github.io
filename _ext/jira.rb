@@ -14,8 +14,9 @@ module Awestruct::Extensions::Jira
     DURATION_1_DAY = 60 * 60 * 24
 
     # Expecting project_key as key:id (e.g., ARQ:12310885) because the JIRA REST API won't give up the project id
-    def initialize(project_key, base_url = DEFAULT_BASE_URL)
+    def initialize(project_key, prefix_version = nil, base_url = DEFAULT_BASE_URL)
       (@project_key, @project_id) = project_key.split(':')
+      @prefix_version = prefix_version
       @base_url = base_url
     end
 
@@ -28,13 +29,16 @@ module Awestruct::Extensions::Jira
           :cache_key => "jira/project-#{@project_key}.json", :cache_expiry_age => DURATION_1_DAY
       project_data['versions'].each do |v|
         next if !v['released']
+        release_key = v['name']
+        release_key = "#{@prefix_version}_#{release_key}" unless @prefix_version.nil?
+
         url = @base_url + RELEASE_NOTES_PATH_TEMPLATE % [@project_id, v['id']]
         html = RestClient.get url, :cache_key => "jira/release-notes-#{@project_key}-#{v['id']}.html"
         doc = Nokogiri::HTML(html)
         release_notes = OpenStruct.new({
           :id => v['id'],
           :comment => v['description'],
-          :key => v['name'],
+          :key => release_key,
           :html_url => url,
           :resolved_issues => {}
         })
@@ -43,7 +47,8 @@ module Awestruct::Extensions::Jira
           release_notes.resolved_issues[type] = [] if !release_notes.resolved_issues.has_key? type
           release_notes.resolved_issues[type] << e.inner_html
         end
-        site.release_notes[v['name']] = release_notes
+
+        site.release_notes[release_key] = release_notes
       end
     end
   end
