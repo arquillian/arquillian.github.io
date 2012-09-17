@@ -6,7 +6,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <meta content="An innovative testing platform for the Java Virtual Machine (JVM). Open source. Highly extensible." name="description" />
     <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml" />
-    <link href="/stylesheets/screen.css?bd6a597285db4e44c754379cff5581dc0b63ca5e" rel="stylesheet" />
+    <link href="/stylesheets/screen.css" rel="stylesheet" />
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.js"></script>
@@ -22,9 +22,6 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </a>
-          <div class="g-plusone-slot">
-            <div class="g-plusone" data-annotation="none"></div>
-          </div>
           <a class="brand" href="/">
             <span class="logo"></span>
             <span class="name">Arquillian</span>
@@ -55,15 +52,132 @@
   <article class="post">
   <header class="header">
     <h2 class="title">
+      <a href="/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/">Arquillian Spring Framework Extension 1.0.0.Alpha2 Released</a>
+    </h2>
+    <div class="byline">
+      <img src="http://gravatar.com/avatar/6dc4a43fdaf5dfe0c69e3ed54ade665f?s=44" class="avatar" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a></span>
+      <span class="dateinline">on Jul 24, 2012</span>
+      <div class="date"><abbr>Jul</abbr> 24</div>
+    </div>
+  </header>
+  <div class="body">
+    <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha2</em> release of the <em>Arquillian Spring Framework Extension</em> component!</p>
+<p>This release contain many improvements on the existing extension, but also some new features.</p>
+<h3 class="highlights">Some of the highlights in this release</h3>
+<p><i class="icon-star"></i> Warp Spring MVC Extension<br />
+<i class="icon-star"></i> Spring Embedded Container<br />
+<i class="icon-star"></i> Separated the integration capabilities</p>
+<h3>Testing Spring MVC with Warp</h3>
+<p><a href="/modules/warp-extension/">Arquillian Warp</a> is a powerful tool that let you run the functional tests against your web front end and at the same time verify the internal state of your application. With this release we are introducing the Warp extension for testing Spring MVC applications that run in a real servlet container.</p>
+<p>Let&#8217;s dive into an example of how to test a Spring MVC application using Arquillian Warp. First we need to prepare the application descriptor.</p>
+<div class="filename">web.xml</div>
+<pre class="prettify"><code class="prettify">&lt;web-app xmlns="http://java.sun.com/xml/ns/javaee"&#x000A;         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"&#x000A;         version="3.0"&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;servlet&gt;&#x000A;        &lt;servlet-name&gt;welcome&lt;/servlet-name&gt;&#x000A;        &lt;servlet-class&gt;org.jboss.arquillian.warp.extension.spring.servlet.WarpDispatcherServlet&lt;/servlet-class&gt;&#x000A;        &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;&#x000A;    &lt;/servlet&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;servlet-mapping&gt;&#x000A;        &lt;servlet-name&gt;welcome&lt;/servlet-name&gt;&#x000A;        &lt;url-pattern&gt;*.do&lt;/url-pattern&gt;&#x000A;    &lt;/servlet-mapping&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/web-app&gt;</code></pre>
+<p>You&#8217;ll notice that instead of using Spring&#8217;s DispatcherServlet we instead use the WarpDispatcherServlet.</p>
+<p>And the testing code:</p>
+<div class="filename">LoginControllerTestCase.java</div>
+<pre class="prettify"><code class="prettify">@WarpTest&#x000A;@RunWith(Arquillian.class)&#x000A;public class LoginControllerTestCase {</code>&#x000A;&#x000A;<code class="prettify">    @Drone&#x000A;    WebDriver browser;</code>&#x000A;&#x000A;<code class="prettify">    @ArquillianResource&#x000A;    URL contextPath;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    @RunAsClient&#x000A;    public void testLoginValidationErrors() {&#x000A;        browser.navigate().to(contextPath + "login.do");</code>&#x000A;&#x000A;<code class="prettify">        Warp.execute(new ClientAction() {</code>&#x000A;&#x000A;<code class="prettify">            @Override&#x000A;            public void action() {</code>&#x000A;&#x000A;<code class="prettify">                browser.findElement(By.id("loginForm")).submit();&#x000A;            }&#x000A;        }).verify(new LoginControllerValidationErrorsVerification());&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    @RunAsClient&#x000A;    public void testLoginSuccess() {&#x000A;        browser.navigate().to(contextPath + "login.do");&#x000A;        browser.findElement(By.id("login")).sendKeys("warp");&#x000A;        browser.findElement(By.id("password")).sendKeys("warp");</code>&#x000A;&#x000A;<code class="prettify">        Warp.execute(new ClientAction() {</code>&#x000A;&#x000A;<code class="prettify">            @Override&#x000A;            public void action() {</code>&#x000A;&#x000A;<code class="prettify">                browser.findElement(By.id("loginForm")).submit();&#x000A;            }&#x000A;        }).verify(new LoginSuccessVerification());&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    public static class LoginControllerValidationErrorsVerification extends ServerAssertion {</code>&#x000A;&#x000A;<code class="prettify">            private static final long serialVersionUID = 1L;</code>&#x000A;&#x000A;<code class="prettify">            @SpringMvcResource&#x000A;            private ModelAndView modelAndView;</code>&#x000A;&#x000A;<code class="prettify">            @SpringMvcResource&#x000A;            private Errors errors;</code>&#x000A;&#x000A;<code class="prettify">            @AfterServlet&#x000A;            public void testGetLogin() {</code>&#x000A;&#x000A;<code class="prettify">                assertEquals("login", modelAndView.getViewName());&#x000A;                assertNotNull(modelAndView.getModel().get("userCredentials"));&#x000A;                assertEquals("Two errors were expected.", 2, errors.getAllErrors().size());&#x000A;                assertTrue("The login hasn't been validated.", errors.hasFieldErrors("login"));&#x000A;                assertTrue("The password hasn't been validated.", errors.hasFieldErrors("password"));&#x000A;            }&#x000A;        }</code>&#x000A;&#x000A;<code class="prettify">    public static class LoginSuccessVerification extends ServerAssertion {</code>&#x000A;&#x000A;<code class="prettify">        private static final long serialVersionUID = 1L;</code>&#x000A;&#x000A;<code class="prettify">        @SpringMvcResource&#x000A;        private ModelAndView modelAndView;</code>&#x000A;&#x000A;<code class="prettify">        @SpringMvcResource&#x000A;        private Errors errors;</code>&#x000A;&#x000A;<code class="prettify">        @AfterServlet&#x000A;        public void testGetLogin() {</code>&#x000A;&#x000A;<code class="prettify">            assertEquals("welcome", modelAndView.getViewName());&#x000A;            assertFalse(errors.hasErrors());&#x000A;        }&#x000A;    }&#x000A;}</code></pre>
+<p>In the above example we are using <a href="/modules/drone-extension/">Arquillian Drone</a> to navigate to the login page of our application and then filling in the login form with our user credentials.</p>
+<p>The internal state of the DispatcherServlet is caught in a SpringMvcResult object which can be injected into the ServerAssertion. We can also inject other required objects like the ModelAndView.</p>
+<h3>Spring Embedded Container</h3>
+<p>Each development cycle may end in repeatedly re-running the integration tests, each time taking significant amount of time. The embedded container was thought to aid this situation. Running the tests embedded will decrease the execution time from seconds to milliseconds. It will help testing business objects, but since it&#8217;s not a full servlet container you won&#8217;t be able to use it for testing servlet requests in a web application.</p>
+<h3>Migrating from 1.0.0.Alpha1</h3>
+<p>1.0.0.Alpha2 comes with a couple significant changes from the previous version.</p>
+<ul>
+	<li>The Spring integration functionality has been separated out to its own module and is now part of the arquillian-service-integration-spring-inject module, and additional the arquillian-service-integration-spring-inject and the arquillian-service-integration-spring-javaconfig that does not target any specific Spring version, but rather provide functionality like XML or Java-based configuration.</li>
+	<li>The arquillian-service-deployer-spring module&#8217;s can still be used for autopackging the Spring artifacts.</li>
+	<li>The @SpringAnnotatedConfiguration has been renamed to @SpringAnnotationConfiguration.</li>
+</ul>
+<h3>Roadmap</h3>
+<p>The next release is planned to include Spring transaction support and will introduce even better Warp integration on the client side in order make REST testing even simpler.</p>
+<p>We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
+<h3>What is Arquillian?</h3>
+<p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
+<h3>Release details</h3>
+<table class="table table-bordered table-striped">
+  <tbody>
+    <tr>
+      <th>Component</th>
+      <td>
+        <a href="/modules/spring-extension/">Arquillian Spring Framework Extension</a>
+      </td>
+    </tr>
+    <tr>
+      <th>Version</th>
+      <td>
+        1.0.0.Alpha2
+        <span class="label tag">
+          <a href="https://github.com/arquillian/arquillian-extension-spring/commit/ef41e3fb2c87c3163680df3767daaa92e5e8b6ec.html">view tag</a>
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <th>Release date</th>
+      <td>2012-07-21</td>
+    </tr>
+    <tr>
+      <th>Released by</th>
+      <td>Aslak Knutsen</td>
+    </tr>
+    <tr>
+      <th>Compiled against</th>
+      <td>
+        <ul class="unstyled">
+          <li>Arquillian Core &#8211; 1.0.1.Final</li>
+          <li>JUnit &#8211; 4.8.1</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h3>
+  Release notes and resolved issues
+  <small>5</small>
+</h3>
+<p>Spring Embedded Container + Warp</p>
+<dl>
+  <dt>Task</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-1019">ARQ-1019</a> -         Spring Extension: Update the Arquiilian Core to 1.0.1</li>
+    </ul>
+  </dd>
+</dl>
+<dl>
+  <dt>Feature Request</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-219">ARQ-219</a> -         Implement an embedded Spring container</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-945">ARQ-945</a> -         Extract Spring Integration out of Spring Deployer</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-978">ARQ-978</a> -         Provide Warp with extension for testing SpringMVC.</li>
+    </ul>
+  </dd>
+</dl>
+<p>
+  Thanks to the following list of contributors:
+  Jakub Narloch, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
+</p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/gsoc/">gsoc</a> <a class="tag" href="/blog/tags/gsoc/">gsoc</a> <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/spring/">spring</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
       <a href="/blog/2012/07/23/arquillian-extension-drone-1-1-0-CR2/">Arquillian Drone Extension 1.1.0.CR2 Released</a>
     </h2>
     <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
+      <img src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" class="avatar" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
       <span class="dateinline">on Jul 23, 2012</span>
       <div class="date"><abbr>Jul</abbr> 23</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/07/23/arquillian-extension-drone-1-1-0-CR2/#disqus_thread" data-disqus-identifier="">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -139,7 +253,7 @@ It&#8217;s a pleasure to work with you guys!</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/drone/" class="tag">drone</a>
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/drone/">drone</a>
   </div>
 </article>
 <article class="post">
@@ -148,12 +262,11 @@ It&#8217;s a pleasure to work with you guys!</p>
       <a href="/blog/2012/06/27/arquillian-extension-drone-1-1-0-CR1/">Arquillian Drone Extension 1.1.0.CR1 Released</a>
     </h2>
     <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/eef1d6d311aa3bf4db3a9a40ed912bf9?s=44" />
+      <img src="http://gravatar.com/avatar/eef1d6d311aa3bf4db3a9a40ed912bf9?s=44" class="avatar" />
       <span class="author">Posted by
       <a href="https://github.com/papousek">Jan PapoušEk</a></span>
       <span class="dateinline">on Jun 27, 2012</span>
       <div class="date"><abbr>Jun</abbr> 27</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/06/27/arquillian-extension-drone-1-1-0-CR1/#disqus_thread" data-disqus-identifier="">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -239,12 +352,11 @@ It&#8217;s a pleasure to work with you guys!</p>
 </h3>
 <p>Support for Reusable sessions</p>
 <dl>
-  <dt>Feature Request</dt>
+  <dt>Task</dt>
   <dd>
     <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-847">ARQ-847</a> -         Support OperaDriver in Drone</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-926">ARQ-926</a> -         Fast development turnaround using Selenium Server and RemoteWebDriver session reusal</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-995">ARQ-995</a> -         Allow Arquillian Drone configuration to map java.util.Map for property values</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-868">ARQ-868</a> -         Update Selenium version to 2.24.1</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-970">ARQ-970</a> -         Drone: Merge tests for reusable remote session</li>
     </ul>
   </dd>
 </dl>
@@ -257,11 +369,12 @@ It&#8217;s a pleasure to work with you guys!</p>
   </dd>
 </dl>
 <dl>
-  <dt>Task</dt>
+  <dt>Feature Request</dt>
   <dd>
     <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-868">ARQ-868</a> -         Update Selenium version to 2.24.1</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-970">ARQ-970</a> -         Drone: Merge tests for reusable remote session</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-847">ARQ-847</a> -         Support OperaDriver in Drone</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-926">ARQ-926</a> -         Fast development turnaround using Selenium Server and RemoteWebDriver session reusal</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-995">ARQ-995</a> -         Allow Arquillian Drone configuration to map java.util.Map for property values</li>
     </ul>
   </dd>
 </dl>
@@ -275,7 +388,7 @@ It&#8217;s a pleasure to work with you guys!</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/drone/" class="tag">drone</a>
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/drone/">drone</a>
   </div>
 </article>
 <article class="post">
@@ -284,12 +397,11 @@ It&#8217;s a pleasure to work with you guys!</p>
       <a href="/blog/2012/06/05/arquillian-extension-byteman-1-0-0-Alpha2/">Arquillian Extension Byteman 1.0.0.Alpha2 Released</a>
     </h2>
     <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" />
+      <img src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" class="avatar" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a></span>
       <span class="dateinline">on Jun 05, 2012</span>
       <div class="date"><abbr>Jun</abbr> 05</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/06/05/arquillian-extension-byteman-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -356,7 +468,7 @@ It&#8217;s a pleasure to work with you guys!</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/byteman/" class="tag">byteman</a>
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/byteman/">byteman</a>
   </div>
 </article>
 <article class="post">
@@ -365,12 +477,11 @@ It&#8217;s a pleasure to work with you guys!</p>
       <a href="/blog/2012/05/27/arquillian-extension-warp-1-0-0-Alpha1/">Arquillian Warp Extension 1.0.0.Alpha1 Released</a>
     </h2>
     <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" />
+      <img src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" class="avatar" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a></span>
       <span class="dateinline">on May 27, 2012</span>
       <div class="date"><abbr>May</abbr> 27</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/05/27/arquillian-extension-warp-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -497,13 +608,11 @@ It&#8217;s a pleasure to work with you guys!</p>
 </h3>
 <p>First Release of Warp Extension</p>
 <dl>
-  <dt>Enhancement</dt>
+  <dt>Feature Request</dt>
   <dd>
     <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-931">ARQ-931</a> -         Warp: Define API/SPI</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-933">ARQ-933</a> -         Warp: server exception propagation</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-948">ARQ-948</a> -         Make the ServerAssertion abstract class to ensure future compatibility</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-955">ARQ-955</a> -         Warp: Define BOM</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-578">ARQ-578</a> -         Create a Extension for handling Server State assertion during normal Servlet/JSF requests</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-957">ARQ-957</a> -         Add Warp Showcase sample</li>
     </ul>
   </dd>
 </dl>
@@ -517,11 +626,13 @@ It&#8217;s a pleasure to work with you guys!</p>
   </dd>
 </dl>
 <dl>
-  <dt>Feature Request</dt>
+  <dt>Enhancement</dt>
   <dd>
     <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-578">ARQ-578</a> -         Create a Extension for handling Server State assertion during normal Servlet/JSF requests</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-957">ARQ-957</a> -         Add Warp Showcase sample</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-931">ARQ-931</a> -         Warp: Define API/SPI</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-933">ARQ-933</a> -         Warp: server exception propagation</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-948">ARQ-948</a> -         Make the ServerAssertion abstract class to ensure future compatibility</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-955">ARQ-955</a> -         Warp: Define BOM</li>
     </ul>
   </dd>
 </dl>
@@ -535,115 +646,8 @@ It&#8217;s a pleasure to work with you guys!</p>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/warp/" class="tag">warp</a>
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/warp/">warp</a>
   </div>
-</article>
-<article class="post">
-  <header class="header">
-    <h2 class="title">
-      <a href="/blog/2012/05/22/arquillian-extension-spring-1-0-0-Alpha1/">Arquillian Spring Framework Extension 1.0.0.Alpha1 Released</a>
-    </h2>
-    <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/6dc4a43fdaf5dfe0c69e3ed54ade665f?s=44" />
-      <span class="author">Posted by
-      <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a></span>
-      <span class="dateinline">on May 22, 2012</span>
-      <div class="date"><abbr>May</abbr> 22</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/05/22/arquillian-extension-spring-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="">Comments</a></span>
-    </div>
-  </header>
-  <div class="body">
-    <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha1</em> release of the <em>Arquillian Spring Framework Extension</em> component!</p>
-<p>We&#8217;re moving the boundaries of Arquillian into a completely new area by including built-in support for testing applications that use the <a href="http://springsource.org">Spring Framework</a>. This release is the first milestone for this extension. The focus so far has been on providing support for Spring&#8217;s core features (e.g., IoC container, data sources, persistence, transactions, javax.inject and EJB integration, etc.).</p>
-<p>I&#8217;m working on the Spring extension for my <a href="http://www.google-melange.com/gsoc/project/google/gsoc2012/jnarloch/41002">Google Summer of Code 2012 project</a>. This post also serves as my first status update. Coding began yesterday, but I&#8217;ve already been hard at work ;)</p>
-<h3 class="highlights">Some of the highlights in this release</h3>
-<dl>
-	<dt><i class="icon-star"></i> Dependency injection</dt>
-	<dd><p>The extension provides three simple ways to enable Spring support in Arquillian test case. In other to create application context from XML simply add to the test <code>@SpringConfiguration</code> with locations of the XML files. Java-based config is supported as well with <code>@SpringAnnotatedConfiguration</code> which can be configured with concrete classes or names of packages to scan. The last possibility, <code>@SpringWebConfiguration</code> that allows to retrieve the application context of the specific DispatcherServlet running in the container, can be used only with web applications.</p></dd>
-	<dt><i class="icon-star"></i> Custom context classes</dt>
-	<dd><p>There are situations when plain Spring context isn&#8217;t enough, so we allowed to register custom context classes that will be instantiated for each test. The context classes could be customized through annotations or through extension settings provided with arquillian.xml. A typical scenario would be for example running the Spring in JBoss AS using <a href="http://jboss.org/snowdrop">Snowdrop</a> custom context classes.</p></dd>
-	<dt><i class="icon-star"></i> Artifact packaging</dt>
-	<dd><p>The extension, by default, handles packaging of spring-context and spring-web automatically with each test.</p></dd>
-	<dt><i class="icon-star"></i> Intuitive configuration</dt>
-	<dd><p>The extension can be easily configured through the arquillian.xml. All the settings like e.g. artifacts versions can be overridden here.</p>
-<div class="filename">arquillian.xml</div>
-<pre class="prettify"><code class="prettify">&lt;extension qualifier="spring"&gt;&#x000A;    &lt;property name="autoPackage"&gt;true&lt;/property&gt;&#x000A;    &lt;property name="springVersion"&gt;3.0.0.RELEASE&lt;/property&gt;&#x000A;    &lt;property name="cglibVersion"&gt;2.2&lt;/property&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;property name="includeSnowdrop"&gt;true&lt;/property&gt;&#x000A;    &lt;property name="snowdropVersion"&gt;2.0.3.Final&lt;/property&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;property name=&#8220;customContextClass&#8221;&gt;org.jboss.spring.vfs.context.VFSClassPathXmlApplicationContext&lt;/property&gt;<br />&#x000A;&lt;/extension&gt;</code></pre></dd>&#x000A;</dl>&#x000A;<p>Here&#8217;s an example of a basic Spring test with Arquillian:</p>&#x000A;<div class="filename">DefaultStockRepositoryTestCase.java</div>&#x000A;<pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;@SpringConfiguration("applicationContext.xml")&#x000A;public class DefaultStockRepositoryTestCase {</code>&#x000A;&#x000A;<code class="prettify">    @Deployment&#x000A;    public static JavaArchive createTestArchive() {&#x000A;        return ShrinkWrap.create(JavaArchive.class)&#x000A;                .addClasses(Stock.class, StockRepository.class, StockService.class,&#x000A;                        DefaultStockRepository.class, DefaultStockService.class)&#x000A;                .addAsResource("applicationContext.xml");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Autowired&#x000A;    StockRepository stockRepository;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testSave() {&#x000A;        Stock acme = createStock("Acme", "ACM", 123.21D, new Date());&#x000A;        Stock redhat = createStock("Red Hat", "RHC", 59.61D, new Date());</code>&#x000A;&#x000A;<code class="prettify">        stockRepository.save(acme);&#x000A;        stockRepository.save(redhat);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue("The stock id hasn't been assigned.", acme.getId() &gt; 0);&#x000A;        assertTrue("The stock id hasn't been assigned.", redhat.getId() &gt; 0);&#x000A;    }&#x000A;}</code></pre>
-<p>For more examples on how to use these extensions and quickly get started with development you can take a look at prepared <a href="https://github.com/arquillian/arquillian-showcase/tree/master/spring">showcase</a>. Additionally, you can browse the <a href="https://github.com/arquillian/arquillian-extension-spring">integration tests</a> that are part of project source code.</p>
-<p>For help with preparing this release, I&#8217;d like to especially thank <a href="https://community.jboss.org/people/dan.j.allen">Dan Allen</a>, <a href="https://community.jboss.org/people/marius.bogoevici">Marius Bogoevici</a> and <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a> for sharing their knowledge and providing helping hand.</p>
-<p>We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
-<h3>What is Arquillian?</h3>
-<p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
-<h3>Release details</h3>
-<table class="table table-bordered table-striped">
-  <tbody>
-    <tr>
-      <th>Component</th>
-      <td>
-        <a href="/modules/spring-extension/">Arquillian Spring Framework Extension</a>
-      </td>
-    </tr>
-    <tr>
-      <th>Version</th>
-      <td>
-        1.0.0.Alpha1
-        <span class="label tag">
-          <a href="https://github.com/arquillian/arquillian-extension-spring/commit/76b87c61566c28d16b0d6c9abe34bf6ac6b5ae1e.html">view tag</a>
-        </span>
-      </td>
-    </tr>
-    <tr>
-      <th>Release date</th>
-      <td>2012-05-22</td>
-    </tr>
-    <tr>
-      <th>Released by</th>
-      <td>Aslak Knutsen</td>
-    </tr>
-    <tr>
-      <th>Compiled against</th>
-      <td>
-        <ul class="unstyled">
-          <li>JUnit &#8211; 4.8.1</li>
-          <li>Arquillian Core &#8211; 1.0.0.Final</li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-<h3>
-  Release notes and resolved issues
-  <small>2</small>
-</h3>
-<p>Support for Spring enrichment in other Containers</p>
-<dl>
-  <dt>Feature Request</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-301">ARQ-301</a> -         Create a Spring framework integration (for non-standalone containers)</li>
-    </ul>
-  </dd>
-</dl>
-<p>
-  Thanks to the following list of contributors:
-  Jakub Narloch, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
-</p>
-  </div>
-  <div class="footer">
-    <a href="/blog/2012/05/22/arquillian-extension-spring-1-0-0-Alpha1/">permalink</a>
-    |
-    <i class="icon-tags"></i>
-    tagged as
-    <a href="/blog/tags/gsoc/" class="tag">gsoc</a> <a href="/blog/tags/gsoc/" class="tag">gsoc</a> <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/spring/" class="tag">spring</a>
-  </div>
-  
-              <script type="text/javascript">
-              var disqus_shortname = 'arquillian';
-              (function () {
-                var s = document.createElement('script'); s.async = true;
-                s.src = "http://disqus.com/forums/arquillian/count.js";
-                (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
-              }());
-              </script>
 </article>
 <ul class="pager">
   <li class="previous">
@@ -665,6 +669,14 @@ It&#8217;s a pleasure to work with you guys!</p>
   <nav class="latest">
     <h2>Latest Posts</h2>
     <ul>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/09/17/arquillian-graphene-2-0-0-Alpha2/">Graphene 2.0.0.Alpha2 Released</a>
+        </div>
+        <div class="meta">
+          Sep 17, 2012
+        </div>
+      </li>
       <li>
         <div class="title">
           <a href="/blog/2012/09/11/arquillian-extension-drone-1-1-0-CR3/">Arquillian Drone Extension 1.1.0.CR3 Released</a>
@@ -697,239 +709,214 @@ It&#8217;s a pleasure to work with you guys!</p>
           Aug 13, 2012
         </div>
       </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2012/07/25/arquillian-core-1-0-2-Final/">Arquillian Core 1.0.2.Final Released</a>
-        </div>
-        <div class="meta">
-          Jul 25, 2012
-        </div>
-      </li>
     </ul>
-    
-                <div class="dsq-widget" id="popularposts">
-                  <h2 class="dsq-widget-title">Popular Posts</h2>
-                  <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
-                  <script>
-                    var ppw = document.getElementById("popularposts");
-                    if (ppw.getElementsByTagName('li').length == 0) {
-                      var p = document.createElement('p');
-                      p.className = 'noresults';
-                      p.appendChild(document.createTextNode('No popular posts reported.')); 
-                      ppw.appendChild(p);
-                    }
-                  </script>
-                  <noscript>
-                    <p>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">popular posts powered by Disqus</a>.</p>
-                  </noscript>
-                </div>
   </nav>
   <nav class="tags">
     <h2>Tags</h2>
     <div class="tag-cloud">
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/2010/">2010</a>
+        <a href="http://localhost:4242/blog/tags/2010/">2010</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/2011/">2011</a>
+        <a href="http://localhost:4242/blog/tags/2011/">2011</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/2012/">2012</a>
+        <a href="http://localhost:4242/blog/tags/2012/">2012</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/ajocado/">ajocado</a>
+        <a href="http://localhost:4242/blog/tags/ajocado/">ajocado</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/android/">android</a>
+        <a href="http://localhost:4242/blog/tags/android/">android</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/announcement/">announcement</a>
+        <a href="http://localhost:4242/blog/tags/announcement/">announcement</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/as7/">as7</a>
+        <a href="http://localhost:4242/blog/tags/as7/">as7</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/awards/">awards</a>
+        <a href="http://localhost:4242/blog/tags/awards/">awards</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/best-practice/">best-practice</a>
+        <a href="http://localhost:4242/blog/tags/best-practice/">best-practice</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/byteman/">byteman</a>
+        <a href="http://localhost:4242/blog/tags/byteman/">byteman</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/cdi/">cdi</a>
+        <a href="http://localhost:4242/blog/tags/cdi/">cdi</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/community/">community</a>
+        <a href="http://localhost:4242/blog/tags/community/">community</a>
       </span>
       <span class="tag tag-3">
-        <a href="http://arquillian.org/blog/tags/container-adapter/">container-adapter</a>
+        <a href="http://localhost:4242/blog/tags/container-adapter/">container-adapter</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/contributors/">contributors</a>
+        <a href="http://localhost:4242/blog/tags/contributors/">contributors</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/core/">core</a>
+        <a href="http://localhost:4242/blog/tags/core/">core</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/dependencies/">dependencies</a>
+        <a href="http://localhost:4242/blog/tags/dependencies/">dependencies</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/docs/">docs</a>
+        <a href="http://localhost:4242/blog/tags/docs/">docs</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/drone/">drone</a>
+        <a href="http://localhost:4242/blog/tags/drone/">drone</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/event/">event</a>
+        <a href="http://localhost:4242/blog/tags/event/">event</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/examples/">examples</a>
+        <a href="http://localhost:4242/blog/tags/examples/">examples</a>
       </span>
       <span class="tag tag-3">
-        <a href="http://arquillian.org/blog/tags/extension/">extension</a>
+        <a href="http://localhost:4242/blog/tags/extension/">extension</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/forge/">forge</a>
+        <a href="http://localhost:4242/blog/tags/forge/">forge</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/glassfish/">glassfish</a>
+        <a href="http://localhost:4242/blog/tags/glassfish/">glassfish</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/graphene/">graphene</a>
+        <a href="http://localhost:4242/blog/tags/graphene/">graphene</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/gsoc/">gsoc</a>
+        <a href="http://localhost:4242/blog/tags/gsoc/">gsoc</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/guides/">guides</a>
+        <a href="http://localhost:4242/blog/tags/guides/">guides</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/hackfest/">hackfest</a>
+        <a href="http://localhost:4242/blog/tags/hackfest/">hackfest</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/jacoco/">jacoco</a>
+        <a href="http://localhost:4242/blog/tags/jacoco/">jacoco</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/javaone/">javaone</a>
+        <a href="http://localhost:4242/blog/tags/javaone/">javaone</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/jboss/">jboss</a>
+        <a href="http://localhost:4242/blog/tags/jboss/">jboss</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/jbossas/">jbossas</a>
+        <a href="http://localhost:4242/blog/tags/jbossas/">jbossas</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/jbosscentral/">jbosscentral</a>
+        <a href="http://localhost:4242/blog/tags/jbosscentral/">jbosscentral</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/jbossworld/">jbossworld</a>
+        <a href="http://localhost:4242/blog/tags/jbossworld/">jbossworld</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/jetty/">jetty</a>
+        <a href="http://localhost:4242/blog/tags/jetty/">jetty</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/jpa/">jpa</a>
+        <a href="http://localhost:4242/blog/tags/jpa/">jpa</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/judcon/">judcon</a>
+        <a href="http://localhost:4242/blog/tags/judcon/">judcon</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/maven/">maven</a>
+        <a href="http://localhost:4242/blog/tags/maven/">maven</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/migration/">migration</a>
+        <a href="http://localhost:4242/blog/tags/migration/">migration</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/mission/">mission</a>
+        <a href="http://localhost:4242/blog/tags/mission/">mission</a>
       </span>
-      <span class="tag tag-2">
-        <a href="http://arquillian.org/blog/tags/nonrelease/">nonrelease</a>
+      <span class="tag tag-1">
+        <a href="http://localhost:4242/blog/tags/nonrelease/">nonrelease</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/openejb/">openejb</a>
+        <a href="http://localhost:4242/blog/tags/openejb/">openejb</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/openshift/">openshift</a>
+        <a href="http://localhost:4242/blog/tags/openshift/">openshift</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/openwebbeans/">openwebbeans</a>
+        <a href="http://localhost:4242/blog/tags/openwebbeans/">openwebbeans</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/osgi/">osgi</a>
+        <a href="http://localhost:4242/blog/tags/osgi/">osgi</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/performance/">performance</a>
+        <a href="http://localhost:4242/blog/tags/performance/">performance</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/persistence/">persistence</a>
+        <a href="http://localhost:4242/blog/tags/persistence/">persistence</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/photos/">photos</a>
+        <a href="http://localhost:4242/blog/tags/photos/">photos</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/platform/">platform</a>
+        <a href="http://localhost:4242/blog/tags/platform/">platform</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/plugin/">plugin</a>
+        <a href="http://localhost:4242/blog/tags/plugin/">plugin</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/portal/">portal</a>
+        <a href="http://localhost:4242/blog/tags/portal/">portal</a>
       </span>
       <span class="tag tag-6">
-        <a href="http://arquillian.org/blog/tags/release/">release</a>
+        <a href="http://localhost:4242/blog/tags/release/">release</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/roadmap/">roadmap</a>
+        <a href="http://localhost:4242/blog/tags/roadmap/">roadmap</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/seam2/">seam2</a>
+        <a href="http://localhost:4242/blog/tags/seam2/">seam2</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/spock/">spock</a>
+        <a href="http://localhost:4242/blog/tags/spock/">spock</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/spring/">spring</a>
+        <a href="http://localhost:4242/blog/tags/spring/">spring</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/stats/">stats</a>
+        <a href="http://localhost:4242/blog/tags/stats/">stats</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/test-runner/">test-runner</a>
+        <a href="http://localhost:4242/blog/tags/test-runner/">test-runner</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/testing/">testing</a>
+        <a href="http://localhost:4242/blog/tags/testing/">testing</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/tip/">tip</a>
+        <a href="http://localhost:4242/blog/tags/tip/">tip</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/tomcat/">tomcat</a>
+        <a href="http://localhost:4242/blog/tags/tomcat/">tomcat</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/tool-plugin/">tool-plugin</a>
+        <a href="http://localhost:4242/blog/tags/tool-plugin/">tool-plugin</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/transaction/">transaction</a>
+        <a href="http://localhost:4242/blog/tags/transaction/">transaction</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/video/">video</a>
+        <a href="http://localhost:4242/blog/tags/video/">video</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/warp/">warp</a>
+        <a href="http://localhost:4242/blog/tags/warp/">warp</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/website/">website</a>
+        <a href="http://localhost:4242/blog/tags/website/">website</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/weld/">weld</a>
+        <a href="http://localhost:4242/blog/tags/weld/">weld</a>
       </span>
       <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/wls/">wls</a>
+        <a href="http://localhost:4242/blog/tags/wls/">wls</a>
       </span>
       <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/wrapup/">wrapup</a>
+        <a href="http://localhost:4242/blog/tags/wrapup/">wrapup</a>
       </span>
     </div>
   </nav>
@@ -1030,22 +1017,6 @@ It&#8217;s a pleasure to work with you guys!</p>
     </script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.2/bootstrap.min.js"></script>
     <script src="/javascripts/prettify.js"></script>
-    <script src="/javascripts/site.js?bd6a597285db4e44c754379cff5581dc0b63ca5e"></script>
-    <script>
-      (function() {
-        var po = document.createElement('script'); po.async = true; po.src = 'https://apis.google.com/js/plusone.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
-      })();
-    </script>
-    <script type="text/javascript">
-    var _gaq = _gaq || [];
-    _gaq.push(['_setAccount','UA-18727998-3']);
-    _gaq.push(['_trackPageview']);
-    (function() {
-     var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
-    </script>
+    <script src="/javascripts/site.js"></script>
   </body>
 </html>
