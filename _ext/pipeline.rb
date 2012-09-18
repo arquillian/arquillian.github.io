@@ -37,6 +37,7 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Identities::Storage.new
   # the JIRA extension registers its own extensions
   Awestruct::Extensions::Jira::Project.new(self, 'ARQ:12310885')
+  extension Awestruct::Extensions::Jira::ReleaseNotes.new('ARQGRA:12312222', 'graphene')
   extension Awestruct::Extensions::Repository::Collector.new(480465, 'sGiJRdK2Cq8Nz0TkTNAKyw', :observers => [github_collector])
   extension Awestruct::Extensions::Identities::Collect.new(github_collector)
   extension Awestruct::Extensions::Identities::Crawl.new(

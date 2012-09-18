@@ -219,7 +219,7 @@ module Awestruct::Extensions::Repository::Visitors
           #t.name =~ /^[1-9]\d*\.\d+\.\d+\.((Alpha|Beta|CR)[1-9]\d*|Final)$/
           # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1
           t.name =~ /^[1-9]\d*\.\d+\.\d+[\.-]((alpha|beta|cr)-?[1-9]\d*|final)$/i
-      }.sort_by{|t| rc.gcommit(t).date}.each do |t|
+      }.sort_by{|t| rc.gcommit(t).author_date}.each do |t|
         # skip tag if arquillian has nothing to do with it
         next if repository.relative_path and rc.log(1).object(t.name).path(repository.relative_path).size.zero?
         # for some reason, we have to use ^0 to get to the actual commit, can't use t.sha
@@ -233,7 +233,7 @@ module Awestruct::Extensions::Repository::Visitors
           :sha => sha,
           :html_url => RepositoryHelpers.build_commit_url(repository, sha, 'html'),
           :json_url => RepositoryHelpers.build_commit_url(repository, sha, 'json'),
-          :date => commit.date,
+          :date => commit.author_date,
           :released_by => OpenStruct.new({
             :name => committer.name,
             :email => committer.email.downcase
