@@ -42,7 +42,7 @@
         </div>
       </div>
     </header>
-    <div role="main" id="main">
+    <div id="main" role="main">
   <div id="content-header">
     <div class="container">
       <h1>
@@ -55,10 +55,80 @@
   <article class="post">
   <header class="header">
     <h2 class="title">
+      <a href="/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/">Introducing Arquillian Graphene Page Fragments</a>
+    </h2>
+    <div class="byline">
+      <img src="http://gravatar.com/avatar/937262449f9882b576aa893299a46d41?s=44" class="avatar" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/jhuska">Juraj Huska</a></span>
+      <span class="dateinline">on Sep 19, 2012</span>
+      <div class="date"><abbr>Sep</abbr> 19</div>
+      <span class="comments">| <a data-disqus-identifier="" href="http://arquillian.org/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/#disqus_thread">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>Tools like <em>Arquillian Graphene</em>, <em>WebDriver</em>, or just plain <em>Selenium</em> combined with concepts like <a href="http://code.google.com/p/selenium/wiki/PageObjects"><em>Page Objects</em></a> can help you automate your functional(integration, whatever&#8230;) web UI tests. We have already introduced some of the advances brought to you by <em>Arquillian Graphene</em> <a href="http://arquillian.org/blog/tags/graphene/">earlier</a>. In this blog entry we will look a bit deeper into a new concept introduced in <em>Arquillian Graphene</em> 2.0.0.Alpha2; <em>Page Fragments</em>.</p>
+<p>Consider the following example taken from the RichFaces <a href="http://showcase.richfaces.org/richfaces/component-sample.jsf?demo=autocomplete&amp;sample=modes&amp;skin=blueSky">component showcase</a>. The page under test contain three Autocomplete widgets.</p>
+<pre class="prettify"><code class="prettify">public class TestAutocompleteWidgets extends AbstractGrapheneTest {</code>&#x000A;&#x000A;<code class="prettify">    private JQueryLocator minCharInput = jq("input[type=text]:eq(0)");&#x000A;    private JQueryLocator multipleSelectionInput = jq("input[type=text]:eq(1)");&#x000A;    private JQueryLocator selectFirstFalseInput = jq("input[type=text]:eq(2)");&#x000A;    private JQueryLocator selection = jq("div.rf-au-itm");</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testFirstAutocomplete() {</code>&#x000A;&#x000A;<code class="prettify">        graphene.keyPress(minCharInput, 'a');</code>&#x000A;&#x000A;<code class="prettify">        assertFalse(graphene.isElementPresent(selection),&#x000A;            "The suggestion list should not be visible, since there is only one char!");</code>&#x000A;&#x000A;<code class="prettify">        String keys = "ar";&#x000A;        graphene.focus(minCharInput);&#x000A;        selenium.type(minCharInput, keys);&#x000A;        guardXhr(graphene).fireEvent(minCharInput, Event.KEYPRESS);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(graphene.isVisible(selection), &#x000A;            "The suggestion list should be visible, since there are two chars!");</code>&#x000A;&#x000A;<code class="prettify">        String actualArizona = graphene.getText(jq(selection.getRawLocator() + ":eq(0)"));&#x000A;        assertEquals(actualArizona, "Arizona", "The provided suggestion should be Arizona!");</code>&#x000A;&#x000A;<code class="prettify">        String actualArkansas = graphene.getText(jq(selection.getRawLocator() + ":eq(1)"));&#x000A;        assertEquals(actualArkansas, "Arkansas", "The provided suggestion should be Arkansas!");</code>&#x000A;&#x000A;<code class="prettify">    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testSecondAutocomplete() {</code>&#x000A;&#x000A;<code class="prettify">        char key = 'a';&#x000A;        selenium.focus(multipleSelectionInput);&#x000A;        guardXhr(selenium).keyPress(multipleSelectionInput, key);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(selenium.isVisible(selection),&#x000A;            "The suggestion list should be visible, since there is correct starting char!");</code>&#x000A;&#x000A;<code class="prettify">        selenium.keyPressNative(KeyEvent.VK_ENTER);</code>&#x000A;&#x000A;<code class="prettify">        key = ' ';&#x000A;        selenium.keyPress(multipleSelectionInput, key);</code>&#x000A;&#x000A;<code class="prettify">        key = 'w';</code>&#x000A;&#x000A;<code class="prettify">        selenium.focus(multipleSelectionInput);&#x000A;        guardXhr(selenium).keyPress(multipleSelectionInput, key);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(selenium.isVisible(selection),&#x000A;            "The suggestion list should be visible, since there is correct starting char!");</code>&#x000A;&#x000A;<code class="prettify">        selenium.keyPressNative(KeyEvent.VK_ENTER);</code>&#x000A;&#x000A;<code class="prettify">        String actualContentOfInput = selenium.getValue(multipleSelectionInput);&#x000A;        assertEquals(actualContentOfInput, "Alabama Washington", "The input should contain something else!");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testThirdAutocomplete() {&#x000A;        //similar autocomplete interactions as in the previous tests&#x000A;    }&#x000A;}</code></pre>
+<h3>Now, ask yourself the following questions:</h3>
+<ul>
+	<li><em>Do you find these types of tests less robust than for example unit tests for the persistence layer?</em></li>
+</ul>
+<ul>
+	<li><em>Do you think these tests still pass when the underlying HTML change?</em></li>
+</ul>
+<ul>
+	<li><em>Do you see repeating code in the these tests?</em></li>
+</ul>
+<p>In my opinion you should have a clean answer to all of these questions. You are probably aware that tests should be loosely coupled with the underlying HTML structure of the application under test as it makes tests more robust and changes in the HTML structure of the page will not directly affect all tests.</p>
+<p>Let&#8217;s apply the <a href="http://code.google.com/p/selenium/wiki/PageObjects"><em>Page Objects</em></a> pattern to split the HTML structure and the test logic. The <em>Page Object</em> will encapsulate the HTML structure so when the HTML change, only your <em>Page Objects</em> has to change.</p>
+<ul>
+	<li><em>But what about when I&#8217;m testing another application that use the same Autocomplete widget?</em></li>
+</ul>
+<ul>
+	<li><em>Should I copy the part of the Page Object that interact with the Autocomplete widget and paste it around in my code?</em></li>
+</ul>
+<p>But as you&#8217;re already thinking: this would be a major don&#8217;t-repeat-yourself violation! Is there something we could do to improve this?</p>
+<p><strong>Yes, there is! Arquillian Graphene <em>Page Fragments</em> to the rescue!</strong></p>
+<h3><em>Page Fragments</em>, what are they?</h3>
+<ul>
+	<li><em>Page Fragments</em> are any repeating part of a page, any widget, web component, etc.</li>
+	<li>They encapsulate parts of the page into reusable test components across your whole test suite.</li>
+	<li>You can differentiate each fragment by its root element and reference other elements as children of that root.</li>
+	<li>They leverage Selenium WebDriver under the hood combined with all of the killer features of <em>Graphene</em>.</li>
+	<li>And they come with a set of utilities which simplify using them within tests and <em>Page Objects</em>.</li>
+</ul>
+<h3>How to define <em>Page Fragments</em></h3>
+<pre class="prettify"><code class="prettify">public class AutocompleteFragment&lt;T&gt; {</code>&#x000A;&#x000A;<code class="prettify">    @Root&#x000A;    WebElement root;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(css = "input[type='text']")&#x000A;    WebElement inputToWrite;</code>&#x000A;&#x000A;<code class="prettify">    public static final String CLASS_NAME_SUGGESTION = "rf-au-itm";</code>&#x000A;&#x000A;<code class="prettify">    public List&lt;Suggestion&lt;T&gt;&gt; getAllSuggestions(SuggestionParser&lt;T&gt; parser) {&#x000A;        List&lt;Suggestion&lt;T&gt;&gt; allSugg = new ArrayList&lt;Suggestion&lt;T&gt;&gt;();</code>&#x000A;&#x000A;<code class="prettify">        if (areSuggestionsAvailable()) {&#x000A;            WebElement rightSuggList = getRightSuggestionList();&#x000A;            List&lt;WebElement&gt; suggestions = rightSuggList.findElements(&#x000A;                        By.className(CLASS_NAME_SUGGESTION));</code>&#x000A;&#x000A;<code class="prettify">            for (WebElement suggestion : suggestions) {&#x000A;                allSugg.add(parser.parse(suggestion));&#x000A;            }&#x000A;        }</code>&#x000A;&#x000A;<code class="prettify">        return allSugg;&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    public List&lt;Suggestion&lt;T&gt;&gt; type(String value, SuggestionParser&lt;T&gt; parser) {&#x000A;        List&lt;Suggestion&lt;T&gt;&gt; suggestions = new ArrayList&lt;Suggestion&lt;T&gt;&gt;();</code>&#x000A;&#x000A;<code class="prettify">        inputToWrite.sendKeys(value);&#x000A;        try {&#x000A;            waitForSuggestions();&#x000A;        } catch (TimeoutException ex) {&#x000A;            // no suggestions available&#x000A;            return suggestions;&#x000A;        }</code>&#x000A;&#x000A;<code class="prettify">        suggestions = getAllSuggestions(parser);&#x000A;        return suggestions;&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    //other handy encapsulation of Autocomplete services&#x000A;}</code></pre>
+<p class="info"><span>The example is just a snippet from the full implementation of the RichFaces Autocomplete component.</span></p>
+<p>Notice the <code>@Root</code> annotation? The value of the root field is automatically injected by <em>Graphene</em>. The <code>root</code> field contain the root element as defined by the <code>@FindBy</code> annotation on the injection point of the <em>Page Fragment</em> in the Page Object or test. All <code>@FindBy</code> fields in the <em>Page Fragment</em> will use this root as a starting point.</p>
+<p>The fragment implementation is pretty generic and therefore reusable in all tests in all applications that use the Autocomplete widget. A full implementation would encapsulate all the services this fragment provide, but it could for example also encapsulate browser specific interactions like submit or click actions. There are no boundaries!</p>
+<h3>Using <em>Page Fragments</em> and <em>Page Objects</em> together</h3>
+<p>Let&#8217;s rewrite the previous test to use our new <em>Page Fragment</em> together with our <em>Page Object</em>.</p>
+<p>First we define a <em>Page Object</em> which contain the structure of the page under test.</p>
+<pre class="prettify"><code class="prettify">public class TestPage {</code>&#x000A;    &#x000A;<code class="prettify">    @FindBy(css = "div.rf-au:nth-of-type(1)")&#x000A;    private AutocompleteFragment&lt;String&gt; autocomplete1;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(css = "div.rf-au:nth-of-type(2)")&#x000A;    private AutocompleteFragment&lt;String&gt; autocomplete2;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(css = "div.rf-au:nth-of-type(3)")&#x000A;    private AutocompleteFragment&lt;String&gt; autocomplete3;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(xpath = "//*[contains(@id,'sh1')]")&#x000A;    private WebElement viewSourceLink;</code>&#x000A;&#x000A;<code class="prettify">    //all getters for the fields</code>&#x000A;&#x000A;<code class="prettify">    //other handy methods which you find useful when testing those three Autocomplete widgets&#x000A;}</code></pre>
+<p>Declaring the <em>Page Fragment</em> in the <em>Page Object</em> is the preferred option, but you can also declare the <em>Page Fragment</em> directly in the test if desired. The only thing you need to do is to annotate the <em>Page Fragment</em> object with WebDriver&#8217;s <code>@FindBy</code> annotation to refer to the fragment&#8217;s root DOM element. That simple!</p>
+<p>Graphene differentiates between <em>Page Fragments</em> and plain <em>WebElements</em> in the same Page Object so they can be declared side by side. All of the <strong>initialization is done automatically</strong>, so there is no need to initialize the <em>Page Fragments</em> or <em>Page Objects</em> in the <code>@Before</code> method of your test case.</p>
+<p>In this last example we see how the autocomplete widgets&#8217;s <em>Page Fragment</em> is used in the test case.</p>
+<pre class="prettify"><code class="prettify">public class TestWhichUsesPageFragments extend AbstractTest {</code>&#x000A;&#x000A;<code class="prettify">    @Page&#x000A;    private TestPage testPage;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testFirstAutocomplete {&#x000A;        AutocompleteFragment&lt;String&gt; autocomplete = testPage.getAutocomplete1();</code>&#x000A;        &#x000A;<code class="prettify">        autocomplete.type("a");</code>&#x000A;&#x000A;<code class="prettify">        assertFalse(autocomplete.areSuggestionsAvailable(), &#x000A;            "The suggestion list should not be visible, since there is only one char!");</code>&#x000A;&#x000A;<code class="prettify">        String keys = "ar";&#x000A;        autocomplete.type(keys);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(autocomplete.areSuggestionsAvailable(), &#x000A;            "The suggestion list should be visible, since there are two chars!");</code>&#x000A;&#x000A;<code class="prettify">        List&lt;Suggestion&lt;String&gt;&gt; expectedSuggestions = new ArrayList&lt;Suggestion&lt;String&gt;&gt;();&#x000A;        expectedSuggestions.add(new Suggestion&lt;String&gt;("Arizona"));&#x000A;        expectedSuggestions.add(new Suggestion&lt;String&gt;("Arkansas"));</code>&#x000A;&#x000A;<code class="prettify">        assertEquals(autocomplete.getAllSuggestions(new StringSuggestionParser()), expectedSuggestions, &#x000A;            "Suggestions are wrong!");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testSecondAutocomplete() {&#x000A;        AutocompleteFragment&lt;String&gt; autocomplete = testPage.getAutocomplete2();</code>&#x000A;&#x000A;<code class="prettify">        String key = "a";&#x000A;        autocomplete.type(key);</code>&#x000A;        &#x000A;<code class="prettify">        String errorMsg = "The suggestion list should be visible, since there was typed correct char ";&#x000A;        assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);</code>&#x000A;&#x000A;<code class="prettify">        autocomplete.autocomplete(autocomplete.getFirstSuggestion());</code>&#x000A;&#x000A;<code class="prettify">        autocomplete.type(" ");</code>&#x000A;&#x000A;<code class="prettify">        key = "w"&#x000A;        autocomplete.type(key);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);</code>&#x000A;&#x000A;<code class="prettify">        autocomplete.autocomplete(autocomplete.getFirstSuggestion());        </code>&#x000A;&#x000A;<code class="prettify">        String actualContentOfInput = autocomplete.getInputValue();&#x000A;        assertEquals(actualContentOfInput, "Alabama Washington", "The input should contain something else!");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testThirdAutocomplete() {&#x000A;        //similar autocomplete interactions as in the previous tests&#x000A;    }&#x000A;}</code></pre>
+<p>As your application grow, the only thing that needs to change is the root references of your <em>Page Fragments</em>. Last but not least you will be able to make your <em>Page Fragment</em> availabe to be used by other tests in other applications.</p>
+<p>To try <em>Page Fragments</em> check out the Graphene 2.0.0.Alpha2 release. Getting start information can be found in the <a href="https://docs.jboss.org/author/display/ARQGRA2/Page+Abstractions">Reference Documentation</a>.</p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a href="/blog/tags/graphene/" class="tag">graphene</a> <a href="/blog/tags/selenium/" class="tag">selenium</a> <a href="/blog/tags/page-fragment/" class="tag">page-fragment</a> <a href="/blog/tags/best-practice/" class="tag">best-practice</a> <a href="/blog/tags/2012/" class="tag">2012</a> <a href="/blog/tags/nonrelease/" class="tag">nonrelease</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
       <a href="/blog/2012/09/17/arquillian-graphene-2-0-0-Alpha2/">Graphene 2.0.0.Alpha2 Released</a>
     </h2>
     <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" />
+      <img src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" class="avatar" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a></span>
       <span class="dateinline">on Sep 17, 2012</span>
@@ -75,15 +145,15 @@
 <h4>Page Abstractions</h4>
 <p><a href="https://docs.jboss.org/author/display/ARQGRA2/Page+Abstractions">Page abstractions</a> allow you to abstract page functionality using the well-known Selenium design pattern <a href="http://code.google.com/p/selenium/wiki/PageObjects"><em>Page Objects</em></a>. In Graphene you can inject page objects directly into the test case using the <code>@Page</code> annotation.</p>
 <p>But we take the <em>Page Objects</em> pattern one step further with the concept of <a href="https://docs.jboss.org/author/display/ARQGRA2/Page+Fragments"><em>Page Fragments</em></a> . <em>Page Fragments</em> are reusable parts within a page encapsulated into an object similar to <em>Page Objects</em>. A good example of <em>Page Fragments</em> are JavaScript widgets or forms.</p>
-<p>The concept of <em>Page Fragments</em> comes fro an idea that those components share a same underlying DOM structure, the only difference between all occurences of a component is a location in a DOM tree where a component is rendered &#8211; this is denoted by the <code>@Root</code> annotation. You can define this root location for each concrete occurence using a <code>@FindBy(locator)</code> annotation.</p>
+<p>The concept of <em>Page Fragments</em> comes from an idea that those components share a same underlying DOM structure, the only difference between all occurences of a component is a location in a DOM tree where a component is rendered &#8211; this is denoted by the <code>@Root</code> annotation. You can define this root location for each concrete occurence using a <code>@FindBy(locator)</code> annotation.</p>
 <h4>Fluent-API for Waiting Conditions</h4>
 <p>Graphene provides a set of widely used <a href="https://docs.jboss.org/author/display/ARQGRA2/Graphene+Utility+Class">conditions to avoid writing them repeatedly</a>.</p>
 <h4>Request Guards</h4>
-<p><a href="https://docs.jboss.org/author/display/ARQGRA2/Request+Guards">Request guards</a> block the Selenium test execution until a network communication caused by a given action ends. Guards support blocking on <em>HTTP</em> and <em>XHR (AJAX)</em> but can also be used to verify that no such request were done.</p>
+<p><a href="https://docs.jboss.org/author/display/ARQGRA2/Request+Guards">Request guards</a> block the Selenium test execution until a network communication caused by a given action ends. Guards support blocking on <em>HTTP</em> and <em>XHR (AJAX)</em> but can also be used to verify that no such requests were done.</p>
 <h4>Under the Hood</h4>
 <p>There are some low level features exposed as API that are used by Graphene internally. While not used regularly within a normal test, can be handy to write more robust tests:</p>
 <h5><a href="https://docs.jboss.org/author/display/ARQGRA2/JavaScript+Interface">JavaScript Interface</a></h5>
-<p>This allow you to write a Java interface which automatically translates Java API invocations to JavaScript calls:</p>
+<p>This allows you to write a Java interface which automatically translates Java API invocations to JavaScript calls:</p>
 <pre class="prettify"><code class="prettify">@JavaScript&#x000A;public interface Document {&#x000A;    String getTitle();&#x000A;}</code></pre>
 <h5>Page Extensions</h5>
 <p><a href="https://docs.jboss.org/author/display/ARQGRA2/Page+Extensions">Page Extensions</a> allow you to inject arbitrary JavaScript code in the page under the test. The javascript code might help you to test complex situations as well as bring completely new features for improving testing. Graphene internally uses <em>Page Extensions</em> for <em>Request Guards</em>.</p>
@@ -151,16 +221,6 @@
 </h3>
 <p></p>
 <dl>
-  <dt>Bug</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-6">ARQGRA-6</a> -         Using of JQuery 1.5 causes that JQuery selectors are not escaped properly</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-151">ARQGRA-151</a> -         Graphene.getProxyForInterfaces returns wrong proxy</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-159">ARQGRA-159</a> -         Use Drone depchain in Graphene depchain</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
   <dt>Feature Request</dt>
   <dd>
     <ul class="unstyled">
@@ -208,6 +268,16 @@
     </ul>
   </dd>
 </dl>
+<dl>
+  <dt>Bug</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQGRA-6">ARQGRA-6</a> -         Using of JQuery 1.5 causes that JQuery selectors are not escaped properly</li>
+      <li><a href="https://issues.jboss.org/browse/ARQGRA-151">ARQGRA-151</a> -         Graphene.getProxyForInterfaces returns wrong proxy</li>
+      <li><a href="https://issues.jboss.org/browse/ARQGRA-159">ARQGRA-159</a> -         Use Drone depchain in Graphene depchain</li>
+    </ul>
+  </dd>
+</dl>
 <p>
   Thanks to the following list of contributors:
   <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://community.jboss.org/people/jhuska">Juraj Huska</a>, <a href="https://github.com/papousek">Jan PapoušEk</a>, <a href="https://community.jboss.org/people/jhuska">Juraj Huska</a>, <a href="https://community.jboss.org/people/bleathem">Brian Leathem</a>
@@ -227,7 +297,7 @@
       <a href="/blog/2012/05/24/arquillian-graphene-2-0-0-Alpha1/">Graphene 2.0.0.Alpha1 Released</a>
     </h2>
     <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" />
+      <img src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" class="avatar" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a></span>
       <span class="dateinline">on May 24, 2012</span>
@@ -316,7 +386,7 @@
       <a href="/blog/2012/04/11/arquillian-graphene-1-0-0-Final/">Graphene 1.0.0.Final Released</a>
     </h2>
     <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" />
+      <img src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" class="avatar" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a></span>
       <span class="dateinline">on Apr 11, 2012</span>
@@ -421,14 +491,6 @@
 </h3>
 <p></p>
 <dl>
-  <dt>Bug</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-137">ARQGRA-137</a> -         SLF4J is no longer required</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
   <dt>Feature Request</dt>
   <dd>
     <ul class="unstyled">
@@ -456,6 +518,14 @@
     </ul>
   </dd>
 </dl>
+<dl>
+  <dt>Bug</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQGRA-137">ARQGRA-137</a> -         SLF4J is no longer required</li>
+    </ul>
+  </dd>
+</dl>
 <p>
   Thanks to the following list of contributors:
   <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>
@@ -475,7 +545,7 @@
       <a href="/blog/2012/03/19/goodbye-ajocado-welcome-graphene/">Goodbye, Ajocado - Welcome, Graphene!</a>
     </h2>
     <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" />
+      <img src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" class="avatar" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a></span>
       <span class="dateinline">on Mar 19, 2012</span>
@@ -530,182 +600,6 @@ It is just undergoing rename.<br />
     tagged as
     <a href="/blog/tags/announcement/" class="tag">announcement</a> <a href="/blog/tags/graphene/" class="tag">graphene</a> <a href="/blog/tags/ajocado/" class="tag">ajocado</a> <a href="/blog/tags/2012/" class="tag">2012</a> <a href="/blog/tags/nonrelease/" class="tag">nonrelease</a>
   </div>
-</article>
-<article class="post">
-  <header class="header">
-    <h2 class="title">
-      <a href="/blog/2012/03/15/arquillian-graphene-1-0-0-CR3/">Graphene 1.0.0.CR3 Released & How To Migrate from Ajocado</a>
-    </h2>
-    <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/1ce36ce1c246b989f9cd79504c400b08?s=44" />
-      <span class="author">Posted by
-      <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a></span>
-      <span class="dateinline">on Mar 15, 2012</span>
-      <div class="date"><abbr>Mar</abbr> 15</div>
-      <span class="comments">| <a data-disqus-identifier="" href="http://arquillian.org/blog/2012/03/15/arquillian-graphene-1-0-0-CR3/#disqus_thread">Comments</a></span>
-    </div>
-  </header>
-  <div class="body">
-    <p>The Arquillian team is proud to announce the <em>1.0.0.CR3</em> release of the <em>Graphene</em> component!</p>
-<p>The project Ajocado has been <a href="/blog/2012/03/19/goodbye-ajocado-welcome-graphene/">renamed to Graphene</a>.</p>
-<p>The first release under the new name waits for you in Maven repositories.</p>
-<h3>Migration Path</h3>
-<p>Fortunately, the migration to new name in your project is very smooth, you can even continue to use original APIs.</p>
-<h4>Java Classes</h4>
-<p>The packages of the Java classes have not been renamed, the only change is addition of three new interfaces/utilities and deprecation of the old ones:</p>
-<ul>
-	<li>Ajocado &#8594; Graphene</li>
-	<li>AjaxSelenium &#8594; GrapheneSelenium</li>
-	<li>AjocadoConfiguration &#8594; GrapheneConfiguration</li>
-	<li>AjocadoContext &#8594; GrapheneSeleniumContextM</li>
-	<li>AjocadoConfigurationContext &#8594; GrapheneConfigurationContext</li>
-</ul>
-<p>The original names has been deprecated, but it doesn&#8217;t prevent to use current tests as they are &#8211; the deprecated classes will continue to be part of the project.</p>
-<h4>Configuration</h4>
-<p>The simple change in the arquillian.xml descriptor is needed, you just need to change ajocado to graphene:</p>
-<pre class="prettify"><code class="prettify">&lt;extension qualifier="graphene"&gt;&#x000A;    ...&#x000A;&lt;/extension&gt;</code></pre>
-<h4>Maven Artifacts</h4>
-<p>The most significant change underwent dependency system, so let me talk a more little bit about that:</p>
-<p>In Ajocado CR2, there was only one dependency necessary to import all the JUnit/TestNG and all Arquillian dependencies.</p>
-<p>In Graphene CR3, you need to manage several dependencies &#8211; however it makes your usage of dependencies little more cleaner, since you know exactly what dependencies are imported.</p>
-<p>At first, you need to import JUnit/TestNG dependency:</p>
-<h4>Test Framework</h4>
-<p><strong>JUnit</strong></p>
-<pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;junit&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;junit&lt;/artifactId&gt;&#x000A;    &lt;version&gt;4.8.2&lt;/version&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
-<p><strong>TestNG</strong></p>
-<pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.testng&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;testng&lt;/artifactId&gt;&#x000A;    &lt;version&gt;5.14.6&lt;/version&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
-<p>Additionally, you need to choose between using Graphene as standalone or use Arquillian integration with containers:</p>
-<h4>Standalone Usage</h4>
-<p>In this mode, you don&#8217;t use integration with containers, you need to manage the container and deployment at own:</p>
-<p><strong>Arquillian JUnit Standalone</strong></p>
-<pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.junit&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-junit-standalone&lt;/artifactId&gt;&#x000A;    &lt;version&gt;1.0.0.CR7&lt;/version&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
-<p><strong>Arquillian TestNG Standalone</strong></p>
-<pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.testng&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-testng-standalone&lt;/artifactId&gt;&#x000A;    &lt;version&gt;1.0.0.CR7&lt;/version&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
-<h4>Container usage</h4>
-<p>In the container mode, you need to provide deployable archive (@Deployment) and the whole lifecycle of the container and deployment will be managed by Arquillian:</p>
-<p><strong>Arquillian JUnit Container</strong></p>
-<pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.junit&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-junit-container&lt;/artifactId&gt;&#x000A;    &lt;version&gt;1.0.0.CR7&lt;/version&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
-<p><strong>Arquillian TestNG Container</strong></p>
-<pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.testng&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-testng-container&lt;/artifactId&gt;&#x000A;    &lt;version&gt;1.0.0.CR7&lt;/version&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
-<h4>Graphene Dependency Chain</h4>
-<p>And finally it&#8217;s necessary to import Arquillian Graphene dependency chain, which includes all other necessary dependencies (Graphene, Drone, Selenium):</p>
-<p><strong>Graphene Dependency Chain</strong></p>
-<pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.graphene&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-graphene&lt;/artifactId&gt;&#x000A;    &lt;version&gt;1.0.0.CR3&lt;/version&gt;&#x000A;    &lt;type&gt;pom&lt;/type&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
-<h3>What&#8217;s next?</h3>
-<p>We are preparing to release Final later soon, the same as other dependencies in Arquillian ecosystem.</p>
-<p>Thanks all the people who helped to test migration (Jan Papousek, Karel Piwko), so it is now pretty smooth.</p>
-<h3>Project Links</h3>
-<ul>
-	<li><a href="https://community.jboss.org/wiki/ArquillianGraphene">Home page</a></li>
-	<li><a href="https://github.com/arquillian/arquillian-graphene">Source code</a></li>
-	<li><a href="https://docs.jboss.org/author/display/ARQGRA">Documentation</a></li>
-	<li><a href="https://issues.jboss.org/browse/ARQGRA">Issue tracker</a></li>
-</ul>
-<h3>What is Arquillian?</h3>
-<p>Arquillian is a platform that simplifies Java middleware testing. It brings your test to the runtime, freeing you from the concern of managing the runtime from your test. As a result, you can focus on the task at hand, <em>writing your integration test logic</em>.</p>
-<h3>Release details</h3>
-<table class="table table-bordered table-striped">
-  <tbody>
-    <tr>
-      <th>Component</th>
-      <td>
-        <a href="/modules/graphene-extension/">Graphene</a>
-      </td>
-    </tr>
-    <tr>
-      <th>Version</th>
-      <td>
-        1.0.0.CR3
-        <span class="label tag">
-          <a href="https://github.com/arquillian/arquillian-graphene/commit/1ef76b7e5e41bee9b5d667d6010192b1da2d672f.html">view tag</a>
-        </span>
-      </td>
-    </tr>
-    <tr>
-      <th>Release date</th>
-      <td>2012-03-15</td>
-    </tr>
-    <tr>
-      <th>Released by</th>
-      <td>Lukas Fryc</td>
-    </tr>
-    <tr>
-      <th>Compiled against</th>
-      <td>
-        <ul class="unstyled">
-          <li>Arquillian Core &#8211; 1.0.0.CR7</li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-<h3>
-  Release notes and resolved issues
-  <small>15</small>
-</h3>
-<p></p>
-<dl>
-  <dt>Sub-task</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-88">ARQGRA-88</a> -         Test migration path for renaming Ajocado to Graphene</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-89">ARQGRA-89</a> -         Rename project to Graphene - wiki/docs</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-90">ARQGRA-90</a> -         Blog about renaming to Graphene</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-91">ARQGRA-91</a> -         Rename JIRA project name to ARQGRA</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-92">ARQGRA-92</a> -         Rename GitHub repository to arquillian-graphene</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
-  <dt>Feature Request</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-54">ARQGRA-54</a> -         Thread-Local Contexts section in docs should be more clean even for people not so familiar with given topic</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-59">ARQGRA-59</a> -         support for configurating arquillian.xml during runtime for matrix browser compability jobs</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-61">ARQGRA-61</a> -         Umbrella: Rename the project to Graphene</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
-  <dt>Enhancement</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-32">ARQGRA-32</a> -         Remove javassist dependency</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-33">ARQGRA-33</a> -         Classes Point, Dimension and Offset should override default equals and hashCode</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-36">ARQGRA-36</a> -         Split arquillian-testng/junit to support -standalone and -container version</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
-  <dt>Task</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-97">ARQGRA-97</a> -         Remove repositories definition from pom.xml</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-106">ARQGRA-106</a> -         Review usage of Shrinkwrap version definition</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
-  <dt>Component  Upgrade</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-21">ARQGRA-21</a> -         Upgrade Arquillian Core, Arquillian Drone and Shrinkwrap</li>
-      <li><a href="https://issues.jboss.org/browse/ARQGRA-23">ARQGRA-23</a> -         Upgrade to JBoss Parent version 8</li>
-    </ul>
-  </dd>
-</dl>
-<p>
-  Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://community.jboss.org/people/jhuska">Juraj Huska</a>, <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/ppitonak">Pavol Pitonak</a>
-</p>
-  </div>
-  <div class="footer">
-    <a href="/blog/2012/03/15/arquillian-graphene-1-0-0-CR3/">permalink</a>
-    |
-    <i class="icon-tags"></i>
-    tagged as
-    <a href="/blog/tags/ajocado/" class="tag">ajocado</a> <a href="/blog/tags/migration/" class="tag">migration</a> <a href="/blog/tags/ajocado/" class="tag">ajocado</a> <a href="/blog/tags/migration/" class="tag">migration</a> <a href="/blog/tags/release/" class="tag">release</a> <a href="/blog/tags/extension/" class="tag">extension</a> <a href="/blog/tags/graphene/" class="tag">graphene</a>
-  </div>
   
               <script type="text/javascript">
               var disqus_shortname = 'arquillian';
@@ -726,7 +620,7 @@ It is just undergoing rename.<br />
   </li>
 </ul>
 </div>
-<aside role="complementary" id="sidebar">
+<aside id="sidebar" role="complementary">
   <div class="subscribe">
     <h2 class="icon news">
       <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
@@ -736,6 +630,14 @@ It is just undergoing rename.<br />
   <nav class="latest">
     <h2>Latest Posts</h2>
     <ul>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/">Introducing Arquillian Graphene Page Fragments</a>
+        </div>
+        <div class="meta">
+          Sep 19, 2012
+        </div>
+      </li>
       <li>
         <div class="title">
           <a href="/blog/2012/09/17/arquillian-graphene-2-0-0-Alpha2/">Graphene 2.0.0.Alpha2 Released</a>
@@ -766,14 +668,6 @@ It is just undergoing rename.<br />
         </div>
         <div class="meta">
           Aug 17, 2012
-        </div>
-      </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/">Arquillian Transaction Extension 1.0.0.Alpha1 Released</a>
-        </div>
-        <div class="meta">
-          Aug 13, 2012
         </div>
       </li>
     </ul>
@@ -822,7 +716,7 @@ It is just undergoing rename.<br />
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/awards/">awards</a>
       </span>
-      <span class="tag tag-0">
+      <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/best-practice/">best-practice</a>
       </span>
       <span class="tag tag-1">
@@ -915,7 +809,7 @@ It is just undergoing rename.<br />
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/mission/">mission</a>
       </span>
-      <span class="tag tag-1">
+      <span class="tag tag-2">
         <a href="http://arquillian.org/blog/tags/nonrelease/">nonrelease</a>
       </span>
       <span class="tag tag-0">
@@ -929,6 +823,9 @@ It is just undergoing rename.<br />
       </span>
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/osgi/">osgi</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="http://arquillian.org/blog/tags/page-fragment/">page-fragment</a>
       </span>
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/performance/">performance</a>
@@ -956,6 +853,9 @@ It is just undergoing rename.<br />
       </span>
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/seam2/">seam2</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="http://arquillian.org/blog/tags/selenium/">selenium</a>
       </span>
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/spock/">spock</a>

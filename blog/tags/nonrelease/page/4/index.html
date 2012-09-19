@@ -42,7 +42,7 @@
         </div>
       </div>
     </header>
-    <div role="main" id="main">
+    <div id="main" role="main">
   <div id="content-header">
     <div class="container">
       <h1>
@@ -55,10 +55,92 @@
   <article class="post">
   <header class="header">
     <h2 class="title">
+      <a href="/blog/2010/03/11/arquillian-1-alpha-1-released/">Arquillian 1.0.0 Alpha 1 Released!</a>
+    </h2>
+    <div class="byline">
+      <img src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" class="avatar" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a></span>
+      <span class="dateinline">on Mar 11, 2010</span>
+      <div class="date"><abbr>Mar</abbr> 11</div>
+      <span class="comments">| <a data-disqus-identifier="" href="http://arquillian.org/blog/2010/03/11/arquillian-1-alpha-1-released/#disqus_thread">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>I&#8217;m happy to announce the first alpha release of <a href="http://arquillian.org">Arquillian</a>, an open source (<a href="http://www.apache.org/licenses/LICENSE-2.0">ASL v2</a>) framework for running tests in the container. If you want to read more about Arquillian&#8217;s mission and how it fits into our vision for testing at JBoss, read Pete&#8217;s companion blog entry, <a href="/blog/2010/03/10/testing-javaee-the-jboss-way">Testing Java EE the JBoss way</a>.</p>
+<p>It&#8217;s one thing to unit test your code outside of the container, but what happens when you run it inside? Does it still behave the same? How about testing against container managed resources? This is where Arquillian comes into its own.</p>
+<p>With Arquillian it&#8217;s just as easy to write integration tests as it is to write unit tests. In fact, to minimize the burden on you, Arquillian integrates with familiar testing frameworks, allowing reuse of tools such as the JUnit/TestNG support in your favorite IDE, Maven Surefire, Ant &#8211; in fact any tool which supports TestNG or JUnit!</p>
+<p>To show you just how simple this is, here&#8217;s an example test case setup using JUnit (we&#8217;ll get to the actual test next):</p>
+<pre class="prettify"><code class="prettify">@RunWith(org.jboss.arquillian.junit.Arquillian.class)&#x000A;public class TemperatureConverterTestCase {</code>&#x000A; &#x000A;<code class="prettify">    @Deployment&#x000A;    public static JavaArchive createTestArchive() {&#x000A;        return Archives.create("test.jar", JavaArchive.class)&#x000A;            .addClasses(TemperatureConverter.class, TemperatureConverterBean.class);&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">}</code></pre>
+<p>By using JUnit&#8217;s <code>@RunWith</code> annotation, you tell JUnit to use Arquillian as the test controller. Arquillian will then look for a static method marked with the <code>@Deployment</code> annotation, which defines your micro-deployment. In the example above, the micro-deployment contains a session bean interface and implementation, which Arquillian will deploy to the container.</p>
+<p>Arquillian hooks into your testing frameworks lifecycle and reacts to events. On the before suite and after suite events the container is started/stopped, while on the before class and after class events your micro-deployment is deployed to/undeployed from the container.</p>
+<p>The test case is started in the local JVM. Arquillian then overrides the normal test execution and migrates the test so that it&#8217;s executed inside the container. By the time the test framework calls your <code>@Test</code> annotated method, the test is running inside the container, giving us the possibility to work with container managed resources. Here&#8217;s the complete test class with JUnit <code>@Test</code> methods.</p>
+<pre class="prettify"><code class="prettify">@RunWith(org.jboss.arquillian.junit.Arquillian.class)&#x000A;public class TemperatureConverterTestCase {</code>&#x000A; &#x000A;<code class="prettify">    @Deployment&#x000A;    public static JavaArchive createTestArchive() {&#x000A;        return Archives.create("test.jar", JavaArchive.class)&#x000A;            .addClasses(TemperatureConverter.class, TemperatureConverterBean.class);&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">    @EJB&#x000A;    TemperatureConverter converter;</code>&#x000A; &#x000A;<code class="prettify">    @Test&#x000A;    public void shouldConvertToCelsius() {&#x000A;        Assert.assertEquals(converter.convertToCelsius(32d), 0d);&#x000A;        Assert.assertEquals(converter.convertToCelsius(212d), 100d);&#x000A;    }</code>&#x000A; &#x000A;<code class="prettify">    @Test&#x000A;    public void shouldConvertToFarenheit() {&#x000A;        Assert.assertEquals(converter.convertToFarenheit(0d), 32d);&#x000A;        Assert.assertEquals(converter.convertToFarenheit(100d), 212d);&#x000A;    }&#x000A;}</code></pre>
+<p>Note how we can use <code>@EJB</code> to inject the session bean from our deployment into the test case for use in our test method &#8211; <em>neat!</em></p>
+<p>The Arquillian TestEnricher SPI supports all the injection annotations from Java EE 6:</p>
+<ul>
+	<li><code>@EJB</code></li>
+	<li><code>@Resource</code></li>
+	<li><code>@PersistenceContext</code></li>
+	<li><code>@Inject</code></li>
+</ul>
+<p>Since there are no container specific code/configuration in this example test case, it&#8217;s portable. That means it can be run in GlassFish, JBoss AS or OpenEJB, <em>or all three!</em> The choice is yours.</p>
+<h2>I want to learn more, where should I go from here?</h2>
+<p>You can follow up with some in depth usage scenarios and tests described in these articles:</p>
+<ul>
+	<li>Dan Allen &#8211; <a href="http://community.jboss.org/docs/DOC-14952">Using Arquillian to test a possible bug in Weld</a></li>
+	<li>Jordan Ganoff &#8211; <a href="http://community.jboss.org/docs/DOC-14845">Seam 3 JMS Module Testing with Arquillian</a></li>
+	<li>German Escobar &#8211; <a href="http://community.jboss.org/docs/DOC-14953">Testing a JMX Portable Extension for CDI</a></li>
+</ul>
+<p>We also have <a href="http://docs.jboss.org/arquillian/reference/1.0.0.Alpha1/en-US/html_single">reference documentation</a> which walks you through the examples from Arquillian, and shows you how to create your own Arquillian test suite. You might also find the Javadoc useful (<a href="http://docs.jboss.org/arquillian/api/1.0.0.Alpha1/">API</a>, <a href="http://docs.jboss.org/arquillian/spi/1.0.0.Alpha1/">SPI</a>), especially if you plan on adding support for another container. You can also check out the forums and more articles can be found on our <a href="http://community.jboss.org/en/arquillian/">community site</a>. If your interested in chatting to us, please drop by #jbosstesting on irc.freenode.net</p>
+<h2>So, what&#8217;s next?</h2>
+<p>Some of the things you can expect from Arquillian in the future are:</p>
+<ul>
+	<li><b>Local run mode</b> &#8212; Sometimes, you don&#8217;t want to run the test case inside the container itself. A local run mode will be added; a mode where your test controls the deployment but is not deployed as a part of it. This will give you the chance to run a test against, for example, JSF pages or RMI (testing for those nasty Non-Serializable / SessionClosed exceptions).</li>
+	<li><b>Multiple deployments controlled by same test</b> &#8212; Sometimes your micro-deployment is not enough to test on its own and you want to package other components as part of the same deployment. For example, you need to test the interaction between two Web applications.</li>
+	<li><b>Support for method argument injection</b> &#8212; In the first alpha we only support field injection. In alpha 2 we will be extending the <a href="http://docs.jboss.org/arquillian/spi/1.0.0.Alpha1/org/jboss/arquillian/spi/TestEnricher.html">TestEnricher SPI</a> to include support for method argument injection:</li>
+</ul>
+<pre class="prettify"><code class="prettify">@Test&#x000A;public void shouldWithdrawFromAccount(@EJB AccountManager manager)&#x000A;        throws Exception {&#x000A;    ...&#x000A;}</code></pre>
+<ul>
+	<li><b>Test method interceptors</b> &#8211; Another planned enricher SPI is a test method interceptor. With this we can add support for transactions:</li>
+</ul>
+<pre class="prettify"><code class="prettify">@Test&#x000A;@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)&#x000A;public void shouldWithdrawFromAccount(@EJB AccountManager manager)&#x000A;        throws Exception {&#x000A;    ...&#x000A;}</code></pre>
+<ul>
+	<li><b>Convention over configuration</b> &#8211; The micro-deployments should be as easy as possible to create, so adding support for common conventions should help speed up the test development. For example we can automatically add all classes in the same package as the test class to the deployment</li>
+	<li><b>Arquillian controlled resources</b> &#8211; Sometimes the container requires container specific configuration e.g, <code>java.naming.*</code> parameters needed to create an <code>InitialContext</code>. If the test case has to explicitly deal with this, it places the burden for container portability back on the test case author. Arquillian will provide an extension point to add Arquillian created/managed resources:</li>
+</ul>
+<pre class="prettify"><code class="prettify">// auto creation of InitialContext based on running container, remote or local.&#x000A;@ArquillianResource&#x000A;InitialContext context;</code></pre>
+<pre class="prettify"><code class="prettify">// auto creation of URL to a deployed Servlet, including http port/ip etc.&#x000A;@ArquillianResource(MyServlet.class)&#x000A;URL myServletURL;</code></pre>
+<pre class="prettify"><code class="prettify">// the bundle context of a deployed osgi bundle&#x000A;@ArquillianResource&#x000A;BundleContext context;</code></pre>
+<ul>
+	<li><b>Support for more containers</b> &#8211; We will plan to support more containers! Currently we have planned: GlassFish 3 (as a remote container), Jetty, Tomcat, Resin, Felix OSGI. (Hey Spring guys, you&#8217;re welcome to join in too!)</li>
+	<li><b>Third party integrations</b> &#8211; In the spirit of ease of development, we integrate with existing test frameworks as much as possible, but we are always keen to learn of new frameworks we can integrate with. We already plan to support Selenium for example.</li>
+	<li><b>Support for other build tools</b> &#8211; Arquillian Alpha1 comes with Maven support. In upcoming releases, we will distribute builds targeted toward other build tools like Ant and Gradle (that shout out is for our resident Gradle expert, Jason Porter).</li>
+	<li><b>A project page, logo and artwork</b> &#8211; All good things must look good. That&#8217;s why the JBoss.org design team is hard at work putting together artwork for the Arquillian project page. Stay tuned!</li>
+</ul>
+<h2>Where can I see Arquillian in use?</h2>
+<p>Arquillian is a new framework, but it&#8217;s going to be put right to work as the workhorse to test all the Seam 3 modules. It will also be our recommended solution for testing your Seam application. (We&#8217;d love to see the community try it out for testing Seam 2 applications). We&#8217;ll also replace the current core of the JSR-299 CDI TCK with Arquillian, likely for the 1.1 version of the TCK. (To provide a little history, Arquillian originated from the <a href="http://docs.jboss.org/cdi/tck/reference/1.0.1-Final/html/test-harness-introduction.html">JBoss Test Harness</a> that was developed by Pete Muir as the foundation of the CDI TCK).</p>
+<p>If you have any thoughts on these ideas, or would like to suggest some new avenues we should explore, please contact us on the <a href="http://community.jboss.org/community/arquillian/dev">Arquillian Dev forum</a>.</p>
+<h2>And, what&#8217;s open source with out the community?!</h2>
+<p>A big thanks to the Arquillian and ShrinkWrap community for helping out on this release by being early adopters, joining in on <a href="http://community.jboss.org/docs/DOC-14808">community meetings</a>, general discussions and writing blogs, articles and patches. In alphabetical order: <a href="https://community.jboss.org/people/dan.j.allen">Dan Allen</a>, <a href="https://community.jboss.org/people/sboscarine">Steven Boscarine</a>, <a href="https://community.jboss.org/people/germanescobar">German Escobar</a>, <a href="https://community.jboss.org/people/jganoff">Jordan Ganoff</a>, <a href="https://community.jboss.org/people/kenglxn">Ken Gullaksen</a>, <a href="https://community.jboss.org/people/petemuir">Pete Muir</a>, <a href="https://community.jboss.org/people/lightguard">Jason Porter</a> and <a href="https://community.jboss.org/people/alrubinger">Andrew Lee Rubinger</a>. You guys rock!</p>
+<p>[ <a href="https://issues.jboss.org/browse/ARQ">Issues</a> | Javadoc: <a href="http://docs.jboss.org/arquillian/api/1.0.0.Alpha1/">API</a>, <a href="http://docs.jboss.org/arquillian/spi/1.0.0.Alpha1/">SPI</a> | <a href="http://docs.jboss.org/arquillian/reference/1.0.0.Alpha1/en-US/html_single">Reference Guide</a> | <a href="https://jira.jboss.org/jira/secure/ReleaseNote.jspa?projectId=12310885&amp;styleName=Html&amp;version=12313950">Release Notes</a> | <a href="https://repository.jboss.org/nexus/content/groups/public/org/jboss/arquillian/">Maven artifacts</a> ]</p>
+<p><em>This post was syndicated from in.relation.to. See the <a href="http://in.relation.to/Bloggers/Arquillian100Alpha1Released">original blog entry</a> to view older comments.</em></p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2010/03/11/arquillian-1-alpha-1-released/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a href="/blog/tags/testing/" class="tag">testing</a> <a href="/blog/tags/roadmap/" class="tag">roadmap</a> <a href="/blog/tags/examples/" class="tag">examples</a> <a href="/blog/tags/announcement/" class="tag">announcement</a> <a href="/blog/tags/2010/" class="tag">2010</a> <a href="/blog/tags/nonrelease/" class="tag">nonrelease</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
       <a href="/blog/2010/03/10/testing-javaee-the-jboss-way/">Testing Java EE the JBoss way</a>
     </h2>
     <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/4ebf34d2cbe74a29138a6d1e477ab4c8?s=44" />
+      <img src="http://gravatar.com/avatar/4ebf34d2cbe74a29138a6d1e477ab4c8?s=44" class="avatar" />
       <span class="author">Posted by
       <a href="https://community.jboss.org/people/pmuir">Pete Muir</a></span>
       <span class="dateinline">on Mar 10, 2010</span>
@@ -113,7 +195,7 @@
   </li>
 </ul>
 </div>
-<aside role="complementary" id="sidebar">
+<aside id="sidebar" role="complementary">
   <div class="subscribe">
     <h2 class="icon news">
       <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
@@ -123,6 +205,14 @@
   <nav class="latest">
     <h2>Latest Posts</h2>
     <ul>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/">Introducing Arquillian Graphene Page Fragments</a>
+        </div>
+        <div class="meta">
+          Sep 19, 2012
+        </div>
+      </li>
       <li>
         <div class="title">
           <a href="/blog/2012/09/17/arquillian-graphene-2-0-0-Alpha2/">Graphene 2.0.0.Alpha2 Released</a>
@@ -153,14 +243,6 @@
         </div>
         <div class="meta">
           Aug 17, 2012
-        </div>
-      </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/">Arquillian Transaction Extension 1.0.0.Alpha1 Released</a>
-        </div>
-        <div class="meta">
-          Aug 13, 2012
         </div>
       </li>
     </ul>
@@ -209,7 +291,7 @@
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/awards/">awards</a>
       </span>
-      <span class="tag tag-0">
+      <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/best-practice/">best-practice</a>
       </span>
       <span class="tag tag-1">
@@ -302,7 +384,7 @@
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/mission/">mission</a>
       </span>
-      <span class="tag tag-1">
+      <span class="tag tag-2">
         <a href="http://arquillian.org/blog/tags/nonrelease/">nonrelease</a>
       </span>
       <span class="tag tag-0">
@@ -316,6 +398,9 @@
       </span>
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/osgi/">osgi</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="http://arquillian.org/blog/tags/page-fragment/">page-fragment</a>
       </span>
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/performance/">performance</a>
@@ -343,6 +428,9 @@
       </span>
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/seam2/">seam2</a>
+      </span>
+      <span class="tag tag-0">
+        <a href="http://arquillian.org/blog/tags/selenium/">selenium</a>
       </span>
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/spock/">spock</a>
