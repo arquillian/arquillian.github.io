@@ -11,12 +11,12 @@ ShrinkWrap 是 Java 中最简单的创建归档文件的方法，它为 Arquilli
 
 * 相对传统的基于文件的归档方式，ShrinkWrap 的目的和好处
 * 从头创建一个新的归档文件
-* 不同添加内容的机制 
+* 不同的添加内容的机制 
 * 从现有的文件结构导入归档
 
 h3. 声明
 
-最初，ShrinkWrap 的诞生是出于更简单了测试 Java 企业部署的需要。传统的基于普通文件归档源于 ZIP 标准，这样必需引入一些构建步骤，对所有应用资源进行打包。 一个构建步骤要花费不少时间：
+最初，ShrinkWrap 的诞生是出于更简单了测试 Java 企业部署的需要。传统的基于普通文件归档源于 ZIP 标准，这样必需引入一些构建步骤，对所有应用资源进行打包。 一次构建过程要花费不少时间：
 
 bc(output).. $ mvn clean install
 ... terrifying output trace ...
@@ -50,7 +50,7 @@ p. 结果是 ShrinkWrap 诞生了。
 
 h3. 入门
 
-第一步是让你了解 ShrinkWrap 二进制文件结构，核心由三部分组成：
+第一步是让你了解一下 ShrinkWrap 体系结构，核心由三部分组成：
 
 |_.Name|_.Maven Coordinates|
 |API|org.jboss.shrinkwrap:shrinkwrap-api|
@@ -59,7 +59,7 @@ h3. 入门
 
 只有 API 是必须包含在编译的 Classpath 中， SPI 和 Implementation 仅在运行时需要。这样可以很好的将直接使用和项目内部类进行了分离。
 
-在 Maven 中， 利用传递性依赖 POM， 这些可以放在不同的 Scope 中，从 Maven Central 资源库获取：
+在 Maven 中， 利用传递性依赖的 POM， 这些依赖可以放在不同的 Scope 中，从 Maven Central 资源库获取：
 
 div(filename). 项目的 pom.xml
 
@@ -80,7 +80,7 @@ bc(prettify).. <project xmlns="http://maven.apache.org/POM/4.0.0"
   <!-- snip -->
 </project>
 
-p. 为了照顾没有使用 Maven 资源库系统的项目，ShrinkWrap 发布包将所有的模块放在一个下载文件中，你可以根据自己的需要手动设置依赖。
+p. 为了顾及那些还没有使用 Maven 资源库系统的项目，ShrinkWrap 发布包将所有的模块放在一个下载文件中，你可以根据自己的需要手动设置依赖。
 
 h4. 前提条件
 
@@ -107,7 +107,7 @@ ShrinkWrap 库的主要入口是 @org.jboss.shrinkwrap.api.ShrinkWrap@ 类。你
 |Path|@org.jboss.shrinkwrap.api.ArchivePath@|Location in an @Archive@ under which a @Node@ lives|
 |Asset|@org.jboss.shrinkwrap.api.Asset@|Byte-based content within a @Node@|
 
-另外， @Archive@ 包括多个视图，通常情况下，你不会直接处理 @Archive@ 类。相反，ShrinkWrap 提供了一些 @Archive@ 扩展，自带了一些有用的方法来操作类型相关的内容。
+另外， @Archive@ 包括多个视图，通常情况下，你不会直接处理 @Archive@ 类。相反，ShrinkWrap 提供了一些 @Archive@ 扩展，自带了一些辅助方法来操作类型相关的内容。
 
 |_.Archive Type|_.Description|
 |@org.jboss.shrinkwrap.api.GenericArchive@|Simplest type of concrete user-view of an @Archive@; supports generic operations|
@@ -116,7 +116,7 @@ ShrinkWrap 库的主要入口是 @org.jboss.shrinkwrap.api.ShrinkWrap@ 类。你
 |@org.jboss.shrinkwrap.api.spec.WebArchive@|Java EE WAR type; supports operations common to web application deployments|
 |@org.jboss.shrinkwrap.api.spec.ResourceAdaptorArchive@|Java EE RAR type; supports operations common to resource adaptor deployments|
 
-要创建一个 @Archive@, 只要简单的选择你要创建的归档类型，根据需要，可以添加一个名字到静态 @ShrinkWrap:create@ 方法中：
+要创建一个 @Archive@, 很简单， 只要选择你要创建的归档类型，根据需要，还可以添加一个名称到 @ShrinkWrap:create@ 静态方法中：
 
 bc(prettify).. GenericArchive myArchive = ShrinkWrap.create(GenericArchive.class,"myArchive.jar");
 
@@ -124,7 +124,7 @@ p. 就这样，你创建了第一个 ShrinkWrap 归档文档！
 
 h3. 添加内容
 
-当然一个代表空归档的对象是毫无用处。所以我们试着看添加一些内容。正如前面所说的那样，内容由 @Asset@ 进行构造，所以我们先看 ShrinkWrap 提供的一些 @Asset@ 实现：
+当然一个代表空归档的对象是毫无意义的。所以我们试着看添加一些内容。正如前面所说的那样，内容由 @Asset@ 进行构造，所以我们先看 ShrinkWrap 提供的一些 @Asset@ 实现：
 
 |_.Asset|_.Represents|
 |@org.jboss.shrinkwrap.api.asset.ArchiveAsset@|Nested @Archive@ content|
@@ -136,7 +136,7 @@ h3. 添加内容
 |@org.jboss.shrinkwrap.api.asset.UrlAsset@|Content located at a given @URL@|
 |@org.jboss.shrinkwrap.api.asset.EmptyAsset@|Empty (0-byte) content|
 
-另外，因为 @Asset@ 是一个接口，你可以提供你自己的实现，来处理任何代表 @InputStream@ 基于字节的内容。例如，下面的代码片断演示如何将一个 Activation Framework @DataSource@ 转换成 @Asset@ :
+另外，因为 @Asset@ 是一个接口，你可以提供你自己的实现，来处理任何代表 @InputStream@ 基于字节流的内容。例如，下面的代码片断演示如何将一个 Activation Framework @DataSource@ 转换成 @Asset@ :
 
 bc(prettify).. final DataSource dataSource = null; // Assume you have this
   Asset asset = new Asset() {
@@ -155,16 +155,16 @@ p.  @Archive:add@ 方法允许我们传入一些 @Asset@ 内容，并加入到 @
 bc(prettify).. myArchive.add(myAsset,"path/to/content");
 System.out.println(myArchive.toString(true));
 
-p. 传递一个 @true@ 标志给  @Archive@ 的 @toString@ 方法来打印递归的 @"ls -l"@ 样式的输出:
+p. 传递一个 @true@ 标志给  @Archive@ 的 @toString@ 方法来递归打印 @"ls -l"@ 样式的输出:
 
 bc(output).. myArchive.jar:
 /path/
 /path/to/
 /path/to/content
 
-p.  根据你要操作的不同内容的类型， 我们先前提级的 @Archive@ 视图非常有用。例如，一个标准的 JAR 文件一般包含 @.class@ 文件和其它资源，所以你可以用 @JavaArchive@ 类型来添加这些内容。  
+p.  根据你要操作的不同内容的类型， 我们先前提到的 @Archive@ 视图非常有用。例如，一个标准的 JAR 文件一般包含 @.class@ 文件和其它资源，所以你可以用 @JavaArchive@ 类型来添加这些内容。  
 
-ShrinkWrap 支持一种简单的机制，允许你的归档文件在不同的视图间切换， 由  @org.jboss.shrinkwrap.api.Assignable@ 接口的  @as@ 方法提供，每种视图都是从  @Assignable@ 继承。所以要让你的归档用上 @JavaArchive@ 视图，要添加 @Class@ 资源， 可以简化为:
+ShrinkWrap 支持一种简单的机制，允许你的归档文件在不同的视图间切换， 由  @org.jboss.shrinkwrap.api.Assignable@ 接口的  @as@ 方法提供，每种视图都是从 @Assignable@ 继承。所以要让你的归档用上 @JavaArchive@ 视图，要添加 @Class@ 资源， 代码可以简化为:
 
 bc(prettify).. myArchive.as(JavaArchive.class).addClasses(String.class, Integer.class);
 System.out.println(myArchive.toString(true));
@@ -175,11 +175,11 @@ bc(output).. archive.jar:
 /java/lang/String.class
 /java/lang/Integer.class
 
-p. 使用这种机制的好处是让保持 ShrinkWrap 使用简洁和直观，同时提供多重继承语言的灵活性。
+p. 使用这种机制的好处是保持 ShrinkWrap 用法简洁和直观，同时提供了多重继承语言的灵活性。
 
 h3. 操作文件内容
 
-因为 ShrinkWrap 扎根于 Java EE 并与 Arquillian 测试平台紧密联系，但不局限这些领域。事实上，ShrinkWrap 更偏向扮演一个归档文件的虚拟系统的角色。因此，它提供了一种简单机制来操作普通文件结构。
+因为 ShrinkWrap 扎根于 Java EE 并与 Arquillian 测试平台密不可分，但不局限这些领域。事实上，ShrinkWrap 更偏向扮演一个归档文件的虚拟系统的角色。因此，它提供了一种简单机制来操作普通文件结构。
 
 从上面的代码可以看出，也许我们想用 ShrinkWrap 对包中所有的 @.class@ 文件进行打包，并输出到一个标准的 JAR 或者 ZIP 格式。代码很简单:
 
@@ -195,7 +195,7 @@ bc(output).. javalang.jar:
 /org/alr/test/
 /org/alr/test/TestClass.class
 
-p. 现在看看我们做了些什么。首先，我们创建了一个  @JavaArchive@ ，加入当前的 @Class@ 所在 @Package@ 的所有内容。然后我们打印输出到控制台，只是为了看看包含了哪些内容。最后一行，我们再次利用 @JavaArchive@ 中来自 @Assignable@ 的工具切换到一种新的视图：输出 ZIP 格式。本例中，我们使用相应的  @ZipExporter@ ，允许输出到一个 @File@, @OutputStream@, 甚至将内容转化为 @InputStream@ ，这样我们还可以进行字节码操作。
+p. 简单的分析一下。首先，我们创建了一个  @JavaArchive@ ，加入当前的 @Class@ 所在 @Package@ 的所有内容。为了验证包含了哪些内容，然后我们将它输出到控制台。最后一行，我们再次利用 @JavaArchive@ 中从 @Assignable@ 派生的特性切换到新视图：输出为 ZIP 格式。本例中，我们使用相应的  @ZipExporter@ ，允许输出到一个 @File@, @OutputStream@, 甚至将内容转化为 @InputStream@ ，这样我们还可以进行字节流操作。
 
 ShrinkWrap 自带三种 exporters:
 
@@ -204,20 +204,20 @@ ShrinkWrap 自带三种 exporters:
 |@org.jboss.shrinkwrap.api.exporter.TarGzExporter@|TAR.GZ|
 |@org.jboss.shrinkwrap.api.exporter.ZipExporter@|ZIP|
 
-当然，我们也可以依葫芦画瓢使用下面标准的 importers 之一从普通文件来获得一个 ShrinkWrap 归档：
+当然，我们也可以依葫芦画瓢使用下面标准的 importers 之一从普通文件来创建一个 ShrinkWrap 归档：
 
 |_.Importer|_.Output Format|
 |@org.jboss.shrinkwrap.api.importer.TarImporter@|TAR|
 |@org.jboss.shrinkwrap.api.importer.TarGzImporter@|TAR.GZ|
 |@org.jboss.shrinkwrap.api.importer.ZipImporter@|ZIP|
 
-前面代码换成使用导入的方法可能看起来像这样:
+前面代码改成使用导入的方法可能看起来像这样:
 
 bc(prettify).. JavaArchive roundtrip = ShrinkWrap
   .create(ZipImporter.class, "myPackageRoundtrip.jar")
   .importFrom(new File("/home/alr/Desktop/myPackage.jar"))
   .as(JavaArchive.class);
 
-p. 注意我们是如何 @ZipImporter@ 给 @ShrinkWrap.create@ 方法的，它也是一个 @Assignable@ ! 开始注意到这个了吗?
+p. 注意我们是如何将 @ZipImporter@ 传递给 @ShrinkWrap.create@ 方法的，它也是一个 @Assignable@ ! 开始注意到这个把戏了吗?
 
-这里我们简短的介绍了如何 ShrinkWrap 操作归档文件内容。 我们希望你能够进行研究 API，它更直观，更一致，欢迎到我们社区。
+这里我们简短的介绍了如何 ShrinkWrap 操作归档文件内容。 我们希望你能够深入研究 API，它更直观，更一致，欢迎到我们社区。
