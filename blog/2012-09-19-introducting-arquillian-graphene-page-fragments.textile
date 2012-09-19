@@ -1,11 +1,13 @@
 ---
-layout: blog
+layout: post
 title: Introducing Arquillian Graphene Page Fragments
 author: jhuska
+tags: [graphene, selenium, page-fragment, best-practice]
 ---
-Nowadays tools like _Arquillian Graphene_, _WebDriver_ or just plain _Selenium_  and concepts like "Page Objects":http://code.google.com/p/selenium/wiki/PageObjects can pretty much help you with automated functional (integration, whatever...) testing of your web UI. The advantages which brings _Arquillian Graphene_ "were already introduced":http://arquillian.org/blog/tags/graphene/.
 
-h5. Consider following snippet from Arquillian Graphene functional test <br /> for "simple page":http://showcase.richfaces.org/richfaces/component-sample.jsf?demo=autocomplete&sample=modes&skin=blueSky, which contains three Autocomplete widgets.
+Tools like _Arquillian Graphene_, _WebDriver_, or just plain _Selenium_ combined with concepts like "_Page Objects_":http://code.google.com/p/selenium/wiki/PageObjects can help you automate your functional(integration, whatever...) web UI tests. We have already introduced some of the advances brought to you by _Arquillian Graphene_ "earlier":http://arquillian.org/blog/tags/graphene/. In this blog entry we will look a bit deeper into a new concept introduced in _Arquillian Graphene_ 2.0.0.Alpha2; _Page Fragments_.
+
+p. Consider the following example taken from the RichFaces "component showcase":http://showcase.richfaces.org/richfaces/component-sample.jsf?demo=autocomplete&sample=modes&skin=blueSky. The page under test contain three Autocomplete widgets.
 
 bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest {
 
@@ -73,34 +75,35 @@ bc(prettify).. public class TestAutocompleteWidgets extends AbstractGrapheneTest
     }
 }
 
-h3. Now, could you ask yourself the following questions.
+h3. Now, ask yourself the following questions:
 
-_Do you find these tests less robust than for example unit testing of persistence layer ?_
+* _Do you find these types of tests less robust than for example unit tests for the persistence layer?_
 
-_Do you think that when underlying HTML code will change that these tests will pass?_
+* _Do you think these tests still pass when the underlying HTML change?_
 
-_Have you noticed the same code repeated on many places in these tests ?_
+* _Do you see repeating code in the these tests?_
 
-p. Well, in my opinion all these questions should have affirmative answers. You are probably aware of the fact that tests should be loosely coupled with the underlying HTML structure of the application under test. It makes tests more robust and a likely change in the HTML structure of the page will no more affect tests.
+p. In my opinion you should have a clean answer to all of these questions. You are probably aware that tests should be loosely coupled with the underlying HTML structure of the application under test as it makes tests more robust and changes in the HTML structure of the page will not directly affect all tests.
 
-p. Fine, let's use "Page Objects":http://code.google.com/p/selenium/wiki/PageObjects pattern, to split up these two things. The Page Object will encapsulate all the HTML structure, so the change will be introduced only in your Page Objects.
+p. Let's apply the "_Page Objects_":http://code.google.com/p/selenium/wiki/PageObjects pattern to split the HTML structure and the test logic. The _Page Object_ will encapsulate the HTML structure so when the HTML change, only your _Page Objects_ has to change.
 
-p. _But what when I am testing another application with Autocomplete widgets ?_ I will need to copy lot of LOC which handle the interaction between test and the Autocomplete widget. As you know, it is major DRY violation. Is there something out there to improve this ?
+* _But what about when I'm testing another application that use the same Autocomplete widget?_ 
 
-*Yes, it is. Arquillian Graphene Page Fragments are here to help you!*
+* _Should I copy the part of the Page Object that interact with the Autocomplete widget and paste it around in my code?_ 
 
-h3. What is it ?
+p. But as you're already thinking: this would be a major don't-repeat-yourself violation! Is there something we could do to improve this?
 
-* Page Fragments stands for any part of the tested page, any widget, web component, etc.
-* A concept of encapsulation of these parts into completely reusable pieces across all your tests.
-* Powerful mechanism for creating own page fragments, like Autocomplete (Calendar, Login, etc.) page fragment.
-* A concept which differentiate each fragment by its root element and make other parts referenced from it.
-* A solution which leverages Selenium WebDriver under the hood together with all Graphene killer features.
-* Set of utilities which simplify using of this feature in tests, together with better support for Page Objects.
+*Yes, there is! Arquillian Graphene _Page Fragments_ to the rescue!*
 
-h3. Let's look how such page fragment can be defined.
+h3. _Page Fragments_, what are they?
 
-p. Note that it is just snippet from the whole implementation of RichFaces Autocomplete component.
+* _Page Fragments_ are any repeating part of a page, any widget, web component, etc.
+* They encapsulate parts of the page into reusable test components across your whole test suite.
+* You can differentiate each fragment by its root element and reference other elements as children of that root.
+* They leverage Selenium WebDriver under the hood combined with all of the killer features of _Graphene_.
+* And they come with a set of utilities which simplify using them within tests and _Page Objects_.
+
+h3. How to define _Page Fragments_
 
 bc(prettify).. public class AutocompleteFragment<T> {
 
@@ -117,7 +120,8 @@ bc(prettify).. public class AutocompleteFragment<T> {
 
         if (areSuggestionsAvailable()) {
             WebElement rightSuggList = getRightSuggestionList();
-            List<WebElement> suggestions = rightSuggList.findElements(By.className(CLASS_NAME_SUGGESTION));
+            List<WebElement> suggestions = rightSuggList.findElements(
+                        By.className(CLASS_NAME_SUGGESTION));
 
             for (WebElement suggestion : suggestions) {
                 allSugg.add(parser.parse(suggestion));
@@ -145,21 +149,27 @@ bc(prettify).. public class AutocompleteFragment<T> {
     //other handy encapsulation of Autocomplete services
 }
 
-p. Notice the @@Root@ annotation. The value for that field is automatically injected by Graphene to reference all defined @@FindBy@ elements from it. Such fragment implementation is pretty generic and therefore reusable in all tests for different applications. Finally it would encapsulate all the services which this fragment provides, but it does not have to be all. You can for example encapsulate browser specific interactions with this fragment. There are no boundaries!
+p(info). %The example is just a snippet from the full implementation of the RichFaces Autocomplete component.%
 
-h3. Let's rewrite the previous tests with using of Page Fragments together with support for Page Objects pattern.
+p. Notice the @@Root@ annotation? The value of the root field is automatically injected by _Graphene_. The @root@ field contain the root element as defined by the @@FindBy@ annotation on the injection point of the _Page Fragment_ in the Page Object or test. All @@FindBy@ fields in the _Page Fragment_ will use this root as a starting point. 
 
-p. Firstly define a Page Object which will contain the structure of the tested page.
+p. The fragment implementation is pretty generic and therefore reusable in all tests in all applications that use the Autocomplete widget. A full implementation would encapsulate all the services this fragment provide, but it could for example also encapsulate browser specific interactions like submit or click actions. There are no boundaries!
+
+h3. Using _Page Fragments_ and _Page Objects_ together
+
+p. Let's rewrite the previous test to use our new _Page Fragment_ together with our _Page Object_.
+
+First we define a _Page Object_ which contain the structure of the page under test.
 
 bc(prettify).. public class TestPage {
     
-    @FindBy(css = "div[class=\"rf-au\"]:nth-of-type(1)")
+    @FindBy(css = "div.rf-au:nth-of-type(1)")
     private AutocompleteFragment<String> autocomplete1;
 
-    @FindBy(css = "div[class=\"rf-au\"]:nth-of-type(2)")
+    @FindBy(css = "div.rf-au:nth-of-type(2)")
     private AutocompleteFragment<String> autocomplete2;
 
-    @FindBy(css = "div[class=\"rf-au\"]:nth-of-type(3)")
+    @FindBy(css = "div.rf-au:nth-of-type(3)")
     private AutocompleteFragment<String> autocomplete3;
 
     @FindBy(xpath = "//*[contains(@id,'sh1')]")
@@ -170,11 +180,11 @@ bc(prettify).. public class TestPage {
     //other handy methods which you find useful when testing those three Autocomplete widgets
 }
 
-p. Declaring Page Fragments in the Page Object is one of the options (the preferred one, the other is to declare Page Fragments directly in tests) to go with. *It is done just by using WebDriver @@FindBy@ annotation with reference to the root of the component.* So simple! 
+p. Declaring the _Page Fragment_ in the _Page Object_ is the preferred option, but you can also declare the _Page Fragment_ directly in the test if desired. The only thing you need to do is to annotate the _Page Fragment_ object with WebDriver's @@FindBy@ annotation to refer to the fragment's root DOM element. That simple! 
 
-*Indeed you can combine Page Fragments and plain WebElements on the same Page Object.* Graphene will differentiates between these two and initializes them properly. Just to note that all this *initialization is done automatically*, so no need to initialize Page Fragments or Page Objects in @@Before@ methods of your tests.
+Graphene differentiates between _Page Fragments_ and plain _WebElements_ in the same Page Object so they can be declared side by side. All of the *initialization is done automatically*, so there is no need to initialize the _Page Fragments_ or _Page Objects_ in the @@Before@ method of your test case.
 
-Finally following snippet showcases the actual autocomplete widgets tests.
+In this last example we see how the autocomplete widgets's _Page Fragment_ is used in the test case.
 
 bc(prettify).. public class TestWhichUsesPageFragments extend AbstractTest {
 
@@ -235,6 +245,6 @@ bc(prettify).. public class TestWhichUsesPageFragments extend AbstractTest {
     }
 }
 
-p. Notice integration with Page Object pattern, which is achieved by @@Page@ annotation. As your application will grow, the only what you will need to change will be root references of your Page Fragments. Last but not least you will be able to reuse this Autocomplete Page Fragment in other tests for maybe different applications.
+p. As your application grow, the only thing that needs to change is the root references of your _Page Fragments_. Last but not least you will be able to make your _Page Fragment_ availabe to be used by other tests in other applications.
 
-To try Page Fragments by ourselves, just check it out the Graphene 2.0.0.Alpha2 release. Some of the getting start information can be also found in the documentation for Graphene 2, "here":https://docs.jboss.org/author/display/ARQGRA2/Page+Abstractions.
+To try _Page Fragments_ check out the Graphene 2.0.0.Alpha2 release. Getting start information can be found in the "Reference Documentation":https://docs.jboss.org/author/display/ARQGRA2/Page+Abstractions.
