@@ -114,8 +114,15 @@ module Awestruct::Extensions::Releases
       rc = Git.open(page.site.dir)
       last_commit = rc.log(nil).path(page.relative_source_path[1..-1]).to_a.last
       if !last_commit.nil?
-        # FIXME fragile lookup!
-        page.site.identities.lookup_by_name(last_commit.author.name).username
+        author_name = last_commit.author.name
+        identity = page.site.identities.lookup_by_name(author_name)
+        # FIXME need to be more aggressive with getting this lookup to succeed
+        if identity.nil?
+          puts "Cannot determine author for post " + page.relative_source_path
+          author_name
+        else
+          identity.username
+        end
       end
     end
 
