@@ -105,7 +105,8 @@ module Awestruct::Extensions::Repository::Visitors
       range_author_index = {}
       RepositoryHelpers.resolve_commits_between(repository, sha1, sha2).map {|c|
         # we'll use email as the key to finding their identity; the sha we just need temporarily
-        OpenStruct.new({:name => c.author.name, :email => c.author.email.downcase, :commits => 0, :sha => c.sha})
+        # clear out bogus characters from email and downcase
+        OpenStruct.new({:name => c.author.name, :email => c.author.email.downcase.gsub(/[^\w@\.\(\)]/, ''), :commits => 0, :sha => c.sha})
       }.each {|e|
         # This loop both grabs unique authors by email and counts their commits
         if !range_author_index.has_key? e.email
