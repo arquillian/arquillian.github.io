@@ -41,7 +41,7 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Repository::Collector.new(480465, 'sGiJRdK2Cq8Nz0TkTNAKyw', :observers => [github_collector])
   extension Awestruct::Extensions::Identities::Collect.new(github_collector)
   extension Awestruct::Extensions::Identities::Crawl.new(
-    Identities::GitHub::Crawler.new,
+    Identities::GitHub::Crawler.new(:auth_file => '.github-auth'),
     Identities::Gravatar::Crawler.new,
     Identities::Confluence::Crawler.new('https://docs.jboss.org/author', :auth_file => '.jboss-auth',
         :identity_search_keys => ['name', 'username'], :assign_username_to => 'jboss_username'),

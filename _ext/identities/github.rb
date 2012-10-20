@@ -3,6 +3,7 @@ module Identities
     CONTRIBUTORS_URL_TEMPLATE = 'https://api.github.com/repos/%s/%s/contributors'
     TEAM_MEMBERS_URL_TEMPLATE = 'https://api.github.com/teams/%s/members'
     USER_URL_TEMPLATE = 'https://api.github.com/users/%s'
+    PROFILE_URL_TEMPLATE = 'https://api.github.com/users/%s'
 
     # It appears that all github users have a gravatar_id
     AVATAR_URL_TEMPLATE = 'http://gravatar.com/avatar/%s?s=%i'
@@ -42,7 +43,7 @@ module Identities
       def collect(identities)
         visited = []
         @repositories.each do |r|
-          url = CONTRIBUTORS_URL_TEMPLATE % [ r.owner, r.path ]
+          url = with_credentials(CONTRIBUTORS_URL_TEMPLATE % [ r.owner, r.path ])
           contributors = RestClient.get url, :accept => 'application/json'
           contributors.each do |acct|
             github_id = acct['login'].downcase
@@ -66,7 +67,7 @@ module Identities
           filter.values.select{|author| !author.github_id.nil? and !visited.include? author.github_id}.each do |author|
             github_id = author.github_id
             puts "Manually adding #{author.name} (#{github_id}) as a contributor"
-            url = USER_URL_TEMPLATE % [ github_id ]
+            url = with_credentials(USER_URL_TEMPLATE % [ github_id ])
             user = RestClient.get url, :accept => 'application/json'
             identity = identities.lookup_by_github_id(github_id, true)
             github_acct_to_identity(user, author, identity)
@@ -74,11 +75,9 @@ module Identities
         end
 
         if !@teams.nil?
-          get_credentials()
-          if @credentials
+          if get_credentials()
             @teams.each do |team|
-              url = TEAM_MEMBERS_URL_TEMPLATE % team[:id]
-              url = url.gsub(/^(https?:\/\/)/, '\1' + @credentials.chomp + '@')
+              url = with_credentials(TEAM_MEMBERS_URL_TEMPLATE % team[:id])
               members = RestClient.get(url, :accept => 'application/json') 
               members.each do |m|
                 github_id = m['login']
@@ -115,7 +114,7 @@ module Identities
               # FIXME this could be made into a smarter utility function
               identity.name = author.name.split(' ').map{|n| n.capitalize}.join(' ')
               # special exception for Lincoln :)
-              identity.name.gsub!('Iii', 'III')
+              identity.name.sub!('Iii', 'III')
             else
               identity.name = author.name.capitalize
             end
@@ -124,6 +123,11 @@ module Identities
         else
           identity.github.contributions += acct.has_key?('contributions') ? acct['contributions'] : 0
         end
+      end
+
+      # credentials increases rate limit from 60/hr to 1,500/hr and, in certain cases, are required to access the data
+      def with_credentials(url)
+        get_credentials() ? url.sub(/^(https?:\/\/)/, '\1' + @credentials.chomp + '@') : url
       end
 
       def get_credentials()
@@ -137,11 +141,17 @@ module Identities
             end
           end
         end
+        @credentials
       end
     end
 
     class Crawler
-      PROFILE_URL_TEMPLATE = 'https://api.github.com/users/%s'
+
+      def initialize(opts = {})
+        @auth_file = opts[:auth_file]
+        @credentials = nil
+      end
+
       def enhance(identity)
         identity.extend(IdentityHelper)
       end
@@ -159,6 +169,7 @@ module Identities
           return
         end
 
+        url = with_credentials(url)
         data = RestClient.get url, :accept => 'application/json'
         identity.github_id = data['login'].downcase
         identity.username = identity.github_id
@@ -198,6 +209,26 @@ module Identities
             :name => identity.name
           })
         end
+      end
+       
+      # YIKES, duplication from above!
+      def with_credentials(url)
+        get_credentials() ? url.sub(/^(https?:\/\/)/, '\1' + @credentials.chomp + '@') : url
+      end
+
+      # YIKES, duplication from above!
+      def get_credentials()
+        if @credentials.nil?
+          @credentials = false
+          if !@auth_file.nil?
+            if File.exist? @auth_file
+              @credentials = File.read(@auth_file)
+            elsif Pathname.new(@auth_file).relative? and File.exist? File.join(ENV['HOME'], @auth_file)
+              @credentials = File.read(File.join(ENV['HOME'], @auth_file))
+            end
+          end
+        end
+        @credentials
       end
     end
   end
