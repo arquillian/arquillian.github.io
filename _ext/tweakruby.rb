@@ -14,6 +14,12 @@ class String
   def pluralize_unless_one(count, plural = nil)
     count == 1 ? self : (plural || self.pluralize)
   end
+
+  unless method_defined?(:force_encoding)
+    def force_encoding(encoding)
+      self
+    end
+  end
 end
 
 require 'ostruct'
