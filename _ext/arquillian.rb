@@ -211,8 +211,8 @@ module Awestruct::Extensions::Repository::Visitors
         :groupId => resolve_group_id(repository),
         :parent => true,
         :lead => resolve_current_lead(repository, site.component_leads),
-        # we should not assume the license for external modules
-        :license => repository.owner.eql?('jbossas') ? 'LGPL v2.1' : 'ASL v2.0',
+        # we should not assume the license for external modules (hardcoding is not ideal either)
+        :license => ['jbossas', 'jsfunit'].include?(repository.owner) ? 'LGPL-2.1' : 'Apache-2.0',
         :releases => [],
         :contributors => []
       })
@@ -232,7 +232,7 @@ module Awestruct::Extensions::Repository::Visitors
         release = OpenStruct.new({
           :version => t.name,
           :key => (c.key.eql?('core') ? '' : c.key + '_') + t.name, # jira release version key, should we add owner?
-          #:license => 'Apache License 2.0',
+          #:license => 'track?',
           :sha => sha,
           :html_url => RepositoryHelpers.build_commit_url(repository, sha, 'html'),
           :json_url => RepositoryHelpers.build_commit_url(repository, sha, 'json'),
