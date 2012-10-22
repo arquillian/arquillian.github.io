@@ -53,8 +53,7 @@ module Awestruct
                 :owner => git_url.split('/').last(2).first,
                 :host => URI(git_url).host,
                 :type => 'git',
-                # QUESTION should this be html_url??
-                :http_url => git_url.chomp('.git').sub('git://', 'https://'),
+                :html_url => git_url.chomp('.git').sub('git://', 'https://'),
                 :clone_url => git_url
               })
               @repositories << repository
@@ -78,7 +77,7 @@ module Awestruct
             :owner => 'jbossas',
             :host => 'github.com',
             :type => 'git',
-            :http_url => 'https://github.com/jbossas/jboss-as',
+            :html_url => 'https://github.com/jbossas/jboss-as',
             :clone_url => 'git://github.com/jbossas/jboss-as.git'
           )
 
@@ -90,7 +89,7 @@ module Awestruct
           #  :owner => 'apache',
           #  :host => 'github.com',
           #  :type => 'git',
-          #  :http_url => 'https://github.com/apache/openejb',
+          #  :html_url => 'https://github.com/apache/openejb',
           #  :clone_url => 'git://github.com/apache/openejb.git'
           #)
 
@@ -101,7 +100,7 @@ module Awestruct
             :owner => 'jsfunit',
             :host => 'github.com',
             :type => 'git',
-            :http_url => 'https://github.com/jsfunit/jsfunit',
+            :html_url => 'https://github.com/jsfunit/jsfunit',
             :clone_url => 'git://github.com/jsfunit/jsfunit.git'
           )
 
@@ -112,7 +111,7 @@ module Awestruct
             :owner => 'forge',
             :host => 'github.com',
             :type => 'git',
-            :http_url => 'https://github.com/forge/plugin-arquillian',
+            :html_url => 'https://github.com/forge/plugin-arquillian',
             :clone_url => 'git://github.com/forge/plugin-arquillian.git'
           )
 

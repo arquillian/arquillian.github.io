@@ -127,7 +127,7 @@ module Awestruct::Extensions::Repository::Visitors
             :repositories => []
           })
           site.git_author_index[e.email].commits += e.commits
-          site.git_author_index[e.email].repositories |= [repository.http_url]
+          site.git_author_index[e.email].repositories |= [repository.html_url]
         end
         e.delete_field('sha')
       }.sort {|a, b| a.name <=> b.name}
@@ -146,7 +146,7 @@ module Awestruct::Extensions::Repository::Visitors
     end
 
     def self.build_commit_url(repository, sha, ext)
-      repository.http_url + '/commit/' + sha + '.' + ext
+      repository.html_url + '/commit/' + sha + '.' + ext
     end
   end
 
@@ -204,13 +204,15 @@ module Awestruct::Extensions::Repository::Visitors
         :basepath => repository.path.eql?(repository.owner) ? repository.path : repository.path.sub(/^#{repository.owner}-/, ''),
         :key => repository.path.split('-').last, # this is how components are matched in jira
         :owner => repository.owner,
+        :html_url => repository.relative_path.empty? ? repository.html_url : "#{repository.html_url}/tree/#{repository.master_branch}/#{repository.relative_path.chomp('/')}",
+        :external => !repository.owner.eql?('arquillian'),
         :name => resolve_name(repository),
         :desc => repository.desc,
         :groupId => resolve_group_id(repository),
         :parent => true,
         :lead => resolve_current_lead(repository, site.component_leads),
-        # what about the AS7 adapters? are those ASL?
-        :license => 'Apache License 2.0',
+        # we should not assume the license for external modules
+        :license => repository.owner.eql?('jbossas') ? 'LGPL v2.1' : 'ASL v2.0',
         :releases => [],
         :contributors => []
       })
