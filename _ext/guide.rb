@@ -5,14 +5,20 @@ module Awestruct
 
       class Index
         include Guide
+        @@transformers_registered = false
         
         def initialize(path_prefix, num_changes = nil)
           @path_prefix = path_prefix
           @num_changes = num_changes
         end
 
+        # transform gets called twice in the process of loading the pipeline, so
+        # we use a class variable to detect this scenario and shortcircuit
         def transform(transformers)
-          transformers << WrapHeaderAndAssignHeadingIds.new
+          if not @@transformers_registered
+              transformers << WrapHeaderAndAssignHeadingIds.new
+              @@transformers_registered = true
+          end
         end
 
         def execute(site)
