@@ -55,30 +55,29 @@
   <article class="post">
   <header class="header">
     <h2 class="title">
-      <a href="/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/">Arquillian Transaction Extension 1.0.0.Alpha1 Released</a>
+      <a href="/blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha2/">Arquillian Transaction Extension 1.0.0.Alpha2 Released</a>
     </h2>
     <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/6dc4a43fdaf5dfe0c69e3ed54ade665f?s=44" />
+      <img class="avatar" src="http://gravatar.com/avatar/de13898b827f3227a9f9f31eb90a2367?s=44" />
       <span class="author">Posted by
-      <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a></span>
-      <span class="dateinline">on Aug 13, 2012</span>
-      <div class="date"><abbr>Aug</abbr> 13</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="8736b8a0433b1ae5e7f8b4f6ec555abfe7055f8f">Comments</a></span>
+      <a href="https://community.jboss.org/people/bmajsak">Bartosz Majsak</a></span>
+      <span class="dateinline">on Nov 01, 2012</span>
+      <div class="date"><abbr>Nov</abbr> 01</div>
+      <span class="comments">| <a href="http://arquillian.org/blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="">Comments</a></span>
     </div>
   </header>
   <div class="body">
-    <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha1</em> release of the <em>Arquillian Transaction Extension</em> component!</p>
-<h3>Motivation</h3>
-<p>Until this point, the only special transaction support in Arquillian has come from the <a href="/modules/persistence-extension">Arquillian Persistence Extension</a>. But as the extension universe expand, the need for other extensions to interact with transactions expand as well. To avoid you having to deal with the individual extensions transaction support in different ways, different apis, we concluded it was time to make Transactions it&#8217;s own top level extension.</p>
+    <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha2</em> release of the <em>Arquillian Transaction Extension</em> component!</p>
+<h3>JTA implementation</h3>
+<p>The time has come to extract the JTA transactions support from <a href="/modules/persistence-extension">Arquillian Persistence Extension</a> and move it over to the Transaction Extension. It was in fact quite a natural refactoring step. This opens the possibility of providing a different transaction manager to your (not only) persistence related tests. Many thanks to <a href="https://github.com/jmnarloch">Jakub Narloch</a> for bringing the Transaction Extension to life as a top level module and helping with this release!</p>
+<p class="info"><span>Future releases of the <a href="/modules/persistence-extension">Arquillian Persistence Extension</a> will ship with the JTA extension implementation as a dependency, but the Persistence Extension API will change to the new API from the Transaction Extension. Since the Persistence Extension is using the transaction provider SPI you will be able to change the implementation without a need to adopt your test code to whatever comes in the future.</span></p>
 <h3>Usage</h3>
-<p>The current API takes a declarative approach to configure the transactional behavior of the Test case. By annotating the TestClass or the TestMethod with <code>@Transactional</code> you control how the transaction should be handled after TestMethod execution.<br />
-Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</code> the transaction for this method?</p>
-<p>Example:</p>
-<pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;@Transactional&#x000A;public class GreeterTestClass {</code>&#x000A;&#x000A;<code class="prettify">    public void defaultTest() throws Exception {&#x000A;        // test code&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Transactional(TransactionMode.ROLLBACK)&#x000A;    public void rollbackTest() throws Exception {&#x000A;        // test code&#x000A;    }&#x000A;}</code></pre>
-<h3>SPI integration</h3>
-<p>The extension itself does not come with any implementation for a concrete transaction API, the implementations will be provided by separate modules. During execution, the transactional handling is delegated to a <code>TransactionProvider</code> service implementation which is registered within Arquillian. The SPI defines a set of transaction lifecycle events (<code>(Before|After)Transaction(Started|Ended)</code>) and a separate transactional scope (<code>@TransactionScope</code>) which is bound to the executing transaction.</p>
-<h3>Implementations</h3>
-<p>Besides the JTA implementation provided by the <a href="/modules/persistence-extension">Arquillian Persistence Extension</a>, the next extensions which will provide support is the Spring Extension. More details to come.</p>
+<p>Just include this in your dependencies to leverage the JTA implementation within the container of your choice.</p>
+<div class="filename">pom.xml</div>
+<pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;  &lt;groupId&gt;org.jboss.arquillian.extension&lt;/groupId&gt;&#x000A;  &lt;artifactId&gt;arquillian-transaction-jta&lt;/artifactId&gt;&#x000A;  &lt;version&gt;1.0.0.Alpha2&lt;/version&gt;&#x000A;&lt;/dependency&gt;</code></pre>
+<h3>New SPI hook</h3>
+<p>The <code>TransactionEnabler</code> interface has been introduced to the <strong>SPI</strong>. It gives the option to alternate the strategy for enabling transactions. This is particularly handy for the Persistence Extension where we automatically wrap annotations like <code>@UsingDataSet</code> or <code>@ShouldMatchDataSet</code> in a transaction. For reference you may take a look at the <a href="https://github.com/arquillian/arquillian-extension-transaction/blob/master/spi/src/main/java/org/jboss/arquillian/transaction/spi/provider/TransactionEnabler.java">new SPI interface</a> and the related tests.</p>
+<p>That&#8217;s pretty much it! We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
 <h3>What is Arquillian?</h3>
 <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop end-to-end tests from the convenience of your IDE and run them in any IDE, build tool or continous integration environment.</p>
 <h3>Release details</h3>
@@ -93,15 +92,15 @@ Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</c
     <tr>
       <th>Version</th>
       <td>
-        1.0.0.Alpha1
+        1.0.0.Alpha2
         <span class="label tag">
-          <a href="https://github.com/arquillian/arquillian-extension-transaction/commit/fbca9f5eb141b9172c4356d934bd4908fd3cc819.html">view tag</a>
+          <a href="https://github.com/arquillian/arquillian-extension-transaction/commit/b30f831c7a47a7fc9f7a7da7a75ad76e380612f0.html">view tag</a>
         </span>
       </td>
     </tr>
     <tr>
       <th>Release date</th>
-      <td>2012-08-13</td>
+      <td>2012-10-30</td>
     </tr>
     <tr>
       <th>Released by</th>
@@ -111,7 +110,7 @@ Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</c
       <th>Compiled against</th>
       <td>
         <ul class="unstyled">
-          <li>Arquillian Core &#8211; 1.0.0.Final</li>
+          <li>Arquillian Core &#8211; 1.0.2.Final</li>
           <li>ShrinkWrap Resolvers &#8211; 2.0.0-alpha-1</li>
         </ul>
       </td>
@@ -127,56 +126,80 @@ Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</c
     org.jboss.arquillian.extension
     &raquo;
     arquillian-transaction-api
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-api/1.0.0.Alpha1/arquillian-transaction-api-1.0.0.Alpha1.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-api/1.0.0.Alpha1/arquillian-transaction-api-1.0.0.Alpha1.pom" target="_blank">pom</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-api/1.0.0.Alpha2/arquillian-transaction-api-1.0.0.Alpha2.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-api/1.0.0.Alpha2/arquillian-transaction-api-1.0.0.Alpha2.pom" target="_blank">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-transaction-bom
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-bom/1.0.0.Alpha1/arquillian-transaction-bom-1.0.0.Alpha1.pom" target="_blank">pom</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-bom/1.0.0.Alpha2/arquillian-transaction-bom-1.0.0.Alpha2.pom" target="_blank">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-transaction-impl-base
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-impl-base/1.0.0.Alpha1/arquillian-transaction-impl-base-1.0.0.Alpha1.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-impl-base/1.0.0.Alpha1/arquillian-transaction-impl-base-1.0.0.Alpha1.pom" target="_blank">pom</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-impl-base/1.0.0.Alpha2/arquillian-transaction-impl-base-1.0.0.Alpha2.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-impl-base/1.0.0.Alpha2/arquillian-transaction-impl-base-1.0.0.Alpha2.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-transaction-jta
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-jta/1.0.0.Alpha2/arquillian-transaction-jta-1.0.0.Alpha2.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-jta/1.0.0.Alpha2/arquillian-transaction-jta-1.0.0.Alpha2.pom" target="_blank">pom</a>
   </li>
   <li>
     org.jboss.arquillian.extension
     &raquo;
     arquillian-transaction-spi
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spi/1.0.0.Alpha1/arquillian-transaction-spi-1.0.0.Alpha1.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spi/1.0.0.Alpha1/arquillian-transaction-spi-1.0.0.Alpha1.pom" target="_blank">pom</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spi/1.0.0.Alpha2/arquillian-transaction-spi-1.0.0.Alpha2.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spi/1.0.0.Alpha2/arquillian-transaction-spi-1.0.0.Alpha2.pom" target="_blank">pom</a>
   </li>
 </ul>
 <h3>
   Release notes and resolved issues
-  <small>0</small>
+  <small>6</small>
 </h3>
-<p>The basic setup for rollback/commit on a TestClass with multiple Manager implementation</p>
+<p>Embedded Container and JTA support</p>
+<dl>
+  <dt>Enhancement</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-1137">ARQ-1137</a> -         Provide a way to alter logic determining if transaction support is required</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-1156">ARQ-1156</a> -         Improve resource handling</li>
+    </ul>
+  </dd>
+</dl>
+<dl>
+  <dt>Feature Request</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-1074">ARQ-1074</a> -         TransactionProvider should be supported on client side</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-1155">ARQ-1155</a> -         Make JNDI transaction name configurable</li>
+    </ul>
+  </dd>
+</dl>
+<dl>
+  <dt>Sub-task</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-1069">ARQ-1069</a> -         JTA implementation for Transaction Extension</li>
+    </ul>
+  </dd>
+</dl>
 <p>
   Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
+  <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/bmajsak">Bartosz Majsak</a>, <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a>
 </p>
   </div>
   <div class="footer">
-    <a href="/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/">permalink</a>
+    <a href="/blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha2/">permalink</a>
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/transaction/">transaction</a> <a class="tag" href="/blog/tags/transaction/">transaction</a> <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/transaction/">transaction</a>
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/transaction/">transaction</a>
   </div>
-  
-              <script type="text/javascript">
-              var disqus_shortname = 'arquillian';
-              (function () {
-                var s = document.createElement('script'); s.async = true;
-                s.src = "http://disqus.com/forums/arquillian/count.js";
-                (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
-              }());
-              </script>
 </article>
 <article class="post">
   <header class="header">
@@ -189,7 +212,7 @@ Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</c
       <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a></span>
       <span class="dateinline">on Aug 13, 2012</span>
       <div class="date"><abbr>Aug</abbr> 13</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="8736b8a0433b1ae5e7f8b4f6ec555abfe7055f8f">Comments</a></span>
+      <span class="comments">| <a href="http://arquillian.org/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -279,9 +302,17 @@ Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</c
 </ul>
 <h3>
   Release notes and resolved issues
-  <small>0</small>
+  <small>2</small>
 </h3>
 <p>The basic setup for rollback/commit on a TestClass with multiple Manager implementation</p>
+<dl>
+  <dt>Feature Request</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-1033">ARQ-1033</a> -         Extract the transaction support out of Arquillian Persistence Extension</li>
+    </ul>
+  </dd>
+</dl>
 <p>
   Thanks to the following list of contributors:
   <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
@@ -292,133 +323,7 @@ Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</c
     |
     <i class="icon-tags"></i>
     tagged as
-    <a class="tag" href="/blog/tags/transaction/">transaction</a> <a class="tag" href="/blog/tags/transaction/">transaction</a> <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/transaction/">transaction</a>
-  </div>
-  
-              <script type="text/javascript">
-              var disqus_shortname = 'arquillian';
-              (function () {
-                var s = document.createElement('script'); s.async = true;
-                s.src = "http://disqus.com/forums/arquillian/count.js";
-                (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
-              }());
-              </script>
-</article>
-<article class="post">
-  <header class="header">
-    <h2 class="title">
-      <a href="/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/">Arquillian Transaction Extension 1.0.0.Alpha1 Released</a>
-    </h2>
-    <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/6dc4a43fdaf5dfe0c69e3ed54ade665f?s=44" />
-      <span class="author">Posted by
-      <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a></span>
-      <span class="dateinline">on Aug 13, 2012</span>
-      <div class="date"><abbr>Aug</abbr> 13</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="8736b8a0433b1ae5e7f8b4f6ec555abfe7055f8f">Comments</a></span>
-    </div>
-  </header>
-  <div class="body">
-    <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha1</em> release of the <em>Arquillian Transaction Extension</em> component!</p>
-<h3>Motivation</h3>
-<p>Until this point, the only special transaction support in Arquillian has come from the <a href="/modules/persistence-extension">Arquillian Persistence Extension</a>. But as the extension universe expand, the need for other extensions to interact with transactions expand as well. To avoid you having to deal with the individual extensions transaction support in different ways, different apis, we concluded it was time to make Transactions it&#8217;s own top level extension.</p>
-<h3>Usage</h3>
-<p>The current API takes a declarative approach to configure the transactional behavior of the Test case. By annotating the TestClass or the TestMethod with <code>@Transactional</code> you control how the transaction should be handled after TestMethod execution.<br />
-Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</code> the transaction for this method?</p>
-<p>Example:</p>
-<pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;@Transactional&#x000A;public class GreeterTestClass {</code>&#x000A;&#x000A;<code class="prettify">    public void defaultTest() throws Exception {&#x000A;        // test code&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Transactional(TransactionMode.ROLLBACK)&#x000A;    public void rollbackTest() throws Exception {&#x000A;        // test code&#x000A;    }&#x000A;}</code></pre>
-<h3>SPI integration</h3>
-<p>The extension itself does not come with any implementation for a concrete transaction API, the implementations will be provided by separate modules. During execution, the transactional handling is delegated to a <code>TransactionProvider</code> service implementation which is registered within Arquillian. The SPI defines a set of transaction lifecycle events (<code>(Before|After)Transaction(Started|Ended)</code>) and a separate transactional scope (<code>@TransactionScope</code>) which is bound to the executing transaction.</p>
-<h3>Implementations</h3>
-<p>Besides the JTA implementation provided by the <a href="/modules/persistence-extension">Arquillian Persistence Extension</a>, the next extensions which will provide support is the Spring Extension. More details to come.</p>
-<h3>What is Arquillian?</h3>
-<p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop end-to-end tests from the convenience of your IDE and run them in any IDE, build tool or continous integration environment.</p>
-<h3>Release details</h3>
-<table class="table table-bordered table-striped">
-  <tbody>
-    <tr>
-      <th>Component</th>
-      <td>
-        <a href="/modules/transaction-extension/">Arquillian Transaction Extension</a>
-      </td>
-    </tr>
-    <tr>
-      <th>Version</th>
-      <td>
-        1.0.0.Alpha1
-        <span class="label tag">
-          <a href="https://github.com/arquillian/arquillian-extension-transaction/commit/fbca9f5eb141b9172c4356d934bd4908fd3cc819.html">view tag</a>
-        </span>
-      </td>
-    </tr>
-    <tr>
-      <th>Release date</th>
-      <td>2012-08-13</td>
-    </tr>
-    <tr>
-      <th>Released by</th>
-      <td>Aslak Knutsen</td>
-    </tr>
-    <tr>
-      <th>Compiled against</th>
-      <td>
-        <ul class="unstyled">
-          <li>Arquillian Core &#8211; 1.0.0.Final</li>
-          <li>ShrinkWrap Resolvers &#8211; 2.0.0-alpha-1</li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-<h3>
-  Published artifacts
-  <small>org.jboss.arquillian.extension</small>
-</h3>
-<ul>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-transaction-api
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-api/1.0.0.Alpha1/arquillian-transaction-api-1.0.0.Alpha1.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-api/1.0.0.Alpha1/arquillian-transaction-api-1.0.0.Alpha1.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-transaction-bom
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-bom/1.0.0.Alpha1/arquillian-transaction-bom-1.0.0.Alpha1.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-transaction-impl-base
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-impl-base/1.0.0.Alpha1/arquillian-transaction-impl-base-1.0.0.Alpha1.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-impl-base/1.0.0.Alpha1/arquillian-transaction-impl-base-1.0.0.Alpha1.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-transaction-spi
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spi/1.0.0.Alpha1/arquillian-transaction-spi-1.0.0.Alpha1.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spi/1.0.0.Alpha1/arquillian-transaction-spi-1.0.0.Alpha1.pom" target="_blank">pom</a>
-  </li>
-</ul>
-<h3>
-  Release notes and resolved issues
-  <small>0</small>
-</h3>
-<p>The basic setup for rollback/commit on a TestClass with multiple Manager implementation</p>
-<p>
-  Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
-</p>
-  </div>
-  <div class="footer">
-    <a href="/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/">permalink</a>
-    |
-    <i class="icon-tags"></i>
-    tagged as
-    <a class="tag" href="/blog/tags/transaction/">transaction</a> <a class="tag" href="/blog/tags/transaction/">transaction</a> <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/transaction/">transaction</a>
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/transaction/">transaction</a>
   </div>
   
               <script type="text/javascript">
@@ -452,6 +357,14 @@ Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</c
     <ul>
       <li>
         <div class="title">
+          <a href="/blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha2/">Arquillian Transaction Extension 1.0.0.Alpha2 Released</a>
+        </div>
+        <div class="meta">
+          Nov 01, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
           <a href="/blog/2012/10/25/arquillian-extension-drone-1-1-0-Final/">Arquillian Drone Extension 1.1.0.Final Released</a>
         </div>
         <div class="meta">
@@ -480,14 +393,6 @@ Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</c
         </div>
         <div class="meta">
           Oct 17, 2012
-        </div>
-      </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2012/09/24/arquillian-container-tomcat-1-0-0-CR4/">Arquillian Container Tomcat 1.0.0.CR4 Released</a>
-        </div>
-        <div class="meta">
-          Sep 24, 2012
         </div>
       </li>
     </ul>
@@ -629,7 +534,7 @@ Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</c
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/mission/">mission</a>
       </span>
-      <span class="tag tag-2">
+      <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/nonrelease/">nonrelease</a>
       </span>
       <span class="tag tag-0">
@@ -641,7 +546,7 @@ Should Arquillian <code>COMMIT</code>, <code>ROLLBACK</code> or <code>DISABLE</c
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/openwebbeans/">openwebbeans</a>
       </span>
-      <span class="tag tag-0">
+      <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/osgi/">osgi</a>
       </span>
       <span class="tag tag-0">
