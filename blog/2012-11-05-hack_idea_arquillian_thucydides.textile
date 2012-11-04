@@ -1,0 +1,246 @@
+---
+layout: post
+title: "Hack Idea: Layering Thucydides over Arquillian"
+author: mojavelinux
+tags: [hack, proposal, thucydides, drone]
+---
+Imagine browser-based acceptance tests that are stylish, agile, portable and self-contained. That's what you can look forward to by combining "Thucydides":http://www.thucydides.info/ and "Arquillian":http://arquillian.org.
+
+h3. Introducing the candidates
+
+h4. What is Thucydides?
+
+!(pull-right)/images/blog/thucydides-logo.png! Thucydides is a testing tool that encourages developers write more flexible and reusable WebDriver-based tests. In the style of "Acceptance Test-Driven Development (ATDD)":http://www.javaworld.com/javaworld/jw-08-2011/110823-atdd-for-web-apps.html, Thucydides introduces a narrative for tests that describes the high-level requirements and identifies the acceptance criteria the tests automate. Developers then follow the test-driven approach to complete the requirements (i.e., stories), as depicted in the diagram below.
+
+!/images/blog/thucydides-workflow.png!
+
+By analyzing the test metadata and test results, Thucydides generates illustrated documentation that describes how the application is used, in the form of high-level requirements, acceptance criteria and screenshots, and measures the progress of development.
+
+!/images/blog/thucydides-story-status.png!
+
+h4. What is Arquillian?
+
+#{site.definition}
+
+h4. What is Arquillian Drone?
+
+Arquillian Drone is an extension to Arquillian that manages the lifecycle of browsers for the purpose of controlling them from a test, thus simplifying automated functional / acceptance testing. Drone bootstraps the tooling necessary to send commands to the browser (e.g. Selenium Server, WebDriver, etc), spawns an instance of a browser, injects the browser API into the test class to allow tests to control that instance and, finally, properly disposes of the browser instance after the test is complete.
+
+h3. Integration benefits
+
+h4. Arquillian and Thucydides as yin and yang
+
+While Thucydides handles automation of the browser, via the "WebDriver":http://seleniumhq.org/docs/03_webdriver.html library, it does not handle deploying the application being tested, nor does it manage the container where the application would be deployed. That's where Arquillian steps in.
+
+Arquillian complements Thucydides by managing the container lifecycle and deploying the application (complete or micro-deployment). These services would otherwise have to be managed through the build lifecycle when using Thucydides alone. Additionally, Arquillian makes any of its extensions available to Thucydides, opening the door to services such as loading seed data into the database, measuring performance and even managing browser automation. Speaking of managing browser automation...
+
+h4. More powerful browser automation
+
+There is additional benefit to bring Arquillian Drone into the fold to handle the configuration and automation of browsers, using WebDriver _or alternatives_. This secondary integration between Arquillian and Thucydides broadens the capabilities of the browser controller in Thucydides and unifies the developer experience between plain Arquillian Drone tests and Thucydides tests when interacting with the browser automation API (embracing the concept that each tool should focus on doing one thing well).
+
+h4. How this integration helps test writers
+
+* Test segments of the webapp in isolation (using micro-deployments)
+** Speads up acceptance testing because entire application doesn't have to be built and deployed
+* Skip the build (e.g., Run As > XYZ Test in the IDE)
+** automatic container lifecycle management
+** deploy test archive defined in test class
+** inject application (initial) URL into test
+* Toggle target environments (e.g., local, dev, qa, staging)
+* Write Thucydides tests using other test runners, such as TestNG and Spock
+* Write Thucydides tests using any Arquillian-supported programming model (CDI, Spring, etc)
+* Leverage other Arquillian extensions in Thucydides tests
+* Integrated configuration (arquillian.xml) for containers and browsers*
+* Use alternate browser automation libraries supported by Drone*
+* Use Graphene page fragments to simplify tests*
+
+p. * requires Drone integration
+
+h4. Balancing responsibility
+
+Thucydides' strong suit is providing a programming model and DSL for defining acceptance tests and a thorough reporting pipeline to summarize the test results in terms of ATDD. I don't think it should worry about general test extensions, such as alternate test runners, data loading, browser automation, programming model integration, etc. Those are strengths of the Arquillian ecosystem. We believe Thucydides could move faster (and have less overlap) by allowing Arquillian extensions to address these needs and instead focus on tools and metrics needed to promote ATDD. In other words, Thucydides should focus on its core competancy:
+
+bq. Organize and structure acceptance tests, associate tests with the user stories or features that they test, generate illustrated documentation describing how the application is used based on the stories described by the tests.
+
+h3. Scenarios
+
+These scenarios are extracted from the "Beer Advisor example":https://github.com/bartoszmajsak/Beer-Advisor. They contrast the integration without Drone to the integration with Drone.
+
+h4. Without Drone integration
+
+*Example test*
+
+bc(prettify).. @RunWith(ThucydidesRunner.class) // or @RunWith(Arquillian.class)
+@Story(BeerAdvisorFeatures.SearchingBeers.class)
+public class SearchingBeersStory {
+
+    // Thucydides members
+
+    @Managed(uniqueSession = true)
+    public WebDriver browser;
+
+    @ManagedPages
+    public Pages pages;
+
+    @Steps
+    public SearchingSteps searchingSteps;
+
+    // Arquillian members
+
+    @Rule
+    public ArquillianEnricher enricher = new ArquillianEnricher();
+
+    @Deployment(testable = false)
+    public static WebArchive createTestArchive() {
+       return ShrinkWrap.create(WebArchive.class, "searching-beers-story.war")...;
+    }
+
+    @ArquillianResource
+    URL deploymentUrl;
+
+    // Tests
+
+    @Before
+    public void before_tests() {
+        pages.setDefaultBaseUrl(deploymentUrl.toExternalForm());
+    }
+
+    @Test
+    public void should_find_all_usa_beers() {
+        searchingSteps.on_main_beer_advisor_page();
+        searchingSteps.search_for("from usa");
+        searchingSteps.should_contain_beers(new Beer("90 minute IPA"), new Beer("Mirror Pond"));
+    }
+}
+
+p. *Execution steps*
+
+* Either Arquillian or Thucydides takes over test execution and activate both frameworks
+* Triggered by JUnit Rule, Arquillian configures and starts (or connects to) the container
+* Arquillian deploys test archive(s) to container
+* Arquillian injects the application URL into the @ArquillianResource URL inject point of the test
+* Thucydides spawns a browser instance using WebDriver
+* Thucydides executes tests, sending browser commands to WebDriver
+* Thucydides takes screenshots using WebDriver as the browser is interacting with the web application
+* Thucydides destoys the browser instance using WebDriver
+* Arquillian undeploys the test archive
+* Arquillian stops the container
+* Thucydides generates reports from the high-level summarizes, screenshots and test results
+
+Any Arquillian extensions that are loaded should also work as normal
+
+h4. With Drone integration
+
+*Example test*
+
+bc(prettify).. @RunWith(ThucydidesRunner.class) // or @RunWith(Arquillian.class)
+@Story(BeerAdvisorFeatures.SearchingBeers.class)
+public class SearchingBeersStory {
+
+    // Thucydides members
+
+    @Steps
+    public SearchingSteps searchingSteps;
+
+    // Arquillian members
+
+    @Deployment(testable = false)
+    public static WebArchive createTestArchive() {
+       return ShrinkWrap.create(WebArchive.class, "searching-beers-story.war")...;
+    }
+
+    @Drone // may get moved to the page objects
+    public WebDriver browser;
+
+    // Tests
+
+    @Test
+    public void should_find_all_usa_beers() {
+        searchingSteps.on_main_beer_advisor_page();
+        searchingSteps.search_for("from usa");
+        searchingSteps.should_contain_beers(new Beer("90 minute IPA"), new Beer("Mirror Pond"));
+    }
+}
+
+p. *Execution steps*
+
+* Either Arquillian or Thucydides takes over test execution and activate both frameworks
+* Arquillian configures and starts (or connects to) the container
+* Arquillian deploys test archive(s) to container
+* Arquillian injects the application URL into the @ArquillianResource URL injection point of the test
+* Arquillian Drone spawns a browser instance using the configured browser automation library (e.g., WebDriver)
+* Arquillian Drone sets the default base URL on the managed pages
+* Thucydides executes tests, sending browser commands to the browser automation library
+* Arquillian Drone takes screenshots as the browser is interacting with the web application
+* Arquillian Drone destoys the browser instance using the configured browser automation library
+* Arquillian undeploys the test archive
+* Arquillian stops the container
+* Thucydides generates reports from the high-level summarizes, screenshots and test results
+
+Any Arquillian Drone extensions, such as Graphene, that are loaded should also work as normal
+
+h3. Current status of effort
+
+h4. Who's involved
+
+* "John Ferguson Smart":https://github.com/wakaleo (Thucydides)
+* "Karel Piwko":https://github.com/kpiwko (Arquillian Drone)
+* "Vineet Reynolds":https://github.com/VineetReynolds (Arquillian Core and Thucydides integration)
+* "Bartosz Majsak":https://github.com/bartoszmajsak and "Aslak Knutsen":http://github.com/aslakknutsen (Beer Advisor example)
+* "Alex Soto":https://github.com/lordofthejars (Contributor)
+* "Dan Allen":https://github.com/mojavelinux (Advocate, Advisor)
+
+h4. Progress report
+
+John Smart has offered to host the integration in the Thucydides code base, which is fantastic.
+
+Vineet Reynolds has started experimenting with "an integration between Thucydides and Arquillian Core":https://github.com/VineetReynolds/thucydides-arquillian-example/. Vineet's integration code uses a JUnit Rule to weave the Arquillian lifecycle into the test. Tests are run using the Thucydides testrunner, while Arquillian manages the container lifecycle and performs the deployment of archives defined in the tests. The integration does not incorporate Arquillian Drone, opting to leave management of WebDriver up to Thucydides.
+
+Vineet reports he is picking off from where he last worked on the ATDD/BDD frameworks, Thucydides and JBehave.
+ 
+Alex Soto used Vineet's integration in his talk at LinuxTag 2012. Aslak and Bartosz also used the integration as the basis for the updated "Beer Advisor demo app":https://github.com/bartoszmajsak/Beer-Advisor for their JavaZone talk in September 2012.
+
+The Beer Advisor demo uses Thucydides WebDriver factories instead of Drone, and has a ArquillianEnricher JUnit Rule to delegate to the ArquillianListener to do the normal test class enrichment/injection. A JUnit Rule is necessary due to missing hooks in Thucydides, but in general it works nicely with Arquillian controlling the Container and Deployment.
+ 
+It's nice to know that a more basic integration is possible and getting Drone in there is an optional (but valuable) bonus step.
+
+h4. Engineering challenges
+
+*Unified test runner*
+
+Thucydides needs a startup API that isn't coupled with JUnit so that Arquillian is able to perform the startup in an extension. The alternative is that Thucydides provides enough extension points for Arquillian to hook its own startup into the Thucydides lifecycle.
+
+Ideally, the @@RunWith(Arquillian.class)@ annotation should be enough for Arquillian to drive Thucydides if Arquillian detects Thucydides is also in use (e.g., the @@Story@ annotation is present on the test class). This is the preferred approach since it simplifies the experience for the user across the test suite (a single @@RunWith@ for all integration tests) and it may make the integration more compatible with extensions since Arquillian has a more thorough event bus.
+
+*Drone integration*
+
+When Drone is integrated, the user has an option to use the browser automation library (directly or via the page object pattern) as with other Drone tests or use the page object support provided by Thucydides. Drone should be able to pass Thucydides the WebDriver instance so that Thucydides can operate its own page objects.
+
+Ideally, the integation with Drone should cut down on as many redundant declarations in the class as possible to simplify test authoring. That means that the @@Drone@ injection point is used to access the browser instance and and @@ArquillianResource URL@ injection point is used to access the initial (base) url.
+
+Karel Piwko mentioned that Drone currently needs better SPI for better integration with Arquillian Graphene, expected for 1.2.0.Final. He believes the Drone SPI will also enable Thucydides integration.
+
+h4. Sample code to demonstrate the idea
+
+* "Beer Advisor":https://github.com/bartoszmajsak/Beer-Advisor by Bartosz Majsak
+* "Currency Exchange":https://github.com/VineetReynolds/thucydides-arquillian-example by Vineet Reynolds
+
+h3. Kickoff event
+
+* When: Tue 13th November 2012, 09:30 - 16:30
+* Where: Hackergarten at Devoxx 2012 (Metropolis, Antwerpen, Belgium)
+* Conference URL: "http://devoxx.com":http://devoxx.com
+* Hashtag: "#hackdevoxx":https://twitter.com/search/%23hackdevoxx
+* Lanyrd: "http://lanyrd.com/2012/devoxx/syzdq":http://lanyrd.com/2012/devoxx/syzdq
+* RSVP: "Google+ Event: Arquillian Hands-On Coding at Devoxx 2012 Hackergarten":https://plus.google.com/events/cukalsoit15mrhsokig3b02j8mk
+
+h3. Resources
+
+* "Thucydides project page":http://thucydides.info
+* "Thucydides reference guide":http://thucydides.info/docs/thucydides
+* "Thucydides API documentation":http://wakaleo.com/thucydides-javadoc
+* "Acceptance test-driven development for web applications":http://www.javaworld.com/javaworld/jw-08-2011/110823-atdd-for-web-apps.html by John Smart (JavaWorld)
+* "Selenium 2 and Thucydides for ATDD":http://www.javaworld.com/javaworld/jw-10-2011/111018-thucydides-for-atdd.html by John Smart (JavaWorld)
+* "Real Agile: How Real Tests Lead to Real Progress":http://vimeo.com/49484334 by Aslak Knutsen and Bartosz Majsak (JavaZone 2012)
+* "How to test enterprise applications":http://www.youtube.com/watch?v=Xxpk2YGa6Do by Alex Soto (LinuxTag 2012)
+* "Prototype of Arquillian and Thucydides integration":https://github.com/VineetReynolds/thucydides-arquillian-example by Vineet Reynolds
