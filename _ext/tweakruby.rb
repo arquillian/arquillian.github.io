@@ -19,6 +19,13 @@ class String
     def force_encoding(encoding)
       self
     end
+
+    # nokogiri tries to use Encoding.find if String responds to force_encoding
+    class ::Encoding
+      def self.find(encoding)
+        encoding
+      end
+    end
   end
 end
 
