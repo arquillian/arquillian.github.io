@@ -1,0 +1,106 @@
+---
+layout: default
+title: Architecture
+---
+#content.row
+  .tabbable.span8
+    %ul.nav.nav-pills
+      %li.active
+        %a(href='#test-runners'){:data=>{:toggle=>'tab'}} Test runners
+      %li
+        %a(href='#deployments'){:data=>{:toggle=>'tab'}} Deployments
+      %li
+        %a(href='#test-enrichers'){:data=>{:toggle=>'tab'}} Test enrichers
+      %li
+        %a(href='#containers'){:data=>{:toggle=>'tab'}} Containers
+      %li
+        %a(href='#run-modes'){:data=>{:toggle=>'tab'}} Run modes
+      %li
+        %a(href='#extensions'){:data=>{:toggle=>'tab'}} Extensions
+    .tab-content(style='padding: 0 12px')
+      .tab-pane.active#test-runners
+        :textile
+          We know you have your own preference when it comes to test frameworks. That's why Arquillian provides test runners for the two most popular choices:
+  
+          * JUnit 4 (and above)
+          * TestNG 5 (and above)
+  
+          You activate Arquillian as follows:
+          
+          * JUnit - add the annotation @@RunWith(Arquillian.class)@ to the test class
+          * TestNG - extend the @Arquillian@ abstract base class
+          
+          Aside from the extra declaration, these integrations are completely transparent. You can launch the tests and get results using existing IDE (Eclipse, NetBeans, IDEA) and build tool (Ant, Maven, Gradle) test plugins without any add-ons.
+  
+          Additional test runners, such as Spock and JBehave, are being developed as extensions.
+      .tab-pane#deployments
+        :textile
+          One of the biggest challenges with testing is configuring the code to test. You may need to:
+  
+          * swap in mock objects to enable the code to function
+          * reconfigure the application to use a test database
+          * deal with classpath isolation issues
+          * run a build to assemble and deploy the application archive
+  
+          These steps are time consuming. _ShrinkWrap to the rescue!_
+  
+          "ShrinkWrap":http://jboss.org/shrinkwrap allows you to skip the build and instead define a deployment archive (jar, war, ear) declaratively in Java code. You define an archive inside your test case, termed a _micro-deployment_, and Arquillian deploys it to the container prior to executing the test case. Only classes and resources in the archive are visible to the test case.
+  
+          This strategy gives you tremendous control over the code you're testing and quick turnaround.
+      .tab-pane#test-enrichers
+        :textile
+          Arquillian enriches the test class with services such as:
+  
+          * injection
+          * lifecycle callbacks
+          * contexts
+  
+          These services provide easy access to components under test and allows the test to abstract away plumbing.
+  
+          Here are some of the injection types that Arquillian supports in Java EE environments:
+  
+          * @@Inject@ (supported in any CDI environment)
+          * @@Resource@
+          * @@EJB@
+          * @@PersistenceUnit@, @@PersistenceContext@
+  
+          Arquillian provides an SPI that allows you to introduce additional enrichers to this list.
+      .tab-pane#containers
+        :textile
+          The test class does not reference the container directly. That means you can run the same test case against various containers and you don't get locked into a proprietary test environment.
+  
+          Arquillian recognizes three container interaction styles:
+  
+          # A _remote container_ resides in a separate JVM from the test runner. Arquillian binds to the container to deploy the test archive and invokes tests via a remote protocol (e.g., Servlet, JMX).
+          # A _managed container_ is similar to a remote container, except its lifecycle (startup/shutdown) is also managed by Arquillian.
+          # An _embedded container_ resides in the same JVM and is mostly likely managed by Arquillian. Tests are executed via a local protocol for containers without a web component and via a remote protocol for containers with a web component. No need to fiddle with those Maven plugins!
+  
+          A container is further classified by its capabilities:
+  
+          * Java EE application server (e.g., JBoss AS, GlassFish, WebLogic)
+          * Servlet container (e.g., Tomcat, Jetty)
+          * standalone bean container (e.g., OpenEJB, Weld SE)
+          * OSGi container
+  
+          Arquillian can control a variety of containers out of the box. If the container you are using isn't supported, Arquillian provides an SPI that allows you to introduce any additional container.
+      .tab-pane#run-modes
+        :textile
+          Each Arquillian test can control its own run mode, of which there are two:
+  
+          * in container (in-process invocation)
+          * as client (through a remote client)
+  
+          In the first mode, Arquillian puts the test class inside the container alongside the components under test. Then, the test directly invokes the methods of the component instance that Arquillian injects.
+  
+          Arquillian also supports deploying the application code separately to allow the test to act as a remote client to the deployed archive. This mode is typically used for testing web pages using Arquillian Drone and web services using JAX-RS or JAX-WS.
+  
+          You can also mix and match the run modes to cover a myriad of testing scenarios.
+      .tab-pane#extensions
+        :textile
+          Most of what has been covered by Arquillian is merely the default behavior. Arquillian offers extension points for nearly every aspect of its behavior. Not only does this allow Arquillian to be customized, it also keeps Arquillian open to uses that were not considered when it was designed.
+          
+          For instance, the RHQ team found Arquillian to be suitable for testing plugins. The integration works by packaging a plugin as a ShrinkWrap archive and deploying it to an RHQ agent environment, even though the definition of a deployment is completely different than how its defined in Java EE.
+  
+          As another example, deployments may not even be necessary in some testing scenarios, such as testing data grids. An extension can be used to alter the way Arquillian defines and handles the deployment scenario.
+  
+          Arquillian is a flexible and extensible testing platform. We look forward to seeing how it grows as it accomodates and masters new testing scenarios.

@@ -1,7 +1,5 @@
-# Requires the following change to lib/awestruct/textilable.rb
-# in render(context), replace begin block with:
-#   rules = context.site.textile_rules ? context.site.textile_rules.map { |r| r.to_sym } : []
-#   rendered = RedCloth.new( context.interpolate_string( raw_page_content ) ).to_html(*rules)
+require 'redcloth'
+
 module Awestruct::Extensions
   class TextilePlus
     def initialize()
@@ -34,11 +32,12 @@ module Awestruct::Extensions
   end
 end
 
-# temporary fix for https://github.com/bobmcwhirter/awestruct/issues/68
+# make sure :no_span_caps is enabled, necessary for :textile filter in haml
+# still necessary for :textile use inside of haml, which does not respect rules
 module RedCloth
   class TextileDoc < String
     def initialize(string, restrictions = [])
-      restrictions << :no_span_caps
+      restrictions << :no_span_caps unless restrictions.include? :no_span_caps
       restrictions.each { |r| method("#{r}=").call(true) }
       super(string)
     end
@@ -46,6 +45,11 @@ module RedCloth
 end
 
 module RedCloth::Formatters::HTML
+  # hack to avoid getting an extra endline at end of code snippets when occur at the end of text
+  def before_transform(text)
+    text.chomp!
+  end
+
   # video. vimeo 22696384 320x400
   def video(opts)
     opts[:class] = (opts[:class] ? opts[:class] + ' video' : 'video')

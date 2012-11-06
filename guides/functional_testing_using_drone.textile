@@ -3,7 +3,7 @@ layout: guide
 title: Functional Testing using Drone
 authors: [mojavelinux, kpiwko]
 tags: [drone, selenium, as7, cdi, solder]
-guide_summary: Discover how Arquillian Drone simplifies the use of Selenium 2 to test the web UI of your application.
+description: Discover how Arquillian Drone simplifies the use of Selenium 2 to test the web UI of your application.
 guide_group: 2
 guide_order: 3
 ---
@@ -82,7 +82,7 @@ public class BasicClientTest {
     }
 }
 
-p. It's also possible to mix in-container and client modes in the same test! Just leave off the @testable@ attribute. Any method annotated with @@RunWith@ will execute from the client, the remainder will execute inside the container, giving you the best of both worlds!
+p. It's also possible to mix in-container and client modes in the same test! Just leave off the @testable@ attribute. Any method annotated with @@RunAsClient@ will execute from the client, the remainder will execute inside the container, giving you the best of both worlds!
 
 bc(prettify).. @RunWith(Arquillian.class)
 public class MixedRunModeTest {
@@ -115,9 +115,9 @@ h3. Drone Overview
 
 Arquillian Drone is an extension that manages the life cycle of testing browsers for the purpose of simplifying automated functional testing.
  
-Currently, the list of supported browsers is pretty large, a bounded set of those covered by Selenium Server, Selenium Core, Selenium WebDriver and Arquillian Ajocado. Like Arquillian Core, the Arquillian Drone extension is, well, pretty extensible. If your favorite browser is not supported, you'll find it easy to add the support.
+Currently, the list of supported browsers is pretty large, a bounded set of those covered by Selenium Server, Selenium Core, Selenium WebDriver and Arquillian Graphene. Like Arquillian Core, the Arquillian Drone extension is, well, pretty extensible. If your favorite browser is not supported, you'll find it easy to add the support.
   
-Arquillian Drone bootstraps the tooling required for testing browsers in order to work (e.g. Selenium Server), than it creates instances of a testing browser and properly disposes of it after the test is finished. _You only have to worry about writing the logic of the test._
+Arquillian Drone bootstraps the tooling required for testing browsers in order to work (e.g. Selenium Server), then it creates instances of a testing browser and properly disposes of it after the test is finished. _You only have to worry about writing the logic of the test._
 
 Let's get Arquillian Drone configured so that we can start writing some tests.
 
@@ -133,7 +133,7 @@ bc(prettify).. <!-- clip -->
         <dependency>
             <groupId>org.jboss.arquillian</groupId>
             <artifactId>arquillian-bom</artifactId>
-            <version>1.0.0.CR7</version>
+            <version>1.0.0.Final</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -151,14 +151,14 @@ bc(prettify).. <!-- clip -->
         <dependency>
             <groupId>org.jboss.arquillian</groupId>
             <artifactId>arquillian-bom</artifactId>
-            <version>1.0.0.CR7</version>
+            <version>1.0.0.Final</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.extension</groupId>
             <artifactId>arquillian-drone-bom</artifactId>
-            <version>1.0.0.CR3</version>
+            <version>1.0.0.Final</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -225,6 +225,7 @@ bc(prettify).. <!-- clip -->
 <dependency>
     <groupId>org.slf4j</groupId>
     <artifactId>slf4j-simple</artifactId>
+    <version>1.6.4</version>
     <scope>test</scope>
 </dependency> 
 <!-- clip -->
@@ -239,7 +240,7 @@ bc(prettify).. <!-- clip -->
 <dependency>
     <groupId>org.jboss.as</groupId>
     <artifactId>jboss-as-arquillian-container-managed</artifactId>
-    <version>7.0.2.Final</version>
+    <version>7.1.1.Final</version>
     <scope>test</scope>
 </dependency>
 <!-- clip -->
@@ -434,6 +435,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
@@ -450,13 +452,39 @@ public class LoginScreenSeleniumTest {
             .addAsWebResource(new File(WEBAPP_SRC, "login.xhtml"))
             .addAsWebResource(new File(WEBAPP_SRC, "home.xhtml"))
             .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-            .addAsWebInfResource(EmptyAsset.INSTANCE, "faces-config.xml");
+            .addAsWebInfResource(
+                new StringAsset("<faces-config version=\"2.0\"/>"),
+                "faces-config.xml");
     }
 }
 
-p(important). %If get java.lang.ClassNotFoundException: com.thoughtworks.selenium.DefaultSelenium later when you run the test, likely you don't have the testable = false attribute set on the @@Deployment@ annotation. Don't forget it!%
+p(important). %If you encounter a java.lang.ClassNotFoundException: com.thoughtworks.selenium.DefaultSelenium when you run the test, likely you don't have the @testable = false@ attribute on the @@Deployment@ annotation. Don't forget it!%
 
-p(info). %Keep in mind that ShrinkWrap can add a package, directory and so on, so your method can be made far more concise.%
+p(warning). %The Java EE 6 specification requires a @faces-config.xml@ descriptor to be present in WEB-INF to activate JSF. Unlike @beans.xml@, however, the @faces-config.xml@ descriptor cannot be an empty file. It must contain at least the root node and the version attribute to specify the JSF version in use.%
+
+p. If you have a lot of web pages that are part of the test, having to add them to the archive individually is tedious. Instead, you can import them in bulk using the @ExplodedImporter@ from ShrinkWrap. Here's an example of how to add all the web sources that end in .xhtml to the archive:
+
+div(filename). src/test/java/org/arquillian/example/LoginScreenSeleniumTest.java
+
+bc(prettify).. // clip
+import org.jboss.shrinkwrap.api.Filters;
+import org.jboss.shrinkwrap.api.GenericArchive;
+import org.jboss.shrinkwrap.api.importer.ExplodedImporter;
+// clip
+
+return ShrinkWrap.create(WebArchive.class, "login.war")
+    .addClasses(Credentials.class, User.class, LoginController.class)
+    .merge(ShrinkWrap.create(GenericArchive.class).as(ExplodedImporter.class)
+        .importDirectory(WEBAPP_SRC).as(GenericArchive.class),
+        "/", Filters.include(".*\\.xhtml$"))
+    .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
+    .addAsWebInfResource(
+        new StringAsset("<faces-config version=\"2.0\"/>"),
+        "faces-config.xml");
+
+// clip
+
+p. For more information about how to use @ExplodedImporter@ for this task, and alternative strategies, see "this FAQ":https://community.jboss.org/wiki/HowDoIAddAllWebResourcesToTheShrinkWrapArchive.
 
 p. One way to trim this down is to move the creation of the archive to a utility class and refer to it whenever you need this particular micro application. That leaves you with a much simpler @@Deployment@ method:
 
@@ -519,7 +547,7 @@ public class LoginScreenSeleniumTest {
     DefaultSelenium browser;
 
     @ArquillianResource
-    URL deploymentURL;
+    URL deploymentUrl;
 }
 
 p. Now even the URL of your deployed archive is injected in the test. It's now time to drive the browser to verify the functionality of the web application.
@@ -533,7 +561,7 @@ div(filename). src/test/java/org/arquillian/example/LoginScreenSeleniumTest.java
 bc(prettify).. // clip
 @Test
 public void should_login_successfully() {
-    browser.open(deploymentUrl + "home.jsf");
+    browser.open(deploymentUrl + "login.jsf");
 
     browser.type("id=loginForm:username", "demo");
     browser.type("id=loginForm:password", "demo");
@@ -545,7 +573,7 @@ public void should_login_successfully() {
 } 
 // clip
 
-p(info). %The @isElementPresent()@ method in the DefaultSelenium API accepts an XPath expression as a string. Don't confuse it with the similarly-named method from the Ajocado API that accepts an XPathLocator object.%
+p(info). %The @isElementPresent()@ method in the DefaultSelenium API accepts an XPath expression as a string. Don't confuse it with the similarly-named method from the Graphene API that accepts an XPathLocator object.%
 
 p. Right click on the test in your IDE and select Run As > JUnit test. Arquillian will boot JBoss AS 7, kick off Selenium, which will launch Firefox (the default) and magically flip through the pages. The result of the test will appear as normal in your JUnit view.
 
@@ -666,11 +694,14 @@ import java.io.File;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.DependencyResolvers;
 import org.jboss.shrinkwrap.resolver.api.maven.MavenDependencyResolver;
 
 public class Deployments {
+    private static final String WEBAPP_SRC = "src/main/webapp";
+
     public static WebArchive createLoginScreenDeployment() {
         MavenDependencyResolver resolver = DependencyResolvers
             .use(MavenDependencyResolver.class)
@@ -684,7 +715,9 @@ public class Deployments {
             .addAsWebResource(new File(WEBAPP_SRC, "login.xhtml"))
             .addAsWebResource(new File(WEBAPP_SRC, "home.xhtml"))
             .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
-            .addAsWebInfResource(EmptyAsset.INSTANCE, "faces-config.xml");
+            .addAsWebInfResource(
+                new StringAsset("<faces-config version=\"2.0\"/>"),
+                "faces-config.xml");
     }
     // clip 
 }

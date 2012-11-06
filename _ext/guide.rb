@@ -5,14 +5,20 @@ module Awestruct
 
       class Index
         include Guide
+        @@transformers_registered = false
         
-        def initialize(path_prefix, changes_since_date = nil)
+        def initialize(path_prefix, num_changes = nil)
           @path_prefix = path_prefix
-          @changes_since_date = changes_since_date
+          @num_changes = num_changes
         end
 
+        # transform gets called twice in the process of loading the pipeline, so
+        # we use a class variable to detect this scenario and shortcircuit
         def transform(transformers)
-          transformers << WrapHeaderAndAssignHeadingIds.new
+          if not @@transformers_registered
+              transformers << WrapHeaderAndAssignHeadingIds.new
+              @@transformers_registered = true
+          end
         end
 
         def execute(site)
@@ -22,22 +28,26 @@ module Awestruct
             if ( page.relative_source_path =~ /^#{@path_prefix}\/(?!index)/ )
               
               guide = OpenStruct.new
+              page.guide = guide
+              site.engine.set_urls([page])
+              guide.url = page.url
               guide.title = page.title
-              guide.output_path = page.output_path
-              guide.summary = page.guide_summary
-              # TODO switch this around so that "description" is the metadata property in the source file
-              page.description = guide.summary
-              guide.group = page.guide_group
-              guide.order = if page.guide_order then page.guide_order else 100 end
+              if page.description.nil?
+                page.description = page.guide_summary
+              end
+              guide.summary = page.description
               
+              # FIXME contributors should be listed somewhere on the page, but not automatically authors
+              # perhaps as little pictures like on github
+
               # Add the Authors to Page and Guide based on Git Commit history
-              #git_page_contributors = page_contributors(page, @changes_since_date)
+              #git_page_contributors = page_contributors(page, @num_changes)
               #if not page.authors
               #  page.authors = git_page_contributors
               #end
               #guide.authors = page.authors
 
-              page.changes = page_changes(page, @changes_since_date)
+              guide.changes = page_changes(page, @num_changes)
               
               # NOTE page.content forces the source path to be rendered
               page_content = Hpricot(page.content)
@@ -47,7 +57,7 @@ module Awestruct
                 chapter = OpenStruct.new
                 chapter.text = header_html.inner_html
                 # FIXME we need a better way to generate link ids
-                chapter.link_id = chapter.text.gsub(' ', '_').gsub('&#8217;', '_').gsub(/[\(\)\.!]/, '').downcase
+                chapter.link_id = chapter.text.gsub(' ', '_').gsub('&#8217;', '_').gsub(/[\(\)\.!\?]/, '').downcase
                 chapters << chapter
               end
 
@@ -58,18 +68,18 @@ module Awestruct
               chapters << chapter
 
               guide.chapters = chapters
-              page.guide = guide
 
               page_languages = findLanguages(page)
               page.languages = page_languages if page_languages.size > 0
 
               guide.languages = page.languages
 
-              # only add the 'main' (en) guide to the guide index
-              is_main_guide = !(page.relative_source_path =~ /.*_[a-z]{2}(_[a-z]{2})?\..*/)
-              if is_main_guide
+              # only add the main guide to the guide index (i.e., it doesn't have a locale suffix)
+              if !(page.relative_source_path =~ /.*_[a-z]{2}(_[a-z]{2})?\..*/)
+                guide.group = page.guide_group
+                guide.order = if page.guide_order then page.guide_order else 100 end
                 # default guide language is english
-                guide.language = site.languages.send('en')
+                guide.language = site.languages.en
                 guides << guide
               end
             end
@@ -97,7 +107,7 @@ module Awestruct
               trans_page.language.code = trans_lang
               if !trans_page.translators.nil?
                 trans_page.translators.each do |username|
-                  page.site.identities[username.to_sym].translator = true
+                  page.site.identities.lookup(username).translator = true
                 end
               end
 
@@ -118,7 +128,7 @@ module Awestruct
 
             # Wrap <div class="header"> around the h2 section
             # If you can do this more efficiently, feel free to improve it
-            guide_content = guide_root.search('h2').first.parent
+            guide_content = guide_root.search('.titlebar').first.parent
             indent = get_indent(get_depth(guide_content) + 2)
             in_header = true
             header_children = []
@@ -176,11 +186,11 @@ module Awestruct
       # at page.site.dir for the given page. 
       # The Array is ordered by number of commits done by the authors.
       #
-      def page_contributors(page, since)
+      def page_contributors(page, size)
         authors = Hash.new
         
         g = Git.open(page.site.dir)
-        Git::Log.new(g, 50).path(page.relative_source_path[1..-1]).since(since).each do |c|
+        g.log(size).path(page.relative_source_path[1..-1]).each do |c|
           if authors[c.author.name]
             authors[c.author.name] = authors[c.author.name] + 1
           elsif
@@ -190,11 +200,11 @@ module Awestruct
         return authors.sort{|a, b| b[1] <=> a[1]}.map{|x| x[0]}
       end
 
-      def page_changes(page, since)
+      def page_changes(page, size)
         changes = []
         g = Git.open(page.site.dir)
-        Git::Log.new(g, 50).path(page.relative_source_path[1..-1]).since(since).each do |c|
-          changes << Change.new(c.sha, c.author.name, c.author.date, c.message.to_a[0].chomp.chomp('.').capitalize)
+        g.log(size).path(page.relative_source_path[1..-1]).each do |c|
+          changes << Change.new(c.sha, c.author.name, c.author.date, c.message.split(/\n/)[0].chomp('.').capitalize)
         end
         if changes.length == 0
           changes << Change.new('UNTRACKED', 'You', Time.now, 'Not yet committed')

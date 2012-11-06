@@ -3,10 +3,8 @@ layout: guide
 title: "Getting Started: Rinse and Repeat"
 authors: [mojavelinux]
 translators: [leathersole]
-guide_summary: スタートガイドのパート２です。もう少し複雑な例を通じて、理解を確認し、リモートのコンテナをどのように使うか学びます。
-guide_group: 1
-guide_order: 20
-TODO: ["ポートの設定と、arquillian.launch", "予想されたデプロイエラー"]
+description: スタートガイドのパート２です。もう少し複雑な例を通じて、理解を確認し、リモートのコンテナをどのように使うか学びます。
+reference_rev: 13b4077014adcc2cc8ae6b201dfad9ecd3b06bf2
 ---
 この "Getting Started":/guides/getting_started ガイドの続編では、少し複雑な例を通じて、Arquillianについて何を学んだかを確認できます。このガイドを読むと、以下のことができるようになります：
 
@@ -272,7 +270,7 @@ bc(prettify).. <!-- clip -->
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-arquillian-container-remote</artifactId>
-            <version>7.0.2.Final</version>
+            <version>7.1.1.Final</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -442,3 +440,56 @@ p(warning). %Debug As > JUnitテストを使用する必要はありません。
 !/images/guides/arquillian_tutorial_2_debug_remote_test.png!
 
 これで、サーバーを快適なIDEから操作できるようになりました。
+
+h3. マネージドサーバー上でのデバッグ
+
+マネージドコンテナを使ったデバッグは可能でしょうか？もちろん！設定の追加がちょっと必要なだけです。
+
+Arquillianがコンテナの起動と停止を制御しているので、コンテナをデバッグモードで起動することをArquillianに指示しなければいけません。これは、Arquillianがサーバーに渡す必要のあるJVMヒントで、コンテナ設定プロパティとして渡します。
+
+始める前に、どのようにデバッガに接続するか考える必要があります。マウスを超高速で動かせない限り、Arquillianがテストを実行する前にデバッガを接続する時間はほとんどないでしょう。幸い、アプリケーション実行前に、JVMにデバッグのためのコネクタの接続を待たせることができます。ここではJBoss ASを使います。これで、プロセスに接続するために、IDEのデバッグボタンを押す時間ができました。
+
+以下が、サーバーをデバッグモードで起動するために、Arquillian設定記述子に追加しなければならない設定です( @<property>@ スタートタグの直後には、スペースを空けてはいけません)：
+
+div(filename). src/test/resources/arquillian.xml
+
+bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+    <container qualifier="jbossas-7-managed" default="true">
+        <configuration>
+            <property name="jbossHome">target/jboss-as-7.0.2.Final</property>
+            <property name="javaVmArguments">-Xmx512m -XX:MaxPermSize=128m
+                -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y
+            </property>
+        </configuration>
+    </container>
+</arquillian>
+
+p. @suspend=y@ フラグを見てください。これは、プロセスにデバッガの接続を待機するよう指示します。デバッグポートを8787にセットしているので、デバッガにこのポートを設定します。これはすぐできるでしょう。さて、テストを始めましょう。
+
+# arquillian-jbossas-managedプロファイルを有効にする（"Getting Started":/guides/getting_started guide を参照）
+# テストを実行する
+
+コンソールビューでは、ArquillianがJBoss ASインスタンスを起動し、それがデバッガの接続待ちとなっていることが表示されます：
+
+bc(output). Listening for transport dt_socket at address: 8787
+
+やるべきことは、デバッガを接続することです。以下がEclipseでのデバッガの設定と実行方法です：
+
+# メインメニューから、 @Run > Debug Configurations...@ を選択する
+# Remote Java Application を右クリックして、 @New@ を選択する
+# Nameフィールドに"Debug JBoss AS"と入力する
+# Portフィールドに"8787"と入力する
+# Debugボタンをクリックする
+
+以下が、デバッグ設定画面で、作成したデバッグプロファイルを表示しています：
+
+!/images/guides/arquillian_tutorial_2_eclipse_debug_configuration.png!
+
+JBoss ASは、動作を再開し、テスト内のブレークポイントで再度停止します。これで出来上がり！マネージドコンテナのデバッグをしています。
+
+これで、エンベデッド、リモート、マネージドコンテナ上でどのようにテストを実行、デバッグするかを学びました。もうあなたを止めるものはありません！
+

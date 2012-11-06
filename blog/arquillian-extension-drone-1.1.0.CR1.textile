@@ -1,0 +1,49 @@
+---
+author: papousek
+---
+h3. Some of the Highlights in This Release
+
+* underlying *Selenium* upgraded to 2.24.1
+* support for Opera browser added
+* webdriver configuration improved
+* reusable session for "RemoteWebDriver":http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/remote/RemoteWebDriver.html introduced
+
+h3. Configuration Improvement
+
+Have you ever been stucked because you didn't remember full qualified class name of the webdriver you wanted to use in your tests? Last Drone version required setting of *implementationClass* property and we should admit it wasn't really comfortable. So we present a new property called *browserCapabilities* which can have the following values: android, chrome, firefox, htmlUnit, internetExplorer, iphone and opera. The values ​​correspond to the factory methods of "DesiredCapabilities":http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/remote/DesiredCapabilities.html class.
+
+We have also enabled webdriver configuration via "Capabilities":http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/Capabilities.html interface. Now you can use the configuration as you know it from documentation of each webdriver. Use *capability* prefix and camel case instead of dots in the property name to set the capability value.
+
+So assume you want to use Firefox browser and specify the path to its binary file. We know *webdriver.firefox.bin* configuration property from "FirefoxDriver documention":http://code.google.com/p/selenium/wiki/FirefoxDriver.
+
+div(filename). arquillian.xml
+
+bc(prettify). <extension qualifier="webdriver">
+    <property name="browserCapabilities">firefox</property>
+    <property name="capabilityWebdriverFirefoxBin">/path/to/my/firefox/installation/firefox</property>
+</extension>
+
+h3. Reusable Session for RemoteWebDriver
+
+To increase your productivity in test development Drone presents a new feature to reuse session from previous test execution. Skip creating a new session to save your time. You can check the speed-up in the following table. The table contains time needed to run a test (including deployment on JBoss AS 7.1.1.Final).
+
+table(table table-bordered table-striped).
+|                   |_. Common Session      |_. Reusable Session    |
+|_. Firefox         | 3.98 &plusmn; 0.27 s  | 2.15 &plusmn; 0.15 s  |
+|_. Google Chrome   | 4.75 &plusmn; 0.03 s  | 2.57 &plusmn; 0.05 s  |
+
+The feature requires "standalone selenium server":http://code.google.com/p/selenium/downloads/list running, *remoteReusable* enabled and *remoteAddress* pointed to your selenium server.
+
+bc(prettify). <extension qualifier="webdriver">
+    <property name="browserCapabilities">firefox</property>
+    <property name="remoteReusable">true</property>
+    <property name="remoteAddress">http://localhost:4444/wd/hub</property>
+</extension>
+
+Using the reusable session the browser stays open after the test completion, so all its settings are kept alive. If you need to debug your tests on the client side, you can easily prepare break points in the browser and run tests with *remoteReusable* flag.
+
+After the proper configuration of reusable session "RemoteWebDriver":http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/remote/RemoteWebDriver.html will be chosen automatically. That means you have to use compatible types in your test code ("WebDriver":http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/WebDriver.html ideally).
+
+bc(prettify). public void testMethod(@Drone WebDriver driver) {
+    // test code
+}

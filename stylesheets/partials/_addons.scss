@@ -1,3 +1,53 @@
+@mixin border-box {
+  @include box-sizing(border-box);
+}
+
+@mixin geometry($width, $height) {
+  width: $width;
+  height: $height;
+}
+
+// mixin for bootstrap's .row
+@mixin row {
+  @extend .row;
+}
+
+// mixin for bootstrap's .span*
+// .row-col is added so the columns react to responsive
+@mixin span($span, $first: false, $col: true) {
+  @if $col {
+    @extend .row-col;
+  }
+  @if floor($span) != $span {
+    @extend .span#{floor($span)}.half;
+  }
+  @else {
+    @extend .span#{$span};
+  }
+  @if $first {
+    margin-left: 0;
+  }
+}
+
+// mixin for bootstrap's first column (typically done by nesting in .row)
+@mixin first {
+  margin-left: 0;
+}
+
+// mixin for bootstrap's .offset
+@mixin offset($span) {
+  @if floor($span) != $span {
+    @extend .offset#{floor($span)}.half;
+  }
+  @else {
+    @extend .offset#{$span};
+  }
+}
+
+@mixin row-fluid {
+  @extend .row-fluid;
+}
+
 @mixin font-face-variant($name, $variant, $font-files, $eot: false) {
   $iefont: unquote("#{$eot}?iefix");
   @font-face {
@@ -28,8 +78,74 @@
 
 @mixin tag-cloud-groups($groups, $increment: .1) {
   @for $n from 0 through ($groups - 1) {
+    $opacity: $n * .05 + .8;
+    @if $opacity > 1 {
+      $opacity: 1;
+    }
     .tag-#{$n} {
       font-size: #{1 + $n * $increment}em;  
+      opacity: $opacity;
+    }
+  }
+}
+
+// ex. @include heading-sizes(3em, .4em, .5em, -.25em);
+@mixin heading-sizes($start-font-size, $font-size-delta, $start-margin, $margin-delta) {
+  @for $i from 1 through 5 {
+    h#{$i} {
+      font-size: $start-font-size - $font-size-delta * ($i - 1);
+      margin-bottom: $start-margin - $margin-delta * ($i - 1);
+    }
+  }
+}
+
+// ex. @include article-callouts((info yellow) (important red));
+@mixin article-callouts($callouts, $extension: "png") {
+  @each $callout in $callouts {
+    $len: length($callout);
+    @if $len < 1 {
+      @warn "Must provide at least a name for callout."
+    }
+    $name: nth($callout, 1);
+    $bdcolor: #FFFFFF;
+    @if length($callout) >= 2 {
+      $bdcolor: nth($callout, 2);
+    }
+    $bgcolor: mix($bdcolor, #fff, 10%);
+
+    p.#{$name} {
+      font-size: 0.95em;
+      background: image-url("#{$name}.#{$extension}") no-repeat center 0; 
+      padding-top: 28px;
+      margin-top: -1em;
+      margin-bottom: 1.5em !important;
+      & > span {
+        display: block;
+        padding: 1.4em 18px 1em 18px;
+        border: 0 solid $bdcolor;
+        border-width: 0 1px 3px 1px;
+        @include border-radius(7px 7px 8px 8px);
+        @include background(
+          image-url("#{$name}.#{$extension}") center -28px no-repeat,
+          linear-gradient(left,
+            $bdcolor 0%,
+            $bdcolor 46%,
+            rgba(255,255,255,0) 46%,
+            // compass is adding a random color-stop, so squeeze it out
+            rgba(255,255,255,0) 53.99%,
+            $bdcolor 54%,
+            $bdcolor
+          ) center 0 no-repeat,
+          linear-gradient(bottom, $bgcolor 5%, transparentize($bgcolor, .8) 95%) center 0 no-repeat
+        );
+        @include background-size(auto, 100% 1px, auto);
+      }
+    }
+
+    ul.legend {
+      li.#{$name} {
+        background-image: image-url("#{$name}.#{$extension}");
+      }
     }
   }
 }

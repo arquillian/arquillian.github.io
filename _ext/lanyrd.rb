@@ -1,4 +1,5 @@
-require 'vpim/icalendar'
+require 'ri_cal'
+require 'tzinfo'
 
 ##
 # Lanyrd is an Awestruct extension module for interacting with lanyrd.com
@@ -44,13 +45,14 @@ module Awestruct::Extensions::Lanyrd
     def initialize(term)
       @base = 'http://lanyrd.com'
       @term = term
-      @since = DateTime.now
+      @since = Time.now
     end
   
     def execute(site)
       @lanyrd_tmp = tmp(site.tmp_dir, 'lanyrd')
       
       # add &topic=#{@term} to limit sessions to those that have been tagged with the term
+      # context=future only works for conferences atm...waiting for session search support
       search_url = "#{@base}/search/?type=session&q=#{@term}"
       
       sessions = []
@@ -94,23 +96,31 @@ module Awestruct::Extensions::Lanyrd
         session.title = event_link.inner_text
         
         session_detail_url = "#{@base}#{event_link.attributes['href']}"
-        session_detail = Hpricot(getOrCache(File.join(@lanyrd_tmp, "session-#{event_link.attributes['href'].split('/').last}.html"), session_detail_url))
+        session.slug = event_link.attributes['href'].split('/').last
+        session_detail = Hpricot(getOrCache(File.join(@lanyrd_tmp, "session-#{session.slug}.html"), session_detail_url))
+        session.updated = File.mtime(File.join(@lanyrd_tmp, "session-#{session.slug}.html"))
         
         session_meta_node = session_detail.at('div[@class=session-meta]')
         timezone_node = session_detail.at('abbr[@class=timezone]')
         if timezone_node
-          session.timezone = timezone_node.inner_text
+          session.timezone = timezone_node.attributes['title']
         end
+
+        tz = nil
+        tz = TZInfo::Timezone.get(session.timezone) unless session.timezone.nil?
+
         dtstart_node = session_meta_node.at('abbr[@class=dtstart]')
         if dtstart_node
-          session.start_datetime = DateTime.parse [dtstart_node.attributes['title'], session.timezone].join(' ')
+          session.start_datetime = Time.parse dtstart_node.attributes['title']
+          session.start_datetime = tz.local_to_utc(session.start_datetime) unless tz.nil?
         end
 
         # skip old events and events with no date
         if session.start_datetime and session.start_datetime >= @since
           dtend_node = session_meta_node.at('abbr[@class=dtend]')
           if dtend_node
-            session.end_datetime = DateTime.parse [dtend_node.attributes['title'], session.timezone].join(' ')
+            session.end_datetime = Time.parse dtend_node.attributes['title']
+            session.end_datetime = tz.local_to_utc(session.end_datetime) unless tz.nil?
           end
 
           session.description = session_detail.search('div[@class*=abstract]').inner_html
@@ -118,13 +128,14 @@ module Awestruct::Extensions::Lanyrd
 
           session.event_location = session_detail.at('p[@class=location]').inner_text.split(/\//).map{|l| l.strip}.reverse.join(', ')
           
+          session.speaker_names = []
+          session.speakers = []
+
           raw.search('p[@class*=meta]').each do |meta|
             type = meta.search('strong').inner_html
             meta.search('strong').remove()
             session.event = meta.inner_text.strip if type.eql? 'Event'
-            session.event_url = "#{@base}#{meta.at('a').attributes['href']}" if type.eql? 'Event'
-            session.speaker_names = []
-            session.speakers = []
+            session.event_url = "#{meta.at('a').attributes['href']}" if type.eql? 'Event'
             
             if type.eql? 'Speakers'
               session.speaker_names = meta.inner_text.strip.split(', ')
@@ -133,9 +144,8 @@ module Awestruct::Extensions::Lanyrd
                 username = speaker_node.attributes['href'].match(/\/profile\/([^\/]*)/)[1]
                 # QUESTION add identities for speakers if not exist?
                 session.speakers << {'name' => name, 'username' => username }
-              end
+                end
             end
-            
           end
           
           sessions << session
@@ -168,33 +178,28 @@ module Awestruct::Extensions::Lanyrd
     def execute(site)
       if site.sessions
 
-        cal = Vpim::Icalendar.create2
-        site.sessions.each do |session|
+        cal = RiCal.Calendar do |cal|
+          site.sessions.each do |session|
 
-          cal.add_event do |e|
-            e.dtstart       Time.parse session.start_datetime.to_s
-            e.dtend         Time.parse session.end_datetime.to_s
-            e.summary       session.title
-            e.description session.description
-            e.categories    [ 'SESSION' ]
-            e.url           session.detail_url
-            e.set_text('LOCATION', session.event)
-            e.sequence      0
-            e.access_class  "PUBLIC"
+            cal.event do |e|
+              e.dtstart = session.start_datetime
+              e.dtend = session.end_datetime
+              e.summary = session.title
+              e.description = session.description
+              e.categories ['SESSION']
+              e.url = session.detail_url
+              e.location = session.event
+              e.sequence = 0
+              e.security_class = 'PUBLIC'
 
-            now = Time.now
-            e.created       now
-            e.lastmod       now
+              e.created = session.updated
+              e.last_modified = session.updated
 
-            e.organizer do |o|
-              o.cn = session.event
-              o.uri = session.event_url
-            end
+              e.organizer = "CN=#{session.event}:#{session.event_url}"
 
-            session.speaker_names do |speaker|
-              attendee = Vpim::Icalendar::Address.create(speaker)
-              attendee.rsvp = true
-              e.add_attendee attendee
+              session.speakers.each do |speaker|
+                e.add_attendee speaker['name']
+              end
             end
           end
         end
@@ -203,7 +208,7 @@ module Awestruct::Extensions::Lanyrd
         page = site.engine.load_page( input_page )
         page.date = page.timestamp unless page.timestamp.nil?
         page.output_path = @output_path
-        page.session_ical = cal.encode
+        page.session_ical = cal.export
         site.pages << page
 
       end

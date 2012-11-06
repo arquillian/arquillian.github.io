@@ -29,11 +29,11 @@
 
 source :rubygems
 
-gem "awestruct", "0.2.13"
-gem "json", "1.6.5"
+gem "awestruct", "0.4.6"
 gem "rest-client", "1.6.7"
 gem "git", "1.2.5"
-gem "sassy-buttons", "0.0.9"
-gem "vpim", "0.695"
-gem "jruby-openssl", "0.7.6.1", :platforms => :jruby
+gem "ri_cal", "0.8.8"
+gem "tzinfo", "0.3.33"
+#gem "therubyracer", "0.10.1"
+gem "jruby-openssl", "0.7.7", :platforms => :jruby
 gem "rb-inotify", "0.8.8", :platforms => [:ruby, :jruby]
