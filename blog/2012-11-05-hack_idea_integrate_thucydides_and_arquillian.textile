@@ -94,7 +94,7 @@ h4. Who will be there hacking?
 
 * "John Ferguson Smart":https://github.com/wakaleo (Thucydides Lead)
 * "Aslak Knutsen":http://github.com/aslakknutsen (Arquillian Lead)
-* "Bartosz Majsak":https://github.com/bartoszmajsak (Arquillian team member, author of Beer Advisor example)
+* "Bartosz Majsak":https://github.com/bartoszmajsak (Arquillian team member, author of Beer Advisor)
 * "Dan Allen":https://github.com/mojavelinux (Arquillian team member)
 * "Jan Papoušek":https://github.com/jpapousek (Arquillian Drone contributor)
 * "Alex Soto":https://github.com/lordofthejars (NoSQLUnit Lead, testing advocate)
@@ -105,7 +105,7 @@ h4. What we want to achieve
 
 The following two tests are proposed milestones we want to achieve during the hack. They contrast what integration looks like without Drone to the integration with Drone. Thinking through these scenarios helps reveal integartion points that need to be exposed or refined.
 
-p(info). %The sample tests in this section apply to the "Beer Advisor example":https://github.com/bartoszmajsak/Beer-Advisor.%
+p(info). %The tests in this section apply to the "Beer Advisor":https://github.com/bartoszmajsak/Beer-Advisor sample application.%
 
 *Sample test without Drone integration*
 
@@ -125,9 +125,6 @@ public class SearchingBeersStory {
     public SearchingSteps searchingSteps;
 
     // Arquillian members
-
-    @Rule
-    public ArquillianEnricher enricher = new ArquillianEnricher();
 
     @Deployment(testable = false)
     public static WebArchive createTestArchive() {
@@ -155,7 +152,7 @@ public class SearchingBeersStory {
 p. The following steps outline the interplay between Arquillian and Thucydides while the test executes in this scenario.
 
 * Either Arquillian or Thucydides takes over test execution and activate both frameworks
-* Triggered by JUnit Rule, Arquillian configures and starts (or connects to) the container
+* Responding to the test suite start event, Arquillian and configures and starts (or connects to) the container
 * Arquillian deploys test archive(s) to container
 * Arquillian injects the application URL into the @ArquillianResource URL inject point of the test
 * Thucydides spawns a browser instance using WebDriver
@@ -223,11 +220,9 @@ h4. Sample code to use for exploring the integration
 
 h4. Prior work
 
-Vineet Reynolds has been experimenting with "an integration between Thucydides and Arquillian Core":https://github.com/VineetReynolds/thucydides-arquillian-example/. Vineet's integration code uses a JUnit Rule to weave the Arquillian lifecycle into the test. Tests are run using the Thucydides testrunner, while Arquillian manages the container lifecycle and performs the deployment of archives defined in the tests. The integration does not incorporate Arquillian Drone, opting to leave management of WebDriver up to Thucydides.
+Vineet Reynolds has been experimenting with "an integration between Thucydides and Arquillian Core":https://github.com/VineetReynolds/thucydides-arquillian-example/. Vineet's integration code uses a Thucydides @StepsListener@ to weave the Arquillian lifecycle into the test. Tests are run using the Thucydides testrunner, while Arquillian manages the container lifecycle and performs the deployment of archives defined in the tests. The integration does not incorporate Arquillian Drone, opting to leave management of WebDriver up to Thucydides.
 
-Alex Soto used Vineet's integration in his talk at LinuxTag 2012. Aslak and Bartosz also used the integration as the basis for the updated "Beer Advisor demo app":https://github.com/bartoszmajsak/Beer-Advisor for their JavaZone talk in September 2012.
-
-The Beer Advisor demo uses Thucydides WebDriver factories instead of Drone, and has a "ArquillianEnricher JUnit rule":https://github.com/bartoszmajsak/Beer-Advisor/blob/master/thucydides-tests/src/test/java/org/arquillian/example/thucydides/ArquillianEnricher.java to delegate to the "ArquillianListener":https://github.com/bartoszmajsak/Beer-Advisor/blob/master/thucydides-tests/src/test/java/org/arquillian/example/thucydides/ArquillianListener.java to do the normal test class enrichment/injection. A JUnit Rule is necessary due to missing hooks in Thucydides, but in general it works admirably with Arquillian controlling the Container and Deployment. Vineet has since been able to eliminate the JUnit rule as a result of recent enhancements to Thucydides.
+Aslak and Bartosz improved upon the integration and incorporated it into the "Beer Advisor sample app":https://github.com/bartoszmajsak/Beer-Advisor for their JavaZone talk in September 2012. They introduced a "JUnit Rule":https://github.com/bartoszmajsak/Beer-Advisor/blob/master/thucydides-tests/src/test/java/org/arquillian/example/thucydides/ArquillianEnricher.java that activates the Arquillian services that run before and after each test method, such as test enrichment. A JUnit Rule is currently necessary due to insufficient hooks in Thucydides, but it gets the job done. Eventually we want to phase out the JUnit Rule because it exposes integration plumbing in the test.
  
 h4. Engineering challenges
 
