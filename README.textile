@@ -29,23 +29,27 @@ It might happen that you will face "similar problem":https://gist.github.com/139
 
 First, download and unpack latest stable version of JRuby: (The one available in Ubuntu repositories is too old and does not support Awestruct) 
 
-bc. $ wget http://jruby.org.s3.amazonaws.com/downloads/1.6.5/jruby-bin-1.6.5.tar.gz \
-tar -xzvf jruby-bin-1.6.5.tar.gz  
+bc. $ wget http://jruby.org.s3.amazonaws.com/downloads/1.6.7/jruby-bin-1.6.7.tar.gz \
+tar -xzvf jruby-bin-1.6.7.tar.gz  
 
 Optionally, you can copy it to @/usr/lib/jvm@ and create symbolic link for convenience:
 
-bc. $ sudo mv jruby-1.6.5/ /usr/lib/jvm \
+bc. $ sudo mv jruby-1.6.7/ /usr/lib/jvm \
 cd /usr/lib/jvm/ \
-sudo ln -s jruby-1.6.5/ jruby 
+sudo ln -s jruby-1.6.7/ jruby 
 
 Last step is adding JRuby to path (for instance in @.bashrc@)
 
 bc. $ export JRUBY_HOME=/usr/lib/jvm/jruby \
 export PATH="$JRUBY_HOME/bin:$PATH"
 
+Also, make sure to unset GEM_HOME for your session or else JRuby will try to install gems into your system installation.
+
+bc. $ unset GEM_HOME
+
 That's it. Just install all required gems described in subsequent sections and you are ready to run awestruct backed by JRuby!
 
-*NOTE:* Use @jgem@ instead of @gem@ for this purpose.
+*NOTE:* Use @jgem@ instead of @sudo gem@ for this purpose.
 
 h3. Installing Ruby and RubyGems on Fedora
 
@@ -64,7 +68,7 @@ p. In Fedora, RubyGems properly links applications such as awestruct to /usr/bin
 
 h3. Installing the Awestruct Gem
 
-Now you are ready to install awestruct. The remainder of the commands work on any Ruby installation. If you're using JRuby, remember to use @jgem@ instead of @gem@.
+Now you are ready to install awestruct. The remainder of the commands work on any Ruby installation. If you're using JRuby, remember to use @jgem@ instead of @sudo gem@.
 
 Use this command to install the awestruct gem and its dependencies:
 
@@ -76,25 +80,38 @@ bc. $ sudo gem install awestruct -- --with-cflags=\"-O2 -pipe -march=native -Wno
 
 You're all set!
 
-If you've previously installed awestruct, make sure you have Awestruct >= 0.2.5. You can update it update it using this command:
+If you've previously installed awestruct, make sure you have Awestruct >= 0.2.15. You can update it update it using this command:
 
 bc. $ sudo gem update awestruct
 
-*NOTE:* Make sure you are using RedCloth-4.2.9 to properly support international characters in guides.
+*IMPORTANT:* If you're using JRuby, you'll need to update your RedCloth gem to support international characters. Follow these steps:
+
+* Download https://github.com/downloads/mojavelinux/redcloth/redcloth_scan.jar
+* Copy it to $JRUBY_HOME/lib/ruby/gems/*/gems/RedCloth-4.2.9-java/lib/ (overwrite existing file)
 
 h3. Additional Required Gems
 
 As the website matures, more gems will be required. This section documents the required third-party gems not already installed by Awestruct.
 
-Install these Gems using the @gem install@ command (or @jgem install@ command for JRuby) as you did above.
+Install these Gems using the @sudo gem install@ command (or @jgem install@ command for JRuby) as you did above.
 
 * rest-client
 * git
-* sassy-buttons
 * vpim
-* json
 * jruby-openssl (if using jruby)
 * rb-inotify (if using linux)
+
+h3. Installing Awestruct and Required Gems using Bundler
+
+Now there's an even easier way to get setup. First, make sure you have the Bundler gem installed:
+
+bc. $ sudo gem install bundler
+
+Now Bundler can handle the rest of the setup automatically:
+
+bc. $ sudo bundle install
+
+At this point, you are ready to pull down the site and run it.
 
 h2. Previewing the Site Locally
 
@@ -149,8 +166,10 @@ h2. Page structure
 ** h2#logo
 ** #navigation
 * #main
-** #content-header
-*** h1
+** #intro
+*** .hgroup
+**** h1
+*** .aside
 ** #content
 *** .post
 **** .header
@@ -160,6 +179,11 @@ h2. Page structure
 **** .footer
 ** #sidebar
 * #footer
+
+#intro
+#content
+  section#primary
+  aside
 
 h2. Writing a Blog Entry
 
@@ -183,17 +207,19 @@ The prolog is a set of name/value pairs defined at the top of the file in betwee
 
 * layout (always "blog")
 * title (use sentence capitalization)
-* author
+* author (use github id)
 * tags (array structure, limit to 5, use singular forms as in "release")
 
 Here's an example (refer to HTML output):
 
 pre. ---
 layout: blog
-title: Announcing Arquillian 1.0!
-author: Aslak Knutsen
-tags: [ announcements, releases ]
+title: Ike is our hero
+author: aslakknutsen
+tags: [ announcements, ike ]
 --- << only copy the hyphens and the lines of text between them
+
+If you want the post to appear in the JBoss Central view in JBoss Tools, add jbosscentral to the list of tags.
 
 h3. Content
 
@@ -305,8 +331,15 @@ You can add emoticons by immediately preceding any of the following smile symbol
 
 Here's an example ~;)
 
+h2. Style Classes
+
+- .last := Defines the last column, used to remove the margin & padding to the right
+- .first := Defines the first of something, used to remove the margin & padding from the top
+- .bottom := Defines the last paragraph, used to remove the margin & padding from the bottom
+
 h2. Resources
 
+* Social Media Icons: http://icondock.com/free/vector-social-media-icons
 * Currently using Google Prettify, could use "jQuery wrapper":http://balupton.github.com/jquery-syntaxhighlighter
 * Icons from Faenza Gnome icon theme
 * A pure CSS sticky footer technique: http://ryanfait.com/sticky-footer/

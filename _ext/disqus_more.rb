@@ -6,8 +6,8 @@ module Awestruct
           %Q{
             <div id="#{title.downcase.gsub(' ', '')}" class="dsq-widget">
               <#{heading_level} class="dsq-widget-title">#{title}</#{heading_level}>
-              <script type="text/javascript" src="http://#{site.disqus}.disqus.com/popular_threads_widget.js?num_items=#{num_items}"></script>
-              <script type="text/javascript">
+              <script src="http://#{site.disqus}.disqus.com/popular_threads_widget.js?num_items=#{num_items}"></script>
+              <script>
                 var ppw = document.getElementById("#{title.downcase.gsub(' ', '')}");
                 if (ppw.getElementsByTagName('li').length == 0) {
                   var p = document.createElement('p');

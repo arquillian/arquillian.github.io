@@ -2,33 +2,179 @@
 layout: default
 ---
 #content
-  %p
-    %strong Git Repository:
-    %a{:href=>site.source_repo} arquillian
-    %span /
-    %a{:href=>page.github_org_repo['html_url']}= page.github_org_repo['name'] 
-  %h3 Description
-  %p= page.github_org_repo['description']
-  ~ content
-  %h3 Contributors
-  %ul.contributors
-    - for contributor in page.github_repo_contributors.sort{|a, b| b['contributions']<=>a['contributions']}.map{|e| e['contributor']} 
-      %li
-        .photo
-          %img{:src=>"#{contributor.avatar_url}?s=140", :title=>contributor.name}
-          %ul
+  .row
+    .span9
+      .hero-unit
+        %h2
+          -# FIXME make a property for this substring
+          = page.module.name.sub(/ #{page.component.type_name}$/, '')
+          %small{ :style=>'white-space: nowrap' }= page.component.type_name
+        %p= page.module.desc
+        - unless page.component.releases.empty?
+          %ul.breadcrumb{ :style=>'padding-top: 1em; padding-bottom: 1em; margin-top: 2em;' }
             %li
-              - if contributor.blog
-                %a{:href=>contributor.blog} Blog
-              - else
-                %span Blog
+              %i.icon-tag
+              Latest version:
+              %strong.label{ :style=>'position: relative; top: -1px;' }= page.component.releases.last.version
+              %span.divider= "|"
             %li
-              - if contributor.twitter?
-                %a{:href=>contributor.twitter.url} Twitter
-              - else
-                %span Twitter
+              %i.icon-calendar
+              Release date:
+              %strong= page.component.releases.last.date.strftime('%Y-%m-%d')
+              %span.divider= "|"
             %li
-              %a{:href=>contributor.github.url} GitHub
-        %h3= contributor.name
-        %strong= contributor.company
-        %em= contributor.location
+              %i.icon-leaf
+              License:
+              %strong
+                %a{:href => "http://opensource.org/licenses/#{page.component.license}", :style=>'color: inherit', :target => 'license'}= site.licenses[page.component.license]
+      .row
+        .span3
+          %h3
+            %i.icon-star
+            Lead
+          %p
+            - if page.component.lead
+              - identity = site.identities.lookup(page.component.lead.jboss_username)
+              - unless identity.nil?
+                .thumbnail{ :style=>'margin-top: -5px; margin-bottom: 3px; width: 48px;' }
+                  %img{ :src=>identity.avatar_url(48) }
+              = page.component.lead.name
+            - else
+              Unknown
+        .span3
+          %h3
+            %i.icon-barcode
+            Type
+          %p= page.component.type_name
+        - unless page.component.family.nil?
+          .span3
+            %h3
+              %i.icon-heart
+              Family
+            %p
+              -#.thumbnail{ :style=>'margin-top: -5px; margin-bottom: 3px; width: 48px;' }
+              -#  %img{ :src=>"/images/logo-#{page.component.family}.png", :alt=>page.component.family, :style=>'height: 48px; width: 48px;' }
+              = page.component.family
+    .span3
+      .well
+        %h3
+          %i.icon-github
+          Source repository
+        %dl.unstyled
+          %dt
+            %abbr(title="Version Control System") VCS
+          %dd= page.component.repository.type
+          %dt Host
+          %dd= page.component.repository.host
+          %dt Organization
+          %dd
+            -# make function for organization url or add to data structure
+            %a{:href=>"http://#{page.component.repository.host}/#{page.component.repository.owner}"}= page.component.repository.owner
+          %dt Web URL
+          %dd
+            - # make a function for full path (path + relative_path) or add to data structure
+            %a{:href=>page.component.html_url}= page.component.repository.relative_path.empty? ? page.component.repository.path : "#{page.component.repository.path}/#{page.component.repository.relative_path.chomp('/')}"
+          %dt Clone URL
+          %dd
+            %a{:href=>page.component.repository.clone_url}= page.component.repository.path + '.' + page.component.repository.type
+          - if page.component.repository.host.eql? 'github.com'
+            %iframe{:src=>"http://ghbtns.com/github-btn.html?user=#{page.component.repository.owner}&repo=#{page.component.repository.path}&type=fork&count=true", :allowtransparency=>"true", :frameborder=>0, :scrolling=>0, :width=>"95px", :height=>"20px"}
+          -# component.path ??
+  %section#activity
+    .page-header
+      %h1
+        Latest activity
+    %p
+      %strong= page.component.unreleased_commits
+      #{'commit'.pluralize_unless_one(page.component.unreleased_commits)} since the last release.
+    %p Last commit to the master branch:
+    %table.table.table-bordered
+      %thead
+        %tr
+          %th
+            %a{:href=>page.component.last_commit.html_url}= page.component.last_commit.message.split(/\n/, 2).first
+      %tbody
+        %tr
+          %td
+            %i.icon-user 
+            Authored by #{page.component.last_commit.author.name},
+            committed on #{page.component.last_commit.date.strftime('%Y-%m-%d')}
+  %section#artifacts
+    .page-header
+      %h1#artifacts Artifacts
+    - unless page.component.bom.nil?
+      %h2#dependency-management Build dependency management artifact
+      %p Add the following stanza to the <code>&lt;dependencies&gt;</code> element within the <code>&lt;dependencyManagement&gt;</code> element in your pom.xml:
+      %pre.prettify&= page.component.bom.to_maven_dep :scope => :import
+    - unless page.module.artifacts.nil?
+      %h2#dependencies Build dependency artifacts
+      %p Add the appropriate stanza to the <code>&lt;dependencies&gt;</code> element in your pom.xml:
+      - page.module.artifacts.each do |a|
+        %h3= a.name
+        -#- if page.component.type.eql? 'container-adapter'
+        -#  .alert
+        -#    %strong Warning:
+        -#    You'll likely need additional dependencies to use this artifact. Please refer to the <a href="/guides">guides</a> for more information.
+        %pre.prettify&= a.coordinates.to_maven_dep :scope => :test
+      - unless page.component.type.eql? 'platform'
+        .alert
+          %strong Warning:
+          You'll also need to add the <a href="/modules/core-platform">Arquillian core platform</a> and possibly additional dependencies. Please refer to the <a href="/guides">guides</a> for more details.
+    - unless page.component.releases.empty? || page.component.releases.last.published_artifacts.empty?
+      %h2 Latest published artifacts
+      %ul
+        - page.component.releases.last.published_artifacts.each do |a|
+          %li
+            = a
+            - if a.packaging.eql? :jar
+              %a.artifact{:href=>a.to_url, :target=>'_blank'} jar
+            %a.artifact{:href=>a.to_pom_url, :target=>'_blank'} pom
+  %section#releases
+    .page-header
+      %h1
+        Releases
+        %small= page.component.releases.size
+    .alert.alert-info
+      %strong Note:
+      Most released artifacts are published to the <a href="http://repo1.maven.org/maven2">Maven Central repository</a>. Those that cannot are published to the <a href="http://repository.jboss.org/nexus">JBoss Community repository</a>.
+    %table.table.table-bordered.table-striped
+      %thead
+        %tr
+          %th #
+          %th Version
+          %th Release date
+          %th Released by
+          %th Compiled against
+      %tbody
+        - release_cnt = page.component.releases.size
+        - page.component.releases.reverse.each_with_index do |r, i|
+          %tr
+            %td= release_cnt - i
+            %td
+              = r.version
+              - unless r.page.nil?
+                %span.label.tag
+                  %a{:href=>r.page.url} view blog
+                -# haml, you bastard, put a space here!
+                &nbsp;
+              %span.label.tag
+                %a{:href=>r.html_url} view tag
+            %td= r.date.strftime('%Y-%m-%d')
+            %td= r.released_by.name
+            %td
+              - unless r.compiledeps.empty?
+                %ul.unstyled
+                  - r.compiledeps.each do |d|
+                    %li= "#{d.name} &#8211; #{d.version}"
+  %section#contributors
+    .page-header
+      %h1
+        Contributors
+        %small= page.component.contributors.size
+    %table.table.table-striped
+      %tbody
+        - page.component.contributors.each do |c|
+          %tr
+            %td
+              %i.icon-user 
+              = c.name

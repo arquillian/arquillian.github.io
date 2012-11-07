@@ -1,66 +1,89 @@
-require 'common'
-require 'page_debug'
-require 'fork_me_ribbon'
-require 'interwiki'
-require 'github'
-require 'jira'
-require 'arquillian'
-require 'identity'
-require 'guide'
-require 'lanyrd'
-require 'sassy-buttons'
-require 'textile_plus'
-require 'disqus_more'
-require 'posts_helper'
+require File.join File.dirname(__FILE__), 'tweakruby'
+require_relative 'restclient_extensions_enabler'
+require_relative 'identities'
+require_relative 'jira'
+require_relative 'repository'
+require_relative 'arquillian'
+require_relative 'releases'
+require_relative 'patched_atomizer'
+require_relative 'autotag'
+require_relative 'common'
+require_relative 'guide'
+require_relative 'lanyrd'
+require_relative 'interwiki'
+require_relative 'textile_plus'
+require_relative 'disqus_more'
+require_relative 'posts_helper'
+require_relative 'edit_page'
+require_relative 'asset_fingerprinter'
+#require_relative 'cache_evolver'
+#require_relative 'page_debug'
+#require_relative 'fork_me_ribbon'
 
 Awestruct::Extensions::Pipeline.new do
-    # Custom tags and syntax for textile markup
-    extension Awestruct::Extensions::TextilePlus.new()
+  # Custom tags and syntax for textile markup
+  extension Awestruct::Extensions::TextilePlus.new
 
-    extension Awestruct::Extensions::GitHub::Org.new(
-        'arquillian',
-        #'arquillian\-((core|showcase|maven|ajocado)|(container|extension|testrunner)\-.*)',
-        'arquillian\-((core|showcase|maven)|(container|extension|testrunner)\-(?!(reloaded|gae|spring)).+)',
-        #'arquillian\-((core)|(extension-drone))',
-        'module',
-        'html.haml',
-        # Reg Exp mapping between repo_name and type of module layout
-        [
-          [/.*\-core/, 'core-module'],
-          [/.*\-container\-.*/, 'container-module'],
-          [/.*\-testrunner\-.*/, 'testrunner-module'],
-          [/.*\-extension\-.*/, 'extension-module']
-        ]
-    )
-    extension Awestruct::Extensions::GitHub::Contributor.new
-    extension Awestruct::Extensions::GitHub::Repo.new('([0-9]+\.[0-9]+).*')
-    extension Awestruct::Extensions::Jira::ReleaseNotes.new('ARQ', '12310885')
-    extension Awestruct::Extensions::GitHub::Release.new('blog', 'textile', '2010-09-14')
-    extension Awestruct::Extensions::Arquillian::JiraVersionPrefix.new
+  # You need to have the file $HOME/.github-auth containing username:password on one line
+  github_collector = Identities::GitHub::Collector.new(:auth_file => '.github-auth', :teams =>
+    [
+      {:id => 146647, :name => 'speaker'},
+      {:id => 125938, :name => 'translator'},
+      {:id => 146643, :name => 'core'}
+    ]
+  )
 
-    extension Awestruct::Extensions::Lanyrd::Search.new('arquillian')
-    extension Awestruct::Extensions::Lanyrd::Export.new('/invasion/events/arquillian.ics')
+  extension Awestruct::Extensions::RestClientExtensions::EnableGetCache.new
+  extension Awestruct::Extensions::RestClientExtensions::EnableJsonConverter.new
+  extension Awestruct::Extensions::Identities::Storage.new
+  # the JIRA extension registers its own extensions
+  Awestruct::Extensions::Jira::Project.new(self, 'ARQ:12310885')
+  extension Awestruct::Extensions::Jira::ReleaseNotes.new('ARQGRA:12312222', 'graphene')
+  extension Awestruct::Extensions::Repository::Collector.new(480465, 'sGiJRdK2Cq8Nz0TkTNAKyw', :observers => [github_collector])
+  extension Awestruct::Extensions::Identities::Collect.new(github_collector)
+  extension Awestruct::Extensions::Identities::Crawl.new(
+    Identities::GitHub::Crawler.new(:auth_file => '.github-auth'),
+    Identities::Gravatar::Crawler.new,
+    Identities::Confluence::Crawler.new('https://docs.jboss.org/author', :auth_file => '.jboss-auth',
+        :identity_search_keys => ['name', 'username'], :assign_username_to => 'jboss_username'),
+    Identities::JBossCommunity::Crawler.new
+  )
 
-    extension Awestruct::Extensions::Arquillian::TagInfo.new
-    extension Awestruct::Extensions::Identity::Bind.new
+  # Releases extension must be after jira and repository extensions and before posts extension 
+  extension Awestruct::Extensions::Releases::Posts.new('/blog', :for_repo_owners => ['arquillian'], :since => '2011-01-01')
 
-    extension Awestruct::Extensions::Posts.new('/blog')
-    extension Awestruct::Extensions::Paginator.new(:posts, '/blog/index', :per_page=>5)
-    extension Awestruct::Extensions::Atomizer.new(:posts, '/blog.atom')
-    extension Awestruct::Extensions::Tagger.new(:posts, '/blog/index', '/blog/tags', :per_page=>5)
-    extension Awestruct::Extensions::TagCloud.new(:posts, '/blog/tags/index.html')
-    extension Awestruct::Extensions::Disqus.new
-    helper Awestruct::Extensions::PostsHelper
+  extension Awestruct::Extensions::Lanyrd::Search.new('arquillian')
+  extension Awestruct::Extensions::Lanyrd::Export.new('/invasion/events/arquillian.ics')
 
-    # Indexifier moves HTML files to their own directory to achieve "pretty" URLs (e.g., features.html -> /features/index.html)
-    extension Awestruct::Extensions::Indexifier.new
+  extension Awestruct::Extensions::Posts.new('/blog')
+  extension Awestruct::Extensions::AutoTag.new(:posts)
+  extension Awestruct::Extensions::Paginator.new(:posts, '/blog/index', :per_page => 5)
+  extension Awestruct::Extensions::Tagger.new(:posts, '/blog/index', '/blog/tags', :per_page => 5)
+  extension Awestruct::Extensions::TagCloud.new(:posts, '/blog/tags/index.html')
+  extension Awestruct::Extensions::Disqus.new
 
-    # Needs to be after Indexifier to get the linking correct
-    extension Awestruct::Extensions::Guide::Index.new('/guides', '2011-10-12')
+  # Indexifier moves HTML files to their own directory to achieve "pretty" URLs (e.g., features.html -> /features/index.html)
+  extension Awestruct::Extensions::Indexifier.new
 
-    #helper Awestruct::Extensions::Partial
-    helper Awestruct::Extensions::GoogleAnalytics
-    helper Awestruct::Extensions::ForkMeRibbon
-    helper Awestruct::Extensions::Interwiki
-    helper Awestruct::Extensions::PageDebug
+  # Needs to be after Indexifier to get the links correct
+  # FIXME we need a patched atomizer to carry over our custom fields (release & component)
+  extension Awestruct::Extensions::PatchedAtomizer.new(:posts, '/blog/atom.xml', :additional_tags => ['arquillian'])
+
+  # Needs to be after Indexifier to get the linking correct; second argument caps changelog per guide
+  extension Awestruct::Extensions::Guide::Index.new('/guides', 15)
+
+  # Must be after all other extensions that might populate identities
+  extension Awestruct::Extensions::Identities::Cache.new
+
+  # Transformers
+  transformer Awestruct::Extensions::Minify.new([:js])
+
+  # Helpers
+  helper Awestruct::Extensions::PostsHelper
+  helper Awestruct::Extensions::Partial
+  helper Awestruct::Extensions::Interwiki
+  helper Awestruct::Extensions::GoogleAnalytics
+  helper Awestruct::Extensions::EditPage
+  #helper Awestruct::Extensions::CacheEvolver
+  helper Awestruct::Extensions::AssetFingerprinter
 end

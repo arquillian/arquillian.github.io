@@ -1,0 +1,105 @@
+---
+tags: [ gsoc ]
+date: 2012-08-17
+---
+
+The first Beta release of the Arquillian Spring extension is here.
+
+h3(highlights). Some of the highlights in this release
+
+<i class="icon-star"></i> Client side application context registration
+<i class="icon-star"></i> Spring transaction support
+
+h3. Client side tests with Spring
+
+p. So far the Spring extension has only allowed application context creation and bean injection to occure when the tests were deployed in a container. We wanted to bring the same functionality to the client side. With the two new annotations @@SpringClientConfiguration@ and @@SpringClientAnnotationConfiguration@ it is now possible to set up the application context and inject beans into Arquillian tests that are running on the client.
+
+p. An example of use would be to test a deployed REST service using the Spring RestTemplate configured in the client context.
+
+bc(prettify).. @RunWith(Arquillian.class)
+@SpringClientConfiguration("applicationContext-rest.xml")
+public class ClientRestServiceTestCase {
+
+    @Deployment(testable = false)
+    @OverProtocol("Servlet 3.0")
+    public static Archive createTestArchive() {
+        return Deployments.createWebApplication()
+                .addAsWebInfResource("mvc/web.xml", "web.xml")
+                .addAsWebInfResource("service-servlet.xml");
+    }
+
+    @ArquillianResource
+    private URL contextPath;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Test
+    public void testGetEmployees() {
+
+        Employee result = restTemplate.getForObject(contextPath + "/Employees/1", Employee.class);
+
+        assertEquals("The returned employee has invalid name.", "John Smith", result.getName());
+    }
+}
+
+h3. Spring transaction support
+
+p. The recent release of the "Arquillian Transaction Extension":/modules/transaction-extension/ allow us to control the transactional behavior of our test methods. With the help of the Spring Extension you can now control your Spring configured transaction manager using the same API. The set up is done in the normal Spring way by defining a transaction manager in the application context.
+
+div(filename). applicationContext.xml
+
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:context="http://www.springframework.org/schema/context"
+      xmlns:tx="http://www.springframework.org/schema/tx"
+      xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd">
+
+   <!-- Creates local entity manager factory -->
+   <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalEntityManagerFactoryBean">
+       <property name="persistenceUnitName" value="ArquillianTestUnit"/>
+   </bean>
+
+   <!-- Enables the declarative transaction support -->
+   <tx:annotation-driven transaction-manager="txManager"/>
+
+   <!-- Creates transaction manager -->
+   <bean id="txManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+       <property name="entityManagerFactory" ref="entityManagerFactory"/>
+   </bean>
+
+</beans>
+
+p. You define which transaction manager to use in your test class via the @manager@ attribute on the @@Transactional@ annotation.
+
+bc(prettify).. @RunWith(Arquillian.class)
+@Transactional(manager = "txManager")
+@SpringConfiguration("applicationContext.xml")
+public class JpaEmployeeRepositoryTestCase {
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Test
+    public void testSave() {
+
+        Employee employee = new Employee();
+        employee.setName("Test employee");
+
+        employeeRepository.save(employee);
+
+        List<Employee> result = entityManager.createQuery("from Employee").getResultList();
+
+        assertEquals("Two employees were expected.", 1, result.size());
+    }
+}
+
+h3. Migrating from 1.0.0.Alpha2
+
+* Artifact @arquillian-container-spring@ has been renamed to @arquillian-service-container-spring@
+
+p. We look forward to your feedback on this new release on the "community forums":#{site.project_space}!

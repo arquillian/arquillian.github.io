@@ -1,0 +1,265 @@
+---
+layout: guide
+title: Developing a Container Adapter
+authors: [vineetreynolds]
+tags: [containers, spi, extension]
+guide_summary: Learn how to adapt Arquillian to new backends by implementing the Container SPI
+guide_group: 3
+guide_order: 11
+---
+This guide introduces you to Arquillian's Container SPI for the purpose of developing a new container adapter. After reading this guide, you'll be able to:
+
+* Write your own Arquillian container adapter
+* Add support for select programming models in tests
+* Test an Arquillian extension (TODO)
+* Use the container adapter to run tests in the new container (TODO)
+
+You'll learn all of these skills by creating an Arquillian extension project that has a Maven build. We've designed this guide to be a _fast read_ to get you started quickly!
+
+h3. Assumptions
+
+This guide assumes you are familiar with using Arquillian. You should understand the basic building blocks of Arquillian, how to set it up and how to develop and execute tests. If you don't, you'll have better chance of success by first reviewing the two starter guides, "Getting Started":/guides/getting_started and "Getting Started: Rinse and Repeat":/guides/getting_started_rinse_and_repeat.
+
+Obviously, you should be familiar with the container for which you are writing an adapter, specifically its deployment mechanism and/or API. It also helps to understand Arquillian's event model.
+
+Finally, this guide assumes you are familiar with Maven. All the reference container adapters provided by Arquillian are organized as Maven projects and we will be following that lead in this guide.
+
+h3. What is a Container Adapter?
+
+A container, generally speaking, is a runtime with which Arquillian interacts when running a test. Arquillian may manage the container's lifecycle or simply bind to it. Arquillian may deploy archives or descriptors to the container. Arquillian may transfer execution of the tests into the container, or it may simply make the URL of the deployed application available to the test which is acting as a client. What's important is that the container interaction is transparent to the test.
+
+To recollect a few salient points from the getting started guides, Arquillian supports containers through its extension mechanism. A container adapter is packaged as a JAR and is referenced, along with its dependencies, through as set of Maven coordinates (groupId, artifactId, version). During the execution of tests, a container adapter must be present in the test classpath, allowing Arquillian to locate, load and use it.
+
+The notion of a container is not restricted to a Servlet container, an EJB container or a Java EE container, despite these being the most common types. A container could be abstracted away as a JVM process (like most Servlet containers and Java EE containers), a cloud service provider (OpenShift and CloudBees) or even a device (Android). Simply put, a container adapter enables Arquillian to communicate with a container so that the test doesn't have to.
+
+h4. How a container adapter gets discovered
+
+Container adapters are Arquillian extensions located using the Service Provider Interface (SPI) mechanism in Java. All Arquillian container adapter extensions must implement the @LoadableExtension@ SPI. The @LoadableExtension@ of a container is used to register a @DeployableContainer@ service. A container adapter implements the @DeployableContainer@ SPI in a manner specific to the container, to enable Arquillian to manage the lifecycle, make deployments and to execute tests in the container.
+
+h3. Setup the Project
+
+One must first create a new project (preferably in Maven) to compile and package the container adapter.
+
+p(info). %Arquillian container adapters are usually created with the groupId of @org.jboss.arquillian.container@ , and with an artifactId of @arquillian-{container_acronym}-{managed|remote|embedded}-{container_version}@.%
+
+Update the project POM with the following necessary dependencies.
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.arquillian</groupId>
+            <artifactId>arquillian-bom</artifactId>
+            <version>${version.arquillian_core}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<dependencies>
+    <dependency>
+        <groupId>org.jboss.arquillian.container</groupId>
+        <artifactId>arquillian-container-spi</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.arquillian.container</groupId>
+        <artifactId>arquillian-container-test-spi</artifactId>
+    </dependency>
+</dependencies>
+<!-- clip -->
+
+p. The @version.arquillian_core@ property in the above snippet should match the  version of Arquillian Core that the adapter would be tested and built against.
+
+p. Additional dependencies will be added in later sections.
+
+h3. Write the Extension
+
+h4. Implement the DeployableContainer
+
+The @DeployableContainer@ implementation is the heart of a container adapter. Arquillian invokes the methods on the @DeployableContainer@ during various points in the test lifecycle. The table below lists the significance of some of these methods:
+
+| setup(T configuration) | Sets up the @DeployableContainer@ instance. |
+| start() | Starts the container. Invoked before the test suite or class begins. Can be invoked manually via a @ContainerController@. |
+| stop() | Stops the container. Invoked after the test suite or class ends. Can be invoked manually via a @ContainerController@. |
+| deploy(org.jboss.shrinkwrap.api.Archive<?> archive) | Deploys an archive. Invoked before all test methods in a test class. |
+| undeploy(org.jboss.shrinkwrap.api.Archive<?> archive) | Undeploys an archive. Invoked after all the test methods in a test class. |
+| deploy(org.jboss.shrinkwrap.descriptor.api.Descriptor descriptor) | Deploys a descriptor (data source, JMS queue, etc). Executed before all the test methods in a test class. |
+| undeploy(org.jboss.shrinkwrap.descriptor.api.Descriptor descriptor) | Undeploys a descriptor. Executed after all the test methods in a test class. |
+
+h4. Implement the ContainerConfiguration
+
+The @ContainerConfiguration@ type is a JavaBean-style class that is used to store properties required to assist in the operation of the container adapter. A container adapter creates a concrete implementation of this type. The properties are set by Arquillian from the arquillian.xml configuration file, arquillian.properties file or from commandline arguments. Note that Arquillian can set values for datatypes like Strings, Booleans, Integers etc. Complex properties are initialized to null even though their values may be provided.
+
+You can validate the supplied property values in the _validate_ method of the @ContainerConfiguration@ type.
+
+Once you have defined a @ContainerConfiguration@ class for a container adapter, you must register it in the @getConfigurationClass@ method of the @DeployableContainer@ class of the adapter, like:
+
+bc(prettify).. public class MyContainerExtension implements LoadableExtension {
+    @Override
+    public Class<MyContainerConfiguration> getConfigurationClass() {
+        return MyContainerConfiguration.class;
+    }
+}
+
+h4. Choose the protocol
+
+An Arquillian protocol is the means employed by Arquillian to communicate with the container and to coordinate the execution of tests and collection of test results. Arquillian provides implementations out of the box for several protocols: JMX, Servlet 2.5 and Servlet 3.0. Note that the JMX protocol provided by Arquillian Core is an abstract protocol requiring a concrete implementation to be provided by the container adapter; one can refer the JBoss AS7 Arquillian container adapter for a real-world implementation. You can also implement custom protocols, however it's beyond the scope of this guide.
+
+The default protocol used by Arquillian to communicate with the container is determined primarily by the container adapter, though can be overriden in arquillian.xml or for a specific deployment through the @@OverProtocol@ annotation. Choosing the correct protocol is important since the choice is primarily driven by the capabilities of the container. Most Java EE 6 container adapters specify a default protocol of _Servlet 3.0_, whereas Java EE 5 container adapters specify a default protocol of _Servlet 2.5_.
+
+p(info). %The "Servlet 2.5" and "Servlet 3.0" strings are unique names identifying the protocol. Arquillian uses this information at runtime to enhance deployments with the test runners and communication endpoints required for the protocol.%
+
+p. The snippet below shows how to configure the _Servlet 3.0_ protocol for your container adapter.
+
+bc(prettify).. // clip
+@Override
+public ProtocolDescription getDefaultProtocol() {
+    return new ProtocolDescription("Servlet 3.0");
+}
+// clip
+
+
+p. You must also add the project containing the protocol implementation as a Maven dependency to your container adapter project. This will establish the protocol implementation as a transitive dependency for your container. The following snippet shows the addition of the @arquillian-protocol-servlet@ artifact to support the Servlet protocol.
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependencies>
+    <dependency>
+        <groupId>org.jboss.arquillian.protocol</groupId>
+        <artifactId>arquillian-protocol-servlet</artifactId>
+    </dependency>
+</dependencies>
+<!-- clip -->
+
+h4. Implement the lifecycle APIs for your adapter
+
+*Setup method*
+
+The @setup(T configuration)@ method is invoked by Arquillian after initializing the @DeployableContainer@ instance. An instance of the @ContainerConfiguration@ class associated with the container adapter is populated with user-supplied properties, validated, and provided as an argument to this method.
+
+bc(prettify).. // clip
+private MyContainerConfiguration config;
+
+@Override
+public void setup(MyContainerConfiguration configuration) {
+    this.configuration = configuration;
+}
+// clip
+
+p. Method implementations are often limited to storing the @ContainerConfiguration@ argument for future use by the container adapter in other parts of the adapter lifecycle, as shown in the above snippet.
+
+*Start method*
+
+The @start()@ method is invoked by Arquillian to signal the initialization of the container adapter. When this method returns, the container adapter is required to be ready to process deployments and test executions.
+
+If you are implementing an embedded or a managed Arquillian container adapter, this is the place to start the container. In the case of remote container adapters, this is ideally the place to verify if the container is running, along with any other necessary validations.
+
+p(info). %In Arquillian, an embedded container runs in the same JVM as the client initiating the test. A managed container refers to one where Arquillian manages the entire lifecycle of the container. Managed container adapters usually fork a new process to operate the container, eventually terminating the process after all tests have been executed. A remote container refers to one where the lifecycle of the container is not managed by Arquillian. In this scenario, management of the remote container is often delegated to the build script and Arquillian is only responsible for deployment and execution of tests.%
+
+*Stop method*
+
+The @stop()@ method is invoked by Arquillian to signal the termination of the container adapter. Any cleanup operations can be performed in this method.
+
+p. It is possible for Arquillian to restart container adapters, especially in the case of managed containers. This is typically done to ensure that the managed JVM does not run out of space in it's permanent generation. Therefore, one must not assume that the _start_ and _stop_ methods will be invoked exactly once in a test suite; they may be invoked multiple times with every start followed by an equivalent stop.
+
+h4. Implement the archive deployment APIs
+
+*Archive deploy method*
+
+This @deploy(Archive<?> archive)@ method is responsible for deploying the supplied archive to the target container. This is done in a manner proprietary to the container. Some containers may require a multi-part HTTP POST request to be submitted, some may require files to be placed in a certain directory and some require proprietary APIs to be invoked. This is where familiarity with your container is critical.
+
+This @deploy(Archive<?> archive)@ method returns an instance of @ProtocolMetaData@ upon completion. The container adapter must introspect the container to obtain the necessary metadata used to construct the @ProtocolMetaData@ instance. In the case of the Servlet protocol, the @ProtocolMetaData@ contains the context root of the deployment, as well as the list of all Servlets under the context root. When this method returns, it is expected that the deployment can be reached via the information in the @ProtocolMetaData@ object.
+
+*Archive undeploy method*
+
+The @undeploy(Archive<?> archive)@ method is responsible for undeploying the previously deployed archive from the target container. Like the @deploy(Archive<?> archive)@ method, this is done in a manner proprietary to the container.
+
+h4. Optionally, implement the descriptor deployment APIs
+
+*Descriptor deploy method*
+
+This @deploy(Descriptor descriptor)@ method allows for deployment of descriptors. Simply put, deployment of descriptors allows for creation of datasources, JMS queues and other ressources on the container that will be used only for the duration of the test. Note that the @Descriptor@ type hierarchy is not formalized. Every container adapter is free to implement its own @Descriptor@ classes.
+
+*Descriptor undeploy method*
+
+The @undeploy(Descriptor descriptor)@ method is the converse of the @deploy(Descriptor descriptor)@ method for descriptors. It allows for undeployment of resources after test execution.
+
+h4. Add the test enrichers
+
+Arquillian supports dependency injection for both in-container and client tests through the use of Arquillian test enrichers. Which injections are supported depend on the type of test and the capabilities of the container. Injection points (e.g., fields in the test class or arguments to test methods) can be annotated with @@Resource@, @@EJB@, @@Inject@, @@PersistenceContext@ annotations, instructing Arquillian to inject these dependencies at runtime.
+
+In order to support these annotations, the deployed archive must be enhanced with the Arquillian test enrichers. Additionally, a container may support only certain test enrichers natively. For instance, Java EE 5 containers may not support injection of @@Inject@ annotated dependencies out of the box, while a Servlet container adapter (like Tomcat) would not support injection of @@EJB@ annotated dependencies.
+
+A container adapter declares the default set of test enrichers as classpath dependencies; at runtime, the test enrichers are made available as transitive dependencies of the container adapter. The test enricher projects contain the necessary auxiliary archive appenders that would enhance a deployment with the required set of classes and resources. Depending on the supported test enrichers, add one or all of the dependencies listed below, to your container adapter project.
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependencies>
+
+    <!-- For @Inject annotations -->
+    <dependency>
+        <groupId>org.jboss.arquillian.testenricher</groupId>
+        <artifactId>arquillian-testenricher-cdi</artifactId>
+    </dependency>
+
+    <!-- For @EJB annotations -->
+    <dependency>
+        <groupId>org.jboss.arquillian.testenricher</groupId>
+        <artifactId>arquillian-testenricher-ejb</artifactId>
+    </dependency>
+
+    <!-- For @Resource annotations -->
+    <dependency>
+        <groupId>org.jboss.arquillian.testenricher</groupId>
+        <artifactId>arquillian-testenricher-resource</artifactId>
+    </dependency>
+
+    <!-- For @ArquillianResource annotated InitialContext injection points -->
+    <dependency>
+        <groupId>org.jboss.arquillian.testenricher</groupId>
+        <artifactId>arquillian-testenricher-initialcontext</artifactId>
+    </dependency>
+
+</dependencies>
+<!-- clip -->
+
+p. By including the dependencies as shown in the above snippet, the following extensions would be discovered by Arquillian at the time of test execution:
+
+* @CDIEnricherExtension@
+* @EJBEnricherExtension@
+* @ResourceEnricherExtension@
+* @InitialContextExtension@
+
+The associated @AuxiliaryArchiveAppender@ implementations in these extensions would enhance the deployment with the test enrichers and associated dependencies. The @TestEnricher@ implementations in these extensions would also be registered as service providers that can be discovered in-container. When a test class instance is to be enriched (before execution of the contained tests), the registered test enrichers (that have been deployed alongside the test) will be used to discover and inject dependencies into the instance.
+
+h3. Register the Extension
+
+To wire up the container adapter together, create a new Arquillian extension by implementing the @LoadableExtension@ interface in your project. The extension must register the concrete implementation of @DeployableContainer@ as a service. In the following snippet, a @LoadableExtension@ is created that registers the @MyDeployableContainer@ type as a @DeployableContainer@.
+
+bc(prettify).. public class MyContainerExtension implements LoadableExtension {
+    @Override
+    public void register(ExtensionBuilder builder) {
+        builder.service(DeployableContainer.class, MyDeployableContainer.class);
+    }
+}
+
+p. Finally, the container adapter extension needs to be registered using the SPI registration mechanism. You must create a file named org.jboss.arquillian.core.spi.LoadableExtension as shown below and put the fully qualified class name of the class implementing the @LoadableExtension@ SPI on the first line.
+
+div(filename). src/main/resources/META-INF/services/org.jboss.arquillian.core.spi.LoadableExtension
+
+bc(prettify).. org.jboss.arquillian.container.guide.spi.MyContainerExtension
+
+h3. Write the Tests
+
+While one can write a container adapter without tests, this is certainly not advisable. Tests serve can not only serve to define the expected behavior of the adapter, but also serve as useful examples for using the adapter. Generally, tests are written to cover the following areas:
+
+* Deployment of various types of ShrinkWrap archives: JavaArchive, WebArchive and EnterpriseArchive.
+* Execution of tests run at the client, using the @@RunAsClient@ annotation and injection of dependencies into such tests using the @@ArquillianResource@ annotation.
+* Execution of tests run in-container and injection of dependencies into such tests using the supported annotations.
+
+FIXME conclusion needed

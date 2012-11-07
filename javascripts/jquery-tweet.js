@@ -159,6 +159,7 @@
       o.retweeted_screen_name = o.retweet && item.retweeted_status.user.screen_name;
       o.tweet_relative_time = relative_time(o.tweet_time);
       o.tweet_raw_text = o.retweet ? ('RT @'+o.retweeted_screen_name+' '+item.retweeted_status.text) : item.text; // avoid '...' in long retweets
+      o.tweet_raw_text = o.tweet_raw_text.replace(/^RT /, '<i class="icon-retweet"></i> ');
       o.tweet_text = $([o.tweet_raw_text]).linkUrl().linkUser().linkHash()[0];
       o.tweet_text_fancy = $([o.tweet_text]).makeHeart().capAwesome().capEpic()[0];
 

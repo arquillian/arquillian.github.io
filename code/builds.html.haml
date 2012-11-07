@@ -1,31 +1,33 @@
 ---
 layout: default
 title: Build Status
-javascripts: [ /javascripts/siphon.js ]
+javascripts: [ /javascripts/siphon-20120407.js ]
 ---
-%script{ :id=> 'status-tmpl', :type=>'text/x-jquery-tmpl'}
-  %tr
-    %td {{=$ctx.extractModule(title)}}
-    %td{ :style=>'text-align: center;' }
-      %img{ :src=>"{{=$ctx.getBuildStatusImage($ctx.extractComment(title), 32)}}"}
-    %td
-      %a{ :href=> "{{=link}}{{=href}}"}
-        {{=$ctx.extractBuild(title)}}
-    %td {{=$ctx.extractComment(title)}}
-    
-
-%a{ :href=>"https://arquillian.ci.cloudbees.com/" }
-  %img{ :src=> "/images/cloudbees_logo.png" }
-
-%table#builds.data
-  %tr
-    %th Module
-    %th Status
-    %th Build
-    %th Comment
+#content
+  %script#status-tmpl(type='text/x-jsrender')
+    %tr
+      %td {{:~extractModule(title)}}
+      %td(style='text-align: center;')
+        %img{ :src=>"{{:~getBuildStatusImage(~extractComment(title), 32)}}"}
+      %td
+        %a(href='{{:link}}{{:href}}') {{:~extractBuild(title)}}
+      %td {{:~extractComment(title)}}
+  
+  %p(style='float: right; margin-top: -100px;')
+    %a(href='https://arquillian.ci.cloudbees.com')
+      %img(src='/images/cloudbees_logo.png')
+  
+  %table#builds.table.table-bordered.table-striped
+    %thead
+      %tr
+        %th Module
+        %th Status
+        %th Build
+        %th Comment
+    %tbody
 
 :javascript
-  $.views.registerHelpers({
+  $.views.helpers({
     extractModule: function(row) {
       return row.replace(/(.*)#.*\(.*\).*/, '$1');
     },
@@ -58,7 +60,7 @@ javascripts: [ /javascripts/siphon.js ]
       if(!feeds){
         return false;
       }
-      $('#builds tr').after($.render(feeds.entries.sort(sort_title), '#status-tmpl'));
+      $('#builds tbody').html($('#status-tmpl').render(feeds.entries.sort(sort_title)));
     }, 50);
     
   function sort_title(a, b) {

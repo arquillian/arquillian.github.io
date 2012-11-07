@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# This script will list the artifacts produced by a Maven build (essentially
+# the Maven Reactor Build Plan). Maven doesn't provide a plugin to get this
+# information directly, but it is reported by certain executions. We decided to
+# use the help:active-profiles command since it references the project artifact
+# coordinates when reporting each active profile.
+#
+# The artifacts are futhur filtered by removing any test, example, build or
+# build-config module, since these are not the main artifacts to be published.
+
+DIRNAME=`dirname "$0"`
+
+# The grep and sed commands parse the following line to get the artifact coordinates:
+# | Active Profiles for Project 'org.jboss.arquillian.junit:arquillian-junit-container:jar:1.0.0.Final': 
+mvn -npu -s $DIRNAME/settings-jboss-community.xml help:active-profiles | \
+    grep -o '^Active Profiles for Project .*' | \
+    sed "s/^[^']*'\([^']*\)': */\1/" | \
+    grep '\([:-]\(bom\|depchain\):pom:\|:jar:\)' | \
+    grep -v '[:-]\(tests\|example.*\|build\|build-config\):jar'
