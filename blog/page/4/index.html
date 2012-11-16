@@ -55,6 +55,183 @@
   <article class="post">
   <header class="header">
     <h2 class="title">
+      <a href="/blog/2012/08/17/arquillian-extension-spring-1-0-0-Beta1/">Arquillian Spring Framework Extension 1.0.0.Beta1 Released</a>
+    </h2>
+    <div class="byline">
+      <img class="avatar" src="http://gravatar.com/avatar/6dc4a43fdaf5dfe0c69e3ed54ade665f?s=44" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a></span>
+      <span class="dateinline">on Aug 17, 2012</span>
+      <div class="date"><abbr>Aug</abbr> 17</div>
+      <span class="comments">| <a href="http://arquillian.org/blog/2012/08/17/arquillian-extension-spring-1-0-0-Beta1/#disqus_thread" data-disqus-identifier="e6572b8c02aaed791ba6fa891f7f8d8bb1633bb9">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>The Arquillian team is proud to announce the <em>1.0.0.Beta1</em> release of the <em>Arquillian Spring Framework Extension</em> component!</p>
+<p>The first Beta release of the Arquillian Spring extension is here.</p>
+<h3 class="highlights">Some of the highlights in this release</h3>
+<p><i class="icon-star"></i> Client side application context registration<br />
+<i class="icon-star"></i> Spring transaction support</p>
+<h3>Client side tests with Spring</h3>
+<p>So far the Spring extension has only allowed application context creation and bean injection to occure when the tests were deployed in a container. We wanted to bring the same functionality to the client side. With the two new annotations <code>@SpringClientConfiguration</code> and <code>@SpringClientAnnotationConfiguration</code> it is now possible to set up the application context and inject beans into Arquillian tests that are running on the client.</p>
+<p>An example of use would be to test a deployed REST service using the Spring RestTemplate configured in the client context.</p>
+<pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;@SpringClientConfiguration("applicationContext-rest.xml")&#x000A;public class ClientRestServiceTestCase {</code>&#x000A;&#x000A;<code class="prettify">    @Deployment(testable = false)&#x000A;    @OverProtocol("Servlet 3.0")&#x000A;    public static Archive createTestArchive() {&#x000A;        return Deployments.createWebApplication()&#x000A;                .addAsWebInfResource("mvc/web.xml", "web.xml")&#x000A;                .addAsWebInfResource("service-servlet.xml");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @ArquillianResource&#x000A;    private URL contextPath;</code>&#x000A;&#x000A;<code class="prettify">    @Autowired&#x000A;    private RestTemplate restTemplate;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testGetEmployees() {</code>&#x000A;&#x000A;<code class="prettify">        Employee result = restTemplate.getForObject(contextPath + "/Employees/1", Employee.class);</code>&#x000A;&#x000A;<code class="prettify">        assertEquals("The returned employee has invalid name.", "John Smith", result.getName());&#x000A;    }&#x000A;}</code></pre>
+<h3>Spring transaction support</h3>
+<p>The recent release of the <a href="/modules/transaction-extension/">Arquillian Transaction Extension</a> allow us to control the transactional behavior of our test methods. With the help of the Spring Extension you can now control your Spring configured transaction manager using the same API. The set up is done in the normal Spring way by defining a transaction manager in the application context.</p>
+<div class="filename">applicationContext.xml</div>
+<pre class="prettify"><code class="prettify">&lt;?xml version="1.0" encoding="UTF-8"?&gt;&#x000A;&lt;beans xmlns="http://www.springframework.org/schema/beans"&#x000A;      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;      xmlns:context="http://www.springframework.org/schema/context"&#x000A;      xmlns:tx="http://www.springframework.org/schema/tx"&#x000A;      xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd"&gt;</code>&#x000A;&#x000A;<code class="prettify">   &lt;!-- Creates local entity manager factory --&gt;&#x000A;   &lt;bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalEntityManagerFactoryBean"&gt;&#x000A;       &lt;property name="persistenceUnitName" value="ArquillianTestUnit"/&gt;&#x000A;   &lt;/bean&gt;</code>&#x000A;&#x000A;<code class="prettify">   &lt;!-- Enables the declarative transaction support --&gt;&#x000A;   &lt;tx:annotation-driven transaction-manager="txManager"/&gt;</code>&#x000A;&#x000A;<code class="prettify">   &lt;!-- Creates transaction manager --&gt;&#x000A;   &lt;bean id="txManager" class="org.springframework.orm.jpa.JpaTransactionManager"&gt;&#x000A;       &lt;property name="entityManagerFactory" ref="entityManagerFactory"/&gt;&#x000A;   &lt;/bean&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/beans&gt;</code></pre>
+<p>You define which transaction manager to use in your test class via the <code>manager</code> attribute on the <code>@Transactional</code> annotation.</p>
+<pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;@Transactional(manager = "txManager")&#x000A;@SpringConfiguration("applicationContext.xml")&#x000A;public class JpaEmployeeRepositoryTestCase {</code>&#x000A;&#x000A;<code class="prettify">    @Autowired&#x000A;    private EmployeeRepository employeeRepository;</code>&#x000A;&#x000A;<code class="prettify">    @PersistenceContext&#x000A;    private EntityManager entityManager;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testSave() {</code>&#x000A;&#x000A;<code class="prettify">        Employee employee = new Employee();&#x000A;        employee.setName("Test employee");</code>&#x000A;&#x000A;<code class="prettify">        employeeRepository.save(employee);</code>&#x000A;&#x000A;<code class="prettify">        List&lt;Employee&gt; result = entityManager.createQuery("from Employee").getResultList();</code>&#x000A;&#x000A;<code class="prettify">        assertEquals("Two employees were expected.", 1, result.size());&#x000A;    }&#x000A;}</code></pre>
+<h3>Migrating from 1.0.0.Alpha2</h3>
+<ul>
+	<li>Artifact <code>arquillian-container-spring</code> has been renamed to <code>arquillian-service-container-spring</code></li>
+</ul>
+<p>We look forward to your feedback on this new release on the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
+<h3>What is Arquillian?</h3>
+<p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+<h3>Release details</h3>
+<table class="table table-bordered table-striped">
+  <tbody>
+    <tr>
+      <th>Component</th>
+      <td>
+        <a href="/modules/spring-extension/">Arquillian Spring Framework Extension</a>
+      </td>
+    </tr>
+    <tr>
+      <th>Version</th>
+      <td>
+        1.0.0.Beta1
+        <span class="label tag">
+          <a href="https://github.com/arquillian/arquillian-extension-spring/commit/24516832e4a84f1032ecdbe6e0ee42e5b1f7f25e.html">view tag</a>
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <th>Release date</th>
+      <td>2012-08-17</td>
+    </tr>
+    <tr>
+      <th>Released by</th>
+      <td>Aslak Knutsen</td>
+    </tr>
+    <tr>
+      <th>Compiled against</th>
+      <td>
+        <ul class="unstyled">
+          <li>Arquillian Core &#8211; 1.0.1.Final</li>
+          <li>JUnit &#8211; 4.8.1</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h3>
+  Published artifacts
+  <small>org.jboss.arquillian.extension</small>
+</h3>
+<ul>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-service-container-spring
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-container-spring/1.0.0.Beta1/arquillian-service-container-spring-1.0.0.Beta1.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-container-spring/1.0.0.Beta1/arquillian-service-container-spring-1.0.0.Beta1.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-service-deployer-spring-2.5
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Beta1/arquillian-service-deployer-spring-2.5-1.0.0.Beta1.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Beta1/arquillian-service-deployer-spring-2.5-1.0.0.Beta1.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-service-deployer-spring-3
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Beta1/arquillian-service-deployer-spring-3-1.0.0.Beta1.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Beta1/arquillian-service-deployer-spring-3-1.0.0.Beta1.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-service-deployer-spring-common
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Beta1/arquillian-service-deployer-spring-common-1.0.0.Beta1.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Beta1/arquillian-service-deployer-spring-common-1.0.0.Beta1.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-service-integration-spring
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Beta1/arquillian-service-integration-spring-1.0.0.Beta1.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Beta1/arquillian-service-integration-spring-1.0.0.Beta1.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-service-integration-spring-inject
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Beta1/arquillian-service-integration-spring-inject-1.0.0.Beta1.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Beta1/arquillian-service-integration-spring-inject-1.0.0.Beta1.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-service-integration-spring-javaconfig
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Beta1/arquillian-service-integration-spring-javaconfig-1.0.0.Beta1.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Beta1/arquillian-service-integration-spring-javaconfig-1.0.0.Beta1.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-transaction-spring
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spring/1.0.0.Beta1/arquillian-transaction-spring-1.0.0.Beta1.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spring/1.0.0.Beta1/arquillian-transaction-spring-1.0.0.Beta1.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-warp-spring
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Beta1/arquillian-warp-spring-1.0.0.Beta1.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Beta1/arquillian-warp-spring-1.0.0.Beta1.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.extension
+    &raquo;
+    arquillian-warp-spring-ftest
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring-ftest/1.0.0.Beta1/arquillian-warp-spring-ftest-1.0.0.Beta1.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring-ftest/1.0.0.Beta1/arquillian-warp-spring-ftest-1.0.0.Beta1.pom" target="_blank">pom</a>
+  </li>
+</ul>
+<h3>
+  Release notes and resolved issues
+  <small>3</small>
+</h3>
+<p>Arquillian Transaction Extension support and Client side ApplicationContext creation</p>
+<dl>
+  <dt>Feature Request</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-958">ARQ-958</a> -         Provide support for Spring transactions</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-985">ARQ-985</a> -         Register the Spring Extension on client side.</li>
+    </ul>
+  </dd>
+</dl>
+<p>
+  Thanks to the following list of contributors:
+  <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
+</p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/08/17/arquillian-extension-spring-1-0-0-Beta1/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/gsoc/">gsoc</a> <a class="tag" href="/blog/tags/gsoc/">gsoc</a> <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/spring/">spring</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
       <a href="/blog/2012/08/13/arquillian-extension-transaction-1-0-0-Alpha1/">Arquillian Transaction Extension 1.0.0.Alpha1 Released</a>
     </h2>
     <div class="byline">
@@ -807,169 +984,6 @@ The exception happens when the <code>Servlet Protocol</code> in Arquillian attem
     tagged as
     <a class="tag" href="/blog/tags/gsoc/">gsoc</a> <a class="tag" href="/blog/tags/gsoc/">gsoc</a> <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/spring/">spring</a>
   </div>
-</article>
-<article class="post">
-  <header class="header">
-    <h2 class="title">
-      <a href="/blog/2012/07/23/arquillian-extension-drone-1-1-0-CR2/">Arquillian Drone Extension 1.1.0.CR2 Released</a>
-    </h2>
-    <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
-      <span class="author">Posted by
-      <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
-      <span class="dateinline">on Jul 23, 2012</span>
-      <div class="date"><abbr>Jul</abbr> 23</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/07/23/arquillian-extension-drone-1-1-0-CR2/#disqus_thread" data-disqus-identifier="238272126eafc3769c05a89332127657e4f5d94d">Comments</a></span>
-    </div>
-  </header>
-  <div class="body">
-    <p>The Arquillian team is proud to announce the <em>1.1.0.CR2</em> release of the <em>Arquillian Drone Extension</em> component!</p>
-<h3>Some of the Highlights in This Release</h3>
-<p>Drone 1.1.0.CR2 is a bugfix release form the previous 1.1.0 CR release. We fixed browserCapability usage, reusing browers sessions and Selenium Server user extensions support.</p>
-<h3>Big thanks to the community</h3>
-<p>I&#8217;d like to thank Arquillian Drone Community, especially Ste Gr and Simon Søndergaard for helping us test and patch the release by proactively using new features. <br />
-It&#8217;s a pleasure to work with you guys!</p>
-<h3>What is Arquillian?</h3>
-<p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
-<h3>Release details</h3>
-<table class="table table-bordered table-striped">
-  <tbody>
-    <tr>
-      <th>Component</th>
-      <td>
-        <a href="/modules/drone-extension/">Arquillian Drone Extension</a>
-      </td>
-    </tr>
-    <tr>
-      <th>Version</th>
-      <td>
-        1.1.0.CR2
-        <span class="label tag">
-          <a href="https://github.com/arquillian/arquillian-extension-drone/commit/3f8919a6a0942f46f692a8c7a40a6f36cb2e926a.html">view tag</a>
-        </span>
-      </td>
-    </tr>
-    <tr>
-      <th>Release date</th>
-      <td>2012-07-18</td>
-    </tr>
-    <tr>
-      <th>Released by</th>
-      <td>Lukas Fryc</td>
-    </tr>
-    <tr>
-      <th>Compiled against</th>
-      <td>
-        <ul class="unstyled">
-          <li>Arquillian Core &#8211; 1.0.0.Final</li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-<h3>
-  Published artifacts
-  <small>org.jboss.arquillian.extension</small>
-</h3>
-<ul>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-drone-api
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR2/arquillian-drone-api-1.1.0.CR2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR2/arquillian-drone-api-1.1.0.CR2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-drone-bom
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-bom/1.1.0.CR2/arquillian-drone-bom-1.1.0.CR2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-drone-configuration
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR2/arquillian-drone-configuration-1.1.0.CR2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR2/arquillian-drone-configuration-1.1.0.CR2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-drone-impl
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR2/arquillian-drone-impl-1.1.0.CR2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR2/arquillian-drone-impl-1.1.0.CR2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-drone-selenium
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR2/arquillian-drone-selenium-1.1.0.CR2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR2/arquillian-drone-selenium-1.1.0.CR2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-drone-selenium-depchain
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-depchain/1.1.0.CR2/arquillian-drone-selenium-depchain-1.1.0.CR2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-drone-selenium-server
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR2/arquillian-drone-selenium-server-1.1.0.CR2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR2/arquillian-drone-selenium-server-1.1.0.CR2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-drone-spi
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR2/arquillian-drone-spi-1.1.0.CR2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR2/arquillian-drone-spi-1.1.0.CR2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-drone-webdriver
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR2/arquillian-drone-webdriver-1.1.0.CR2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR2/arquillian-drone-webdriver-1.1.0.CR2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-drone-webdriver-depchain
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver-depchain/1.1.0.CR2/arquillian-drone-webdriver-depchain-1.1.0.CR2.pom" target="_blank">pom</a>
-  </li>
-</ul>
-<h3>
-  Release notes and resolved issues
-  <small>6</small>
-</h3>
-<p></p>
-<dl>
-  <dt>Bug</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-1021">ARQ-1021</a> -         Internet Explorer could not be created from capabilities</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-1022">ARQ-1022</a> -         BrowserCapability overrides direct @Drone class type</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-1023">ARQ-1023</a> -         Selenium Server does not load user extensions</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-1026">ARQ-1026</a> -         Selenium session is not persisted to a file store when file does not exists</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-1030">ARQ-1030</a> -         Driving capabilities using arquillin.xml does not work</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-1031">ARQ-1031</a> -         Drone doesn't remove non-reusable sessions from the queue</li>
-    </ul>
-  </dd>
-</dl>
-<p>
-  Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://github.com/papousek">Jan PapoušEk</a>, <a href="https://github.com/john7doe">Simon Søndergaard</a>
-</p>
-  </div>
-  <div class="footer">
-    <a href="/blog/2012/07/23/arquillian-extension-drone-1-1-0-CR2/">permalink</a>
-    |
-    <i class="icon-tags"></i>
-    tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/drone/">drone</a>
-  </div>
   
               <script type="text/javascript">
               var disqus_shortname = 'arquillian';
@@ -1002,6 +1016,14 @@ It&#8217;s a pleasure to work with you guys!</p>
     <ul>
       <li>
         <div class="title">
+          <a href="/blog/2012/11/16/arquillian-extension-transaction-1-0-0-Alpha3/">Arquillian Transaction Extension 1.0.0.Alpha3 Released</a>
+        </div>
+        <div class="meta">
+          Nov 16, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
           <a href="/blog/2012/11/15/devoxx-2012-hackergarten-overdrive/">Devoxx 2012 Hackergarten Overdrive!</a>
         </div>
         <div class="meta">
@@ -1030,14 +1052,6 @@ It&#8217;s a pleasure to work with you guys!</p>
         </div>
         <div class="meta">
           Nov 02, 2012
-        </div>
-      </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha2/">Arquillian Transaction Extension 1.0.0.Alpha2 Released</a>
-        </div>
-        <div class="meta">
-          Nov 01, 2012
         </div>
       </li>
     </ul>
