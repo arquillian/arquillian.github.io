@@ -4,7 +4,7 @@ set -e
 
 function pushdq() { pushd "$1" > /dev/null; }
 function popdq() { popd > /dev/null; }
-function error() { echo "$1" >&2; }
+function error() { echo "$*" >&2; }
 
 BIN_DIR=$(dirname "$0")
 ROOT_DIR="$BIN_DIR/.."
