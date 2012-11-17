@@ -82,16 +82,16 @@ module Awestruct
           )
 
           # still some funkiness supporting this one (page title, tags, compiled with, etc)
-          #@repositories << OpenStruct.new(
-          #  :path => 'openejb',
-          #  :desc => nil,
-          #  :relative_path => 'openejb/arquillian-tomee/',
-          #  :owner => 'apache',
-          #  :host => 'github.com',
-          #  :type => 'git',
-          #  :html_url => 'https://github.com/apache/openejb',
-          #  :clone_url => 'git://github.com/apache/openejb.git'
-          #)
+          @repositories << OpenStruct.new(
+            :path => 'openejb',
+            :desc => nil,
+            :relative_path => 'openejb/arquillian/',
+            :owner => 'apache',
+            :host => 'github.com',
+            :type => 'git',
+            :html_url => 'https://github.com/apache/openejb',
+            :clone_url => 'git://github.com/apache/openejb.git'
+          )
 
           @repositories << OpenStruct.new(
             :path => 'jsfunit',
