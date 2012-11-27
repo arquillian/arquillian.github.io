@@ -55,6 +55,291 @@
   <article class="post">
   <header class="header">
     <h2 class="title">
+      <a href="/blog/2012/11/05/hack_idea_integrate_thucydides_and_arquillian/">Hack Idea: Fully Automate ATDD by Integrating Thucydides with Arquillian</a>
+    </h2>
+    <div class="byline">
+      <img class="avatar" src="http://gravatar.com/avatar/dcccd96c499963133f7f95e7ffa20c4e?s=44" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/dan.j.allen">Dan Allen</a></span>
+      <span class="dateinline">on Nov 05, 2012</span>
+      <div class="date"><abbr>Nov</abbr> 05</div>
+      <span class="comments">| <a href="http://arquillian.org/blog/2012/11/05/hack_idea_integrate_thucydides_and_arquillian/#disqus_thread" data-disqus-identifier="">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>Imagine being able to organize and structure your Arquillian tests as human-readable <em>specifications by example</em> that describe at a high-level how the application should work, then being able to present illustrated documentation generated from a test run that gives all parties an account of the features under development and tracks feature sign-off through automation of the acceptance criteria.</p>
+<p>This goal can be achieved by <a href="http://www.thucydides.info">Thucydides</a> and <a href="http://arquillian.org">Arquillian</a> joining forces. Acceptance tests will not only be agile and illustrated, but fully automated. With a <a href="https://github.com/VineetReynolds/thucydides-arquillian-example">proof of concept</a> in hand, we plan to advance this combination, including substituting Arquillian Drone to manage WebDriver, at the <a href="http://lanyrd.com/2012/devoxx/syzdq">Devoxx 2012 Hackergarten</a>.</p>
+<h3>Introducing the candidates</h3>
+<h4>What is Thucydides?</h4>
+<p><img src="/images/blog/thucydides-logo.png" class="pull-right" alt="" /> Thucydides is a testing tool that encourages developers write more flexible and reusable end-to-end acceptance tests. In the style of <a href="http://www.javaworld.com/javaworld/jw-08-2011/110823-atdd-for-web-apps.html" title="ATDD">Acceptance Test-Driven Development</a>, Thucydides introduces a narrative for tests that describes the high-level requirements and automates the acceptance criteria using the tests. Developers then iterate using a test-driven approach to complete the requirements (i.e., stories), as depicted in the diagram below.</p>
+<p><img src="/images/blog/thucydides-workflow.png" class="graphic" alt="" /></p>
+<p>By analyzing the test metadata and test results, Thucydides generates illustrated documentation that describes how the application is used in the form of high-level requirements, acceptance criteria and screenshots, and records the progress of development.</p>
+<p><img src="/images/blog/thucydides-story-status.png" alt="" /></p>
+<h4>What is Arquillian?</h4>
+<p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application&#8217;s behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+<h4>What is Arquillian Drone?</h4>
+<p>Arquillian Drone is an extension to Arquillian that manages the lifecycle of browsers for the purpose of controlling them from a test, thus simplifying automated functional / acceptance testing. Drone bootstraps the tooling necessary to send commands to the browser (e.g. Selenium Server, WebDriver, etc), spawns an instance of a browser, injects the browser API into the test class to allow tests to control that instance and, finally, properly disposes of the browser instance after the test is complete.</p>
+<h3>Integration benefits</h3>
+<h4>Arquillian and Thucydides as yin and yang</h4>
+<p>While Thucydides handles automation of the browser&#8212;via the <a href="http://seleniumhq.org/docs/03_webdriver.html">WebDriver</a> library&#8212;it does not handle deploying the application being tested, nor does it manage the lifecycle of the container to which the application is deployed. In other words, it doesn&#8217;t automate <em>everything</em>. That&#8217;s where Arquillian steps in.</p>
+<p>Thucydides brings the ATDD methodology and rich test reports to Arquillian, both new features to the Arquillian ecosystem. Arquillian complements Thucydides by managing the lifecycle of the container and deploying the application (as a whole or micro-deployment) to it. These services would otherwise need to be handled by the build when using Thucydides alone.</p>
+<p>Beyond their combined core feature set, the integration brings all of the Arquillian extensions to Thucydides tests, opening the door to services such as loading seed data into the database, measuring performance and even managing browser automation. Speaking of managing browser automation&#8230;</p>
+<h4>More powerful browser automation with Drone</h4>
+<p>Bringing Arquillian Drone into the fold provides additional benefit by introducing a more powerful and flexible choice for controlling the browser in a Thucydides test, including simplified configuration, alternatives to WebDriver and extensions (e.g., Graphene). This secondary integration between Arquillian and Thucydides also unifies the developer experience with regard to how the browser is controlled across vanilla Arquillian Drone tests and Thucydides tests (embracing the concept that each tool should focus on doing one thing well).</p>
+<p>Basic integration between Arquillian and Thucydides is a first step and getting Drone integrated is an optional (but valuable) bonus.</p>
+<h4>How this integration helps test writers</h4>
+<ul>
+	<li>Arquillian tests become contract deliverables by leveraging Thucydides&#8217; language for ATDD</li>
+	<li>Test segments of the webapp in isolation (using micro-deployments)
+	<ul>
+		<li>Accelerates acceptance testing because entire application doesn&#8217;t have to be built and deployed</li>
+	</ul></li>
+	<li>Skip the build (e.g., Run As &gt; XYZ Test in the IDE)
+	<ul>
+		<li>automatic container lifecycle management</li>
+		<li>deploy test archive defined in test class</li>
+		<li>inject application (initial) URL into test</li>
+	</ul></li>
+	<li>Support for multiple target environments (e.g., local, dev, qa, staging)</li>
+	<li>Write Thucydides tests using other test runners, such as TestNG and Spock</li>
+	<li>Write Thucydides tests using any Arquillian-supported programming model (CDI, Spring, etc)</li>
+	<li>Rich reports summarizing test results generated by Thucydides, something Arquillian doesn&#8217;t currently provide</li>
+	<li>Use additional Arquillian extensions in Thucydides tests</li>
+	<li>Integrated configuration (arquillian.xml) for containers and browsers*</li>
+	<li>Use alternate browser automation libraries supported by Drone*</li>
+	<li>Use Graphene page fragments to reduce boilerplate code common in acceptance tests*</li>
+</ul>
+<p>* requires Drone integration</p>
+<h4>Balancing responsibility</h4>
+<p>Thucydides&#8217; strong suit is promoting ATDD through its programming model for writing acceptance tests as specifications by example and its reporting pipeline that summarizes test results as user stories. We believe Thucydides could move faster by focusing on tools and metrics needed to facilitate ATDD, allowing Arquillian to address the need of general purpose test extensions such as alternate test runners, data loading, browser automation, programming model integration, etc. In other words, Thucydides has more freedom to focus on its core competency, as stated on its website:</p>
+<blockquote>
+<p>Organize and structure acceptance tests, associate tests with the user stories or features that they test and generate illustrated documentation describing how the application is used based on the stories described by the tests.</p>
+</blockquote>
+<h3>Hacking on the integration</h3>
+<p>We plan to hack on this idea during the Hackergarten at Devoxx 2012. Keep in mind there is a <a href="https://github.com/VineetReynolds/thucydides-arquillian-example">proof of concept</a> we can reference as a starting point, described later in this section.</p>
+<p>John Smart, the author of Thucydides, has offered to host the integration in the Thucydides code base, which is fantastic.</p>
+<h4>When and where are we hacking?</h4>
+<p>We are going to use the free Hackergarten day at Devoxx 2012 as an opportunity to put our heads together to make progress on this integration. Here are the details:</p>
+<ul>
+	<li>When: Tue 13th November 2012, 09:30 &#8211; 16:30</li>
+	<li>Where: Hackergarten at Devoxx 2012 (Metropolis, Antwerpen, Belgium)</li>
+	<li>Conference URL: <a href="http://devoxx.com">http://devoxx.com</a></li>
+	<li>Hashtag: <a href="https://twitter.com/search/%23hackdevoxx">#hackdevoxx</a> and <a href="https://twitter.com/search/%23arquillian">#arquillian</a></li>
+	<li>Lanyrd: <a href="http://lanyrd.com/2012/devoxx/syzdq">http://lanyrd.com/2012/devoxx/syzdq</a></li>
+	<li>RSVP: <a href="https://plus.google.com/events/cukalsoit15mrhsokig3b02j8mk">Google+ Event: Arquillian Hands-On Coding at Devoxx 2012 Hackergarten</a></li>
+	<li>IRC: #arquillian on Freenode</li>
+</ul>
+<p>We&#8217;ll also be hacking throughout the week, either at the long white &#8220;hacking&#8221; tables on the second floor of the venue or after hours at a bar. Of course, anyone is welcome to hack on this idea at anytime from anywhere. This is open source!</p>
+<h4>Who will be there hacking?</h4>
+<ul>
+	<li><a href="https://github.com/wakaleo">John Ferguson Smart</a> (Thucydides Lead)</li>
+	<li><a href="http://github.com/aslakknutsen">Aslak Knutsen</a> (Arquillian Lead)</li>
+	<li><a href="https://github.com/bartoszmajsak">Bartosz Majsak</a> (Arquillian team member, author of Beer Advisor)</li>
+	<li><a href="https://github.com/mojavelinux">Dan Allen</a> (Arquillian team member)</li>
+	<li><a href="https://github.com/jpapousek">Jan Papoušek</a> (Arquillian Drone contributor)</li>
+	<li><a href="https://github.com/lordofthejars">Alex Soto</a> (NoSQLUnit Lead, testing advocate)</li>
+</ul>
+<p><a href="https://github.com/kpiwko">Karel Piwko</a> (Arquillian Drone Lead) and <a href="https://github.com/VineetReynolds">Vineet Reynolds</a> (Arquillian Core and Thucydides integration) will be participating, time permitting, from afar. Feel free to reach out to them on IRC or the forums.</p>
+<h4>What we want to achieve</h4>
+<p>The following two tests are proposed milestones we want to achieve during the hack. They contrast what integration looks like without Drone to the integration with Drone. Thinking through these scenarios helps reveal integartion points that need to be exposed or refined.</p>
+<p class="info"><span>The tests in this section apply to the <a href="https://github.com/bartoszmajsak/Beer-Advisor">Beer Advisor</a> sample application.</span></p>
+<p><strong>Sample test without Drone integration</strong></p>
+<pre class="prettify"><code class="prettify">@RunWith(ThucydidesRunner.class) // or @RunWith(Arquillian.class)&#x000A;@Story(BeerAdvisorFeatures.SearchingBeers.class)&#x000A;public class SearchingBeersStory {</code>&#x000A;&#x000A;<code class="prettify">    // Thucydides members</code>&#x000A;&#x000A;<code class="prettify">    @Managed(uniqueSession = true)&#x000A;    public WebDriver browser;</code>&#x000A;&#x000A;<code class="prettify">    @ManagedPages&#x000A;    public Pages pages;</code>&#x000A;&#x000A;<code class="prettify">    @Steps&#x000A;    public SearchingSteps searchingSteps;</code>&#x000A;&#x000A;<code class="prettify">    // Arquillian members</code>&#x000A;&#x000A;<code class="prettify">    @Deployment(testable = false)&#x000A;    public static WebArchive createTestArchive() {&#x000A;       return ShrinkWrap.create(WebArchive.class, "searching-beers-story.war")...;&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @ArquillianResource&#x000A;    URL deploymentUrl;</code>&#x000A;&#x000A;<code class="prettify">    // Tests</code>&#x000A;&#x000A;<code class="prettify">    @Before&#x000A;    public void before_tests() {&#x000A;        pages.setDefaultBaseUrl(deploymentUrl.toExternalForm());&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void should_find_all_usa_beers() {&#x000A;        searchingSteps.on_main_beer_advisor_page();&#x000A;        searchingSteps.search_for("from usa");&#x000A;        searchingSteps.should_contain_beers(new Beer("90 minute IPA"), new Beer("Mirror Pond"));&#x000A;    }&#x000A;}</code></pre>
+<p>The following steps outline the interplay between Arquillian and Thucydides while the test executes in this scenario.</p>
+<ul>
+	<li>Either Arquillian or Thucydides takes over test execution and activate both frameworks</li>
+	<li>Responding to the test suite start event, Arquillian and configures and starts (or connects to) the container</li>
+	<li>Arquillian deploys test archive(s) to container</li>
+	<li>Arquillian injects the application URL into the @ArquillianResource URL inject point of the test</li>
+	<li>Thucydides spawns a browser instance using WebDriver</li>
+	<li>Thucydides executes tests, sending browser commands to WebDriver</li>
+	<li>Thucydides takes screenshots using WebDriver as the browser is interacting with the web application</li>
+	<li>Thucydides destoys the browser instance using WebDriver</li>
+	<li>Arquillian undeploys the test archive</li>
+	<li>Arquillian stops the container</li>
+	<li>Thucydides generates reports from the high-level summarizes, screenshots and test results</li>
+</ul>
+<p>Any Arquillian extensions that are loaded should also work as normal.</p>
+<p><strong>Sample test with Drone integration</strong></p>
+<pre class="prettify"><code class="prettify">@RunWith(ThucydidesRunner.class) // or @RunWith(Arquillian.class)&#x000A;@Story(BeerAdvisorFeatures.SearchingBeers.class)&#x000A;public class SearchingBeersStory {</code>&#x000A;&#x000A;<code class="prettify">    // Thucydides members</code>&#x000A;&#x000A;<code class="prettify">    @Steps&#x000A;    public SearchingSteps searchingSteps;</code>&#x000A;&#x000A;<code class="prettify">    // Arquillian members</code>&#x000A;&#x000A;<code class="prettify">    @Deployment(testable = false)&#x000A;    public static WebArchive createTestArchive() {&#x000A;       return ShrinkWrap.create(WebArchive.class, "searching-beers-story.war")...;&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Drone // may get moved to the page objects&#x000A;    public WebDriver browser;</code>&#x000A;&#x000A;<code class="prettify">    // Tests</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void should_find_all_usa_beers() {&#x000A;        searchingSteps.on_main_beer_advisor_page();&#x000A;        searchingSteps.search_for("from usa");&#x000A;        searchingSteps.should_contain_beers(new Beer("90 minute IPA"), new Beer("Mirror Pond"));&#x000A;    }&#x000A;}</code></pre>
+<p>The following steps outline the interplay between Arquillian and Thucydides while the test executes in this scenario.</p>
+<ul>
+	<li>Either Arquillian or Thucydides takes over test execution and activate both frameworks</li>
+	<li>Arquillian configures and starts (or connects to) the container</li>
+	<li>Arquillian deploys test archive(s) to container</li>
+	<li>Arquillian injects the application URL into the @ArquillianResource URL injection point of the test</li>
+	<li>Arquillian Drone spawns a browser instance using the configured browser automation library (e.g., WebDriver)</li>
+	<li>Arquillian Drone sets the default base URL on the managed pages</li>
+	<li>Thucydides executes tests, sending browser commands to the browser automation library</li>
+	<li>Arquillian Drone takes screenshots as the browser is interacting with the web application</li>
+	<li>Arquillian Drone destoys the browser instance using the configured browser automation library</li>
+	<li>Arquillian undeploys the test archive</li>
+	<li>Arquillian stops the container</li>
+	<li>Thucydides generates reports from the high-level summarizes, screenshots and test results</li>
+</ul>
+<p>Any Arquillian Drone extensions, such as Graphene, that are loaded should also work as normal.</p>
+<h4>Sample code to use for exploring the integration</h4>
+<ul>
+	<li><a href="https://github.com/bartoszmajsak/Beer-Advisor">Beer Advisor</a> by Bartosz Majsak</li>
+	<li><a href="https://github.com/VineetReynolds/thucydides-arquillian-example">Currency Exchange</a> by Vineet Reynolds</li>
+</ul>
+<h4>Prior work</h4>
+<p>Vineet Reynolds has been experimenting with <a href="https://github.com/VineetReynolds/thucydides-arquillian-example/">an integration between Thucydides and Arquillian Core</a>. Vineet&#8217;s integration code uses a Thucydides <a href="https://github.com/VineetReynolds/thucydides-arquillian-example/blob/master/src/test/java/com/mycompany/listeners/ArquillianListener.java">StepListener implementation</a> to weave the Arquillian lifecycle into the test. Tests are run using the Thucydides testrunner, while Arquillian manages the container lifecycle and performs the deployment of archives defined in the tests. The integration does not incorporate Arquillian Drone, opting to leave management of WebDriver up to Thucydides.</p>
+<p>Aslak and Bartosz improved upon the integration and incorporated it into the <a href="https://github.com/bartoszmajsak/Beer-Advisor">Beer Advisor sample app</a> for their JavaZone talk in September 2012. They introduced a <a href="https://github.com/bartoszmajsak/Beer-Advisor/blob/master/thucydides-tests/src/test/java/org/arquillian/example/thucydides/ArquillianEnricher.java">JUnit Rule</a> that activates the Arquillian services that run before and after each test method, such as test enrichment. A JUnit Rule is currently necessary due to insufficient hooks in Thucydides, but it gets the job done. Eventually we want to phase out the JUnit Rule because it exposes integration plumbing in the test.</p>
+<h4>Engineering challenges</h4>
+<p><strong>Challenge #1: Unified test runner</strong></p>
+<p>Thucydides needs a startup API that isn&#8217;t coupled with JUnit so that Arquillian is able to perform the startup in an extension. At the moment there is a lot of setup code in the <a href="https://github.com/thucydides-webtests/thucydides/blob/master/thucydides-junit/src/main/java/net/thucydides/junit/runners/ThucydidesRunner.java">ThucydidesRunner</a> to reproduce. The alternative is that Thucydides provides enough hooks in its <a href="https://github.com/thucydides-webtests/thucydides/blob/master/thucydides-core/src/main/java/net/thucydides/core/steps/StepEventBus.java">StepEventBus</a> for Arquillian to hook its own startup into the Thucydides lifecycle. In the integration prototype, a JUnit rule is used to activate Arquillian in a Thucydides test, but this is not the most elegant approach.</p>
+<p>Ideally, the <code>@RunWith(Arquillian.class)</code> annotation should be enough for Arquillian to drive Thucydides if Arquillian detects Thucydides is also in use (e.g., the <code>@Story</code> annotation is present on the test class). This is the preferred approach since it simplifies the experience for the user across the test suite (a single <code>@RunWith</code> for all integration tests) and it may make the integration more compatible with extensions since Arquillian has a more sophisticated event bus.</p>
+<p><strong>Challenge #2: Drone integration</strong></p>
+<p>When Drone is integrated, the user has an option to use the browser automation library (directly or via the page object pattern) as with other Drone tests or use the page object support provided by Thucydides. Drone should be able to pass Thucydides the WebDriver instance so that Thucydides can operate its own page objects.</p>
+<p>Ideally, the integration with Drone should cut down on as many redundant declarations in the class as possible to simplify test authoring. That means that the <code>@Drone</code> injection point is used to access the browser instance and and <code>@ArquillianResource URL</code> injection point is used to access the initial (base) url.</p>
+<p>Karel Piwko mentioned that Drone needs a better SPI for improved integration with Arquillian Graphene, slated for 1.2.0.Final. He believes the Drone SPI will also help facilitate Thucydides integration. It also opens the door for Drone to be integrated into Thucydides on its own.</p>
+<p><strong>Happy hacking!</strong></p>
+<h3>Resources</h3>
+<ul>
+	<li>Thucydides: <a href="http://thucydides.info">project page</a> &#8211; <a href="http://thucydides.info/docs/thucydides">reference guide</a> &#8211; <a href="http://wakaleo.com/thucydides-javadoc">API documentation</a></li>
+	<li><a href="http://www.javaworld.com/javaworld/jw-08-2011/110823-atdd-for-web-apps.html">Acceptance test-driven development for web applications</a> by John Smart (JavaWorld)</li>
+	<li><a href="http://www.javaworld.com/javaworld/jw-10-2011/111018-thucydides-for-atdd.html">Selenium 2 and Thucydides for ATDD</a> by John Smart (JavaWorld)</li>
+	<li><a href="http://vimeo.com/49484334">Real Agile: How Real Tests Lead to Real Progress</a> by Aslak Knutsen and Bartosz Majsak (JavaZone 2012)</li>
+	<li><a href="http://www.youtube.com/watch?v=Xxpk2YGa6Do">How to test enterprise applications</a> by Alex Soto (LinuxTag 2012)</li>
+	<li><a href="https://github.com/VineetReynolds/thucydides-arquillian-example">Prototype of Arquillian and Thucydides integration</a> by Vineet Reynolds</li>
+	<li><a href="https://community.jboss.org/message/772475">Arquillian Thucydides integration discussion post</a></li>
+</ul>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/11/05/hack_idea_integrate_thucydides_and_arquillian/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/hack-idea/">hack-idea</a> <a class="tag" href="/blog/tags/thucydides/">thucydides</a> <a class="tag" href="/blog/tags/drone/">drone</a> <a class="tag" href="/blog/tags/atdd/">atdd</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
+      <a href="/blog/2012/11/02/arquillian-container-weld-1-0-0-CR5/">Arquillian Container Weld 1.0.0.CR5 Released</a>
+    </h2>
+    <div class="byline">
+      <img class="avatar" src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" />
+      <span class="author">Posted by
+      <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a></span>
+      <span class="dateinline">on Nov 02, 2012</span>
+      <div class="date"><abbr>Nov</abbr> 02</div>
+      <span class="comments">| <a href="http://arquillian.org/blog/2012/11/02/arquillian-container-weld-1-0-0-CR5/#disqus_thread" data-disqus-identifier="">Comments</a></span>
+    </div>
+  </header>
+  <div class="body">
+    <p>The Arquillian team is proud to announce the <em>1.0.0.CR5</em> release of the <em>Arquillian Container Weld</em> component!</p>
+
+<h3>What is Arquillian?</h3>
+<p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+<h3>Release details</h3>
+<table class="table table-bordered table-striped">
+  <tbody>
+    <tr>
+      <th>Component</th>
+      <td>Arquillian Container Weld</td>
+    </tr>
+    <tr>
+      <th>Modules</th>
+      <td>
+        <ul class="unstyled">
+          <li>
+            <a href="/modules/weld-ee-embedded-1.1-container-adapter/">Arquillian Weld EE Embedded 1.1.x Container Adapter</a>
+          </li>
+          <li>
+            <a href="/modules/weld-se-embedded-1-container-adapter/">Arquillian Weld SE Embedded 1.x Container Adapter</a>
+          </li>
+          <li>
+            <a href="/modules/weld-se-embedded-1.1-container-adapter/">Arquillian Weld SE Embedded 1.1.x Container Adapter</a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <th>Version</th>
+      <td>
+        1.0.0.CR5
+        <span class="label tag">
+          <a href="https://github.com/arquillian/arquillian-container-weld/commit/0761871ad37e26b7b73a42ef15b42c8b7b704fb9.html">view tag</a>
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <th>Release date</th>
+      <td>2012-11-02</td>
+    </tr>
+    <tr>
+      <th>Released by</th>
+      <td>Aslak Knutsen</td>
+    </tr>
+    <tr>
+      <th>Compiled against</th>
+      <td>
+        <ul class="unstyled">
+          <li>Arquillian Core &#8211; 1.0.2.Final</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h3>
+  Published artifacts
+  <small>org.jboss.arquillian.container</small>
+</h3>
+<ul>
+  <li>
+    org.jboss.arquillian.container
+    &raquo;
+    arquillian-weld-ee-embedded-1.1
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-ee-embedded-1.1/1.0.0.CR5/arquillian-weld-ee-embedded-1.1-1.0.0.CR5.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-ee-embedded-1.1/1.0.0.CR5/arquillian-weld-ee-embedded-1.1-1.0.0.CR5.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.container
+    &raquo;
+    arquillian-weld-se-embedded-1
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1/1.0.0.CR5/arquillian-weld-se-embedded-1-1.0.0.CR5.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1/1.0.0.CR5/arquillian-weld-se-embedded-1-1.0.0.CR5.pom" target="_blank">pom</a>
+  </li>
+  <li>
+    org.jboss.arquillian.container
+    &raquo;
+    arquillian-weld-se-embedded-1.1
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1.1/1.0.0.CR5/arquillian-weld-se-embedded-1.1-1.0.0.CR5.jar" target="_blank">jar</a>
+    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1.1/1.0.0.CR5/arquillian-weld-se-embedded-1.1-1.0.0.CR5.pom" target="_blank">pom</a>
+  </li>
+</ul>
+<h3>
+  Release notes and resolved issues
+  <small>3</small>
+</h3>
+<p>Minor enhancement</p>
+<dl>
+  <dt>Feature Request</dt>
+  <dd>
+    <ul class="unstyled">
+      <li><a href="https://issues.jboss.org/browse/ARQ-1148">ARQ-1148</a> -         weld-ee-container should remove duplicate entries when merging multiple beans.xml files</li>
+      <li><a href="https://issues.jboss.org/browse/ARQ-1168">ARQ-1168</a> -         Merge beans.xml files for Embedded Weld Containers</li>
+    </ul>
+  </dd>
+</dl>
+<p>
+  Thanks to the following list of contributors:
+  <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
+</p>
+  </div>
+  <div class="footer">
+    <a href="/blog/2012/11/02/arquillian-container-weld-1-0-0-CR5/">permalink</a>
+    |
+    <i class="icon-tags"></i>
+    tagged as
+    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/weld/">weld</a>
+  </div>
+</article>
+<article class="post">
+  <header class="header">
+    <h2 class="title">
       <a href="/blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha2/">Arquillian Transaction Extension 1.0.0.Alpha2 Released</a>
     </h2>
     <div class="byline">
@@ -63,7 +348,7 @@
       <a href="https://community.jboss.org/people/bmajsak">Bartosz Majsak</a></span>
       <span class="dateinline">on Nov 01, 2012</span>
       <div class="date"><abbr>Nov</abbr> 01</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="a7c2d17cb1ce7291c0e3575abaeea4ebf7734ab3">Comments</a></span>
+      <span class="comments">| <a href="http://arquillian.org/blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -100,7 +385,7 @@
     </tr>
     <tr>
       <th>Release date</th>
-      <td>2012-10-29</td>
+      <td>2012-10-30</td>
     </tr>
     <tr>
       <th>Released by</th>
@@ -212,7 +497,7 @@
       <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
       <span class="dateinline">on Oct 25, 2012</span>
       <div class="date"><abbr>Oct</abbr> 25</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/10/25/arquillian-extension-drone-1-1-0-Final/#disqus_thread" data-disqus-identifier="43ac2e7f656307f2ec7d971ee0be8c960940ff3d">Comments</a></span>
+      <span class="comments">| <a href="http://arquillian.org/blog/2012/10/25/arquillian-extension-drone-1-1-0-Final/#disqus_thread" data-disqus-identifier="">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -223,11 +508,11 @@
 	<dt><i class="icon-star"></i> Browser capabilities instead of <code>implementationClass</code> and native capability configuration</dt>
 	<dd><p>Think of any WebDriver capability, such as <code>opera.no_restart</code> or <code>acceptSSLCerts</code>, and you can now specify it directly in <code>arquillian.xml</code>:</p>
 <div class="filename">arquillian.xml</div>
-<pre class="prettify"><code class="prettify">&lt;extension qualifier="webdriver"&gt;&#x000A;    &lt;property name="browserCapabilities"&gt;opera&lt;/property&gt;&#x000A;    &lt;property name="opera.no_restart"&gt;true&lt;/property&gt;&#x000A;    &lt;property name="acceptSSLCerts"&gt;false&lt;/property&gt;&#x000A;&lt;/extension&gt; </code></pre></dd>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier=&#8220;webdriver&#8221;&gt;<br />&#x000A;    &lt;property name=&#8220;browserCapabilities&#8221;&gt;opera&lt;/property&gt;<br />&#x000A;    &lt;property name=&#8220;opera.no_restart&#8221;&gt;true&lt;/property&gt;<br />&#x000A;    &lt;property name=&#8220;acceptSSLCerts&#8221;&gt;false&lt;/property&gt;<br />&#x000A;&lt;/extension&gt;</code></pre></dd>
 	<dt><i class="icon-star"></i> Support for reusable browsers</dt>
 	<dd><p>Reusable browsers stay connected even if you finish the tests. This will speed up turnaroud when developing the application. Reusable browsers are based on top of remote browsers, so you&#8217;ll need Selenium Hub (run <strong>selenium-server-standalone-2.25.0.jar</strong>) running during your tests. This is how you enable them (<code>remoteAddress</code> is optional, default value listed here):</p>
 <div class="filename">arquillian.xml</div>
-<pre class="prettify"><code class="prettify">&lt;extension qualifier="webdriver"&gt;&#x000A;    &lt;property name="browserCapabilities"&gt;chrome&lt;/property&gt;&#x000A;    &lt;property name="remoteReusable"&gt;true&lt;/property&gt;&#x000A;    &lt;property name="remoteAddress"&gt;http://localhost:4444/wd/hub&lt;/property&gt;&#x000A;&lt;/extension&gt; </code></pre></dd>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier=&#8220;webdriver&#8221;&gt;<br />&#x000A;    &lt;property name=&#8220;browserCapabilities&#8221;&gt;chrome&lt;/property&gt;<br />&#x000A;    &lt;property name=&#8220;remoteReusable&#8221;&gt;true&lt;/property&gt;<br />&#x000A;    &lt;property name=&#8220;remoteAddress&#8221;&gt;http://localhost:4444/wd/hub&lt;/property&gt;<br />&#x000A;&lt;/extension&gt;</code></pre></dd>
 	<dt><i class="icon-star"></i> Better support for the Opera browser</dt>
 	<dt><i class="icon-star"></i> Support for browsers on iOS devices</dt>
 	<dt><i class="icon-star"></i> Deprecated Arquillian Drone system properties configuration</dt>
@@ -396,7 +681,7 @@
 </dl>
 <p>
   Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://github.com/papousek">Jan PapoušEk</a>
+  <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://github.com/papousek">Jan Papoušek</a>
 </p>
   </div>
   <div class="footer">
@@ -418,7 +703,7 @@
       <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a></span>
       <span class="dateinline">on Oct 19, 2012</span>
       <div class="date"><abbr>Oct</abbr> 19</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/10/19/arquillian-core-1-0-3-Final/#disqus_thread" data-disqus-identifier="cacec3262163a511e4fd3a79c3f5f5348e0bbaa5">Comments</a></span>
+      <span class="comments">| <a href="http://arquillian.org/blog/2012/10/19/arquillian-core-1-0-3-Final/#disqus_thread" data-disqus-identifier="">Comments</a></span>
     </div>
   </header>
   <div class="body">
@@ -682,7 +967,7 @@
 </dl>
 <p>
   Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://github.com/krichardsson">Kristoffer Richardsson</a>
+  <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://github.com/krichardsson">Kristoffer Richardsson</a>, <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>
 </p>
   </div>
   <div class="footer">
@@ -691,281 +976,6 @@
     <i class="icon-tags"></i>
     tagged as
     <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/platform/">platform</a> <a class="tag" href="/blog/tags/core/">core</a> <a class="tag" href="/blog/tags/jbosscentral/">jbosscentral</a>
-  </div>
-</article>
-<article class="post">
-  <header class="header">
-    <h2 class="title">
-      <a href="/blog/2012/10/18/arquillian-extension-portal-1-0-0-Alpha2/">Arquillian Portal Extension 1.0.0.Alpha2 Released</a>
-    </h2>
-    <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/74e721dd22b0d509b85746c5edf559c8?s=44" />
-      <span class="author">Posted by
-      <a href="https://community.jboss.org/people/kenfinni">Ken Finnigan</a></span>
-      <span class="dateinline">on Oct 18, 2012</span>
-      <div class="date"><abbr>Oct</abbr> 18</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/10/18/arquillian-extension-portal-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="a61a42ecc442178e6a641b4ed51dd2f4bc47f070">Comments</a></span>
-    </div>
-  </header>
-  <div class="body">
-    <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha2</em> release of the <em>Arquillian Portal Extension</em> component!</p>
-<p>The <em>Portal</em> extension for Arquillian brings testing into the world of Portlets!</p>
-<h3 class="highlights">Some of the highlights in this release</h3>
-<p><i class="icon-star"></i> URL injection of portlets by name. <code>@PortalURL</code> now supports defining the names of the portlets that you want rendered on the page of the injected URL. You can either specify a single portlet name, multiple, or leave it empty and it will load all portlets defined within <code>portlets.xml</code> onto the page. Injecting a URL of a portlet page with the <code>MyPortlet</code> portlet present is done by:</p>
-<div class="filename">MyTest.java</div>
-<pre class="prettify"><code class="prettify">@ArquillianResource&#x000A;@PortalURL("MyPortlet")&#x000A;URL portletPage;</code></pre>
-<p><i class="icon-star"></i> Annotation for marking portlet tests. <code>@PortalTest</code> now represents a marker on a test class that signifies to <em>Portal</em> extension implementations that a portlet test is being invoked. This enables for augmenting the test deployment with whatever information is needed for particular portlet containers to enable a portlet to be tested. It has the added benefit of decoupling a test needing to inject a <code>@PortalURL</code> if the tests don&#8217;t require a URL to the portlet page.</p>
-<p>Currently there are two implementations of this extension for use with <a href="https://github.com/jbossportletbridge/pluto-testing">Pluto</a> and <a href="https://github.com/jbossportletbridge/gatein-testing">GateIn</a> portal containers.</p>
-<p>For examples on how to use these extensions with their respective portal containers, you can take a look at the <a href="https://github.com/jbossportletbridge/jbossportletbridge/tree/master/testsuites">testsuite</a> of JBoss Portlet Bridge.</p>
-<p>We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
-<h3>What is Arquillian?</h3>
-<p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
-<h3>Release details</h3>
-<table class="table table-bordered table-striped">
-  <tbody>
-    <tr>
-      <th>Component</th>
-      <td>
-        <a href="/modules/portal-extension/">Arquillian Portal Extension</a>
-      </td>
-    </tr>
-    <tr>
-      <th>Version</th>
-      <td>
-        1.0.0.Alpha2
-        <span class="label tag">
-          <a href="https://github.com/arquillian/arquillian-extension-portal/commit/f214ca2608daaf6d69b4afbe32ff251eae35b9a6.html">view tag</a>
-        </span>
-      </td>
-    </tr>
-    <tr>
-      <th>Release date</th>
-      <td>2012-10-17</td>
-    </tr>
-    <tr>
-      <th>Released by</th>
-      <td>Ken Finnigan</td>
-    </tr>
-    <tr>
-      <th>Compiled against</th>
-      <td>
-        <ul class="unstyled">
-          <li>Arquillian Core &#8211; 1.0.2.Final</li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-<h3>
-  Published artifacts
-  <small>org.jboss.arquillian.extension</small>
-</h3>
-<ul>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-portal
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal/1.0.0.Alpha2/arquillian-portal-1.0.0.Alpha2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal/1.0.0.Alpha2/arquillian-portal-1.0.0.Alpha2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-portal-api
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-api/1.0.0.Alpha2/arquillian-portal-api-1.0.0.Alpha2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-api/1.0.0.Alpha2/arquillian-portal-api-1.0.0.Alpha2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-portal-impl
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-impl/1.0.0.Alpha2/arquillian-portal-impl-1.0.0.Alpha2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-impl/1.0.0.Alpha2/arquillian-portal-impl-1.0.0.Alpha2.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.extension
-    &raquo;
-    arquillian-portal-spi
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-spi/1.0.0.Alpha2/arquillian-portal-spi-1.0.0.Alpha2.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-spi/1.0.0.Alpha2/arquillian-portal-spi-1.0.0.Alpha2.pom" target="_blank">pom</a>
-  </li>
-</ul>
-<h3>
-  Release notes and resolved issues
-  <small>6</small>
-</h3>
-<p></p>
-<dl>
-  <dt>Bug</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-961">ARQ-961</a> -         Error in README for the name of additional URL qualifier</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
-  <dt>Enhancement</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-1117">ARQ-1117</a> -         Support Portal URL for specific portlet or several on a page</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
-  <dt>Task</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-1115">ARQ-1115</a> -         Introduce Portal depchain</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-1116">ARQ-1116</a> -         Change references of portal container to portlet container</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-1151">ARQ-1151</a> -         Update Portal Extension to Core 1.0.2.Final</li>
-    </ul>
-  </dd>
-</dl>
-<p>
-  Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/kenfinni">Ken Finnigan</a>, <a href="https://community.jboss.org/people/toomtooms">Thomas DelhoméNie</a>
-</p>
-  </div>
-  <div class="footer">
-    <a href="/blog/2012/10/18/arquillian-extension-portal-1-0-0-Alpha2/">permalink</a>
-    |
-    <i class="icon-tags"></i>
-    tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/portal/">portal</a>
-  </div>
-</article>
-<article class="post">
-  <header class="header">
-    <h2 class="title">
-      <a href="/blog/2012/10/17/arquillian-container-weld-1-0-0-CR4/">Arquillian Container Weld 1.0.0.CR4 Released</a>
-    </h2>
-    <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" />
-      <span class="author">Posted by
-      <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a></span>
-      <span class="dateinline">on Oct 17, 2012</span>
-      <div class="date"><abbr>Oct</abbr> 17</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/10/17/arquillian-container-weld-1-0-0-CR4/#disqus_thread" data-disqus-identifier="fd447bbd4f99bfabe73a57e08591938dda5ce5e1">Comments</a></span>
-    </div>
-  </header>
-  <div class="body">
-    <p>The Arquillian team is proud to announce the <em>1.0.0.CR4</em> release of the <em>Arquillian Container Weld</em> component!</p>
-
-<h3>What is Arquillian?</h3>
-<p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
-<h3>Release details</h3>
-<table class="table table-bordered table-striped">
-  <tbody>
-    <tr>
-      <th>Component</th>
-      <td>Arquillian Container Weld</td>
-    </tr>
-    <tr>
-      <th>Modules</th>
-      <td>
-        <ul class="unstyled">
-          <li>
-            <a href="/modules/weld-ee-embedded-1.1-container-adapter/">Arquillian Weld EE Embedded 1.1.x Container Adapter</a>
-          </li>
-          <li>
-            <a href="/modules/weld-se-embedded-1-container-adapter/">Arquillian Weld SE Embedded 1.x Container Adapter</a>
-          </li>
-          <li>
-            <a href="/modules/weld-se-embedded-1.1-container-adapter/">Arquillian Weld SE Embedded 1.1.x Container Adapter</a>
-          </li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <th>Version</th>
-      <td>
-        1.0.0.CR4
-        <span class="label tag">
-          <a href="https://github.com/arquillian/arquillian-container-weld/commit/97397582b80ecc1bfe9ab7610bd5d7965bdc6f32.html">view tag</a>
-        </span>
-      </td>
-    </tr>
-    <tr>
-      <th>Release date</th>
-      <td>2012-10-17</td>
-    </tr>
-    <tr>
-      <th>Released by</th>
-      <td>Aslak Knutsen</td>
-    </tr>
-    <tr>
-      <th>Compiled against</th>
-      <td>
-        <ul class="unstyled">
-          <li>Arquillian Core &#8211; 1.0.2.Final</li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-<h3>
-  Published artifacts
-  <small>org.jboss.arquillian.container</small>
-</h3>
-<ul>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-weld-ee-embedded-1.1
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-ee-embedded-1.1/1.0.0.CR4/arquillian-weld-ee-embedded-1.1-1.0.0.CR4.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-ee-embedded-1.1/1.0.0.CR4/arquillian-weld-ee-embedded-1.1-1.0.0.CR4.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-weld-se-embedded-1
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1/1.0.0.CR4/arquillian-weld-se-embedded-1-1.0.0.CR4.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1/1.0.0.CR4/arquillian-weld-se-embedded-1-1.0.0.CR4.pom" target="_blank">pom</a>
-  </li>
-  <li>
-    org.jboss.arquillian.container
-    &raquo;
-    arquillian-weld-se-embedded-1.1
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1.1/1.0.0.CR4/arquillian-weld-se-embedded-1.1-1.0.0.CR4.jar" target="_blank">jar</a>
-    <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1.1/1.0.0.CR4/arquillian-weld-se-embedded-1.1-1.0.0.CR4.pom" target="_blank">pom</a>
-  </li>
-</ul>
-<h3>
-  Release notes and resolved issues
-  <small>6</small>
-</h3>
-<p></p>
-<dl>
-  <dt>Bug</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-753">ARQ-753</a> -         ShrinkWrapClassLoader does not find service provider in WAR</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-817">ARQ-817</a> -         arquillian-weld-container does not build on Maven Default Profile</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-818">ARQ-818</a> -         WebArchiveClassLoader only honors resource requests for Service files</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-819">ARQ-819</a> -         Wrong criteria used for supplying Weld with WebArchiveClassLoader</li>
-      <li><a href="https://issues.jboss.org/browse/ARQ-890">ARQ-890</a> -         WeldEEMockContainer does not clean up resources if the deployment fails</li>
-    </ul>
-  </dd>
-</dl>
-<dl>
-  <dt>Feature Request</dt>
-  <dd>
-    <ul class="unstyled">
-      <li><a href="https://issues.jboss.org/browse/ARQ-1160">ARQ-1160</a> -         Prepare Weld CR4</li>
-    </ul>
-  </dd>
-</dl>
-<p>
-  Thanks to the following list of contributors:
-  <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>, <a href="https://community.jboss.org/people/alrubinger">Andrew Lee Rubinger</a>, <a href="https://community.jboss.org/people/mkouba">Martin Kouba</a>, <a href="https://community.jboss.org/people/jharting">Jozef Hartinger</a>
-</p>
-  </div>
-  <div class="footer">
-    <a href="/blog/2012/10/17/arquillian-container-weld-1-0-0-CR4/">permalink</a>
-    |
-    <i class="icon-tags"></i>
-    tagged as
-    <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/weld/">weld</a>
   </div>
   
               <script type="text/javascript">
@@ -999,6 +1009,22 @@
     <ul>
       <li>
         <div class="title">
+          <a href="/blog/2012/11/27/arquillian-extension-jacoco-1-0-0-Alpha5/">Arquillian Extension Jacoco 1.0.0.Alpha5 Released</a>
+        </div>
+        <div class="meta">
+          Nov 27, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
+          <a href="/blog/2012/11/27/arquillian-extension-jacoco-1-0-0-Alpha4/">Arquillian Extension Jacoco 1.0.0.Alpha4 Released</a>
+        </div>
+        <div class="meta">
+          Nov 27, 2012
+        </div>
+      </li>
+      <li>
+        <div class="title">
           <a href="/blog/2012/11/16/arquillian-extension-transaction-1-0-0-Alpha3/">Arquillian Transaction Extension 1.0.0.Alpha3 Released</a>
         </div>
         <div class="meta">
@@ -1019,22 +1045,6 @@
         </div>
         <div class="meta">
           Nov 08, 2012
-        </div>
-      </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2012/11/05/hack_idea_integrate_thucydides_and_arquillian/">Hack Idea: Fully Automate ATDD by Integrating Thucydides with Arquillian</a>
-        </div>
-        <div class="meta">
-          Nov 05, 2012
-        </div>
-      </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2012/11/02/arquillian-container-weld-1-0-0-CR5/">Arquillian Container Weld 1.0.0.CR5 Released</a>
-        </div>
-        <div class="meta">
-          Nov 02, 2012
         </div>
       </li>
     </ul>
@@ -1098,7 +1108,7 @@
       <span class="tag tag-1">
         <a href="http://arquillian.org/blog/tags/community/">community</a>
       </span>
-      <span class="tag tag-3">
+      <span class="tag tag-2">
         <a href="http://arquillian.org/blog/tags/container-adapter/">container-adapter</a>
       </span>
       <span class="tag tag-1">
