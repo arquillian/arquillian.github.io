@@ -62,7 +62,7 @@ module Awestruct::Extensions::Lanyrd
       page1 = Hpricot(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-1.html"), search_url))
       pages << page1
       
-      extract_pages(page1, pages)
+      extract_pages(page1, pages, search_url)
       
       pages.each do |page|
         extract_sessions(page, sessions)
@@ -72,17 +72,17 @@ module Awestruct::Extensions::Lanyrd
     end
     
     # Find all Pages in a 'root' Page
-    def extract_pages(root, pages)
+    def extract_pages(root, pages, search_url)
+      # lanyrd pageination show 1, 2, 3... 5
+      # Get the last index and loop
+      last_page_index = 1
       root.search('div[@class*=pagination]') do |p|
-        p.search('li') do |entry|
-          a = entry.at('a')
-          if a
-            pageinated_url = "#{@base}#{a.attributes['href']}"
-        
-            pageX = Hpricot(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-#{a.inner_text}.html"), pageinated_url))
-            pages << pageX
-          end
-        end
+        last_page_index = Integer(p.search('li').last.at('a').inner_text) +1
+      end
+      for index in 2...last_page_index
+		pageinated_url = "#{search_url}&page=#{index}"
+		pageX = Hpricot(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-#{index}.html"), pageinated_url))
+		pages << pageX
       end
     end
     
