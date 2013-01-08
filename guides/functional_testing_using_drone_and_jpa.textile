@@ -513,7 +513,7 @@ public class LoginController implements Serializable {
 
 h4. Web pages
 
-p. We will use only three web pages, one for registering, one for logging and the last one will simulate simple home-like web page to which a user is redirected after successful logging in. These files are very similar to what you saw in the previous tutorial, they are nearly their copy-paste brothers. All pages are stored in @src/main/webapp@ directory. Let's start with @login.xhtml@
+p. We will use only three web pages, one for registering, one for logging and the last one will simulate simple home-like web page which a user is redirected to after successful logging in. These files are very similar to what you saw in the previous tutorial, they are nearly their copy-paste brothers. All pages are stored in @src/main/webapp@ directory. Let's start with @login.xhtml@
 
 div(filename). src/main/webapp/login.xhtml
 
@@ -595,7 +595,7 @@ p. We are testing in the client mode, the priciple behind it is just the same as
 p. First of all we can not forget to inject @@Drone@ and @@ArquillianResource@ into our test. @Drone@ 
 annotation on the field injects Selenium driver throught which we can communicate and command the web browser the test will run at. @@ArquillianResource@ gives us the URL of the deployed application:
 
-div(filename). src/test/java/org/arquillian/example/JPASeleniumTest.java
+div(filename). src/test/java/org/arquillian/example/JPAWebDriverTest.java
 
 bc(prettify).. // clip 
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -603,7 +603,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 // clip
 
 @Drone
-DefaultSelenium browser;
+WebDriver browser;
     
 @ArquillianResource
 URL deploymentUrl;
@@ -706,27 +706,49 @@ private static final String PASSWORD = "PASSWORD";
 @Test
 public void register() {
     // Register
-    browser.open(deploymentUrl + "register.jsf");
-    browser.waitForPageToLoad("15000");
-    browser.type("id=registerForm:username", USERNAME);
-    browser.type("id=registerForm:password", PASSWORD);
-    browser.click("id=registerForm:register");
-    browser.waitForPageToLoad("15000");
-    Assert.assertTrue(browser.isTextPresent("Log in"));
-
+    driver.get(deploymentUrl + "register.jsf");
+    driver.findElement(REGISTER_USERNAME_FIELD).sendKeys(USERNAME);
+    driver.findElement(REGISTER_PASSWORD_FIELD).sendKeys(PASSWORD);
+    driver.findElement(REGISTER_BUTTON).click();
+    
+    Assert.assertTrue(driver.findElement(LOGIN_TEXT).isDisplayed());
+    
     // And try to log in
-    Assert.assertTrue("User should be registered and redirected to login page!",
-            browser.isElementPresent("id=loginForm:username"));
-    Assert.assertTrue("User should be registered and redirected to login page!",
-            browser.isElementPresent("id=loginForm:password"));
-
-    browser.type("id=loginForm:username", USERNAME);
-    browser.type("id=loginForm:password", PASSWORD);
-    browser.click("id=loginForm:login");
-    browser.waitForPageToLoad("15000");
+    Assert.assertTrue("User should be registered and redirected to login page!"
+            , driver.findElement(LOGIN_USERNAME_FIELD).isDisplayed()
+            && driver.findElement(LOGIN_PASSWORD_FIELD).isDisplayed());
+        
+    driver.findElement(LOGIN_USERNAME_FIELD).clear();
+    driver.findElement(LOGIN_USERNAME_FIELD).sendKeys(USERNAME);
+    driver.findElement(LOGIN_PASSWORD_FIELD).clear();
+    driver.findElement(LOGIN_PASSWORD_FIELD).sendKeys(PASSWORD);
+    driver.findElement(LOGIN_BUTTON).click();
+            
     Assert.assertTrue("User should be at welcome page!",
-        browser.isTextPresent("You are signed in as " + USERNAME));
+            driver.findElement(WELCOME).isDisplayed());
 }
+
+p. As you spotted, we are using locators to find some element at the web page we are testing. These locators 
+have to be specified in the test class as well. You are welcome to paste this to your class:
+
+bc(prettify).. private static final By REGISTER_USERNAME_FIELD = By.id("registerForm:username");
+    
+private static final By REGISTER_PASSWORD_FIELD = By.id("registerForm:password");
+    
+private static final By REGISTER_BUTTON = By.id("registerForm:register");
+    
+private static final By LOGIN_USERNAME_FIELD = By.id("loginForm:username");
+    
+private static final By LOGIN_PASSWORD_FIELD = By.id("loginForm:password");
+    
+private static final By LOGIN_TEXT = By.xpath("//h3[contains(text(), 'Log in')]");
+
+private static final By LOGIN_BUTTON = By.id("loginForm:login");
+
+private static final By WELCOME = By.xpath("//p[contains(text(), 'You are signed in as " + USERNAME + ".')]");
+
+p. These are all locators you have to specify to provide the WebDriver driver a way how to access it and deal 
+with them.
 
 p. You are welcome to extend this testing method as you like, you can also play around and try to incorporate test methods which test user's input, e.g. the lenght of the username and password. You can write appropriate message which will be shown to the user when he enters invalid username (e.g. too short) and react accordingly. The sky is the limit.
 
@@ -734,94 +756,104 @@ p(info). %When writing more then one test method, it might be the case you want 
 
 h3. Maven infrastructure
 
-The last bit of information which misses is to show you @pom.xml@ file. This one will be pretty concise too. For the sake of simplicity, we as showing only one profile which is activated by default. We will be testing in managed container of JBoss AS 7.
+The last bit of information which misses is to show you @pom.xml@ file. This one will be pretty concise too. For the sake of simplicity, we are showing only one profile which is activated by default. We will be testing in managed container of JBoss AS 7. We are testing against WebDriver.
 
 div(filename). pom.xml
 
-bc(prettify).. <profile>
-    <id>arquillian-jbossas-managed</id>
-    <activation>
-        <activeByDefault>true</activeByDefault>
-    </activation>
+bc(prettify).. <profiles>
+    <profile>
+        <id>arquillian-jbossas-managed</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <dependencies>
+            <dependency>
+            <!-- Adds Arquillian Core and ShrinkWrap API -->
+                <groupId>org.jboss.arquillian.junit</groupId>
+                <artifactId>arquillian-junit-container</artifactId>
+                <scope>test</scope>
+            </dependency>
+            <!-- jboss as managed -->
+            <dependency>
+                <groupId>org.jboss.as</groupId>
+                <artifactId>jboss-as-arquillian-container-managed</artifactId>
+                <version>7.1.1.Final</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec</groupId>
+                <artifactId>jboss-javaee-6.0</artifactId>
+                <version>1.0.0.Final</version>
+                <type>pom</type>
+                <scope>provided</scope>
+            </dependency>
+            <!-- Drone impl -->
+            <dependency>
+                <groupId>org.jboss.arquillian.extension</groupId>
+                <artifactId>arquillian-drone-impl</artifactId>
+                <scope>test</scope>
+            </dependency>
+            <!-- Graphene Webdriver -->              
+            <dependency>
+                <groupId>org.jboss.arquillian.graphene</groupId>
+                <artifactId>graphene-webdriver</artifactId>
+                <version>${version.org.jboss.arquillian.graphene2}</version>
+                <type>pom</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>1.6.4</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.8.1</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </profile>
+</profiles>
+
+p. Regarding dependency management, you are oblidged to enter this to your @pom.xml@
+
+bc(prettify).. <dependencyManagement>
     <dependencies>
-        <!-- Adds Arquillian Core and ShrinkWrap API -->
+        <!-- Arquillian Core dependencies -->
         <dependency>
-            <groupId>org.jboss.arquillian.junit</groupId>
-            <artifactId>arquillian-junit-container</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- jboss as managed -->
-        <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-arquillian-container-managed</artifactId>
-            <version>7.1.1.Final</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-6.0</artifactId>
-            <version>1.0.0.Final</version>
+            <groupId>org.jboss.arquillian</groupId>
+            <artifactId>arquillian-bom</artifactId>
+            <version>${version.org.jboss.arquillian}</version>
             <type>pom</type>
-            <scope>provided</scope>
+            <scope>import</scope>
         </dependency>
-        <!-- drone impl -->
+        <!-- Arquillian Drone dependencies and Selenium dependencies -->
         <dependency>
             <groupId>org.jboss.arquillian.extension</groupId>
-            <artifactId>arquillian-drone-impl</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- drone selenium -->
-        <dependency>
-            <groupId>org.jboss.arquillian.extension</groupId>
-            <artifactId>arquillian-drone-selenium</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- drone selenium server -->
-        <dependency>
-            <groupId>org.jboss.arquillian.extension</groupId>
-            <artifactId>arquillian-drone-selenium-server</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- selenium java -->
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-server</artifactId>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.mortbay.jetty</groupId>
-                    <artifactId>servlet-api-2.5</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.6.4</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.8.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.protocol</groupId>
-            <artifactId>arquillian-protocol-servlet</artifactId>
-            <scope>test</scope>
+            <artifactId>arquillian-drone-bom</artifactId>
+            <version>${version.org.jboss.arquillian.drone}</version>
+            <type>pom</type>
+            <scope>import</scope>
         </dependency>
     </dependencies>
-</profile>
+</dependencyManagement>
+
+p. It will import all dependencies necessary to run Arquillian and Drone based tests.
+
+p. Do not forget to import properties element in order to get Maven know what versions of artifact it should use
+
+bc(prettify).. <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <version.org.jboss.arquillian>1.0.3.Final</version.org.jboss.arquillian>
+    <version.org.jboss.arquillian.drone>1.1.0.Final</version.org.jboss.arquillian.drone>
+    <version.org.jboss.arquillian.graphene2>2.0.0.Alpha2</version.org.jboss.arquillian.graphene2>
+</properties>
 
 h3. Run it!
 
-Testing is very easy since the profile is activated by default. The only thing which remains is to run test
+Testing is very easy since the profile is activated by default. The only thing which remains is to run the test
 
 bc(command). mvn test
 
