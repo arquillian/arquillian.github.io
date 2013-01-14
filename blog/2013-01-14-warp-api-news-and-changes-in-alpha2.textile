@@ -1,0 +1,136 @@
+---
+layout: post
+title: Warp API - News and Changes in Alpha2
+author: lfryc
+tags: [ warp ]
+---
+
+The Warp high-level API underwent a huge number of changes in Alpha2.
+
+To introduce those features, we will go through them one by one.
+
+h3. Single Request Execution
+
+In the most simple scenario you need to inspect a first request after performing a given client activity. For this purpose, you can use a basic Warp API known from Alpha1:
+
+bc(prettify).. Warp
+    .initiate(Activity)
+    .inspect(Inspection);
+
+p. This will intercept a first request coming from a client and ignore rest of potential requests.
+
+Additionally, Warp will ignore requests for <tt>favicon.ico</tt> which could fail your tests unexpectadly.
+
+h3(#anonymous-and-inner-classes). Anonymous and Inner Classes
+
+In _Alpha1_, you had to use _top-level_ or _static inner classes_ to define inspections.
+
+In _Alpha2_, you can provide _non-static inner class_ or even _anonymous class_.
+
+In a following sample, you can see new API together with anonymous inspection in action:
+
+div(filename). HelloWarp.java
+
+bc(prettify).. Warp
+    // first you need to initiate activity which triggers HTTP request
+    .initiate(new Activity() {
+        public void perform() {
+            ajaxButton.click();
+        }
+    })
+
+    // and then specify what behavior should be inspected on the server
+    .inspect(new Inspection() {
+
+        // don't forget to specify serialVerionUID to allow serialization
+        private static final long serialVersionUID = 1L;
+        
+        // bring JSF context via dependency injection
+        @ArquillianResource
+        FacesContext facesContext;
+
+        // verify expected behavior in given request phase
+        @AfterPhase(RESTORE_VIEW)
+        public void beforeServlet() {
+            assertTrue(facesContext.isPostback());
+        }
+    });
+
+h3(#request-groups). Multiple Requests with Request Groups
+
+Warp allows you to verify more than one request triggered by single client activity. This allows you to verify e.g. request for HTML page and all its resources (JS, CSS, images) separately. This feature is called _Request Groups_.
+
+The _Request Groups_ execution returns @WarpResult@ which contains details of finished execution. In order to access results related to given group, you can give the group a name:
+
+div(filename). TestRequestGroups.java
+
+bc(prettify).. // Request Group execution will return WarpResult
+WarpResult result = Warp
+    .initiate(Activity)
+    // a group specification without name - the name will be generated
+    .group()
+        .observe(HttpRequestFilter)
+        .inspect(Inspection1)
+    // a named group specification - the result can be easily accessed
+    .group("second")
+        .observe(HttpRequestFilter)
+        .inspect(Inspection2)
+    // you need to execute whole Request Group once it is completely specified
+    .execute();
+    
+    // you can access details of finished execution
+    result.getGroup("second").getInspection();
+
+p. You can find more samples for this "API in a source":https://github.com/arquillian/arquillian-extension-warp/blob/1.0.0.Alpha2/api/src/test/java/org/jboss/arquillian/warp/TestExecutionAPI.java#L62 .
+
+h3(#request-observers). Request Observers with Fluent API
+
+When using _Request Groups_, each of the requests will be inspected by inspections defined in exactly one group. There might be one or more requests verified by one group.
+
+In any case, it's necessary to choose right request to observe. For this purpose, there is @HttpRequestFilter@ interface, where you specify which @HttpRequest@ matches the purpose of current group.
+
+In order to simplify writing new Warp specifications, you can define observer using fluent API by leveraging :
+
+bc(prettify).. import static org.jboss.arquillian.warp.client.filter.http.HttpFilters.request;
+
+// will accept only requests for HTML
+...group()
+    .observe(request().uri().contains(".html"))
+
+// will accept only REST requests for JSON
+...group()
+    .observe(request().header().containsValue("Accept", "application/json"))
+
+// will accept only POST requests
+...group()
+   .observe(request().method().equal(POST))
+
+
+
+h3. Support for Request Redirection
+
+The API for _Request Groups_ allows another feature which wasn't possible in Alpha1: testing redirected requests.
+
+The idea is having observer which counts requests which were observed.
+
+It is much easier to use fluent API though:
+
+div(filename). TestHttpRedirection.java
+
+bc(prettify).. Warp
+    .initiate(Activity)
+    // first group will intercept first HTTP request
+    .group()
+        .observe(request().index(1))
+        .inspect(Inspection1)
+    // second group will intercept second HTTP request
+    .group()
+        .observe(request().index(2))
+        .inspect(Inspection2)
+    .execute();
+
+h3. How to Warp More?
+
+You can get more samples of how to use high-level API in "API sample directory":https://github.com/arquillian/arquillian-extension-warp/tree/master/api/src/test/java/org/jboss/arquillian/warp.
+
+The best to learn how to use Warp generally is looking at functional tests for "Warp":https://github.com/arquillian/arquillian-extension-warp/tree/master/ftest/src/test/java/org/jboss/arquillian/warp/ftest or "Warp JSF":https://github.com/arquillian/arquillian-extension-warp/tree/master/extension/jsf-ftest/src/test/java/org/jboss/arquillian/warp/jsf/ftest.
