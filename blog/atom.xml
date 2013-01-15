@@ -6,6 +6,511 @@
   <link href="http://arquillian.org/blog/atom.xml" rel="self" type="application/atom+xml" />
   <link href="http://arquillian.org/blog" rel="alternate" type="text/html" />
   <entry>
+    <id>http://arquillian.org/blog/2013/01/15/arquillian-extension-warp-1-0-0-Alpha2/</id>
+    <title>Arquillian Warp 1.0.0.Alpha2 Released</title>
+    <updated>2013-01-16T00:00:00Z</updated>
+    <link href="http://arquillian.org/blog/2013/01/15/arquillian-extension-warp-1-0-0-Alpha2/" rel="alternate" type="text/html" />
+    <category scheme="http://arquillian.org/blog/tags" term="release" />
+    <category scheme="http://arquillian.org/blog/tags" term="extension" />
+    <category scheme="http://arquillian.org/blog/tags" term="warp" />
+    <category scheme="http://arquillian.org/blog" term="arquillian" />
+    <summary>
+      The Arquillian team is proud to announce the 1.0.0.Alpha2 release of the Arquillian Warp component!
+It has been a pretty long road from Alpha1 to this release, focused primarily on polishing the user experience.
+So without any further ado, let’s look at the new shiny features!
+Highlighted Features
+
+	 Renaming Warp API methods
+	The API methods were renamed according to the results of our public survey. (read more)
+
+In the simplest scenario you want to inspect the first request after performing a given client activity. For this purpose, you can use a basic Warp API known from Alpha1:
+Warp&#x000A;    .initiate(Activity)&#x000A;    .inspect(Inspection);
+This......
+    </summary>
+    <content type="html">
+      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.Alpha2&lt;/em&gt; release of the &lt;em&gt;Arquillian Warp&lt;/em&gt; component!&lt;/p&gt;
+&lt;p&gt;It has been a pretty long road from Alpha1 to this release, focused primarily on polishing the user experience.&lt;/p&gt;
+&lt;p&gt;So without any further ado, let’s look at the new shiny features!&lt;/p&gt;
+&lt;h3&gt;Highlighted Features&lt;/h3&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Renaming Warp API methods&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;The API methods were renamed according to the results of our public survey. (&lt;a href=&quot;#renaming-warp-api&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;p&gt;In the simplest scenario you want to inspect the first request after performing a given client activity. For this purpose, you can use a basic Warp API known from Alpha1:&lt;/p&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;Warp&amp;#x000A;    .initiate(Activity)&amp;#x000A;    .inspect(Inspection);&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This will intercept the first request coming from the client and ignore the rest of the potential requests.&lt;/p&gt;
+&lt;p&gt;Additionally, Warp will ignore requests for &lt;tt&gt;favicon.ico&lt;/tt&gt; which could fail your test unexpectadly.&lt;/p&gt;
+&lt;p&gt;You can find more samples for this &lt;a href=&quot;https://github.com/arquillian/arquillian-extension-warp/blob/1.0.0.Alpha2/api/src/test/java/org/jboss/arquillian/warp/TestExecutionAPI.java#L62&quot;&gt;API in a source&lt;/a&gt; .&lt;/p&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Anonymous and Inner Classes&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;It&amp;#8217;s now much easier to define a verification code, which is also more readable.&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;p&gt;In &lt;em&gt;Alpha1&lt;/em&gt;, you had to use a &lt;em&gt;top-level&lt;/em&gt; or a &lt;em&gt;static inner classes&lt;/em&gt; to define inspections.&lt;/p&gt;
+&lt;p&gt;In &lt;em&gt;Alpha2&lt;/em&gt;, you can provide &lt;em&gt;non-static inner class&lt;/em&gt; or even &lt;em&gt;anonymous class&lt;/em&gt;.&lt;/p&gt;
+&lt;div class=&quot;filename&quot;&gt;HelloWarp.java&lt;/div&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;Warp&amp;#x000A;    // first you need to initiate activity which triggers HTTP request&amp;#x000A;    .initiate(new Activity() {&amp;#x000A;        public void perform() {&amp;#x000A;            ajaxButton.click();&amp;#x000A;        }&amp;#x000A;    })&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;    // and then specify what behavior should be inspected on the server&amp;#x000A;    .inspect(new Inspection() {&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;        // don't forget to specify serialVerionUID to allow serialization&amp;#x000A;        private static final long serialVersionUID = 1L;&lt;/code&gt;&amp;#x000A;        &amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;        // bring JSF context via dependency injection&amp;#x000A;        @ArquillianResource&amp;#x000A;        FacesContext facesContext;&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;        // verify expected behavior in given request phase&amp;#x000A;        @AfterPhase(RESTORE_VIEW)&amp;#x000A;        public void beforeServlet() {&amp;#x000A;            assertTrue(facesContext.isPostback());&amp;#x000A;        }&amp;#x000A;    });&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This example showed how to use the new API together with anonymous inspections&lt;/p&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Multiple Requests / Request Groups&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;It is possible to intercept several requests during one Warp execution.&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;p&gt;Warp allows you to verify more than one request triggered by a single client activity. This allows you to verify e.g. a request for HTML page and all its resources (JS, CSS, images) separately. This feature is called &lt;em&gt;Request Groups&lt;/em&gt;.&lt;/p&gt;
+&lt;div class=&quot;filename&quot;&gt;TestRequestGroups.java&lt;/div&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;// Request Group execution will return WarpResult&amp;#x000A;WarpResult result = Warp&amp;#x000A;    .initiate(Activity)&amp;#x000A;    // a group specification without name - the name will be generated&amp;#x000A;    .group()&amp;#x000A;        .observe(HttpRequestFilter)&amp;#x000A;        .inspect(Inspection1)&amp;#x000A;    // a named group specification - the result can be easily accessed&amp;#x000A;    .group(&quot;second&quot;)&amp;#x000A;        .observe(HttpRequestFilter)&amp;#x000A;        .inspect(Inspection2)&amp;#x000A;    // you need to execute whole Request Group once it is completely specified&amp;#x000A;    .execute();&lt;/code&gt;&amp;#x000A;    &amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;    // you can access details of finished execution&amp;#x000A;    result.getGroup(&quot;second&quot;).getInspection();&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;em&gt;Request Groups&lt;/em&gt; execution returns a &lt;code&gt;WarpResult&lt;/code&gt; which contains details about the finished execution. In order to access the results related to a specific group, you can give the group a name&lt;/p&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Request Observers &amp;amp; Fluent API&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;The new API for observing the correct request allows you to select which request should be verified on a server.&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;p&gt;When using &lt;em&gt;Request Groups&lt;/em&gt;, all of the requests will be inspected by the inspections defined in that group. There might be one or more requests verified by each group.&lt;/p&gt;
+&lt;p&gt;Since multiple request can be triggered, you might want to choose the correct request to observe. For this purpose, we have the &lt;code&gt;HttpRequestFilter&lt;/code&gt; interface, where you specify which &lt;code&gt;HttpRequest&lt;/code&gt; should matches the current group.&lt;/p&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;import static org.jboss.arquillian.warp.client.filter.http.HttpFilters.request;&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;// will accept only requests for HTML&amp;#x000A;...group()&amp;#x000A;    .observe(request().uri().contains(&quot;.html&quot;))&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;// will accept only REST requests for JSON&amp;#x000A;...group()&amp;#x000A;    .observe(request().header().containsValue(&quot;Accept&quot;, &quot;application/json&quot;))&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;// will accept only POST requests&amp;#x000A;...group()&amp;#x000A;   .observe(request().method().equal(POST))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In order to simplify writing the Warp specifications, you can define the observer using a fluent API and static factory methods.&lt;/p&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Dependency Injection for Servlets and JSF&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;Test enrichers now allow the the injection of Servlet and JSF resources. (&lt;a href=&quot;#servlet-jsf-enrichments&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Renaming Phaser to Warp JSF&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;The JSF specific extension was renamed from Phaser to Warp JSF. (&lt;a href=&quot;#renaming-phaser-to-warp-jsf&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Introduction of Dependency Chain&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;The dependency chain was introduced to bring in all necessary dependencies by specifying just one dependency. (&lt;a href=&quot;#warp-dependency-chain&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Warp Extensions for REST and Spring MVC&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;Thanks to &lt;a href=&quot;http://arquillian.org/community/contributors/&quot;&gt;Jakub Narloch&lt;/a&gt;, we have two new additions to Arquillian Galaxy. (&lt;a href=&quot;#warp-extensions-rest-spring&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;h3&gt;Under the Hood&lt;/h3&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Usability and Debugging Improvements&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;A focus of Alpha2 was to polishing the way Warp behave in case of failures and on debuggability of Warp execution.&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Validation of Warp Specification&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;Warp now validates that the number of observed requests match a number of expected requests. It also makes sure that all of defined lifecycle callbacks are executed on the server, to avoid any false positives.&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;p&gt;As you can see there are many of new features, so let&amp;#8217;s look at them separately:&lt;/p&gt;
+&lt;h3 id=&quot;renaming-warp-api&quot;&gt;Renaming Warp API&lt;/h3&gt;
+&lt;p&gt;After Alpha1 we &lt;a href=&quot;https://community.jboss.org/message/777404#777404&quot;&gt;got several requests&lt;/a&gt; for clarifying the Warp high-level API:&lt;/p&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;Warp.execute(ClientAction).verify(ServerAssertion)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;a href=&quot;https://docs.google.com/spreadsheet/viewform?formkey=dFlZeGI3ZklOUVlDX2M2V2owUkFmYVE6MQ&quot;&gt;announced survey&lt;/a&gt; helped us choose the new API. As a result, &lt;a href=&quot;https://issues.jboss.org/secure/attachment/12358992/warp-api-method-naming-survey-responses.pdf&quot;&gt;88&amp;#37; of participants reported&lt;/a&gt; they found this new API more natural:&lt;/p&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;Warp.initiate(Activity).inspect(Inspection)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Big thanks to everyone who participated in the survey! This type of collaboration makes me really proud to be part of the team.&lt;/p&gt;
+&lt;h3 id=&quot;warp-extensions-rest-spring&quot;&gt;Warp Extensions: REST and Spring MVC&lt;/h3&gt;
+&lt;p&gt;Warp was from the beginning built as a project that focused on any framework/technology that is based on top of the Servlet API.&lt;/p&gt;
+&lt;p&gt;Thus it&amp;#8217;s not surprising that there are already two extensions shaping out thanks to &lt;a href=&quot;http://arquillian.org/community/contributors/&quot;&gt;Jakub Narloch&lt;/a&gt;:&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;&lt;a href=&quot;http://arquillian.org/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/&quot;&gt;Spring MVC&lt;/a&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;a href=&quot;https://github.com/jmnarloch/arquillian-extension-warp-rest&quot;&gt;REST&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&quot;warp-dependency-chain&quot;&gt;Introduction of Dependency Chain&lt;/h3&gt;
+&lt;p&gt;Putting Warp to work in your Maven project is now as easy as defining a single dependency:&lt;/p&gt;
+&lt;div class=&quot;filename&quot;&gt;pom.xml&lt;/div&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;&amp;lt;dependency&amp;gt;&amp;#x000A;    &amp;lt;groupId&amp;gt;org.jboss.arquillian.extension&amp;lt;/groupId&amp;gt;&amp;#x000A;    &amp;lt;artifactId&amp;gt;arquillian-warp&amp;lt;/artifactId&amp;gt;&amp;#x000A;    &amp;lt;version&amp;gt;1.0.0.Alpha2&amp;lt;/version&amp;gt;&amp;#x000A;    &amp;lt;type&amp;gt;pom&amp;lt;/type&amp;gt;&amp;#x000A;&amp;lt;/dependency&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This declaration will bring Warp core, which supports Servlet API lifecycle callbacks.&lt;/p&gt;
+&lt;h3 id=&quot;renaming-phaser-to-warp-jsf&quot;&gt;Renaming Phaser to Warp JSF&lt;/h3&gt;
+&lt;p&gt;Initially we had created Phaser as the next generation of the successful &lt;a href=&quot;http://www.jboss.org/jsfunit/&quot;&gt;JSFUnit&lt;/a&gt;. It occured to use that Phaser is an unfortunate name and it just makes it harded to understand the Arquillian eco-system.&lt;/p&gt;
+&lt;p&gt;That&amp;#8217;s why we have come up with a simpler variant &amp;#8211; so let me introduce the Warp JSF extension.&lt;/p&gt;
+&lt;p&gt;You can bring Warp JSF to your project just by adding the following declaration:&lt;/p&gt;
+&lt;div class=&quot;filename&quot;&gt;pom.xml&lt;/div&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;&amp;lt;dependency&amp;gt;&amp;#x000A;    &amp;lt;groupId&amp;gt;org.jboss.arquillian.extension&amp;lt;/groupId&amp;gt;&amp;#x000A;    &amp;lt;artifactId&amp;gt;arquillian-warp-jsf&amp;lt;/artifactId&amp;gt;&amp;#x000A;    &amp;lt;version&amp;gt;1.0.0.Alpha2&amp;lt;/version&amp;gt;&amp;#x000A;&amp;lt;/dependency&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&quot;servlet-jsf-enrichments&quot;&gt;Dependency Injection for Servlets and JSF&lt;/h3&gt;
+&lt;p&gt;After the announcement of the Alpha1 release, we focused on improving Warp to come closer to the Arquillian goal: bring all necessary dependencies to the test (in our case to inspection).&lt;/p&gt;
+&lt;p&gt;Now, you can not only inject all CDI managed beans (&lt;code&gt;@Inject&lt;/code&gt;), EJB beans (&lt;code&gt;@EJB&lt;/code&gt;) or container managed resources &lt;code&gt;@Resource&lt;/code&gt;, but you can also inject the following resources:&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;&lt;strong&gt;Servlet resources&lt;/strong&gt;
+	&lt;ul&gt;
+		&lt;li&gt;&lt;code&gt;ServletRequest&lt;/code&gt; or &lt;code&gt;HttpServletRequest&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;ServletResponse&lt;/code&gt; or &lt;code&gt;HttpServletResponse&lt;/code&gt;&lt;/li&gt;
+	&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ul&gt;
+	&lt;li&gt;&lt;strong&gt;JSF resources&lt;/strong&gt;
+	&lt;ul&gt;
+		&lt;li&gt;&lt;code&gt;FacesContext&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;Application&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;ELContext&lt;/code&gt;, &lt;code&gt;ELResolver&lt;/code&gt;, &lt;code&gt;ExpressionFactory&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;ExceptionHandler&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;Flash&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;NavigationHandler&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;PartialViewContext&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;RenderKit&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;ResourceHandler&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;StateManager&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;UIViewRoot&lt;/code&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;code&gt;ViewHandler&lt;/code&gt;&lt;/li&gt;
+	&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Migration from Alpha1&lt;/h3&gt;
+&lt;p&gt;We&amp;#8217;ve create a little &lt;a href=&quot;https://gist.github.com/4275537&quot;&gt;bash script&lt;/a&gt; to convert the java source from Alpha1 API to Alpha2 that might help you with the upgrade.&lt;/p&gt;
+&lt;h3&gt;How to Learn Warp?&lt;/h3&gt;
+&lt;p&gt;The best way now is to look at functional tests for &lt;a href=&quot;https://github.com/arquillian/arquillian-extension-warp/tree/master/ftest/src/test/java/org/jboss/arquillian/warp/ftest&quot;&gt;Warp&lt;/a&gt; or &lt;a href=&quot;https://github.com/arquillian/arquillian-extension-warp/tree/master/extension/jsf-ftest/src/test/java/org/jboss/arquillian/warp/jsf/ftest&quot;&gt;Warp JSF&lt;/a&gt;.&lt;/p&gt;
+&lt;h3&gt;Roadmap&lt;/h3&gt;
+&lt;p&gt;The roadmap to &lt;em&gt;Beta1&lt;/em&gt; is pretty clear:&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;documentation and guides&lt;/li&gt;
+	&lt;li&gt;adding features known from &lt;a href=&quot;http://docs.jboss.org/seam/2.0.1.GA/reference/en/html/testing.html&quot;&gt;SeamTest&lt;/a&gt; and &lt;a href=&quot;http://www.jboss.org/jsfunit/&quot;&gt;JSFUnit&lt;/a&gt;&lt;/li&gt;
+	&lt;li&gt;new injections and event hooks (e.g. improved CDI integration)&lt;/li&gt;
+	&lt;li&gt;hardering and usability enhancements (here we rely on your issue reports!)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Along the way we will welcome &lt;strong&gt;every idea for integrating Warp with your favorite web framework&lt;/strong&gt; &amp;#8211; so don&amp;#8217;t be a stranger and come to us!&lt;/p&gt;
+&lt;h3&gt;What is Arquillian?&lt;/h3&gt;
+&lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
+&lt;h3&gt;Release details&lt;/h3&gt;
+&lt;table class=&quot;table table-bordered table-striped&quot;&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Component&lt;/th&gt;
+      &lt;td&gt;
+        &lt;a href=&quot;http://arquillian.org/modules/warp-extension/&quot;&gt;Arquillian Warp&lt;/a&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Version&lt;/th&gt;
+      &lt;td&gt;
+        1.0.0.Alpha2
+        &lt;span class=&quot;label tag&quot;&gt;
+          &lt;a href=&quot;https://github.com/arquillian/arquillian-extension-warp/commit/10187c5c719c6bc8c96a550e5cde82aaf2a49dd7.html&quot;&gt;view tag&lt;/a&gt;
+        &lt;/span&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Release date&lt;/th&gt;
+      &lt;td&gt;2013-01-08&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Released by&lt;/th&gt;
+      &lt;td&gt;Lukas Fryc&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Compiled against&lt;/th&gt;
+      &lt;td&gt;
+        &lt;ul class=&quot;unstyled&quot;&gt;
+          &lt;li&gt;Arquillian Core &amp;#8211; 1.0.3.Final&lt;/li&gt;
+          &lt;li&gt;ShrinkWrap Resolvers &amp;#8211; 2.0.0-alpha-1&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3&gt;
+  Published artifacts
+  &lt;small&gt;org.jboss.arquillian.extension&lt;/small&gt;
+&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.extension
+    &amp;raquo;
+    arquillian-warp-api
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-api/1.0.0.Alpha2/arquillian-warp-api-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-api/1.0.0.Alpha2/arquillian-warp-api-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.extension
+    &amp;raquo;
+    arquillian-warp-bom
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-bom/1.0.0.Alpha2/arquillian-warp-bom-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.extension
+    &amp;raquo;
+    arquillian-warp-build-resources
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-build-resources/1.0.0.Alpha2/arquillian-warp-build-resources-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-build-resources/1.0.0.Alpha2/arquillian-warp-build-resources-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.extension
+    &amp;raquo;
+    arquillian-warp-ftest
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-ftest/1.0.0.Alpha2/arquillian-warp-ftest-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-ftest/1.0.0.Alpha2/arquillian-warp-ftest-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.extension
+    &amp;raquo;
+    arquillian-warp-impl
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-impl/1.0.0.Alpha2/arquillian-warp-impl-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-impl/1.0.0.Alpha2/arquillian-warp-impl-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.extension
+    &amp;raquo;
+    arquillian-warp-jsf
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf/1.0.0.Alpha2/arquillian-warp-jsf-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf/1.0.0.Alpha2/arquillian-warp-jsf-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.extension
+    &amp;raquo;
+    arquillian-warp-jsf-ftest
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf-ftest/1.0.0.Alpha2/arquillian-warp-jsf-ftest-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf-ftest/1.0.0.Alpha2/arquillian-warp-jsf-ftest-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.extension
+    &amp;raquo;
+    arquillian-warp-spi
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spi/1.0.0.Alpha2/arquillian-warp-spi-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spi/1.0.0.Alpha2/arquillian-warp-spi-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+  Thanks to the following list of contributors:
+  &lt;a href=&quot;https://community.jboss.org/people/lfryc&quot;&gt;Lukas Fryc&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/jmnarloch&quot;&gt;Jakub Narloch&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/lfryc&quot;&gt;Lukas Fryc&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/mkouba&quot;&gt;Martin Kouba&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/bleathem&quot;&gt;Brian Leathem&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;
+&lt;/p&gt;
+    </content>
+  </entry>
+  <entry>
+    <id>http://arquillian.org/blog/2013/01/15/arquillian-graphene-2-0-0-Alpha3/</id>
+    <title>Graphene 2.0.0.Alpha3 Released</title>
+    <updated>2013-01-16T00:00:00Z</updated>
+    <link href="http://arquillian.org/blog/2013/01/15/arquillian-graphene-2-0-0-Alpha3/" rel="alternate" type="text/html" />
+    <category scheme="http://arquillian.org/blog/tags" term="release" />
+    <category scheme="http://arquillian.org/blog/tags" term="extension" />
+    <category scheme="http://arquillian.org/blog/tags" term="graphene" />
+    <category scheme="http://arquillian.org/blog" term="arquillian" />
+    <summary>
+      The Arquillian team is proud to announce the 2.0.0.Alpha3 release of the Graphene component!
+      Highlighted Features
+      
+      	 jQuery Selectors
+      	Graphene gets its own @FindBy annotation and ByJQuery selector in order to fully support jQuery selectors. (read more)
+      
+      
+      	 Injecting Selenium Resources
+      	The interesting Selenium APIs (HTML5, Mobile, etc.) can be injected to the test or page fragments directly. (read more)
+      
+      
+      	 Fluent API for Waiting
+      	Waiting conditions can now be defined in a nice fluent API. (read more)
+      
+      
+      	 Injecting List of Page Fragments
+      	It&#8217;s possible to inject a list of page fragments with @FindBy List&lt;PageFragment&gt;.
+      
+      
+      	 Page Fragment Enrichment
+      	Any Arquillian resource available through @ArquillianResource can be injected into page......
+    </summary>
+    <content type="html">
+      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;2.0.0.Alpha3&lt;/em&gt; release of the &lt;em&gt;Graphene&lt;/em&gt; component!&lt;/p&gt;
+&lt;h3&gt;Highlighted Features&lt;/h3&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; jQuery Selectors&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;Graphene gets its own &lt;code&gt;@FindBy&lt;/code&gt; annotation and &lt;code&gt;ByJQuery&lt;/code&gt; selector in order to fully support &lt;em&gt;jQuery&lt;/em&gt; selectors. (&lt;a href=&quot;#jquery-selectors&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Injecting Selenium Resources&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;The interesting Selenium APIs (HTML5, Mobile, etc.) can be injected to the test or page fragments directly. (&lt;a href=&quot;#injecting-selenium-resources&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Fluent API for Waiting&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;Waiting conditions can now be defined in a nice fluent API. (&lt;a href=&quot;#waiting-fluent-api&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Injecting List of Page Fragments&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;It&amp;#8217;s possible to inject a list of page fragments with &lt;code&gt;@FindBy List&amp;lt;PageFragment&amp;gt;&lt;/code&gt;.&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Page Fragment Enrichment&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;Any Arquillian resource available through &lt;code&gt;@ArquillianResource&lt;/code&gt; can be injected into page fragments.&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;h3&gt;Important Bug Fixes&lt;/h3&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; XHR Request Guards&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;&lt;code&gt;guardXhr&lt;/code&gt; wasn&amp;#8217;t waiting for the XHR request to fully complete. So we have improved it and now it not only waits for AJAX callback to completely finish, but it will wait for any asynchronous processing caused by that callback to finish.&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Protecting against Stale Elements&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;You are now completely protected against &lt;code&gt;StaleElementReferenceException&lt;/code&gt; when using page fragments and elements injected by &lt;code&gt;@FindBy&lt;/code&gt;, because operations on those elements are evaluated lazily (at the time of usage) and they are re-evaluated when they get stale.&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;dl&gt;
+	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Refined Page Fragments&lt;/dt&gt;
+	&lt;dd&gt;&lt;p&gt;Page Fragments have received a lot of bug fixes and improvements.&lt;/p&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;h3 id=&quot;jquery-selectors&quot;&gt;jQuery Selectors&lt;/h3&gt;
+&lt;p&gt;This feature injects a &lt;tt&gt;&lt;a href=&quot;http://jquery.com/&quot;&gt;jQuery&lt;/a&gt;&lt;/tt&gt; script to a tested page and allows Graphene to find elements using the &lt;a href=&quot;http://api.jquery.com/category/selectors/?rdfrom=http%3A%2F%2Fdocs.jquery.com%2Fmw%2Findex.php%3Ftitle%3DSelectors%26redirect%3Dno&quot;&gt;jQuery Selectors syntax&lt;/a&gt;:&lt;/p&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;@FindBy(jquery = &quot;:button:visible&quot;)&amp;#x000A;WebElement firstVisibleButton;&lt;/code&gt;&lt;/pre&gt;
+&lt;p class=&quot;info&quot;&gt;&lt;span&gt;Note that Graphene injects jQuery in &lt;a href=&quot;http://api.jquery.com/jQuery.noConflict/&quot;&gt;non-conflict way&lt;/a&gt;, so it does not affect your tested application.&lt;/span&gt;&lt;/p&gt;
+&lt;h3 id=&quot;injecting-selenium-resources&quot;&gt;Injecting Selenium Resources&lt;/h3&gt;
+&lt;p&gt;Graphene leverages a long list of advanced Selenium features and their APIs to take full control of your browser:&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;&lt;strong&gt;HTML5&lt;/strong&gt;
+	&lt;ul&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/WebStorage.html&quot;&gt;&lt;code&gt;WebStorage&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/DatabaseStorage.html&quot;&gt;&lt;code&gt;DatabaseStorage&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/ApplicationCache.html&quot;&gt;&lt;code&gt;ApplicationCache&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+	&lt;/ul&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;strong&gt;Mobile-specific&lt;/strong&gt;
+	&lt;ul&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/TouchScreen.html&quot;&gt;&lt;code&gt;TouchScreen&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Rotatable.html&quot;&gt;&lt;code&gt;Rotatable&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/BrowserConnection.html&quot;&gt;&lt;code&gt;BrowserConnection&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/LocationContext.html&quot;&gt;&lt;code&gt;LocationContext&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+	&lt;/ul&gt;&lt;/li&gt;
+	&lt;li&gt;&lt;strong&gt;Advanced Browser Control&lt;/strong&gt;
+	&lt;ul&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/interactions/Actions.html&quot;&gt;&lt;code&gt;Actions&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Keyboard.html&quot;&gt;&lt;code&gt;Keyboard&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Mouse.html&quot;&gt;&lt;code&gt;Mouse&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/JavascriptExecutor.html&quot;&gt;&lt;code&gt;JavascriptExecutor&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/TakesScreenshot.html&quot;&gt;&lt;code&gt;TakesScreenshot&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Capabilities.html&quot;&gt;&lt;code&gt;Capabilities&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+	&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;You can inject those using &lt;code&gt;@ArquillianResource&lt;/code&gt; annotation:&lt;/p&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;@ArquillianResource&amp;#x000A;BrowserConnection connection;&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;@Test&amp;#x000A;public void test() {&amp;#x000A;    connection.setOnline(false);&amp;#x000A;}&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&quot;waiting-fluent-api&quot;&gt;Fluent API for Waiting&lt;/h3&gt;
+&lt;p&gt;The Alpha2 API allowed you to define a wait like this:&lt;/p&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;waitAjax().until(element(button).isVisible());&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In order to fully support code-completion, we have decided to deprecate this API in favor of a fluent API:&lt;/p&gt;
+&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;waitAjax().until().element(button).is().visible();&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Roadmap&lt;/h3&gt;
+&lt;p&gt;This release is a significant milestone &lt;a href=&quot;https://community.jboss.org/message/777443#777443&quot;&gt;on the way to Beta1&lt;/a&gt;.&lt;/p&gt;
+&lt;h3&gt;What is Arquillian?&lt;/h3&gt;
+&lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
+&lt;h3&gt;Release details&lt;/h3&gt;
+&lt;table class=&quot;table table-bordered table-striped&quot;&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Component&lt;/th&gt;
+      &lt;td&gt;
+        &lt;a href=&quot;http://arquillian.org/modules/graphene-extension/&quot;&gt;Graphene&lt;/a&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Version&lt;/th&gt;
+      &lt;td&gt;
+        2.0.0.Alpha3
+        &lt;span class=&quot;label tag&quot;&gt;
+          &lt;a href=&quot;https://github.com/arquillian/arquillian-graphene/commit/2acb19018b766656aa5afc745f2071e44448ca5d.html&quot;&gt;view tag&lt;/a&gt;
+        &lt;/span&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Release date&lt;/th&gt;
+      &lt;td&gt;2013-01-08&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Released by&lt;/th&gt;
+      &lt;td&gt;Lukas Fryc&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Compiled against&lt;/th&gt;
+      &lt;td&gt;
+        &lt;ul class=&quot;unstyled&quot;&gt;
+          &lt;li&gt;Arquillian Core &amp;#8211; 1.0.3.Final&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3&gt;
+  Published artifacts
+  &lt;small&gt;org.jboss.arquillian.graphene&lt;/small&gt;
+&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-build-resources
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-build-resources/2.0.0.Alpha3/graphene-build-resources-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-build-resources/2.0.0.Alpha3/graphene-build-resources-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-component-api
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-component-api/2.0.0.Alpha3/graphene-component-api-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-component-api/2.0.0.Alpha3/graphene-component-api-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-selenium-api
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-api/2.0.0.Alpha3/graphene-selenium-api-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-api/2.0.0.Alpha3/graphene-selenium-api-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-selenium-drone
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-drone/2.0.0.Alpha3/graphene-selenium-drone-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-drone/2.0.0.Alpha3/graphene-selenium-drone-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-selenium-ftest-junit-container
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-junit-container/2.0.0.Alpha3/graphene-selenium-ftest-junit-container-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-junit-container/2.0.0.Alpha3/graphene-selenium-ftest-junit-container-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-selenium-ftest-junit-standalone
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-junit-standalone/2.0.0.Alpha3/graphene-selenium-ftest-junit-standalone-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-junit-standalone/2.0.0.Alpha3/graphene-selenium-ftest-junit-standalone-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-selenium-ftest-testng-container
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-testng-container/2.0.0.Alpha3/graphene-selenium-ftest-testng-container-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-testng-container/2.0.0.Alpha3/graphene-selenium-ftest-testng-container-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-selenium-ftest-testng-standalone
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-testng-standalone/2.0.0.Alpha3/graphene-selenium-ftest-testng-standalone-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-testng-standalone/2.0.0.Alpha3/graphene-selenium-ftest-testng-standalone-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-selenium-impl
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-impl/2.0.0.Alpha3/graphene-selenium-impl-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-impl/2.0.0.Alpha3/graphene-selenium-impl-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-webdriver-drone
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-drone/2.0.0.Alpha3/graphene-webdriver-drone-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-drone/2.0.0.Alpha3/graphene-webdriver-drone-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-webdriver-ftest
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-ftest/2.0.0.Alpha3/graphene-webdriver-ftest-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-ftest/2.0.0.Alpha3/graphene-webdriver-ftest-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-webdriver-impl
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-impl/2.0.0.Alpha3/graphene-webdriver-impl-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-impl/2.0.0.Alpha3/graphene-webdriver-impl-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    org.jboss.arquillian.graphene
+    &amp;raquo;
+    graphene-webdriver-spi
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-spi/2.0.0.Alpha3/graphene-webdriver-spi-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-spi/2.0.0.Alpha3/graphene-webdriver-spi-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+  Thanks to the following list of contributors:
+  &lt;a href=&quot;https://github.com/papousek&quot;&gt;Jan Papoušek&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/lfryc&quot;&gt;Lukas Fryc&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/jhuska&quot;&gt;Juraj Huska&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/kpiwko&quot;&gt;Karel Piwko&lt;/a&gt;
+&lt;/p&gt;
+    </content>
+  </entry>
+  <entry>
     <id>http://arquillian.org/blog/2013/01/15/arquillian-extension-drone-1-2-0-Alpha1/</id>
     <title>Arquillian Drone Extension 1.2.0.Alpha1 Released</title>
     <updated>2013-01-16T00:00:00Z</updated>
@@ -314,509 +819,6 @@ pom.xml
 &lt;p&gt;
   Thanks to the following list of contributors:
   &lt;a href=&quot;https://community.jboss.org/people/kpiwko&quot;&gt;Karel Piwko&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/lfryc&quot;&gt;Lukas Fryc&lt;/a&gt;, &lt;a href=&quot;https://github.com/papousek&quot;&gt;Jan Papoušek&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;
-&lt;/p&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>http://arquillian.org/blog/2013/01/15/arquillian-graphene-2-0-0-Alpha3/</id>
-    <title>Graphene 2.0.0.Alpha3 Released</title>
-    <updated>2013-01-16T00:00:00Z</updated>
-    <link href="http://arquillian.org/blog/2013/01/15/arquillian-graphene-2-0-0-Alpha3/" rel="alternate" type="text/html" />
-    <category scheme="http://arquillian.org/blog/tags" term="release" />
-    <category scheme="http://arquillian.org/blog/tags" term="extension" />
-    <category scheme="http://arquillian.org/blog/tags" term="graphene" />
-    <category scheme="http://arquillian.org/blog" term="arquillian" />
-    <summary>
-      The Arquillian team is proud to announce the 2.0.0.Alpha3 release of the Graphene component!
-      Highlighted Features
-      
-      	 jQuery Selectors
-      	Graphene gets its own @FindBy annotation and ByJQuery selector in order to fully support jQuery selectors. (read more)
-      
-      
-      	 Injecting Selenium Resources
-      	The interesting Selenium APIs (HTML5, Mobile, etc.) can be injected to the test or page fragments directly. (read more)
-      
-      
-      	 Fluent API for Waiting
-      	Waiting conditions can now be defined in a nice fluent API. (read more)
-      
-      
-      	 Injecting List of Page Fragments
-      	It&#8217;s possible to inject a list of page fragments with @FindBy List&lt;PageFragment&gt;.
-      
-      
-      	 Page Fragment Enrichment
-      	Any Arquillian resource available through @ArquillianResource can be injected into page......
-    </summary>
-    <content type="html">
-      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;2.0.0.Alpha3&lt;/em&gt; release of the &lt;em&gt;Graphene&lt;/em&gt; component!&lt;/p&gt;
-&lt;h3&gt;Highlighted Features&lt;/h3&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; jQuery Selectors&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;Graphene gets its own &lt;code&gt;@FindBy&lt;/code&gt; annotation and &lt;code&gt;ByJQuery&lt;/code&gt; selector in order to fully support &lt;em&gt;jQuery&lt;/em&gt; selectors. (&lt;a href=&quot;#jquery-selectors&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Injecting Selenium Resources&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;The interesting Selenium APIs (HTML5, Mobile, etc.) can be injected to the test or page fragments directly. (&lt;a href=&quot;#injecting-selenium-resources&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Fluent API for Waiting&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;Waiting conditions can now be defined in a nice fluent API. (&lt;a href=&quot;#waiting-fluent-api&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Injecting List of Page Fragments&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;It&amp;#8217;s possible to inject a list of page fragments with &lt;code&gt;@FindBy List&amp;lt;PageFragment&amp;gt;&lt;/code&gt;.&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Page Fragment Enrichment&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;Any Arquillian resource available through &lt;code&gt;@ArquillianResource&lt;/code&gt; can be injected into page fragments.&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;h3&gt;Important Bug Fixes&lt;/h3&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; XHR Request Guards&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;&lt;code&gt;guardXhr&lt;/code&gt; wasn&amp;#8217;t waiting for the XHR request to fully complete. So we have improved it and now it not only waits for AJAX callback to completely finish, but it will wait for any asynchronous processing caused by that callback to finish.&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Protecting against Stale Elements&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;You are now completely protected against &lt;code&gt;StaleElementReferenceException&lt;/code&gt; when using page fragments and elements injected by &lt;code&gt;@FindBy&lt;/code&gt;, because operations on those elements are evaluated lazily (at the time of usage) and they are re-evaluated when they get stale.&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Refined Page Fragments&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;Page Fragments have received a lot of bug fixes and improvements.&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;h3 id=&quot;jquery-selectors&quot;&gt;jQuery Selectors&lt;/h3&gt;
-&lt;p&gt;This feature injects a &lt;tt&gt;&lt;a href=&quot;http://jquery.com/&quot;&gt;jQuery&lt;/a&gt;&lt;/tt&gt; script to a tested page and allows Graphene to find elements using the &lt;a href=&quot;http://api.jquery.com/category/selectors/?rdfrom=http%3A%2F%2Fdocs.jquery.com%2Fmw%2Findex.php%3Ftitle%3DSelectors%26redirect%3Dno&quot;&gt;jQuery Selectors syntax&lt;/a&gt;:&lt;/p&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;@FindBy(jquery = &quot;:button:visible&quot;)&amp;#x000A;WebElement firstVisibleButton;&lt;/code&gt;&lt;/pre&gt;
-&lt;p class=&quot;info&quot;&gt;&lt;span&gt;Note that Graphene injects jQuery in &lt;a href=&quot;http://api.jquery.com/jQuery.noConflict/&quot;&gt;non-conflict way&lt;/a&gt;, so it does not affect your tested application.&lt;/span&gt;&lt;/p&gt;
-&lt;h3 id=&quot;injecting-selenium-resources&quot;&gt;Injecting Selenium Resources&lt;/h3&gt;
-&lt;p&gt;Graphene leverages a long list of advanced Selenium features and their APIs to take full control of your browser:&lt;/p&gt;
-&lt;ul&gt;
-	&lt;li&gt;&lt;strong&gt;HTML5&lt;/strong&gt;
-	&lt;ul&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/WebStorage.html&quot;&gt;&lt;code&gt;WebStorage&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/DatabaseStorage.html&quot;&gt;&lt;code&gt;DatabaseStorage&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/ApplicationCache.html&quot;&gt;&lt;code&gt;ApplicationCache&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-	&lt;/ul&gt;&lt;/li&gt;
-	&lt;li&gt;&lt;strong&gt;Mobile-specific&lt;/strong&gt;
-	&lt;ul&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/TouchScreen.html&quot;&gt;&lt;code&gt;TouchScreen&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Rotatable.html&quot;&gt;&lt;code&gt;Rotatable&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/BrowserConnection.html&quot;&gt;&lt;code&gt;BrowserConnection&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/LocationContext.html&quot;&gt;&lt;code&gt;LocationContext&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-	&lt;/ul&gt;&lt;/li&gt;
-	&lt;li&gt;&lt;strong&gt;Advanced Browser Control&lt;/strong&gt;
-	&lt;ul&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/interactions/Actions.html&quot;&gt;&lt;code&gt;Actions&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Keyboard.html&quot;&gt;&lt;code&gt;Keyboard&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Mouse.html&quot;&gt;&lt;code&gt;Mouse&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/JavascriptExecutor.html&quot;&gt;&lt;code&gt;JavascriptExecutor&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/TakesScreenshot.html&quot;&gt;&lt;code&gt;TakesScreenshot&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;a href=&quot;http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Capabilities.html&quot;&gt;&lt;code&gt;Capabilities&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
-	&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;You can inject those using &lt;code&gt;@ArquillianResource&lt;/code&gt; annotation:&lt;/p&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;@ArquillianResource&amp;#x000A;BrowserConnection connection;&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;@Test&amp;#x000A;public void test() {&amp;#x000A;    connection.setOnline(false);&amp;#x000A;}&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 id=&quot;waiting-fluent-api&quot;&gt;Fluent API for Waiting&lt;/h3&gt;
-&lt;p&gt;The Alpha2 API allowed you to define a wait like this:&lt;/p&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;waitAjax().until(element(button).isVisible());&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;In order to fully support code-completion, we have decided to deprecate this API in favor of a fluent API:&lt;/p&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;waitAjax().until().element(button).is().visible();&lt;/code&gt;&lt;/pre&gt;
-&lt;h3&gt;Roadmap&lt;/h3&gt;
-&lt;p&gt;This release is a significant milestone &lt;a href=&quot;https://community.jboss.org/message/777443#777443&quot;&gt;on the way to Beta1&lt;/a&gt;.&lt;/p&gt;
-&lt;h3&gt;What is Arquillian?&lt;/h3&gt;
-&lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
-&lt;h3&gt;Release details&lt;/h3&gt;
-&lt;table class=&quot;table table-bordered table-striped&quot;&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Component&lt;/th&gt;
-      &lt;td&gt;
-        &lt;a href=&quot;http://arquillian.org/modules/graphene-extension/&quot;&gt;Graphene&lt;/a&gt;
-      &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Version&lt;/th&gt;
-      &lt;td&gt;
-        2.0.0.Alpha3
-        &lt;span class=&quot;label tag&quot;&gt;
-          &lt;a href=&quot;https://github.com/arquillian/arquillian-graphene/commit/2acb19018b766656aa5afc745f2071e44448ca5d.html&quot;&gt;view tag&lt;/a&gt;
-        &lt;/span&gt;
-      &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Release date&lt;/th&gt;
-      &lt;td&gt;2013-01-08&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Released by&lt;/th&gt;
-      &lt;td&gt;Lukas Fryc&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Compiled against&lt;/th&gt;
-      &lt;td&gt;
-        &lt;ul class=&quot;unstyled&quot;&gt;
-          &lt;li&gt;Arquillian Core &amp;#8211; 1.0.3.Final&lt;/li&gt;
-        &lt;/ul&gt;
-      &lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h3&gt;
-  Published artifacts
-  &lt;small&gt;org.jboss.arquillian.graphene&lt;/small&gt;
-&lt;/h3&gt;
-&lt;ul&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-build-resources
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-build-resources/2.0.0.Alpha3/graphene-build-resources-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-build-resources/2.0.0.Alpha3/graphene-build-resources-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-component-api
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-component-api/2.0.0.Alpha3/graphene-component-api-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-component-api/2.0.0.Alpha3/graphene-component-api-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-selenium-api
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-api/2.0.0.Alpha3/graphene-selenium-api-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-api/2.0.0.Alpha3/graphene-selenium-api-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-selenium-drone
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-drone/2.0.0.Alpha3/graphene-selenium-drone-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-drone/2.0.0.Alpha3/graphene-selenium-drone-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-selenium-ftest-junit-container
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-junit-container/2.0.0.Alpha3/graphene-selenium-ftest-junit-container-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-junit-container/2.0.0.Alpha3/graphene-selenium-ftest-junit-container-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-selenium-ftest-junit-standalone
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-junit-standalone/2.0.0.Alpha3/graphene-selenium-ftest-junit-standalone-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-junit-standalone/2.0.0.Alpha3/graphene-selenium-ftest-junit-standalone-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-selenium-ftest-testng-container
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-testng-container/2.0.0.Alpha3/graphene-selenium-ftest-testng-container-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-testng-container/2.0.0.Alpha3/graphene-selenium-ftest-testng-container-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-selenium-ftest-testng-standalone
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-testng-standalone/2.0.0.Alpha3/graphene-selenium-ftest-testng-standalone-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-ftest-testng-standalone/2.0.0.Alpha3/graphene-selenium-ftest-testng-standalone-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-selenium-impl
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-impl/2.0.0.Alpha3/graphene-selenium-impl-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-selenium-impl/2.0.0.Alpha3/graphene-selenium-impl-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-webdriver-drone
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-drone/2.0.0.Alpha3/graphene-webdriver-drone-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-drone/2.0.0.Alpha3/graphene-webdriver-drone-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-webdriver-ftest
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-ftest/2.0.0.Alpha3/graphene-webdriver-ftest-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-ftest/2.0.0.Alpha3/graphene-webdriver-ftest-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-webdriver-impl
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-impl/2.0.0.Alpha3/graphene-webdriver-impl-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-impl/2.0.0.Alpha3/graphene-webdriver-impl-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.graphene
-    &amp;raquo;
-    graphene-webdriver-spi
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-spi/2.0.0.Alpha3/graphene-webdriver-spi-2.0.0.Alpha3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/graphene/graphene-webdriver-spi/2.0.0.Alpha3/graphene-webdriver-spi-2.0.0.Alpha3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;
-  Thanks to the following list of contributors:
-  &lt;a href=&quot;https://github.com/papousek&quot;&gt;Jan Papoušek&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/lfryc&quot;&gt;Lukas Fryc&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/jhuska&quot;&gt;Juraj Huska&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/kpiwko&quot;&gt;Karel Piwko&lt;/a&gt;
-&lt;/p&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>http://arquillian.org/blog/2013/01/15/arquillian-extension-warp-1-0-0-Alpha2/</id>
-    <title>Arquillian Warp 1.0.0.Alpha2 Released</title>
-    <updated>2013-01-16T00:00:00Z</updated>
-    <link href="http://arquillian.org/blog/2013/01/15/arquillian-extension-warp-1-0-0-Alpha2/" rel="alternate" type="text/html" />
-    <category scheme="http://arquillian.org/blog/tags" term="release" />
-    <category scheme="http://arquillian.org/blog/tags" term="extension" />
-    <category scheme="http://arquillian.org/blog/tags" term="warp" />
-    <category scheme="http://arquillian.org/blog" term="arquillian" />
-    <summary>
-      The Arquillian team is proud to announce the 1.0.0.Alpha2 release of the Arquillian Warp component!
-It has been a pretty long road from Alpha1 to this release, focused primarily on polishing the user experience.
-So without any further ado, let’s look at the new shiny features!
-Highlighted Features
-
-	 Renaming Warp API methods
-	The API methods were renamed according to the results of our public survey. (read more)
-
-In the simplest scenario you want to inspect the first request after performing a given client activity. For this purpose, you can use a basic Warp API known from Alpha1:
-Warp&#x000A;    .initiate(Activity)&#x000A;    .inspect(Inspection);
-This......
-    </summary>
-    <content type="html">
-      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.Alpha2&lt;/em&gt; release of the &lt;em&gt;Arquillian Warp&lt;/em&gt; component!&lt;/p&gt;
-&lt;p&gt;It has been a pretty long road from Alpha1 to this release, focused primarily on polishing the user experience.&lt;/p&gt;
-&lt;p&gt;So without any further ado, let’s look at the new shiny features!&lt;/p&gt;
-&lt;h3&gt;Highlighted Features&lt;/h3&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Renaming Warp API methods&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;The API methods were renamed according to the results of our public survey. (&lt;a href=&quot;#renaming-warp-api&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;p&gt;In the simplest scenario you want to inspect the first request after performing a given client activity. For this purpose, you can use a basic Warp API known from Alpha1:&lt;/p&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;Warp&amp;#x000A;    .initiate(Activity)&amp;#x000A;    .inspect(Inspection);&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;This will intercept the first request coming from the client and ignore the rest of the potential requests.&lt;/p&gt;
-&lt;p&gt;Additionally, Warp will ignore requests for &lt;tt&gt;favicon.ico&lt;/tt&gt; which could fail your test unexpectadly.&lt;/p&gt;
-&lt;p&gt;You can find more samples for this &lt;a href=&quot;https://github.com/arquillian/arquillian-extension-warp/blob/1.0.0.Alpha2/api/src/test/java/org/jboss/arquillian/warp/TestExecutionAPI.java#L62&quot;&gt;API in a source&lt;/a&gt; .&lt;/p&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Anonymous and Inner Classes&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;It&amp;#8217;s now much easier to define a verification code, which is also more readable.&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;p&gt;In &lt;em&gt;Alpha1&lt;/em&gt;, you had to use a &lt;em&gt;top-level&lt;/em&gt; or a &lt;em&gt;static inner classes&lt;/em&gt; to define inspections.&lt;/p&gt;
-&lt;p&gt;In &lt;em&gt;Alpha2&lt;/em&gt;, you can provide &lt;em&gt;non-static inner class&lt;/em&gt; or even &lt;em&gt;anonymous class&lt;/em&gt;.&lt;/p&gt;
-&lt;div class=&quot;filename&quot;&gt;HelloWarp.java&lt;/div&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;Warp&amp;#x000A;    // first you need to initiate activity which triggers HTTP request&amp;#x000A;    .initiate(new Activity() {&amp;#x000A;        public void perform() {&amp;#x000A;            ajaxButton.click();&amp;#x000A;        }&amp;#x000A;    })&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;    // and then specify what behavior should be inspected on the server&amp;#x000A;    .inspect(new Inspection() {&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;        // don't forget to specify serialVerionUID to allow serialization&amp;#x000A;        private static final long serialVersionUID = 1L;&lt;/code&gt;&amp;#x000A;        &amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;        // bring JSF context via dependency injection&amp;#x000A;        @ArquillianResource&amp;#x000A;        FacesContext facesContext;&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;        // verify expected behavior in given request phase&amp;#x000A;        @AfterPhase(RESTORE_VIEW)&amp;#x000A;        public void beforeServlet() {&amp;#x000A;            assertTrue(facesContext.isPostback());&amp;#x000A;        }&amp;#x000A;    });&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;This example showed how to use the new API together with anonymous inspections&lt;/p&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Multiple Requests / Request Groups&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;It is possible to intercept several requests during one Warp execution.&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;p&gt;Warp allows you to verify more than one request triggered by a single client activity. This allows you to verify e.g. a request for HTML page and all its resources (JS, CSS, images) separately. This feature is called &lt;em&gt;Request Groups&lt;/em&gt;.&lt;/p&gt;
-&lt;div class=&quot;filename&quot;&gt;TestRequestGroups.java&lt;/div&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;// Request Group execution will return WarpResult&amp;#x000A;WarpResult result = Warp&amp;#x000A;    .initiate(Activity)&amp;#x000A;    // a group specification without name - the name will be generated&amp;#x000A;    .group()&amp;#x000A;        .observe(HttpRequestFilter)&amp;#x000A;        .inspect(Inspection1)&amp;#x000A;    // a named group specification - the result can be easily accessed&amp;#x000A;    .group(&quot;second&quot;)&amp;#x000A;        .observe(HttpRequestFilter)&amp;#x000A;        .inspect(Inspection2)&amp;#x000A;    // you need to execute whole Request Group once it is completely specified&amp;#x000A;    .execute();&lt;/code&gt;&amp;#x000A;    &amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;    // you can access details of finished execution&amp;#x000A;    result.getGroup(&quot;second&quot;).getInspection();&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The &lt;em&gt;Request Groups&lt;/em&gt; execution returns a &lt;code&gt;WarpResult&lt;/code&gt; which contains details about the finished execution. In order to access the results related to a specific group, you can give the group a name&lt;/p&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Request Observers &amp;amp; Fluent API&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;The new API for observing the correct request allows you to select which request should be verified on a server.&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;p&gt;When using &lt;em&gt;Request Groups&lt;/em&gt;, all of the requests will be inspected by the inspections defined in that group. There might be one or more requests verified by each group.&lt;/p&gt;
-&lt;p&gt;Since multiple request can be triggered, you might want to choose the correct request to observe. For this purpose, we have the &lt;code&gt;HttpRequestFilter&lt;/code&gt; interface, where you specify which &lt;code&gt;HttpRequest&lt;/code&gt; should matches the current group.&lt;/p&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;import static org.jboss.arquillian.warp.client.filter.http.HttpFilters.request;&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;// will accept only requests for HTML&amp;#x000A;...group()&amp;#x000A;    .observe(request().uri().contains(&quot;.html&quot;))&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;// will accept only REST requests for JSON&amp;#x000A;...group()&amp;#x000A;    .observe(request().header().containsValue(&quot;Accept&quot;, &quot;application/json&quot;))&lt;/code&gt;&amp;#x000A;&amp;#x000A;&lt;code class=&quot;prettify&quot;&gt;// will accept only POST requests&amp;#x000A;...group()&amp;#x000A;   .observe(request().method().equal(POST))&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;In order to simplify writing the Warp specifications, you can define the observer using a fluent API and static factory methods.&lt;/p&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Dependency Injection for Servlets and JSF&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;Test enrichers now allow the the injection of Servlet and JSF resources. (&lt;a href=&quot;#servlet-jsf-enrichments&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Renaming Phaser to Warp JSF&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;The JSF specific extension was renamed from Phaser to Warp JSF. (&lt;a href=&quot;#renaming-phaser-to-warp-jsf&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Introduction of Dependency Chain&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;The dependency chain was introduced to bring in all necessary dependencies by specifying just one dependency. (&lt;a href=&quot;#warp-dependency-chain&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Warp Extensions for REST and Spring MVC&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;Thanks to &lt;a href=&quot;http://arquillian.org/community/contributors/&quot;&gt;Jakub Narloch&lt;/a&gt;, we have two new additions to Arquillian Galaxy. (&lt;a href=&quot;#warp-extensions-rest-spring&quot;&gt;read more&lt;/a&gt;)&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;h3&gt;Under the Hood&lt;/h3&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Usability and Debugging Improvements&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;A focus of Alpha2 was to polishing the way Warp behave in case of failures and on debuggability of Warp execution.&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;dl&gt;
-	&lt;dt&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Validation of Warp Specification&lt;/dt&gt;
-	&lt;dd&gt;&lt;p&gt;Warp now validates that the number of observed requests match a number of expected requests. It also makes sure that all of defined lifecycle callbacks are executed on the server, to avoid any false positives.&lt;/p&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-&lt;p&gt;As you can see there are many of new features, so let&amp;#8217;s look at them separately:&lt;/p&gt;
-&lt;h3 id=&quot;renaming-warp-api&quot;&gt;Renaming Warp API&lt;/h3&gt;
-&lt;p&gt;After Alpha1 we &lt;a href=&quot;https://community.jboss.org/message/777404#777404&quot;&gt;got several requests&lt;/a&gt; for clarifying the Warp high-level API:&lt;/p&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;Warp.execute(ClientAction).verify(ServerAssertion)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The &lt;a href=&quot;https://docs.google.com/spreadsheet/viewform?formkey=dFlZeGI3ZklOUVlDX2M2V2owUkFmYVE6MQ&quot;&gt;announced survey&lt;/a&gt; helped us choose the new API. As a result, &lt;a href=&quot;https://issues.jboss.org/secure/attachment/12358992/warp-api-method-naming-survey-responses.pdf&quot;&gt;88&amp;#37; of participants reported&lt;/a&gt; they found this new API more natural:&lt;/p&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;Warp.initiate(Activity).inspect(Inspection)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Big thanks to everyone who participated in the survey! This type of collaboration makes me really proud to be part of the team.&lt;/p&gt;
-&lt;h3 id=&quot;warp-extensions-rest-spring&quot;&gt;Warp Extensions: REST and Spring MVC&lt;/h3&gt;
-&lt;p&gt;Warp was from the beginning built as a project that focused on any framework/technology that is based on top of the Servlet API.&lt;/p&gt;
-&lt;p&gt;Thus it&amp;#8217;s not surprising that there are already two extensions shaping out thanks to &lt;a href=&quot;http://arquillian.org/community/contributors/&quot;&gt;Jakub Narloch&lt;/a&gt;:&lt;/p&gt;
-&lt;ul&gt;
-	&lt;li&gt;&lt;a href=&quot;http://arquillian.org/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/&quot;&gt;Spring MVC&lt;/a&gt;&lt;/li&gt;
-	&lt;li&gt;&lt;a href=&quot;https://github.com/jmnarloch/arquillian-extension-warp-rest&quot;&gt;REST&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&quot;warp-dependency-chain&quot;&gt;Introduction of Dependency Chain&lt;/h3&gt;
-&lt;p&gt;Putting Warp to work in your Maven project is now as easy as defining a single dependency:&lt;/p&gt;
-&lt;div class=&quot;filename&quot;&gt;pom.xml&lt;/div&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;&amp;lt;dependency&amp;gt;&amp;#x000A;    &amp;lt;groupId&amp;gt;org.jboss.arquillian.extension&amp;lt;/groupId&amp;gt;&amp;#x000A;    &amp;lt;artifactId&amp;gt;arquillian-warp&amp;lt;/artifactId&amp;gt;&amp;#x000A;    &amp;lt;version&amp;gt;1.0.0.Alpha2&amp;lt;/version&amp;gt;&amp;#x000A;    &amp;lt;type&amp;gt;pom&amp;lt;/type&amp;gt;&amp;#x000A;&amp;lt;/dependency&amp;gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;This declaration will bring Warp core, which supports Servlet API lifecycle callbacks.&lt;/p&gt;
-&lt;h3 id=&quot;renaming-phaser-to-warp-jsf&quot;&gt;Renaming Phaser to Warp JSF&lt;/h3&gt;
-&lt;p&gt;Initially we had created Phaser as the next generation of the successful &lt;a href=&quot;http://www.jboss.org/jsfunit/&quot;&gt;JSFUnit&lt;/a&gt;. It occured to use that Phaser is an unfortunate name and it just makes it harded to understand the Arquillian eco-system.&lt;/p&gt;
-&lt;p&gt;That&amp;#8217;s why we have come up with a simpler variant &amp;#8211; so let me introduce the Warp JSF extension.&lt;/p&gt;
-&lt;p&gt;You can bring Warp JSF to your project just by adding the following declaration:&lt;/p&gt;
-&lt;div class=&quot;filename&quot;&gt;pom.xml&lt;/div&gt;
-&lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;&amp;lt;dependency&amp;gt;&amp;#x000A;    &amp;lt;groupId&amp;gt;org.jboss.arquillian.extension&amp;lt;/groupId&amp;gt;&amp;#x000A;    &amp;lt;artifactId&amp;gt;arquillian-warp-jsf&amp;lt;/artifactId&amp;gt;&amp;#x000A;    &amp;lt;version&amp;gt;1.0.0.Alpha2&amp;lt;/version&amp;gt;&amp;#x000A;&amp;lt;/dependency&amp;gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 id=&quot;servlet-jsf-enrichments&quot;&gt;Dependency Injection for Servlets and JSF&lt;/h3&gt;
-&lt;p&gt;After the announcement of the Alpha1 release, we focused on improving Warp to come closer to the Arquillian goal: bring all necessary dependencies to the test (in our case to inspection).&lt;/p&gt;
-&lt;p&gt;Now, you can not only inject all CDI managed beans (&lt;code&gt;@Inject&lt;/code&gt;), EJB beans (&lt;code&gt;@EJB&lt;/code&gt;) or container managed resources &lt;code&gt;@Resource&lt;/code&gt;, but you can also inject the following resources:&lt;/p&gt;
-&lt;ul&gt;
-	&lt;li&gt;&lt;strong&gt;Servlet resources&lt;/strong&gt;
-	&lt;ul&gt;
-		&lt;li&gt;&lt;code&gt;ServletRequest&lt;/code&gt; or &lt;code&gt;HttpServletRequest&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;ServletResponse&lt;/code&gt; or &lt;code&gt;HttpServletResponse&lt;/code&gt;&lt;/li&gt;
-	&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;ul&gt;
-	&lt;li&gt;&lt;strong&gt;JSF resources&lt;/strong&gt;
-	&lt;ul&gt;
-		&lt;li&gt;&lt;code&gt;FacesContext&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;Application&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;ELContext&lt;/code&gt;, &lt;code&gt;ELResolver&lt;/code&gt;, &lt;code&gt;ExpressionFactory&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;ExceptionHandler&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;Flash&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;NavigationHandler&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;PartialViewContext&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;RenderKit&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;ResourceHandler&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;StateManager&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;UIViewRoot&lt;/code&gt;&lt;/li&gt;
-		&lt;li&gt;&lt;code&gt;ViewHandler&lt;/code&gt;&lt;/li&gt;
-	&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;How to Learn Warp?&lt;/h3&gt;
-&lt;p&gt;The best way now is to look at functional tests for &lt;a href=&quot;https://github.com/arquillian/arquillian-extension-warp/tree/master/ftest/src/test/java/org/jboss/arquillian/warp/ftest&quot;&gt;Warp&lt;/a&gt; or &lt;a href=&quot;https://github.com/arquillian/arquillian-extension-warp/tree/master/extension/jsf-ftest/src/test/java/org/jboss/arquillian/warp/jsf/ftest&quot;&gt;Warp JSF&lt;/a&gt;.&lt;/p&gt;
-&lt;h3&gt;Roadmap&lt;/h3&gt;
-&lt;p&gt;The roadmap to &lt;em&gt;Beta1&lt;/em&gt; is pretty clear:&lt;/p&gt;
-&lt;ul&gt;
-	&lt;li&gt;documentation and guides&lt;/li&gt;
-	&lt;li&gt;adding features known from &lt;a href=&quot;http://docs.jboss.org/seam/2.0.1.GA/reference/en/html/testing.html&quot;&gt;SeamTest&lt;/a&gt; and &lt;a href=&quot;http://www.jboss.org/jsfunit/&quot;&gt;JSFUnit&lt;/a&gt;&lt;/li&gt;
-	&lt;li&gt;new injections and event hooks (e.g. improved CDI integration)&lt;/li&gt;
-	&lt;li&gt;hardering and usability enhancements (here we rely on your issue reports!)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Along the way we will welcome &lt;strong&gt;every idea for integrating Warp with your favorite web framework&lt;/strong&gt; &amp;#8211; so don&amp;#8217;t be a stranger and come to us!&lt;/p&gt;
-&lt;h3&gt;What is Arquillian?&lt;/h3&gt;
-&lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
-&lt;h3&gt;Release details&lt;/h3&gt;
-&lt;table class=&quot;table table-bordered table-striped&quot;&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Component&lt;/th&gt;
-      &lt;td&gt;
-        &lt;a href=&quot;http://arquillian.org/modules/warp-extension/&quot;&gt;Arquillian Warp&lt;/a&gt;
-      &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Version&lt;/th&gt;
-      &lt;td&gt;
-        1.0.0.Alpha2
-        &lt;span class=&quot;label tag&quot;&gt;
-          &lt;a href=&quot;https://github.com/arquillian/arquillian-extension-warp/commit/10187c5c719c6bc8c96a550e5cde82aaf2a49dd7.html&quot;&gt;view tag&lt;/a&gt;
-        &lt;/span&gt;
-      &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Release date&lt;/th&gt;
-      &lt;td&gt;2013-01-08&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Released by&lt;/th&gt;
-      &lt;td&gt;Lukas Fryc&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Compiled against&lt;/th&gt;
-      &lt;td&gt;
-        &lt;ul class=&quot;unstyled&quot;&gt;
-          &lt;li&gt;Arquillian Core &amp;#8211; 1.0.3.Final&lt;/li&gt;
-          &lt;li&gt;ShrinkWrap Resolvers &amp;#8211; 2.0.0-alpha-1&lt;/li&gt;
-        &lt;/ul&gt;
-      &lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h3&gt;
-  Published artifacts
-  &lt;small&gt;org.jboss.arquillian.extension&lt;/small&gt;
-&lt;/h3&gt;
-&lt;ul&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.extension
-    &amp;raquo;
-    arquillian-warp-api
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-api/1.0.0.Alpha2/arquillian-warp-api-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-api/1.0.0.Alpha2/arquillian-warp-api-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.extension
-    &amp;raquo;
-    arquillian-warp-bom
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-bom/1.0.0.Alpha2/arquillian-warp-bom-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.extension
-    &amp;raquo;
-    arquillian-warp-build-resources
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-build-resources/1.0.0.Alpha2/arquillian-warp-build-resources-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-build-resources/1.0.0.Alpha2/arquillian-warp-build-resources-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.extension
-    &amp;raquo;
-    arquillian-warp-ftest
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-ftest/1.0.0.Alpha2/arquillian-warp-ftest-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-ftest/1.0.0.Alpha2/arquillian-warp-ftest-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.extension
-    &amp;raquo;
-    arquillian-warp-impl
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-impl/1.0.0.Alpha2/arquillian-warp-impl-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-impl/1.0.0.Alpha2/arquillian-warp-impl-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.extension
-    &amp;raquo;
-    arquillian-warp-jsf
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf/1.0.0.Alpha2/arquillian-warp-jsf-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf/1.0.0.Alpha2/arquillian-warp-jsf-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.extension
-    &amp;raquo;
-    arquillian-warp-jsf-ftest
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf-ftest/1.0.0.Alpha2/arquillian-warp-jsf-ftest-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf-ftest/1.0.0.Alpha2/arquillian-warp-jsf-ftest-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    org.jboss.arquillian.extension
-    &amp;raquo;
-    arquillian-warp-spi
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spi/1.0.0.Alpha2/arquillian-warp-spi-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-    &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spi/1.0.0.Alpha2/arquillian-warp-spi-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;
-  Thanks to the following list of contributors:
-  &lt;a href=&quot;https://community.jboss.org/people/lfryc&quot;&gt;Lukas Fryc&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/jmnarloch&quot;&gt;Jakub Narloch&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/lfryc&quot;&gt;Lukas Fryc&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/mkouba&quot;&gt;Martin Kouba&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/bleathem&quot;&gt;Brian Leathem&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;
 &lt;/p&gt;
     </content>
   </entry>
