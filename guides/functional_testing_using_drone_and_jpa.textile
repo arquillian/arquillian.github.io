@@ -1,0 +1,868 @@
+---
+layout: guide
+title: Functional Testing using Drone And JPA
+authors: [smiklosovic]
+tags: [drone, selenium, as7, cdi, jpa, persistence]
+description: Discover how Arquillian Drone simplifies the use of Selenium 2 to test the web UI of your application using underlaying JPA technology
+guide_group: 2
+guide_order: 4
+---
+This guide rinses and repeats what you have learned from two previous guides. In the first one, you have been learning about how to use Arquillian Drone extension in order to write functional tests against web browsers. You understood the very basics in setting up project which tests a functionality of a simple login page. The other guide was about making it possible to test your JPA classes and persistence layer of your application as such. This tutorial's aim is to merge both concepts - we are showing you how to test not only web pages as such with Selenium but also how to integrate web-driven testing with JPA testing, which your web testing is using. We will model simple testing scenario - how to test registration and login which is backed by real JPA implementation - not only by static, simulated business logic wired directly into fragment of application you are willing to test.
+
+
+This guide rinses and repeats the usage of Arquillian Drone extension in addition with JPA business logic. After reading this guide, you'll be able to:
+
+* Test the web application which is using JPA technology in order to provide real business logic
+* Use very simple CDI or EJB beans in your business logic
+* Inject the DefaultSelenium API into your test case
+* Configure your tests in a way you can simply test your JPA models or database layer
+* Control the browser using Selenium to validate the behavior of your web application
+
+Let's get started!
+
+h3. Assumptions
+
+We'll assume that you've read the "Getting Started":/guides/getting_started guide and have an Arquillian test suite setup in your project. We'll be adding a simple JSF(JavaServer Faces) login form to the project as an example of a web UI to test and we will add real JPA implementation of potential user who is trying to register and subsequently log in. From there, you can apply these instructions to any other web pages you may need to test with your database model classes underneath.
+
+We are assuming you went throught two previous tutorials, "Functional Testing Using Drone":functional_testing_using_drone and "Testing Java    Persistence":http://localhost:4242/guides/testing_java_persistence/.
+
+In this guide, we'll be using the following technologies:
+
+* Arquillian
+* Arquillian Drone
+* JPA
+* Selenium (Selenium Server and DefaultSelenium)
+* Maven
+
+The web testing technology, "Selenium":http://seleniumhq.org, automates browsers. Selenium integrates into Arquillian via the Arquillian Drone extension to test the frontend of Java-based web applications.
+
+We'll be using two parts of Selenium:
+
+# Selenium Server is a test tool that allows you to write automated web application UI tests against any HTTP website using any mainstream JavaScript-enabled browser.
+# DefaultSelenium is the Java client API that you use to control the browser.
+
+If you are already familiar with Selenium, you'll discover that Arquillian manages the Selenium Server life cycle in much the same way it manages the container life cycle. If Selenium is new to you, this is a great opportunity to begin using it to test the web UI of your application without having to worry about how it's setup.
+
+h3. Introducing architecture of our application
+
+Here is the structure of our simple application we want to test:
+
+(filetree)* src/main
+** java
+*** org
+**** arquillian
+***** example
+****** controller
+******* LoginController.java
+******* RegisterController.java
+****** dao
+******* impl
+******** UserDAOImpl.java
+******** UserDAOException.java
+******* UserDAO.java
+****** model
+******* Credentials.java
+******* User.java
+****** security
+******* Authenticator.java
+** resources
+*** META-INF
+**** persistence.xml
+** webapp
+*** home.xhtml
+*** login.xhtml
+*** register.xhtml
+
+Now we will discuss every class and interface one by one so you will understand what is the 
+purpose of every file in the project.
+
+As you can see, regarding the core of the project, there are four packages, @controller@, @dao@, 
+@model@ and @security@.
+
+h4. Model package
+
+The purpose of @model@ package is to hold just a model of our simple application. There is the class 
+@User@ which is mapped to an underlying JPA implementation. By introducing this class, we model the user entity in the real application. Every user has some name and password he or she is obliged to type in the logging form upon registration or logging.
+
+p(info). %For the purpose of this tutorial, we are saving passwords as ordinary strings, however, keep in mind that in the real case, passwords should be saved in safer manner, e.g. by hashing them and storing only hashes.%
+
+For completeness, here is the whole @User@ class for you:
+
+div(filename). src/main/java/org/arquillian/example/model/User.java
+
+bc(prettify).. package org.arquillian.example.model;
+
+import java.io.Serializable;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+@Entity
+public class User implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @NotNull
+    @Size(min = 3, max = 15)
+    private String username;
+
+    @NotNull
+    @Size(min = 5, max = 20)
+    private String password;
+
+    public User() {
+    }
+
+    public User(String username) {
+        this.username = username;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return "User [id=" + id + ", username=" + username + "]";
+    }
+
+}
+
+p. The another class in the same model package is @Credentials@. This class just holds the information we entered in the forms at jsf pages. You could look at this class as at an simple DTO object. Notice the @@Model@ annotation on the @Credential@ class. It is the built-in stereotype intended for use with beans that define the model layer of an MVC web application architecture such as JSF. Once again, the source code of the @Credential@ class is following:
+
+div(filename). src/main/java/org/arquillian/example/model/Credentials.java
+
+bc(prettify).. package org.arquillian.example.model;
+
+import javax.enterprise.inject.Model;
+
+@Model
+public class Credentials {
+    private String username;
+
+    private String password;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+}
+
+h4. DAO package
+
+The DAO package is also very easy to understand if you take it step-by-step. In order to be able to do some operations with the @User@ entity, we have to provide methods in so called data access object which 
+will take care of storing, retrieving and other operations. If you think about it, we will need these 
+four operations:
+
+# Saving an instance of a user we want to register.
+# If we save a user, it would be nice if we could deleted him as well.
+# We need to find a user - let's find him by his name. Other approach in our application 
+would not make sense.
+# We need to decide if a user can log in. If we type in the login form name and password, these 
+have to have a match in the database - there has to be a user with the same name and password.
+
+This four operations nicely match the following interface we will in turn implement, it's name is as 
+simple as @UserDAO@:
+
+div(filename). src/main/java/org/arquillian/example/dao/UserDAO.java
+
+bc(prettify).. package org.arquillian.example.dao;
+
+import javax.ejb.Local;
+
+import org.arquillian.example.model.User;
+
+@Local
+public interface UserDAO {
+
+    Long createUser(User user);
+
+    void deleteUser(User user);
+
+    User findByName(String name);
+
+    boolean canLogin(User user);
+}
+
+p. We in turn implement this interface, having @UserDAOImpl@ class, "Impl" suffix stands for "Implementation". Notice this class is @@Stateless@ - it is a bean which does not store any state, it just executes the methods and returns some result. That's it.
+
+By the way, check the injection of @PersistenceContext@ into the @EntityManager@.
+
+div(filename). src/main/java/org/arquillian/example/dao/impl/UserDAO.java
+
+bc(prettify).. package org.arquillian.example.dao.impl;
+
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+
+import org.arquillian.example.dao.UserDAO;
+import org.arquillian.example.dao.UserDAOException;
+import org.arquillian.example.model.User;
+
+@Stateless
+public class UserDAOImpl implements UserDAO {
+
+    private static final Logger logger =
+            Logger.getLogger(UserDAOImpl.class.getName());
+    
+    @PersistenceContext
+    EntityManager em;
+    
+    @Override
+    public Long createUser(User user) throws UserDAOException {
+        try {
+            em.persist(user);
+            return user.getId();
+        } catch (Exception e) {
+            logger.log(Level.INFO, "Unable to create a user {0}.", user);
+            throw new UserDAOException();
+        }
+    }
+
+    @Override
+    public void deleteUser(User user) throws UserDAOException {
+        try {
+            em.remove(user);
+        } catch (Exception e) {
+            logger.log(Level.INFO, "Unable to delete a user {0}.", user);
+            throw new UserDAOException();
+        }
+    }
+
+    @Override
+    public User findByName(String name) throws UserDAOException {
+        try {
+            Query q = em.createQuery("select u from User as u where u.username = :name");
+            q.setParameter("name", name);
+            List<?> result = q.getResultList();
+            if (result.size() > 0) {
+                return (User) result.get(0);
+            } else {
+                return null;
+            }
+        } catch (Exception ex) {
+            logger.log(Level.INFO, ex.getMessage());
+            throw new UserDAOException();
+        }
+    }
+
+    @Override
+    public boolean canLogin(User user) {
+        try {
+            Query q = em.createQuery("select u from User as u where " +
+                    "u.username = :username and u.password = :password");
+            q.setParameter("username", user.getUsername());
+            q.setParameter("password", user.getPassword());
+            List<?> result = q.getResultList();
+            return result.size() == 1;
+        } catch(Exception ex) {
+            logger.log(Level.INFO, ex.getMessage());
+            throw new UserDAOException();
+        }
+    }
+}
+
+p. @createUser@ and @deleteUser@ methods are pretty straightforward. @findByName@ method tries to find a user by its name. If nothing is found, we return @null@, if some error occurs, we throw @UserDAOException@ which is defined in the same package. The @canLogin@ method checks if we can retrieve such a user which matches the user we passed into the method - trying to match username and password fields. If we found him, we return @true@ otherwise we return @false@.
+
+h4. Security package
+
+But what about actual logging and registering? Where are these operations specified? The answer is - in the @Authenticator@ class! The reason we wrote the Authenticator class is to provide the central place where all operations related to authentication are stored. If you look inside the class, you will find this: 
+
+div(filename). src/main/java/org/arquillian/example/security/Authenticator.java
+
+bc(prettify).. package org.arquillian.example.security;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.inject.Inject;
+
+import org.arquillian.example.dao.UserDAO;
+import org.arquillian.example.dao.UserDAOException;
+import org.arquillian.example.model.User;
+
+@Startup
+@Singleton
+public class Authenticator {
+
+    private static final Logger logger = 
+            Logger.getLogger(Authenticator.class.getName());
+    
+    User user;
+    
+    @Inject
+    UserDAO userDAO;
+
+    @Lock(LockType.READ)
+    public boolean login(User user) {
+        try {
+            return userDAO.canLogin(user);
+        } catch (UserDAOException ex) {
+            logger.log(Level.INFO, "Unable to login a user{0}", user);
+            return false;
+        }
+    }
+
+    @Lock(LockType.WRITE)
+    public boolean register(User user) {
+        try {
+            if (userDAO.findByName(user.getUsername()) == null) {
+                userDAO.createUser(user);
+                return true;
+            }
+            return false;
+        } catch (UserDAOException ex) {
+            logger.log(Level.INFO, "Unable to register a user{0}", user);
+            return false;
+        }
+    }
+}
+
+p. There are just two methods - @login@ and @register@. @login@ method returns @true@ if and only if user passed into the method can be logged in - in other words, if he exists in the database and name and password matches. Registering of a user is evaluated to @true@ (user is registered), if there is no other user with the same username - we then create a new user. Creating of a user equals to his registration.
+
+h4. Controller package
+
+p. The last package which remains to be discussed is the controller package. There are just two classes which takes care of logging and registering respectively. Logging controller takes the input values the real user submitted, checks if all input fields are non-empty, resolves if logging is possible and sets @currentUser@ to the one we just logged in. Register controller tries to register a user and based on the result of the decision, the real user is redirected to the logging page or back to the registering page. Logging and registering bean both inject @Authenticator@ class since they both use the methods from there. There is also @Credentials@ class injected because we need to somehow transport the input user submitted to our controller logic. Remeber the @Credentials@ class is annotated by @@Model@ so we 
+can use it in the JSF web pages.
+
+p. There are error messages written in the web pages every time something unwanted is happening.
+
+The code of the both controller classes is following, the first one is @RegisterController@:
+
+div(filename). src/main/java/org/arquillian/example/controller/RegisterController.java
+
+bc(prettify).. package org.arquillian.example.controller;
+
+import java.io.Serializable;
+
+import javax.enterprise.context.SessionScoped;
+import javax.faces.application.FacesMessage;
+import javax.faces.context.FacesContext;
+import javax.inject.Inject;
+import javax.inject.Named;
+
+import org.arquillian.example.model.Credentials;
+import org.arquillian.example.model.User;
+import org.arquillian.example.security.Authenticator;
+
+@Named
+@SessionScoped
+public class RegisterController implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final String FAILURE_MESSAGE =
+            "Both username and password have to be provided";
+
+    @Inject
+    private Credentials credentials;
+
+    @Inject
+    Authenticator authentizator;
+
+    public String register() {
+        String username = credentials.getUsername();
+        String password = credentials.getPassword();
+
+        User user;
+
+        if (username != null && password != null) {
+            user = new User();
+            user.setUsername(username);
+            user.setPassword(password);
+            if (authentizator.register(user)) {
+                return "login.xhtml";
+            } else {
+                return "register.xhtml";
+            }
+        } else {
+            FacesContext.getCurrentInstance().addMessage(
+                    null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN,
+                            FAILURE_MESSAGE, FAILURE_MESSAGE));
+            return "register.xhtml";
+        }
+    }
+}
+
+p. The @LoginController@: 
+
+div(filename). src/main/java/org/arquillian/example/controller/LoginController.java
+
+bc(prettify).. package org.arquillian.example.controller;
+
+import java.io.Serializable;
+
+import javax.enterprise.context.SessionScoped;
+import javax.enterprise.inject.Produces;
+import javax.faces.application.FacesMessage;
+import javax.faces.context.FacesContext;
+import javax.inject.Inject;
+import javax.inject.Named;
+
+import org.arquillian.example.model.Credentials;
+import org.arquillian.example.model.User;
+import org.arquillian.example.security.Authenticator;
+
+@Named
+@SessionScoped
+public class LoginController implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final String SUCCESS_MESSAGE = "Welcome";
+    private static final String FAILURE_MESSAGE = 
+            "Incorrect username and password combination";
+
+    private User currentUser;
+    
+    @Inject
+    private Credentials credentials;
+    
+    @Inject
+    Authenticator authentizator;
+    
+    public String login() {
+        String username = credentials.getUsername();
+        String password = credentials.getPassword();
+        
+        if (username == null || password == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN,
+                            FAILURE_MESSAGE, FAILURE_MESSAGE));
+            return null;
+        }
+        
+        User user = new User();
+        user.setPassword(password);
+        user.setUsername(username);
+        
+        if (authentizator.login(user)) {
+            currentUser = new User(username);
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(SUCCESS_MESSAGE));
+            return "home.xhtml";
+        } else {
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN,
+                            FAILURE_MESSAGE, FAILURE_MESSAGE));
+            return null;            
+        }
+    }
+    
+    public boolean isLoggedIn() {
+        return currentUser != null;
+    }
+    
+    @Produces
+    @Named
+    public User getCurrentUser() {
+        return currentUser;
+    }
+    
+}
+
+h4. Web pages
+
+p. We will use only three web pages, one for registering, one for logging and the last one will simulate simple home-like web page which a user is redirected to after successful logging in. These files are very similar to what you saw in the previous tutorial, they are nearly their copy-paste brothers. All pages are stored in @src/main/webapp@ directory. Let's start with @login.xhtml@
+
+div(filename). src/main/webapp/login.xhtml
+
+bc(prettify).. <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:f="http://java.sun.com/jsf/core">
+    <head>
+        <title>Log in</title>
+    </head>
+    <body>
+        <h3>Log in</h3>
+        <h:messages/>
+        <h:form id="loginForm">
+            <h:panelGrid columns="2">
+                <h:outputLabel for="username">Username:</h:outputLabel>
+                <h:inputText id="username" value="\#{credentials.username}"/>
+                <h:outputLabel for="password">Password:</h:outputLabel>
+                <h:inputSecret id="password" value="\#{credentials.password}"/>
+                <h:commandButton id="login" value="Log in"
+                    action="\#{loginController.login}"/>
+            </h:panelGrid>
+        </h:form>
+    </body>
+</html>
+
+p. The next one is pretty the same, please welcome @register.xhtml@:
+
+div(filename). src/main/webapp/register.xhtml
+
+bc(prettify).. <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:f="http://java.sun.com/jsf/core">
+    <head>
+        <title>Register</title>
+    </head>
+    <body>
+        <h3>Register</h3>
+        <h:messages/>
+        <h:form id="registerForm">
+            <h:panelGrid columns="2">
+                <h:outputLabel for="username">Username:</h:outputLabel>
+                <h:inputText id="username" value="\#{credentials.username}"/>
+                <h:outputLabel for="password">Password:</h:outputLabel>
+                <h:inputSecret id="password" value="\#{credentials.password}"/>
+                <h:commandButton id="register" value="Register"
+                    action="\#{registerController.register}"/>
+            </h:panelGrid>
+        </h:form>
+    </body>
+</html>
+
+p. And the last one - @home.xhtml@:
+
+div(filename). src/main/webapp/home.xhtml
+
+bc(prettify).. <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:f="http://java.sun.com/jsf/core">
+    <head>
+        <title>Home</title>
+    </head>
+    <body>
+        <h:messages/>
+        <h:panelGroup rendered="\#{loginController.loggedIn}">
+            <p>You are signed in as \#{currentUser.username}.</p>
+        </h:panelGroup>
+    </body>
+</html>
+
+p. So far, so good. Let's see the testing side of this project.
+
+h3. Testing
+
+p. We are testing in the client mode, the priciple behind it is just the same as in the previous tutorial about testing with Drone. We have to mark the deployment method as a non-testable (@@Deployment(testable=false)@). By doing so, you are dictating Arquillian that it should not enrich the test archive. Test archive is just sent to the server as it is but Arquillian can still handle the life cycle of the container as well as deployment of the test archive.
+
+p. First of all we can not forget to inject @@Drone@ and @@ArquillianResource@ into our test. @Drone@ 
+annotation on the field injects Selenium driver throught which we can communicate and command the web browser the test will run at. @@ArquillianResource@ gives us the URL of the deployed application:
+
+div(filename). src/test/java/org/arquillian/example/JPAWebDriverTest.java
+
+bc(prettify).. // clip 
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.test.api.ArquillianResource;
+// clip
+
+@Drone
+WebDriver browser;
+    
+@ArquillianResource
+URL deploymentUrl;
+
+p. We can not forget it is necessary to package all resources and classes which are needed in our application fragment. Let's see what our testing package will be consist of:
+
+div(filename). src/test/java/org/arquillian/example/JPASeleniumTest.java
+
+bc(prettify).. //clip
+import org.arquillian.example.controller.LoginController;
+import org.arquillian.example.controller.RegisterController;
+import org.arquillian.example.dao.UserDAO;
+import org.arquillian.example.dao.UserDAOException;
+import org.arquillian.example.dao.impl.UserDAOImpl;
+import org.arquillian.example.model.Credentials;
+import org.arquillian.example.model.User;
+import org.arquillian.example.security.Authenticator;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+//clip
+
+@Deployment(testable = false)
+public static WebArchive createDeployment() {
+    return ShrinkWrap.create(WebArchive.class, "login.war")
+        .addClasses(User.class,
+            UserDAO.class,
+            UserDAOImpl.class,
+            UserDAOException.class,
+            Authenticator.class, 
+            Credentials.class,
+            LoginController.class, 
+            RegisterController.class)
+        .addAsResource("test-persistence.xml", "META-INF/persistence.xml")
+        .addAsWebInfResource("jbossas-ds.xml")                
+        .addAsWebResource(new File(WEBAPP_SRC, "login.xhtml"))
+        .addAsWebResource(new File(WEBAPP_SRC, "home.xhtml"))
+        .addAsWebResource(new File(WEBAPP_SRC, "register.xhtml"))
+        .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
+        .addAsWebInfResource(
+            new StringAsset("<faces-config version=\"2.0\"/>"),
+            "faces-config.xml");
+}
+
+p. Notice there are two files we have not discussed yet: @test-persistence.xml@ and @jbossas-ds.xml@. The first one serves as an ordinary description of the persistence unit we will use in our application:
+
+div(filename). src/test/resources/test-persistence.xml
+
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://java.sun.com/xml/ns/persistence
+        http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+    <persistence-unit name="test">
+        <jta-data-source>jdbc/arquillian</jta-data-source>
+        
+        <properties>
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+            <property name="hibernate.show_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+
+p. This persistence unit called @test@ uses data source called @jdbc/arquillian@ which is defined in another file: @jbossas-ds.xml@:
+
+div(filename). src/test/resources/jbossas-ds.xml
+
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<datasources xmlns="http://www.jboss.org/ironjacamar/schema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.jboss.org/ironjacamar/schema
+        http://docs.jboss.org/ironjacamar/schema/datasources_1_0.xsd">
+    <datasource enabled="true"
+        jndi-name="jdbc/arquillian"
+        pool-name="ArquillianEmbeddedH2Pool">
+        <connection-url>jdbc:h2:mem:arquillian;DB_CLOSE_DELAY=-1</connection-url>
+        <driver>h2</driver>
+    </datasource>
+</datasources>
+
+p. We are using h2 driver which enables creating and managing of the testing database right in the memory. Pretty useful solution.
+
+p. Besides these xml files, we bundled the very well known beans.xml and faces-config.xml to keep the archive valid according specifications.
+
+Now, the ultimate goal of this guide will be shown, let's see what will testing method of the testing class look like:
+
+bc(prettify).. // clip
+import junit.framework.Assert;
+import org.junit.Test;
+// clip
+
+private static final String WEBAPP_SRC = "src/main/webapp";
+private static final String USERNAME = "JohnDoe";
+private static final String PASSWORD = "PASSWORD";
+
+@Test
+public void register() {
+    // Register
+    driver.get(deploymentUrl + "register.jsf");
+    driver.findElement(REGISTER_USERNAME_FIELD).sendKeys(USERNAME);
+    driver.findElement(REGISTER_PASSWORD_FIELD).sendKeys(PASSWORD);
+    driver.findElement(REGISTER_BUTTON).click();
+    
+    Assert.assertTrue(driver.findElement(LOGIN_TEXT).isDisplayed());
+    
+    // And try to log in
+    Assert.assertTrue("User should be registered and redirected to login page!"
+            , driver.findElement(LOGIN_USERNAME_FIELD).isDisplayed()
+            && driver.findElement(LOGIN_PASSWORD_FIELD).isDisplayed());
+        
+    driver.findElement(LOGIN_USERNAME_FIELD).clear();
+    driver.findElement(LOGIN_USERNAME_FIELD).sendKeys(USERNAME);
+    driver.findElement(LOGIN_PASSWORD_FIELD).clear();
+    driver.findElement(LOGIN_PASSWORD_FIELD).sendKeys(PASSWORD);
+    driver.findElement(LOGIN_BUTTON).click();
+            
+    Assert.assertTrue("User should be at welcome page!",
+            driver.findElement(WELCOME).isDisplayed());
+}
+
+p. As you spotted, we are using locators to find some element at the web page we are testing. These locators 
+have to be specified in the test class as well. You are welcome to paste this to your class:
+
+bc(prettify).. private static final By REGISTER_USERNAME_FIELD = By.id("registerForm:username");
+    
+private static final By REGISTER_PASSWORD_FIELD = By.id("registerForm:password");
+    
+private static final By REGISTER_BUTTON = By.id("registerForm:register");
+    
+private static final By LOGIN_USERNAME_FIELD = By.id("loginForm:username");
+    
+private static final By LOGIN_PASSWORD_FIELD = By.id("loginForm:password");
+    
+private static final By LOGIN_TEXT = By.xpath("//h3[contains(text(), 'Log in')]");
+
+private static final By LOGIN_BUTTON = By.id("loginForm:login");
+
+private static final By WELCOME = By.xpath("//p[contains(text(), 'You are signed in as " + USERNAME + ".')]");
+
+p. These are all locators you have to specify to provide the WebDriver driver a way how to access it and deal 
+with them.
+
+p. You are welcome to extend this testing method as you like, you can also play around and try to incorporate test methods which test user's input, e.g. the lenght of the username and password. You can write appropriate message which will be shown to the user when he enters invalid username (e.g. too short) and react accordingly. The sky is the limit.
+
+p(info). %When writing more then one test method, it might be the case you want to run them in some order. You have to annontate testing method with @@InSequence@ annonation with the integer number as the argument, e.g. 1 or 2. Test methods will be executed from the lowest to the highest number.%
+
+h3. Maven infrastructure
+
+The last bit of information which misses is to show you @pom.xml@ file. This one will be pretty concise too. For the sake of simplicity, we are showing only one profile which is activated by default. We will be testing in managed container of JBoss AS 7. We are testing against WebDriver.
+
+div(filename). pom.xml
+
+bc(prettify).. <profiles>
+    <profile>
+        <id>arquillian-jbossas-managed</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <dependencies>
+            <dependency>
+            <!-- Adds Arquillian Core and ShrinkWrap API -->
+                <groupId>org.jboss.arquillian.junit</groupId>
+                <artifactId>arquillian-junit-container</artifactId>
+                <scope>test</scope>
+            </dependency>
+            <!-- jboss as managed -->
+            <dependency>
+                <groupId>org.jboss.as</groupId>
+                <artifactId>jboss-as-arquillian-container-managed</artifactId>
+                <version>7.1.1.Final</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec</groupId>
+                <artifactId>jboss-javaee-6.0</artifactId>
+                <version>1.0.0.Final</version>
+                <type>pom</type>
+                <scope>provided</scope>
+            </dependency>
+            <!-- Drone impl -->
+            <dependency>
+                <groupId>org.jboss.arquillian.extension</groupId>
+                <artifactId>arquillian-drone-impl</artifactId>
+                <scope>test</scope>
+            </dependency>
+            <!-- Graphene Webdriver -->              
+            <dependency>
+                <groupId>org.jboss.arquillian.graphene</groupId>
+                <artifactId>graphene-webdriver</artifactId>
+                <version>${version.org.jboss.arquillian.graphene2}</version>
+                <type>pom</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>1.6.4</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.8.1</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </profile>
+</profiles>
+
+p. Regarding dependency management, you are oblidged to enter this to your @pom.xml@
+
+bc(prettify).. <dependencyManagement>
+    <dependencies>
+        <!-- Arquillian Core dependencies -->
+        <dependency>
+            <groupId>org.jboss.arquillian</groupId>
+            <artifactId>arquillian-bom</artifactId>
+            <version>${version.org.jboss.arquillian}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+        <!-- Arquillian Drone dependencies and Selenium dependencies -->
+        <dependency>
+            <groupId>org.jboss.arquillian.extension</groupId>
+            <artifactId>arquillian-drone-bom</artifactId>
+            <version>${version.org.jboss.arquillian.drone}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+p. It will import all dependencies necessary to run Arquillian and Drone based tests.
+
+p. Do not forget to import properties element in order to get Maven know what versions of artifact it should use
+
+bc(prettify).. <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <version.org.jboss.arquillian>1.0.3.Final</version.org.jboss.arquillian>
+    <version.org.jboss.arquillian.drone>1.1.0.Final</version.org.jboss.arquillian.drone>
+    <version.org.jboss.arquillian.graphene2>2.0.0.Alpha2</version.org.jboss.arquillian.graphene2>
+</properties>
+
+h3. Run it!
+
+Testing is very easy since the profile is activated by default. The only thing which remains is to run the test
+
+bc(command). mvn test
+
+Enjoy your next *(greenbar)Green bar*!
+
+h3. Conclusion
+
+As you could see, testing your application which uses JPA as the persistence technology does not differ from ordinary testing as shown in the previous tutorial. All we done was we added the real JPA implementation instead of the wired one. The testing itself was very similar. This tutorial just showed that it is easy to merge two concepts together. You are not bound to test only one aspect of the application, you can easily combine them and see how it will work when it is put together.
+
+You are welcome to download the whole project by cloning (or even forking! ~:)) the "Arquillian tutorials":https://github.com/arquillian/arquillian-examples.
+
+_Arquillian makes integration testing a breeze. Arquillian Drone adds a great support for functional tests. Together, they make developing tests fun again._
