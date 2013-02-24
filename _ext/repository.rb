@@ -14,6 +14,7 @@ module Awestruct
           @ohloh_api_key = ohloh_api_key
           @use_data_cache = opts[:use_data_cache] || true
           @observers = opts[:observers] || []
+          @auth = opts[:auth]
         end
 
         def execute(site)
@@ -122,20 +123,32 @@ module Awestruct
           @repositories.map {|r|
             r.owner if r.host == 'github.com'
           }.uniq.each {|org_name|
-            org_repos_data = RestClient.get "https://api.github.com/orgs/#{org_name}/repos", :accept => 'application/json'
-            @repositories.each {|r|
-              #repo_data = org_repos_data.select {|c| r.owner == org_name and r.host == 'github.com' and c['name'] == r.path}
-              repo_data = org_repos_data.select {|c| r.clone_url.eql? c['git_url']}
-              if repo_data.size == 1
-                r.desc = repo_data.first['description']
+            more_pages = true
+            org_url = "https://api.github.com/orgs/#{org_name}/repos"
+            while more_pages
+              org_repos_data = RestClient.get @auth.with_credentials(org_url), :accept => 'application/json'
+              @repositories.each {|r|
+                #repo_data = org_repos_data.select {|c| r.owner == org_name and r.host == 'github.com' and c['name'] == r.path}
+                repo_data = org_repos_data.select {|c| r.clone_url.eql? c['git_url']}
+                if repo_data.size == 1
+                  r.desc = repo_data.first['description']
+                  r.commits_url = repo_data.first['commits_url']
+                end
+              }
+              if org_repos_data.headers[:link] =~ /<(.*)>.+rel="next",/
+                org_url = $1
+              else
+                more_pages = false
               end
-            }
+            end
+
           }
 
           site.components = {}
           site.modules = {}
           site.git_author_index = {}
           @repositories.each do |r|
+            ##next unless r.path.eql? 'arquillian-extension-warp' #test filter
             ## REVIEW BEGIN
             if r.host.eql? 'github.com'
               @observers.each do |o|
@@ -153,8 +166,16 @@ module Awestruct
           # use sample commits to get the github_id for each author
           rekeyed_index = {}
           site.git_author_index.each do |email, author|
-            commit_data = RestClient.get(author.sample_commit_url, :accept => 'application/json')
-            github_id = commit_data['commit']['author']['login'].to_s.downcase
+            commit_data = RestClient.get(@auth.with_credentials(author.sample_commit_url), :accept => 'application/json')
+
+            github_id = commit_data['commit']['author']['login']
+            unless commit_data['author'].nil?
+              github_id = commit_data['author']['login'] if github_id.nil? or github_id.empty?
+            end
+
+            github_id = github_id.to_s.downcase unless github_id.nil?
+            github_id = "" if github_id.nil?
+
             if github_id.empty?
               match = site.github_mapping.find{|candidate| candidate.email.eql? author.email}
               if match
@@ -162,7 +183,7 @@ module Awestruct
                 puts "Used github mapping to lookup github_id #{github_id} for #{author.name} <#{author.email}>"
               end
             end
-            if !github_id.empty?
+            if not github_id.empty?
               author.github_id = github_id
               # github_id may exist in index when a person has multiple e-mail address w/ one github account
               if rekeyed_index.has_key? github_id

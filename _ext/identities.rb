@@ -33,6 +33,7 @@ module Awestruct::Extensions::Identities
       attr_accessor :loaded
 
       def lookup(username, create = false)
+        return nil if username.nil?
         identity = self.find {|e| username.eql? e.username} ||
             self.find {|e| username.eql? e.jboss_username}
         if create and identity.nil?
@@ -46,6 +47,7 @@ module Awestruct::Extensions::Identities
       end
   
       def lookup_by_name(name, create = false)
+        return nil if name.nil?
         search = name.downcase
         identity = self.find {|e| search.eql? e.name.to_s.downcase}
         if create and identity.nil?
@@ -68,6 +70,7 @@ module Awestruct::Extensions::Identities
       end
   
       def lookup_by_email(email, create = false)
+        return nil if email.nil?
         identity = self.find {|e| email.eql? e.email or !e.emails.nil? and e.emails.include? email}
         if create and identity.nil?
           identity = OpenStruct.new({:email => email}) 
@@ -80,6 +83,7 @@ module Awestruct::Extensions::Identities
       end
 
       def lookup_by_github_id(github_id, create = false)
+        return nil if github_id.nil?
         identity = self.find {|e| github_id.eql? e.github_id}
         if create and identity.nil?
           identity = OpenStruct.new({:github_id => github_id}) 
@@ -92,6 +96,7 @@ module Awestruct::Extensions::Identities
       end
   
       def lookup_by_twitter_username(username)
+        return nil if username.nil?
         self.find {|e| !e.twitter.nil? and username.eql? e.twitter.username }
       end
   

@@ -45,7 +45,7 @@ module RestClient
       end
 
       if response.nil?
-        puts 'Fetching ' + self.url
+        puts 'Fetching ' + self.url.gsub(/(:\/\/)(.+:.+)(@)/, '\1xxx:xxx\3') ## don't show auth
         response = _execute &block
         instances.each do |instance|
           instance.cache_miss(response) if instance.respond_to? 'cache_miss'
@@ -107,9 +107,16 @@ class RestGetCache
       else
         uri = URI(request.url)
         path = uri.path
+        path = path.gsub(/\//, '-')[1..path.length]
+        query = nil
+        query = uri.query.gsub(/(\?|&|=)/, '-') unless uri.query.nil?
+        file_name = path
+        file_name = "#{path}_#{query}" unless query.nil?
+
         host = uri.host
         host_basename = host.split('.')[-2, 1].first
-        @cache_file = File.join(cache_dir, host_basename, path.gsub(/\//, '-')[1..path.length]).downcase
+        @cache_file = File.join(cache_dir, host_basename, file_name).downcase
+        #puts "Cache File #{@cache_file}"
         if File.extname(path).empty?
           if request.headers.has_key? :accept
             @cache_file << '.' + request.headers[:accept].split('/').last
@@ -126,7 +133,9 @@ class RestGetCache
       # read cache file if it exists and either (no expiry age is specified or the cache file is newer than now - age)
       if File.exist? @cache_file and (@cache_expiry_age.nil? or File.mtime(@cache_file) >= (Time.now - @cache_expiry_age))
         body = File.read(@cache_file)
-        return RestClient::Response.create(body, RestClient::MockNetHTTPResponse.new(body, 200, {}), @request.args)
+        headers = {}
+        headers = JSON.parse(File.read("#{@cache_file}.headers")) if File.exist? "#{@cache_file}.headers"
+        return RestClient::Response.create(body, RestClient::MockNetHTTPResponse.new(body, 200, headers), @request.args)
       end
     end
     response
@@ -139,6 +148,10 @@ class RestGetCache
       FileUtils.mkdir_p(File.dirname @cache_file)
       File.open(@cache_file, 'w') do |out|
         out.write response.body
+      end
+      #puts "Headers #{response.headers[:link].class}"
+      File.open("#{@cache_file}.headers", 'w') do |out|
+        out.write response.headers.inject({}) {|collector, (k,v)| collector[k] = v; collector}.to_json
       end
     end
   end

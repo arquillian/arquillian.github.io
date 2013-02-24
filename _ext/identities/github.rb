@@ -25,8 +25,7 @@ module Identities
         @repositories = []
         @match_filters = []
         @teams = opts[:teams]
-        @auth_file = opts[:auth_file]
-        @credentials = nil
+        @auth = opts[:auth]
       end
 
       def add_repository(repository)
@@ -43,7 +42,7 @@ module Identities
       def collect(identities)
         visited = []
         @repositories.each do |r|
-          url = with_credentials(CONTRIBUTORS_URL_TEMPLATE % [ r.owner, r.path ])
+          url = @auth.with_credentials(CONTRIBUTORS_URL_TEMPLATE % [ r.owner, r.path ])
           contributors = RestClient.get url, :accept => 'application/json'
           contributors.each do |acct|
             github_id = acct['login'].downcase
@@ -67,7 +66,7 @@ module Identities
           filter.values.select{|author| !author.github_id.nil? and !visited.include? author.github_id}.each do |author|
             github_id = author.github_id
             puts "Manually adding #{author.name} (#{github_id}) as a contributor"
-            url = with_credentials(USER_URL_TEMPLATE % [ github_id ])
+            url = @auth.with_credentials(USER_URL_TEMPLATE % [ github_id ])
             user = RestClient.get url, :accept => 'application/json'
             identity = identities.lookup_by_github_id(github_id, true)
             github_acct_to_identity(user, author, identity)
@@ -75,9 +74,9 @@ module Identities
         end
 
         if !@teams.nil?
-          if get_credentials()
+          if @auth.get_credentials()
             @teams.each do |team|
-              url = with_credentials(TEAM_MEMBERS_URL_TEMPLATE % team[:id])
+              url = @auth.with_credentials(TEAM_MEMBERS_URL_TEMPLATE % team[:id])
               members = RestClient.get(url, :accept => 'application/json') 
               members.each do |m|
                 github_id = m['login']
@@ -125,6 +124,14 @@ module Identities
         end
       end
 
+    end
+
+    class Auth
+      def initialize(auth_file = '.github-auth')
+        @auth_file = auth_file
+        @credentials = nil
+      end
+
       # credentials increases rate limit from 60/hr to 1,500/hr and, in certain cases, are required to access the data
       def with_credentials(url)
         get_credentials() ? url.sub(/^(https?:\/\/)/, '\1' + @credentials.chomp + '@') : url
@@ -148,8 +155,7 @@ module Identities
     class Crawler
 
       def initialize(opts = {})
-        @auth_file = opts[:auth_file]
-        @credentials = nil
+        @auth = opts[:auth]
       end
 
       def enhance(identity)
@@ -169,7 +175,7 @@ module Identities
           return
         end
 
-        url = with_credentials(url)
+        url = @auth.with_credentials(url)
         data = RestClient.get url, :accept => 'application/json'
         identity.github_id = data['login'].downcase
         identity.username = identity.github_id
@@ -211,25 +217,6 @@ module Identities
         end
       end
        
-      # YIKES, duplication from above!
-      def with_credentials(url)
-        get_credentials() ? url.sub(/^(https?:\/\/)/, '\1' + @credentials.chomp + '@') : url
-      end
-
-      # YIKES, duplication from above!
-      def get_credentials()
-        if @credentials.nil?
-          @credentials = false
-          if !@auth_file.nil?
-            if File.exist? @auth_file
-              @credentials = File.read(@auth_file)
-            elsif Pathname.new(@auth_file).relative? and File.exist? File.join(ENV['HOME'], @auth_file)
-              @credentials = File.read(File.join(ENV['HOME'], @auth_file))
-            end
-          end
-        end
-        @credentials
-      end
     end
   end
 end

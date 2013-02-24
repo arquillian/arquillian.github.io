@@ -24,8 +24,11 @@ Awestruct::Extensions::Pipeline.new do
   # Custom tags and syntax for textile markup
   extension Awestruct::Extensions::TextilePlus.new
 
+  # GitHub API calls should be wrapped with credentials to up limit
+  github_auth = Identities::GitHub::Auth.new('.github-auth')
+
   # You need to have the file $HOME/.github-auth containing username:password on one line
-  github_collector = Identities::GitHub::Collector.new(:auth_file => '.github-auth', :teams =>
+  github_collector = Identities::GitHub::Collector.new(:auth => github_auth, :teams =>
     [
       {:id => 146647, :name => 'speaker'},
       {:id => 125938, :name => 'translator'},
@@ -39,10 +42,10 @@ Awestruct::Extensions::Pipeline.new do
   # the JIRA extension registers its own extensions
   Awestruct::Extensions::Jira::Project.new(self, 'ARQ:12310885')
   extension Awestruct::Extensions::Jira::ReleaseNotes.new('ARQGRA:12312222', 'graphene')
-  extension Awestruct::Extensions::Repository::Collector.new(480465, 'sGiJRdK2Cq8Nz0TkTNAKyw', :observers => [github_collector])
+  extension Awestruct::Extensions::Repository::Collector.new(480465, 'sGiJRdK2Cq8Nz0TkTNAKyw', :observers => [github_collector], :auth => github_auth)
   extension Awestruct::Extensions::Identities::Collect.new(github_collector)
   extension Awestruct::Extensions::Identities::Crawl.new(
-    Identities::GitHub::Crawler.new(:auth_file => '.github-auth'),
+    Identities::GitHub::Crawler.new(:auth => github_auth),
     Identities::Gravatar::Crawler.new,
     Identities::Confluence::Crawler.new('https://docs.jboss.org/author', :auth_file => '.jboss-auth',
         :identity_search_keys => ['name', 'username'], :assign_username_to => 'jboss_username'),

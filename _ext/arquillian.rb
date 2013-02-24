@@ -146,7 +146,12 @@ module Awestruct::Extensions::Repository::Visitors
     end
 
     def self.build_commit_url(repository, sha, ext)
-      repository.html_url + '/commit/' + sha + '.' + ext
+      if !repository.commits_url.nil?
+        url = repository.commits_url.gsub(/\{.*/, "/#{sha}")
+      else
+        url = repository.html_url + '/commit/' + sha + '.' + ext
+      end
+      return url
     end
   end
 
