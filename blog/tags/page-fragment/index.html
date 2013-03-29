@@ -43,406 +43,406 @@
       </div>
     </header>
     <div id="main" role="main">
-  <div id="content-header">
-    <div class="container">
-      <h1>
-        <a href="/blog/">Arquillian Blog</a>
-      </h1>
-    </div>
-  </div>
-  <div class="container">
-    <div id="content">
-  <article class="post">
-  <header class="header">
-    <h2 class="title">
-      <a href="/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/">Introducing Arquillian Graphene Page Fragments</a>
-    </h2>
-    <div class="byline">
-      <img class="avatar" src="http://gravatar.com/avatar/937262449f9882b576aa893299a46d41?s=44" />
-      <span class="author">Posted by
-      <a href="https://community.jboss.org/people/jhuska">Juraj Huska</a></span>
-      <span class="dateinline">on Sep 19, 2012</span>
-      <div class="date"><abbr>Sep</abbr> 19</div>
-      <span class="comments">| <a href="http://arquillian.org/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/#disqus_thread" data-disqus-identifier="cc813642826fbf50c8640c8a71c088e8d69636d1">Comments</a></span>
-    </div>
-  </header>
-  <div class="body">
-    <p>Tools like <em>Arquillian Graphene</em>, <em>WebDriver</em>, or just plain <em>Selenium</em> combined with concepts like <a href="http://code.google.com/p/selenium/wiki/PageObjects"><em>Page Objects</em></a> can help you automate your functional(integration, whatever&#8230;) web UI tests. We have already introduced some of the advances brought to you by <em>Arquillian Graphene</em> <a href="http://arquillian.org/blog/tags/graphene/">earlier</a>. In this blog entry we will look a bit deeper into a new concept introduced in <em>Arquillian Graphene</em> 2.0.0.Alpha2; <em>Page Fragments</em>.</p>
-<p>Consider the following example taken from the RichFaces <a href="http://showcase.richfaces.org/richfaces/component-sample.jsf?demo=autocomplete&amp;sample=modes&amp;skin=blueSky">component showcase</a>. The page under test contain three Autocomplete widgets.</p>
-<pre class="prettify"><code class="prettify">public class TestAutocompleteWidgets extends AbstractGrapheneTest {</code>&#x000A;&#x000A;<code class="prettify">    private JQueryLocator minCharInput = jq("input[type=text]:eq(0)");&#x000A;    private JQueryLocator multipleSelectionInput = jq("input[type=text]:eq(1)");&#x000A;    private JQueryLocator selectFirstFalseInput = jq("input[type=text]:eq(2)");&#x000A;    private JQueryLocator selection = jq("div.rf-au-itm");</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testFirstAutocomplete() {</code>&#x000A;&#x000A;<code class="prettify">        graphene.keyPress(minCharInput, 'a');</code>&#x000A;&#x000A;<code class="prettify">        assertFalse(graphene.isElementPresent(selection),&#x000A;            "The suggestion list should not be visible, since there is only one char!");</code>&#x000A;&#x000A;<code class="prettify">        String keys = "ar";&#x000A;        graphene.focus(minCharInput);&#x000A;        selenium.type(minCharInput, keys);&#x000A;        guardXhr(graphene).fireEvent(minCharInput, Event.KEYPRESS);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(graphene.isVisible(selection), &#x000A;            "The suggestion list should be visible, since there are two chars!");</code>&#x000A;&#x000A;<code class="prettify">        String actualArizona = graphene.getText(jq(selection.getRawLocator() + ":eq(0)"));&#x000A;        assertEquals(actualArizona, "Arizona", "The provided suggestion should be Arizona!");</code>&#x000A;&#x000A;<code class="prettify">        String actualArkansas = graphene.getText(jq(selection.getRawLocator() + ":eq(1)"));&#x000A;        assertEquals(actualArkansas, "Arkansas", "The provided suggestion should be Arkansas!");</code>&#x000A;&#x000A;<code class="prettify">    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testSecondAutocomplete() {</code>&#x000A;&#x000A;<code class="prettify">        char key = 'a';&#x000A;        selenium.focus(multipleSelectionInput);&#x000A;        guardXhr(selenium).keyPress(multipleSelectionInput, key);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(selenium.isVisible(selection),&#x000A;            "The suggestion list should be visible, since there is correct starting char!");</code>&#x000A;&#x000A;<code class="prettify">        selenium.keyPressNative(KeyEvent.VK_ENTER);</code>&#x000A;&#x000A;<code class="prettify">        key = ' ';&#x000A;        selenium.keyPress(multipleSelectionInput, key);</code>&#x000A;&#x000A;<code class="prettify">        key = 'w';</code>&#x000A;&#x000A;<code class="prettify">        selenium.focus(multipleSelectionInput);&#x000A;        guardXhr(selenium).keyPress(multipleSelectionInput, key);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(selenium.isVisible(selection),&#x000A;            "The suggestion list should be visible, since there is correct starting char!");</code>&#x000A;&#x000A;<code class="prettify">        selenium.keyPressNative(KeyEvent.VK_ENTER);</code>&#x000A;&#x000A;<code class="prettify">        String actualContentOfInput = selenium.getValue(multipleSelectionInput);&#x000A;        assertEquals(actualContentOfInput, "Alabama Washington", "The input should contain something else!");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testThirdAutocomplete() {&#x000A;        //similar autocomplete interactions as in the previous tests&#x000A;    }&#x000A;}</code></pre>
-<h3>Now, ask yourself the following questions:</h3>
-<ul>
-	<li><em>Do you find these types of tests less robust than for example unit tests for the persistence layer?</em></li>
-</ul>
-<ul>
-	<li><em>Do you think these tests still pass when the underlying HTML change?</em></li>
-</ul>
-<ul>
-	<li><em>Do you see repeating code in the these tests?</em></li>
-</ul>
-<p>In my opinion you should have a clean answer to all of these questions. You are probably aware that tests should be loosely coupled with the underlying HTML structure of the application under test as it makes tests more robust and changes in the HTML structure of the page will not directly affect all tests.</p>
-<p>Let&#8217;s apply the <a href="http://code.google.com/p/selenium/wiki/PageObjects"><em>Page Objects</em></a> pattern to split the HTML structure and the test logic. The <em>Page Object</em> will encapsulate the HTML structure so when the HTML change, only your <em>Page Objects</em> has to change.</p>
-<ul>
-	<li><em>But what about when I&#8217;m testing another application that use the same Autocomplete widget?</em></li>
-</ul>
-<ul>
-	<li><em>Should I copy the part of the Page Object that interact with the Autocomplete widget and paste it around in my code?</em></li>
-</ul>
-<p>But as you&#8217;re already thinking: this would be a major don&#8217;t-repeat-yourself violation! Is there something we could do to improve this?</p>
-<p><strong>Yes, there is! Arquillian Graphene <em>Page Fragments</em> to the rescue!</strong></p>
-<h3><em>Page Fragments</em>, what are they?</h3>
-<ul>
-	<li><em>Page Fragments</em> are any repeating part of a page, any widget, web component, etc.</li>
-	<li>They encapsulate parts of the page into reusable test components across your whole test suite.</li>
-	<li>You can differentiate each fragment by its root element and reference other elements as children of that root.</li>
-	<li>They leverage Selenium WebDriver under the hood combined with all of the killer features of <em>Graphene</em>.</li>
-	<li>And they come with a set of utilities which simplify using them within tests and <em>Page Objects</em>.</li>
-</ul>
-<h3>How to define <em>Page Fragments</em></h3>
-<pre class="prettify"><code class="prettify">public class AutocompleteFragment&lt;T&gt; {</code>&#x000A;&#x000A;<code class="prettify">    @Root&#x000A;    WebElement root;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(css = "input[type='text']")&#x000A;    WebElement inputToWrite;</code>&#x000A;&#x000A;<code class="prettify">    public static final String CLASS_NAME_SUGGESTION = "rf-au-itm";</code>&#x000A;&#x000A;<code class="prettify">    public List&lt;Suggestion&lt;T&gt;&gt; getAllSuggestions(SuggestionParser&lt;T&gt; parser) {&#x000A;        List&lt;Suggestion&lt;T&gt;&gt; allSugg = new ArrayList&lt;Suggestion&lt;T&gt;&gt;();</code>&#x000A;&#x000A;<code class="prettify">        if (areSuggestionsAvailable()) {&#x000A;            WebElement rightSuggList = getRightSuggestionList();&#x000A;            List&lt;WebElement&gt; suggestions = rightSuggList.findElements(&#x000A;                        By.className(CLASS_NAME_SUGGESTION));</code>&#x000A;&#x000A;<code class="prettify">            for (WebElement suggestion : suggestions) {&#x000A;                allSugg.add(parser.parse(suggestion));&#x000A;            }&#x000A;        }</code>&#x000A;&#x000A;<code class="prettify">        return allSugg;&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    public List&lt;Suggestion&lt;T&gt;&gt; type(String value, SuggestionParser&lt;T&gt; parser) {&#x000A;        List&lt;Suggestion&lt;T&gt;&gt; suggestions = new ArrayList&lt;Suggestion&lt;T&gt;&gt;();</code>&#x000A;&#x000A;<code class="prettify">        inputToWrite.sendKeys(value);&#x000A;        try {&#x000A;            waitForSuggestions();&#x000A;        } catch (TimeoutException ex) {&#x000A;            // no suggestions available&#x000A;            return suggestions;&#x000A;        }</code>&#x000A;&#x000A;<code class="prettify">        suggestions = getAllSuggestions(parser);&#x000A;        return suggestions;&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    //other handy encapsulation of Autocomplete services&#x000A;}</code></pre>
-<p class="info"><span>The example is just a snippet from the full implementation of the RichFaces Autocomplete component.</span></p>
-<p>Notice the <code>@Root</code> annotation? The value of the root field is automatically injected by <em>Graphene</em>. The <code>root</code> field contain the root element as defined by the <code>@FindBy</code> annotation on the injection point of the <em>Page Fragment</em> in the Page Object or test. All <code>@FindBy</code> fields in the <em>Page Fragment</em> will use this root as a starting point.</p>
-<p>The fragment implementation is pretty generic and therefore reusable in all tests in all applications that use the Autocomplete widget. A full implementation would encapsulate all the services this fragment provide, but it could for example also encapsulate browser specific interactions like submit or click actions. There are no boundaries!</p>
-<h3>Using <em>Page Fragments</em> and <em>Page Objects</em> together</h3>
-<p>Let&#8217;s rewrite the previous test to use our new <em>Page Fragment</em> together with our <em>Page Object</em>.</p>
-<p>First we define a <em>Page Object</em> which contain the structure of the page under test.</p>
-<pre class="prettify"><code class="prettify">public class TestPage {</code>&#x000A;    &#x000A;<code class="prettify">    @FindBy(css = "div.rf-au:nth-of-type(1)")&#x000A;    private AutocompleteFragment&lt;String&gt; autocomplete1;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(css = "div.rf-au:nth-of-type(2)")&#x000A;    private AutocompleteFragment&lt;String&gt; autocomplete2;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(css = "div.rf-au:nth-of-type(3)")&#x000A;    private AutocompleteFragment&lt;String&gt; autocomplete3;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(xpath = "//*[contains(@id,'sh1')]")&#x000A;    private WebElement viewSourceLink;</code>&#x000A;&#x000A;<code class="prettify">    //all getters for the fields</code>&#x000A;&#x000A;<code class="prettify">    //other handy methods which you find useful when testing those three Autocomplete widgets&#x000A;}</code></pre>
-<p>Declaring the <em>Page Fragment</em> in the <em>Page Object</em> is the preferred option, but you can also declare the <em>Page Fragment</em> directly in the test if desired. The only thing you need to do is to annotate the <em>Page Fragment</em> object with WebDriver&#8217;s <code>@FindBy</code> annotation to refer to the fragment&#8217;s root DOM element. That simple!</p>
-<p>Graphene differentiates between <em>Page Fragments</em> and plain <em>WebElements</em> in the same Page Object so they can be declared side by side. All of the <strong>initialization is done automatically</strong>, so there is no need to initialize the <em>Page Fragments</em> or <em>Page Objects</em> in the <code>@Before</code> method of your test case.</p>
-<p>In this last example we see how the autocomplete widgets&#8217;s <em>Page Fragment</em> is used in the test case.</p>
-<pre class="prettify"><code class="prettify">public class TestWhichUsesPageFragments extend AbstractTest {</code>&#x000A;&#x000A;<code class="prettify">    @Page&#x000A;    private TestPage testPage;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testFirstAutocomplete {&#x000A;        AutocompleteFragment&lt;String&gt; autocomplete = testPage.getAutocomplete1();</code>&#x000A;        &#x000A;<code class="prettify">        autocomplete.type("a");</code>&#x000A;&#x000A;<code class="prettify">        assertFalse(autocomplete.areSuggestionsAvailable(), &#x000A;            "The suggestion list should not be visible, since there is only one char!");</code>&#x000A;&#x000A;<code class="prettify">        String keys = "ar";&#x000A;        autocomplete.type(keys);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(autocomplete.areSuggestionsAvailable(), &#x000A;            "The suggestion list should be visible, since there are two chars!");</code>&#x000A;&#x000A;<code class="prettify">        List&lt;Suggestion&lt;String&gt;&gt; expectedSuggestions = new ArrayList&lt;Suggestion&lt;String&gt;&gt;();&#x000A;        expectedSuggestions.add(new Suggestion&lt;String&gt;("Arizona"));&#x000A;        expectedSuggestions.add(new Suggestion&lt;String&gt;("Arkansas"));</code>&#x000A;&#x000A;<code class="prettify">        assertEquals(autocomplete.getAllSuggestions(new StringSuggestionParser()), expectedSuggestions, &#x000A;            "Suggestions are wrong!");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testSecondAutocomplete() {&#x000A;        AutocompleteFragment&lt;String&gt; autocomplete = testPage.getAutocomplete2();</code>&#x000A;&#x000A;<code class="prettify">        String key = "a";&#x000A;        autocomplete.type(key);</code>&#x000A;        &#x000A;<code class="prettify">        String errorMsg = "The suggestion list should be visible, since there was typed correct char ";&#x000A;        assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);</code>&#x000A;&#x000A;<code class="prettify">        autocomplete.autocomplete(autocomplete.getFirstSuggestion());</code>&#x000A;&#x000A;<code class="prettify">        autocomplete.type(" ");</code>&#x000A;&#x000A;<code class="prettify">        key = "w"&#x000A;        autocomplete.type(key);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);</code>&#x000A;&#x000A;<code class="prettify">        autocomplete.autocomplete(autocomplete.getFirstSuggestion());        </code>&#x000A;&#x000A;<code class="prettify">        String actualContentOfInput = autocomplete.getInputValue();&#x000A;        assertEquals(actualContentOfInput, "Alabama Washington", "The input should contain something else!");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testThirdAutocomplete() {&#x000A;        //similar autocomplete interactions as in the previous tests&#x000A;    }&#x000A;}</code></pre>
-<p>As your application grow, the only thing that needs to change is the root references of your <em>Page Fragments</em>. Last but not least you will be able to make your <em>Page Fragment</em> availabe to be used by other tests in other applications.</p>
-<p>To try <em>Page Fragments</em> check out the Graphene 2.0.0.Alpha2 release. Getting start information can be found in the <a href="https://docs.jboss.org/author/display/ARQGRA2/Page+Abstractions">Reference Documentation</a>.</p>
-  </div>
-  <div class="footer">
-    <a href="/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/">permalink</a>
-    |
-    <i class="icon-tags"></i>
-    tagged as
-    <a class="tag" href="/blog/tags/graphene/">graphene</a> <a class="tag" href="/blog/tags/selenium/">selenium</a> <a class="tag" href="/blog/tags/page-fragment/">page-fragment</a> <a class="tag" href="/blog/tags/best-practice/">best-practice</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
-  </div>
-  
-              <script type="text/javascript">
-              var disqus_shortname = 'arquillian';
-              (function () {
-                var s = document.createElement('script'); s.async = true;
-                s.src = "http://disqus.com/forums/arquillian/count.js";
-                (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
-              }());
-              </script>
-</article>
-<ul class="pager">
-  <li class="disabled previous">
-    <a href="#">&laquo; Older</a>
-  </li>
-  <li class="pages">Page 1 of 1</li>
-  <li class="disabled next">
-    <a href="#">Newer &raquo;</a>
-  </li>
-</ul>
-</div>
-<aside id="sidebar" role="complementary">
-  <div class="subscribe">
-    <h2 class="icon news">
-      <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
-    </h2>
-    <p><em>Get the latest information on features, releases and events.</em></p>
-  </div>
-  <nav class="latest">
-    <h2>Latest Posts</h2>
-    <ul>
-      <li>
-        <div class="title">
-          <a href="/blog/2013/03/08/arquillian-container-weld-1-0-0-CR6/">Arquillian Container Weld 1.0.0.CR6 Released</a>
+      <div id="content-header">
+        <div class="container">
+          <h1>
+            <a href="/blog/">Arquillian Blog</a>
+          </h1>
         </div>
-        <div class="meta">
-          Mar 08, 2013
+      </div>
+      <div class="container">
+        <div id="content">
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/">Introducing Arquillian Graphene Page Fragments</a>
+              </h2>
+              <div class="byline">
+                <img class="avatar" src="http://gravatar.com/avatar/937262449f9882b576aa893299a46d41?s=44" />
+                <span class="author">Posted by
+                <a href="https://community.jboss.org/people/jhuska">Juraj Huska</a></span>
+                <span class="dateinline">on Sep 19, 2012</span>
+                <div class="date"><abbr>Sep</abbr> 19</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/#disqus_thread" data-disqus-identifier="cc813642826fbf50c8640c8a71c088e8d69636d1">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>Tools like <em>Arquillian Graphene</em>, <em>WebDriver</em>, or just plain <em>Selenium</em> combined with concepts like <a href="http://code.google.com/p/selenium/wiki/PageObjects"><em>Page Objects</em></a> can help you automate your functional(integration, whatever&#8230;) web UI tests. We have already introduced some of the advances brought to you by <em>Arquillian Graphene</em> <a href="http://arquillian.org/blog/tags/graphene/">earlier</a>. In this blog entry we will look a bit deeper into a new concept introduced in <em>Arquillian Graphene</em> 2.0.0.Alpha2; <em>Page Fragments</em>.</p>
+              <p>Consider the following example taken from the RichFaces <a href="http://showcase.richfaces.org/richfaces/component-sample.jsf?demo=autocomplete&amp;sample=modes&amp;skin=blueSky">component showcase</a>. The page under test contain three Autocomplete widgets.</p>
+              <pre class="prettify"><code class="prettify">public class TestAutocompleteWidgets extends AbstractGrapheneTest {</code>&#x000A;&#x000A;<code class="prettify">    private JQueryLocator minCharInput = jq("input[type=text]:eq(0)");&#x000A;    private JQueryLocator multipleSelectionInput = jq("input[type=text]:eq(1)");&#x000A;    private JQueryLocator selectFirstFalseInput = jq("input[type=text]:eq(2)");&#x000A;    private JQueryLocator selection = jq("div.rf-au-itm");</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testFirstAutocomplete() {</code>&#x000A;&#x000A;<code class="prettify">        graphene.keyPress(minCharInput, 'a');</code>&#x000A;&#x000A;<code class="prettify">        assertFalse(graphene.isElementPresent(selection),&#x000A;            "The suggestion list should not be visible, since there is only one char!");</code>&#x000A;&#x000A;<code class="prettify">        String keys = "ar";&#x000A;        graphene.focus(minCharInput);&#x000A;        selenium.type(minCharInput, keys);&#x000A;        guardXhr(graphene).fireEvent(minCharInput, Event.KEYPRESS);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(graphene.isVisible(selection), &#x000A;            "The suggestion list should be visible, since there are two chars!");</code>&#x000A;&#x000A;<code class="prettify">        String actualArizona = graphene.getText(jq(selection.getRawLocator() + ":eq(0)"));&#x000A;        assertEquals(actualArizona, "Arizona", "The provided suggestion should be Arizona!");</code>&#x000A;&#x000A;<code class="prettify">        String actualArkansas = graphene.getText(jq(selection.getRawLocator() + ":eq(1)"));&#x000A;        assertEquals(actualArkansas, "Arkansas", "The provided suggestion should be Arkansas!");</code>&#x000A;&#x000A;<code class="prettify">    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testSecondAutocomplete() {</code>&#x000A;&#x000A;<code class="prettify">        char key = 'a';&#x000A;        selenium.focus(multipleSelectionInput);&#x000A;        guardXhr(selenium).keyPress(multipleSelectionInput, key);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(selenium.isVisible(selection),&#x000A;            "The suggestion list should be visible, since there is correct starting char!");</code>&#x000A;&#x000A;<code class="prettify">        selenium.keyPressNative(KeyEvent.VK_ENTER);</code>&#x000A;&#x000A;<code class="prettify">        key = ' ';&#x000A;        selenium.keyPress(multipleSelectionInput, key);</code>&#x000A;&#x000A;<code class="prettify">        key = 'w';</code>&#x000A;&#x000A;<code class="prettify">        selenium.focus(multipleSelectionInput);&#x000A;        guardXhr(selenium).keyPress(multipleSelectionInput, key);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(selenium.isVisible(selection),&#x000A;            "The suggestion list should be visible, since there is correct starting char!");</code>&#x000A;&#x000A;<code class="prettify">        selenium.keyPressNative(KeyEvent.VK_ENTER);</code>&#x000A;&#x000A;<code class="prettify">        String actualContentOfInput = selenium.getValue(multipleSelectionInput);&#x000A;        assertEquals(actualContentOfInput, "Alabama Washington", "The input should contain something else!");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testThirdAutocomplete() {&#x000A;        //similar autocomplete interactions as in the previous tests&#x000A;    }&#x000A;}</code></pre>
+              <h3>Now, ask yourself the following questions:</h3>
+              <ul>
+              	<li><em>Do you find these types of tests less robust than for example unit tests for the persistence layer?</em></li>
+              </ul>
+              <ul>
+              	<li><em>Do you think these tests still pass when the underlying HTML change?</em></li>
+              </ul>
+              <ul>
+              	<li><em>Do you see repeating code in the these tests?</em></li>
+              </ul>
+              <p>In my opinion you should have a clean answer to all of these questions. You are probably aware that tests should be loosely coupled with the underlying HTML structure of the application under test as it makes tests more robust and changes in the HTML structure of the page will not directly affect all tests.</p>
+              <p>Let&#8217;s apply the <a href="http://code.google.com/p/selenium/wiki/PageObjects"><em>Page Objects</em></a> pattern to split the HTML structure and the test logic. The <em>Page Object</em> will encapsulate the HTML structure so when the HTML change, only your <em>Page Objects</em> has to change.</p>
+              <ul>
+              	<li><em>But what about when I&#8217;m testing another application that use the same Autocomplete widget?</em></li>
+              </ul>
+              <ul>
+              	<li><em>Should I copy the part of the Page Object that interact with the Autocomplete widget and paste it around in my code?</em></li>
+              </ul>
+              <p>But as you&#8217;re already thinking: this would be a major don&#8217;t-repeat-yourself violation! Is there something we could do to improve this?</p>
+              <p><strong>Yes, there is! Arquillian Graphene <em>Page Fragments</em> to the rescue!</strong></p>
+              <h3><em>Page Fragments</em>, what are they?</h3>
+              <ul>
+              	<li><em>Page Fragments</em> are any repeating part of a page, any widget, web component, etc.</li>
+              	<li>They encapsulate parts of the page into reusable test components across your whole test suite.</li>
+              	<li>You can differentiate each fragment by its root element and reference other elements as children of that root.</li>
+              	<li>They leverage Selenium WebDriver under the hood combined with all of the killer features of <em>Graphene</em>.</li>
+              	<li>And they come with a set of utilities which simplify using them within tests and <em>Page Objects</em>.</li>
+              </ul>
+              <h3>How to define <em>Page Fragments</em></h3>
+              <pre class="prettify"><code class="prettify">public class AutocompleteFragment&lt;T&gt; {</code>&#x000A;&#x000A;<code class="prettify">    @Root&#x000A;    WebElement root;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(css = "input[type='text']")&#x000A;    WebElement inputToWrite;</code>&#x000A;&#x000A;<code class="prettify">    public static final String CLASS_NAME_SUGGESTION = "rf-au-itm";</code>&#x000A;&#x000A;<code class="prettify">    public List&lt;Suggestion&lt;T&gt;&gt; getAllSuggestions(SuggestionParser&lt;T&gt; parser) {&#x000A;        List&lt;Suggestion&lt;T&gt;&gt; allSugg = new ArrayList&lt;Suggestion&lt;T&gt;&gt;();</code>&#x000A;&#x000A;<code class="prettify">        if (areSuggestionsAvailable()) {&#x000A;            WebElement rightSuggList = getRightSuggestionList();&#x000A;            List&lt;WebElement&gt; suggestions = rightSuggList.findElements(&#x000A;                        By.className(CLASS_NAME_SUGGESTION));</code>&#x000A;&#x000A;<code class="prettify">            for (WebElement suggestion : suggestions) {&#x000A;                allSugg.add(parser.parse(suggestion));&#x000A;            }&#x000A;        }</code>&#x000A;&#x000A;<code class="prettify">        return allSugg;&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    public List&lt;Suggestion&lt;T&gt;&gt; type(String value, SuggestionParser&lt;T&gt; parser) {&#x000A;        List&lt;Suggestion&lt;T&gt;&gt; suggestions = new ArrayList&lt;Suggestion&lt;T&gt;&gt;();</code>&#x000A;&#x000A;<code class="prettify">        inputToWrite.sendKeys(value);&#x000A;        try {&#x000A;            waitForSuggestions();&#x000A;        } catch (TimeoutException ex) {&#x000A;            // no suggestions available&#x000A;            return suggestions;&#x000A;        }</code>&#x000A;&#x000A;<code class="prettify">        suggestions = getAllSuggestions(parser);&#x000A;        return suggestions;&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    //other handy encapsulation of Autocomplete services&#x000A;}</code></pre>
+              <p class="info"><span>The example is just a snippet from the full implementation of the RichFaces Autocomplete component.</span></p>
+              <p>Notice the <code>@Root</code> annotation? The value of the root field is automatically injected by <em>Graphene</em>. The <code>root</code> field contain the root element as defined by the <code>@FindBy</code> annotation on the injection point of the <em>Page Fragment</em> in the Page Object or test. All <code>@FindBy</code> fields in the <em>Page Fragment</em> will use this root as a starting point.</p>
+              <p>The fragment implementation is pretty generic and therefore reusable in all tests in all applications that use the Autocomplete widget. A full implementation would encapsulate all the services this fragment provide, but it could for example also encapsulate browser specific interactions like submit or click actions. There are no boundaries!</p>
+              <h3>Using <em>Page Fragments</em> and <em>Page Objects</em> together</h3>
+              <p>Let&#8217;s rewrite the previous test to use our new <em>Page Fragment</em> together with our <em>Page Object</em>.</p>
+              <p>First we define a <em>Page Object</em> which contain the structure of the page under test.</p>
+              <pre class="prettify"><code class="prettify">public class TestPage {</code>&#x000A;    &#x000A;<code class="prettify">    @FindBy(css = "div.rf-au:nth-of-type(1)")&#x000A;    private AutocompleteFragment&lt;String&gt; autocomplete1;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(css = "div.rf-au:nth-of-type(2)")&#x000A;    private AutocompleteFragment&lt;String&gt; autocomplete2;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(css = "div.rf-au:nth-of-type(3)")&#x000A;    private AutocompleteFragment&lt;String&gt; autocomplete3;</code>&#x000A;&#x000A;<code class="prettify">    @FindBy(xpath = "//*[contains(@id,'sh1')]")&#x000A;    private WebElement viewSourceLink;</code>&#x000A;&#x000A;<code class="prettify">    //all getters for the fields</code>&#x000A;&#x000A;<code class="prettify">    //other handy methods which you find useful when testing those three Autocomplete widgets&#x000A;}</code></pre>
+              <p>Declaring the <em>Page Fragment</em> in the <em>Page Object</em> is the preferred option, but you can also declare the <em>Page Fragment</em> directly in the test if desired. The only thing you need to do is to annotate the <em>Page Fragment</em> object with WebDriver&#8217;s <code>@FindBy</code> annotation to refer to the fragment&#8217;s root DOM element. That simple!</p>
+              <p>Graphene differentiates between <em>Page Fragments</em> and plain <em>WebElements</em> in the same Page Object so they can be declared side by side. All of the <strong>initialization is done automatically</strong>, so there is no need to initialize the <em>Page Fragments</em> or <em>Page Objects</em> in the <code>@Before</code> method of your test case.</p>
+              <p>In this last example we see how the autocomplete widgets&#8217;s <em>Page Fragment</em> is used in the test case.</p>
+              <pre class="prettify"><code class="prettify">public class TestWhichUsesPageFragments extend AbstractTest {</code>&#x000A;&#x000A;<code class="prettify">    @Page&#x000A;    private TestPage testPage;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testFirstAutocomplete {&#x000A;        AutocompleteFragment&lt;String&gt; autocomplete = testPage.getAutocomplete1();</code>&#x000A;        &#x000A;<code class="prettify">        autocomplete.type("a");</code>&#x000A;&#x000A;<code class="prettify">        assertFalse(autocomplete.areSuggestionsAvailable(), &#x000A;            "The suggestion list should not be visible, since there is only one char!");</code>&#x000A;&#x000A;<code class="prettify">        String keys = "ar";&#x000A;        autocomplete.type(keys);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(autocomplete.areSuggestionsAvailable(), &#x000A;            "The suggestion list should be visible, since there are two chars!");</code>&#x000A;&#x000A;<code class="prettify">        List&lt;Suggestion&lt;String&gt;&gt; expectedSuggestions = new ArrayList&lt;Suggestion&lt;String&gt;&gt;();&#x000A;        expectedSuggestions.add(new Suggestion&lt;String&gt;("Arizona"));&#x000A;        expectedSuggestions.add(new Suggestion&lt;String&gt;("Arkansas"));</code>&#x000A;&#x000A;<code class="prettify">        assertEquals(autocomplete.getAllSuggestions(new StringSuggestionParser()), expectedSuggestions, &#x000A;            "Suggestions are wrong!");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testSecondAutocomplete() {&#x000A;        AutocompleteFragment&lt;String&gt; autocomplete = testPage.getAutocomplete2();</code>&#x000A;&#x000A;<code class="prettify">        String key = "a";&#x000A;        autocomplete.type(key);</code>&#x000A;        &#x000A;<code class="prettify">        String errorMsg = "The suggestion list should be visible, since there was typed correct char ";&#x000A;        assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);</code>&#x000A;&#x000A;<code class="prettify">        autocomplete.autocomplete(autocomplete.getFirstSuggestion());</code>&#x000A;&#x000A;<code class="prettify">        autocomplete.type(" ");</code>&#x000A;&#x000A;<code class="prettify">        key = "w"&#x000A;        autocomplete.type(key);</code>&#x000A;&#x000A;<code class="prettify">        assertTrue(autocomplete.areSuggestionsAvailable(), errorMsg + key);</code>&#x000A;&#x000A;<code class="prettify">        autocomplete.autocomplete(autocomplete.getFirstSuggestion());        </code>&#x000A;&#x000A;<code class="prettify">        String actualContentOfInput = autocomplete.getInputValue();&#x000A;        assertEquals(actualContentOfInput, "Alabama Washington", "The input should contain something else!");&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void testThirdAutocomplete() {&#x000A;        //similar autocomplete interactions as in the previous tests&#x000A;    }&#x000A;}</code></pre>
+              <p>As your application grow, the only thing that needs to change is the root references of your <em>Page Fragments</em>. Last but not least you will be able to make your <em>Page Fragment</em> availabe to be used by other tests in other applications.</p>
+              <p>To try <em>Page Fragments</em> check out the Graphene 2.0.0.Alpha2 release. Getting start information can be found in the <a href="https://docs.jboss.org/author/display/ARQGRA2/Page+Abstractions">Reference Documentation</a>.</p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/graphene/">graphene</a> <a class="tag" href="/blog/tags/selenium/">selenium</a> <a class="tag" href="/blog/tags/page-fragment/">page-fragment</a> <a class="tag" href="/blog/tags/best-practice/">best-practice</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
+            </div>
+            
+                        <script type="text/javascript">
+                        var disqus_shortname = 'arquillian';
+                        (function () {
+                          var s = document.createElement('script'); s.async = true;
+                          s.src = "http://disqus.com/forums/arquillian/count.js";
+                          (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+                        }());
+                        </script>
+          </article>
+          <ul class="pager">
+            <li class="disabled previous">
+              <a href="#">&laquo; Older</a>
+            </li>
+            <li class="pages">Page 1 of 1</li>
+            <li class="disabled next">
+              <a href="#">Newer &raquo;</a>
+            </li>
+          </ul>
         </div>
-      </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2013/03/07/arquillian-extension-persistence-1-0-0-Alpha6/">Arquillian Persistence Extension 1.0.0.Alpha6 Released</a>
-        </div>
-        <div class="meta">
-          Mar 07, 2013
-        </div>
-      </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2013/02/26/arquillian-extension-gwt-1-0-0-Alpha1/">Arquillian GWT Testing extension 1.0.0.Alpha1 Released</a>
-        </div>
-        <div class="meta">
-          Feb 26, 2013
-        </div>
-      </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2013/02/16/devconf-hackfest/">Hackfest: DevConf 2013, Czech Republic, Brno</a>
-        </div>
-        <div class="meta">
-          Feb 16, 2013
-        </div>
-      </li>
-      <li>
-        <div class="title">
-          <a href="/blog/2013/01/31/arquillian-extension-portal-1-0-0-Beta1/">Arquillian Portal Extension 1.0.0.Beta1 Released</a>
-        </div>
-        <div class="meta">
-          Jan 31, 2013
-        </div>
-      </li>
-    </ul>
-    
-                <div id="popularposts" class="dsq-widget">
-                  <h2 class="dsq-widget-title">Popular Posts</h2>
-                  <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
-                  <script>
-                    var ppw = document.getElementById("popularposts");
-                    if (ppw.getElementsByTagName('li').length == 0) {
-                      var p = document.createElement('p');
-                      p.className = 'noresults';
-                      p.appendChild(document.createTextNode('No popular posts reported.')); 
-                      ppw.appendChild(p);
-                    }
-                  </script>
-                  <noscript>
-                    <p>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">popular posts powered by Disqus</a>.</p>
-                  </noscript>
+        <aside id="sidebar" role="complementary">
+          <div class="subscribe">
+            <h2 class="icon news">
+              <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
+            </h2>
+            <p><em>Get the latest information on features, releases and events.</em></p>
+          </div>
+          <nav class="latest">
+            <h2>Latest Posts</h2>
+            <ul>
+              <li>
+                <div class="title">
+                  <a href="/blog/2013/03/08/arquillian-container-weld-1-0-0-CR6/">Arquillian Container Weld 1.0.0.CR6 Released</a>
                 </div>
-  </nav>
-  <nav class="tags">
-    <h2>Tags</h2>
-    <div class="tag-cloud">
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/2010/">2010</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/2011/">2011</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/2012/">2012</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/2013/">2013</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/ajocado/">ajocado</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/android/">android</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/announcement/">announcement</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/as7/">as7</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/atdd/">atdd</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/awards/">awards</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/best-practice/">best-practice</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/byteman/">byteman</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/cdi/">cdi</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/community/">community</a>
-      </span>
-      <span class="tag tag-2">
-        <a href="http://arquillian.org/blog/tags/container-adapter/">container-adapter</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/contributors/">contributors</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/core/">core</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/dependencies/">dependencies</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/docs/">docs</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/drone/">drone</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/event/">event</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/examples/">examples</a>
-      </span>
-      <span class="tag tag-4">
-        <a href="http://arquillian.org/blog/tags/extension/">extension</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/forge/">forge</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/glassfish/">glassfish</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/graphene/">graphene</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/gsoc/">gsoc</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/guides/">guides</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/gwt/">gwt</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/hack-idea/">hack-idea</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/hackfest/">hackfest</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/jacoco/">jacoco</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/javaone/">javaone</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/jboss/">jboss</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/jbossas/">jbossas</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/jbosscentral/">jbosscentral</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/jbossworld/">jbossworld</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/jetty/">jetty</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/jpa/">jpa</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/judcon/">judcon</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/maven/">maven</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/migration/">migration</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/mission/">mission</a>
-      </span>
-      <span class="tag tag-2">
-        <a href="http://arquillian.org/blog/tags/nonrelease/">nonrelease</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/openejb/">openejb</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/openshift/">openshift</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/openwebbeans/">openwebbeans</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/osgi/">osgi</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/page-fragment/">page-fragment</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/performance/">performance</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/persistence/">persistence</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/photos/">photos</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/platform/">platform</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/plugin/">plugin</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/portal/">portal</a>
-      </span>
-      <span class="tag tag-6">
-        <a href="http://arquillian.org/blog/tags/release/">release</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/roadmap/">roadmap</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/seam2/">seam2</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/selenium/">selenium</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/spock/">spock</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/spring/">spring</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/stats/">stats</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/test-runner/">test-runner</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/testing/">testing</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/thucydides/">thucydides</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/tip/">tip</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/tomcat/">tomcat</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/tool-plugin/">tool-plugin</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/transaction/">transaction</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/video/">video</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/warp/">warp</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/website/">website</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/weld/">weld</a>
-      </span>
-      <span class="tag tag-1">
-        <a href="http://arquillian.org/blog/tags/wls/">wls</a>
-      </span>
-      <span class="tag tag-0">
-        <a href="http://arquillian.org/blog/tags/wrapup/">wrapup</a>
-      </span>
+                <div class="meta">
+                  Mar 08, 2013
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2013/03/07/arquillian-extension-persistence-1-0-0-Alpha6/">Arquillian Persistence Extension 1.0.0.Alpha6 Released</a>
+                </div>
+                <div class="meta">
+                  Mar 07, 2013
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2013/02/26/arquillian-extension-gwt-1-0-0-Alpha1/">Arquillian GWT Testing extension 1.0.0.Alpha1 Released</a>
+                </div>
+                <div class="meta">
+                  Feb 26, 2013
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2013/02/16/devconf-hackfest/">Hackfest: DevConf 2013, Czech Republic, Brno</a>
+                </div>
+                <div class="meta">
+                  Feb 16, 2013
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2013/01/31/arquillian-extension-portal-1-0-0-Beta1/">Arquillian Portal Extension 1.0.0.Beta1 Released</a>
+                </div>
+                <div class="meta">
+                  Jan 31, 2013
+                </div>
+              </li>
+            </ul>
+            
+                        <div id="popularposts" class="dsq-widget">
+                          <h2 class="dsq-widget-title">Popular Posts</h2>
+                          <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
+                          <script>
+                            var ppw = document.getElementById("popularposts");
+                            if (ppw.getElementsByTagName('li').length == 0) {
+                              var p = document.createElement('p');
+                              p.className = 'noresults';
+                              p.appendChild(document.createTextNode('No popular posts reported.')); 
+                              ppw.appendChild(p);
+                            }
+                          </script>
+                          <noscript>
+                            <p>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">popular posts powered by Disqus</a>.</p>
+                          </noscript>
+                        </div>
+          </nav>
+          <nav class="tags">
+            <h2>Tags</h2>
+            <div class="tag-cloud">
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/2010/">2010</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/2011/">2011</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/2012/">2012</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/2013/">2013</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/ajocado/">ajocado</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/android/">android</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/announcement/">announcement</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/as7/">as7</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/atdd/">atdd</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/awards/">awards</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/best-practice/">best-practice</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/byteman/">byteman</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/cdi/">cdi</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/community/">community</a>
+              </span>
+              <span class="tag tag-2">
+                <a href="http://arquillian.org/blog/tags/container-adapter/">container-adapter</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/contributors/">contributors</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/core/">core</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/dependencies/">dependencies</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/docs/">docs</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/drone/">drone</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/event/">event</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/examples/">examples</a>
+              </span>
+              <span class="tag tag-4">
+                <a href="http://arquillian.org/blog/tags/extension/">extension</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/forge/">forge</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/glassfish/">glassfish</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/graphene/">graphene</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/gsoc/">gsoc</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/guides/">guides</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/gwt/">gwt</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/hack-idea/">hack-idea</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/hackfest/">hackfest</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/jacoco/">jacoco</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/javaone/">javaone</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/jboss/">jboss</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/jbossas/">jbossas</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/jbosscentral/">jbosscentral</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/jbossworld/">jbossworld</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/jetty/">jetty</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/jpa/">jpa</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/judcon/">judcon</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/maven/">maven</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/migration/">migration</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/mission/">mission</a>
+              </span>
+              <span class="tag tag-2">
+                <a href="http://arquillian.org/blog/tags/nonrelease/">nonrelease</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/openejb/">openejb</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/openshift/">openshift</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/openwebbeans/">openwebbeans</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/osgi/">osgi</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/page-fragment/">page-fragment</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/performance/">performance</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/persistence/">persistence</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/photos/">photos</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/platform/">platform</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/plugin/">plugin</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/portal/">portal</a>
+              </span>
+              <span class="tag tag-6">
+                <a href="http://arquillian.org/blog/tags/release/">release</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/roadmap/">roadmap</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/seam2/">seam2</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/selenium/">selenium</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/spock/">spock</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/spring/">spring</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/stats/">stats</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/test-runner/">test-runner</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/testing/">testing</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/thucydides/">thucydides</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/tip/">tip</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/tomcat/">tomcat</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/tool-plugin/">tool-plugin</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/transaction/">transaction</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/video/">video</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/warp/">warp</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/website/">website</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/weld/">weld</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/wls/">wls</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/wrapup/">wrapup</a>
+              </span>
+            </div>
+          </nav>
+        </aside>
+      </div>
     </div>
-  </nav>
-</aside>
-  </div>
-</div>
     <footer>
       <div class="container">
         <div class="project">
