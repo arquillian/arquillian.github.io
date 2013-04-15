@@ -1,0 +1,47 @@
+---
+date: 2013-04-16
+author: csadilek
+---
+
+This is an update of the Arquillian GWT extension to remove the need for the custom @GwtArchive@ class. Arquillian GWT tests can now leverage the standard ShrinkWrap API for specifiying their deployments. The @WebArchive@ is automatically enhanced to include all dependencies and configurations relevant to the GWT deployment.
+
+Here's an updated example of a complete test class:
+
+div(filename). GreeterRpcTest.java
+
+bc(prettify).. 
+@RunWith(Arquillian.class)
+public class GreeterRpcTest extends ArquillianGwtTestCase {
+
+  @Deployment
+  public static WebArchive createDeployment() {
+    return ShrinkWrap.create(WebArchive.class, "test.war")
+      .addClass(Greeter.class)
+      .addClass(GreetingService.class)
+      .addClass(GreetingServiceImpl.class)
+      .addAsWebInfResource(new File("src/main/webapp/WEB-INF/web.xml"));
+  }
+
+  @Test
+  @RunAsGwtClient(moduleName = "org.myapp.MyGwtModule")
+  public void testGreetingService() {
+    GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
+    greetingService.greetServer("Hello!", new AsyncCallback<String>() {
+      @Override
+      public void onFailure(Throwable caught) {
+        Assert.fail("Request failure: " + caught.getMessage());
+      }
+
+      @Override
+      public void onSuccess(String result) {
+        assertEquals("Received invalid response from Server", "Welcome!", result);
+        finishTest();
+      }
+    });
+    delayTestFinish(5000);
+  }
+}
+
+p. Note that you will only need to extend @ArquillianGwtTestCase@ if you want to inherit GWT's asynchronous testing methods (@finishTest@ and @delayTestFinish@).
+
+We look forward to your feedback on this release in the "community forums":#{site.project_space}!
