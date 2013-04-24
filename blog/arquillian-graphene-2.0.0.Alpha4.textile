@@ -1,0 +1,100 @@
+---
+date: 2013-04-24
+author: lfryc
+---
+
+As we are on the way to a first Beta release, we identified a need for sharing some of the recent Graphene improvements:
+
+h3. Highlighted Changes
+
+- <i class="icon-star"></i> Guard Improvements and Fixes :=
+Request Guards were polished, extended and hardened. ("read more":#guard-improvements-and-fixes) =:
+
+- <i class="icon-star"></i> Creating Page Fragments Programatically := 
+Page Fragments can now be instantiated not only using dependency injection, but also programatically. ("read more":#creating-page-fragments-programatically) =:
+
+- <i class="icon-star"></i> PhantomJS Support := 
+You can now fully leverage awesomness of headless testing with PhantomJS. =:
+
+- <i class="icon-star"></i> Guarding Programatically Retrieved Elements:= 
+Elements retrieved programatically using @WebElement#findElement(...)@ or @WebElement#findElements(...)@ are now guarded against @StaleElementReferenceException@. =:
+
+- <i class="icon-star"></i> Automatic Inference of Locators := 
+You no longer need to define a locator in simple forms - you can leverage their automatic inference from a injection point name. ("read more":#automatic-inference-of-locators) =:
+
+- <i class="icon-star"></i> Dependency Injection of @SessionStorage@ and @LocalStorage@ :=
+These resources are now exposed directly via @@ArquillianResource@. =:
+
+- <i class="icon-star"></i> Dependency Injection of Selenium Resource Parametrized by @WebElement@ :=
+Selenium resources which takes @WebElement@ as an argument in a constructor (e.g. "@Select@":http://selenium.googlecode.com/git/docs/api/java/org/openqa/selenium/support/ui/Select.html) can be injected using @FindBy@. =:
+
+- <i class="icon-star"></i> Support for @FindBys@ and @FindBy(How, String)@ := &nbsp;
+
+- <i class="icon-star"></i> Improved Integration with Drone := 
+Drone @1.2.0.Alpha2@'s new "@Enhancer@":https://github.com/arquillian/arquillian-extension-drone/blob/master/drone-spi/src/main/java/org/jboss/arquillian/drone/spi/Enhancer.java API allow us to integrate with Drone seamlessly. =:
+
+h4. Deprecations
+
+- <i class="icon-star"></i> Deprecation of Old Variant of Waiting Fluent API  := 
+@Graphene.element(...)@ and @Graphene.attribute(...)@ are now deprecated and they will be removed in an upcoming releases. =:
+
+- <i class="icon-star"></i> Deprecated @guardXhr@ replaced by @guardAjax@  :=
+Not all of us are familiar with abbreviation XHR (XMLHttpRequest). In order to make the API more clear for most of Graphene users, we have deprecated @guardXhr@ and replaced it with @guardAjax@. @guardXhr@ will be removed in upcoming releases. =:
+
+h3(#guard-improvements-and-fixes). Guard Improvements and Fixes
+
+- <i class="icon-star"></i> @waitForHttp@  :=
+When an Ajax request is followed by a relocation (HTTP request), @guardXhr@ or @guardHttp@ can't deterministically wait for an end of a request - in these situations you can use @waitForHttp@ instead. =:
+
+- <i class="icon-star"></i> Testing delayed requests :=
+Guards now waits for a given time interval for a request to start and once the request is started, they wait the another interval for the request to finish. =:
+
+- <i class="icon-star"></i> Bug Fixes  :=
+Guards had problems on Android with deterministic waiting for HTTP requests. =:
+
+h3(#creating-page-fragments-programatically). Creating Page Fragments Programatically
+
+Till this release, the only option to create a page fragment was injecting it:
+
+bc(prettify).. @FindBy(...)
+MyComponent component;
+
+p. With Alpha4 we have added the possibility to create a page fragment programatically:
+
+bc(prettify).. public <T> T getContent(Class<T> clazz) {
+    return PageFragmentEnricher.createPageFragment(clazz, root);
+}
+
+bc(prettify).. @Test
+public void testTabPanelSwitching() {
+    Panel tab3 = tabPanel.switchTo(2);
+    ContentOfTab content = tab3.getContent(ContentOfTab.class);
+    assertEquals("The tab panel was not switched to third tab correctly!", "Content of the tab 3", content.text.getText());
+    
+    Panel tab1 = tabPanel.switchTo(0);
+    content = tab1.getContent(ContentOfTab.class);
+    assertEquals("The tab panel was not switched to first tab correctly!", "Content of the tab 1", content.text.getText());
+}
+
+p. You can find reference usage in this "functional test":https://github.com/arquillian/arquillian-graphene/blob/7637bfd0d92fa78b75caa54bbf41bb393868d62a/graphene-webdriver/graphene-webdriver-ftest/src/test/java/org/jboss/arquillian/graphene/enricher/TestEnrichingContainerElement.java#L61 together with an implementation of "@#getContent(Class<T>)@":https://github.com/arquillian/arquillian-graphene/blob/7637bfd0d92fa78b75caa54bbf41bb393868d62a/graphene-webdriver/graphene-webdriver-ftest/src/test/java/org/jboss/arquillian/graphene/enricher/page/fragment/Panel.java#L39.
+
+h3(#automatic-inference-of-locators). Automatic Inference of Locators
+
+How many times you have written:
+
+bc(prettify).. // look for input with a name 'firstname'
+@FindBy(name = "firstname")
+private WebElement firstname;
+
+p. You can now simplify your tests to just
+
+bc(prettify).. @FindBy
+private WebElement firstname;
+
+p. Graphene will automatically use the strategy "@How.ID_OR_NAME@":http://selenium.googlecode.com/git/docs/api/java/org/openqa/selenium/support/How.html#ID_OR_NAME to locate the element by its ID or name.
+
+Since this mechanism uses the strategy pattern, you can overwrite the default strategy for your test suite and therefore find elements by e.g. their class names or even JSF component IDs.
+
+h3. Roadmap
+
+This release is a maintanance release "on the way to Beta1":https://community.jboss.org/message/777443#777443.
