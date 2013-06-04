@@ -24,7 +24,8 @@ module Awestruct
           entry_clone.author = site.identities.lookup(entry_clone.author) 
           entry_clone.additional_tags = @additional_tags
           # move date forward one day so post is not in the past
-          entry_clone.date += (60*60*24)
+          puts "#{entry_clone.date} #{entry_clone.date.class}"
+          entry_clone.date += 1
           atom_pages << entry_clone
         end
 
