@@ -1,0 +1,91 @@
+---
+
+This is the first release of this Arquillian Guice extension. We are bringing next IOC container into the Arquillian universe.
+
+h3(highlights). Some of the highlights in this release
+
+- <i class="icon-star"></i> Dependency injection :=
+Using the extension setting up a Guice test becomes pretty simple, allowing to inject all Guice management dependencies directly into the test case.
+- <i class="icon-star"></i> Build in  Guice deployer :=
+With the help of the extension you don't need to add Guice to your deployments explicitly, the extension will take care of that.
+
+There are two ways of enabling the Guice injection on a Arquillian test case:
+The first way is to annotate a Arquillian test case with @@GuiceConfiguration@, the annotation values allows to specify the modules that will be passed to injector instance on creation.
+
+Example test:
+
+div(filename). AppointmentServiceImplTestCase.java
+
+bc(prettify).. @RunWith(Arquillian.class)
+   @GuiceConfiguration(AppointmentModule.class)
+   public class AppointmentServiceImplTestCase {
+
+       @Deployment
+       public static JavaArchive createTestArchive() {
+           return ShrinkWrap.create(JavaArchive.class, "guice-test.jar")
+                   .addClasses(Appointment.class,
+                           AppointmentRepository.class, AppointmentRepositoryImpl.class,
+                           AppointmentService.class, AppointmentServiceImpl.class,
+                           AppointmentModule.class);
+       }
+
+       @Inject
+       @Named("appointmentService")
+       private AppointmentService appointmentService;
+
+       @Test
+       public void testGetAll() {
+
+           Appointment appointment1 = createAppointment("Important", "Work", new Date());
+           Appointment appointment2 = createAppointment("Do not forget", "Work", new Date());
+
+           appointmentService.add(appointment1);
+           appointmentService.add(appointment2);
+
+           List<Appointment> result = appointmentService.getAll();
+           assertNotNull("Method returned null.", result);
+           assertEquals("Invalid element count, 2 appointments were expected.", 2, result.size());
+       }
+}
+
+Where @AppointmentModule@ is defined as fallows:
+
+div(filename). AppointmentModule.java
+
+bc(prettify).. public class AppointmentModule implements Module {
+
+    public void configure(Binder binder) {
+
+        binder.bind(AppointmentRepository.class)
+                .annotatedWith(Names.named("appointmentRepository"))
+                .to(AppointmentRepositoryImpl.class);
+        binder.bind(AppointmentService.class)
+                .annotatedWith(Names.named("appointmentService"))
+                .to(AppointmentServiceImpl.class);
+    }
+}
+
+Guice for configuration uses module instances instead of static classes known at compile time, which means that modules
+can have different state at a runtime. Taking that into consideration static annotation used for setting up a test could be in some cases
+a limitation. This is way we added a second possibility for enabling a Guice test. A static factory method could be added into the test case and
+annotated with @@GuiceInjector@ that instantiates the Injector. The extension will invoke such method prior test
+execution and based on the returned injector it will inject all the dependencies. In the previous test we would only need to
+add:
+
+bc(prettify).. @GuiceInjector
+    public static Injector createInjector() {
+
+        return Guice.createInjector(new AppointmentModule());
+    }
+
+The extension defines pretty simple settings that allow to package the Guice dependencies and specify it's version,
+making it possible to tests JAR deployments.
+
+div(filename). arquillian.xml
+
+bc(prettify).. <extension qualifier="guice">
+       <property name="autoPackage">false</property>
+       <property name="guiceVersion">3.0</property>
+   </extension> =:
+
+We look forward to hearing your feedback about this release in the "community forums":#{site.project_space}!
