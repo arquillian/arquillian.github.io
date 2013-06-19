@@ -72,14 +72,14 @@ module Awestruct
           end
 
           @repositories << OpenStruct.new(
-            :path => 'jboss-as',
+            :path => 'wildfly',
             :desc => nil,
             :relative_path => 'arquillian/',
-            :owner => 'jbossas',
+            :owner => 'wildfly',
             :host => 'github.com',
             :type => 'git',
-            :html_url => 'https://github.com/jbossas/jboss-as',
-            :clone_url => 'git://github.com/jbossas/jboss-as.git'
+            :html_url => 'https://github.com/wildfly/wildfly',
+            :clone_url => 'git://github.com/wildfly/wildfly.git'
           )
 
           # still some funkiness supporting this one (page title, tags, compiled with, etc)
