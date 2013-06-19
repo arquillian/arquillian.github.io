@@ -20,6 +20,8 @@ require_relative 'asset_fingerprinter'
 #require_relative 'page_debug'
 #require_relative 'fork_me_ribbon'
 
+require 'bootstrap-sass'
+
 Awestruct::Extensions::Pipeline.new do
   # Custom tags and syntax for textile markup
   extension Awestruct::Extensions::TextilePlus.new
