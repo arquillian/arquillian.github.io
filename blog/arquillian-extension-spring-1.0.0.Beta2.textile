@@ -2,34 +2,27 @@
 date: 2013-06-18
 ---
 
-It has a while since that last Arquillian Spring extension release, but it's finally here. This release focus more on
-improving existing features rather then introducing completely new ones.
+It has been a while since that last Arquillian Spring extension release, but it's finally here. This release focus more on improving existing features rather then introducing completely new ones.
 
-From this place I would like to thank Jakub Kurlenda and John Ament for helping with this release.
+I would like to thank Jakub Kurlenda and John Ament for helping with this release.
 
 h3(highlights). Some of the highlights in this release
+
 <i class="icon-star"></i> Managing the Spring's ApplicationContext lifecycle
+
 <i class="icon-star"></i> New ways of configuring Spring's context
+
 <i class="icon-star"></i> Warp Spring extension
+
 <i class="icon-star"></i> Deployer new functionality
 
 h3. Managing the Spring's ApplicationContext lifecycle
 
-Until now all of the previous versions had one drawback, each tests that were running were using separate instance
-of Spring's @ApplicationContext@. Although the @ApplicationContext@ were destroyed and all it's resources has been freed
-after the test, this brought additional overhead for execution time of each test. From now on the developer has the
-control whether he want to create only single context per test case or would like to have each test run with new "clean"
-context, which in some situation might be handy. By default the context will be created only once, but it can be easly
-changed by adding @@ContextLifeCycle@ annotation to the test case.
+Previous versions had one common drawback, each test were running using a separate instance of  Spring's @ApplicationContext@. Although the @ApplicationContext@ were destroyed and all of its resources were freed after the test execution, this brought additional overhead for each test. From now on the developer has the control whether he want to create only a single context per test case or to have each test run with a new "clean" context, which in some situation might be handy. By default the context will be created only once, but it can easly be  changed by adding the @@ContextLifeCycle@ annotation to the test case.
 
 h3. New ways of configuring Spring's context
 
-This release bring also couple of new features to ease the test configuration. First are smart defaults used for
-configuration. Each @@SpringConfiguration@ annotated test do not need to explicitly define the location of the XML file
-anymore. If none file has been provided, by default the extension will look for file in classpath with exactly the same
-name as the class located in the class package. The same goes for @@SpringAnnotationConfiguration@, which now allows to
-add a static non final internal class which needs to be marked with @@Configuration@. The extension will use that class
-by default when configuring Spring.
+This release also bring a couple of new features to ease the test configuration. First are smart defaults used for configuration. Each @@SpringConfiguration@ annotated test do not need to explicitly define the location of the XML file anymore. If no file has been defined, by default the extension will look for file in classpath with exactly the same name as the class located in the class package. The same goes for @@SpringAnnotationConfiguration@, which now allow to add a static non final internal class which needs to be marked with @@Configuration@. The extension will use that class by default when configuring Spring.
 
 Example:
 
@@ -46,38 +39,26 @@ public class TestCase {
     }
 }
 
-The last new feature is programmatic creation of the ApplicationContext within test. From now on it is possible to
-create the instance of Spring @ApplicationContext@ for each test through code. This is done by adding a static
-factory method to the test which needs to be annotated with @@SpringContextConfiguration@. The extension will invoke such
-method prior test execution (all mentioned above context lifecycle rules also apply here) and use it's result afterwards.
+p. The last new feature is programmatic creation of the ApplicationContext from within a test. From now on it is possible to create the instance of the Spring @ApplicationContext@ for each test via code. This is done by adding a static factory method to the test which needs to be annotated with @@SpringContextConfiguration@. The extension will invoke this method prior to test execution (all context lifecycle rules mentioned above also apply here) and use it's result afterwards.
 
 Example:
 
 bc(prettify).. @SpringContextConfiguration
-   public static ApplicationContext contextConfiguration() {
+public static ApplicationContext contextConfiguration() {
 
-       return new ClassPathXmlApplicationContext(new String[]{"classpath:service.xml", "classpath:repository.xml"});
-   }
+   return new ClassPathXmlApplicationContext(
+       new String[]{"classpath:service.xml", "classpath:repository.xml"});
+}
 
-Why we would like to bring such possibility? In some cases user needs to have greater control over the context, for
-instance at the moment this is the only way for pragmatically setting the Spring profiles for the test.
-The other possibility could be integration with other frameworks in which the context should not be managed by the test
-itself.
+p. Why would this be needed? In some cases you needs to have greater control over the context; for instance at the moment this is the only way to pragmatically set the Spring profiles to use for the test. The other possibility could be integration with other frameworks in which the context should not be managed by the test itself.
 
 h3. Warp Spring extension
 
-The Warp Spring extension has been updated to the latest Alpha 2 release. For consistency with other Warp extensions
-the @SpringMvcResult@ can be now injected using @@ArquillianResource@ annotation. The custom @@SpringResource@ has been
-deprecated and might be remove in next releases.
+The Warp Spring extension has been updated to the latest Alpha 2 release. For consistency with other Warp extensions the @SpringMvcResult@ can be now injected using @@ArquillianResource@ annotation. The custom @@SpringResource@ has been deprecated and might be remove in next releases.
 
 h3. Deployer new functionality
 
-The Spring deployer, which is used for automatically packaging the Spring artifacts and enriching the test deployment-,
-has received some updates. It now allows for importing the dependencies directly from the Maven POM file, and could
-aid with setting up the deployment. The deployer being configured in the arquillian.xml file through the @spring-deployer@
-section. Additional properties like @pomFile@ allows to specify location of the pom file to load, @useMavenOffline@
-the maven resolver mode offline, online and @enableCache@ whether the deployer should cache the artifacts in memory.
-Finally the @excludedArtifacts@ allows to exclude the artifacts that are unwanted from the deployment
+The Spring deployer, which is used for automatic packaging the Spring artifacts and enriching the test deployment, has received some updates. It now allows for importing the dependencies directly from the Maven POM file, and could aid with setting up the deployment. The deployer can be configured in the arquillian.xml file through the @spring-deployer@ section. Additional properties like @pomFile@ allow you to specify the location of the pom file to load; @useMavenOffline@ controls the offline mode of the maven resolver in use, and @enableCache@ controls whether the deployer should cache the artifacts in memory. Finally the @excludedArtifacts@ allow you to exclude artifacts that are unwanted from the deployment
 
 bc(prettify).. <extension qualifier="spring-deployer">
 
@@ -90,6 +71,6 @@ bc(prettify).. <extension qualifier="spring-deployer">
         <property name="excludedArtifacts">org.jboss.arquillian:*</property>
 
         <property name="enableCache">true</property>
-</extension> =:
+</extension>
 
 p. We look forward to your feedback on this new release on the "community forums":#{site.project_space}!
