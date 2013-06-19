@@ -175,6 +175,243 @@
     </content>
   </entry>
   <entry>
+    <id>http://arquillian.org/blog/2013/06/18/arquillian-extension-spring-1-0-0-Beta2/</id>
+    <title>Arquillian Spring Framework Extension 1.0.0.Beta2 Released</title>
+    <updated>2013-06-19T00:00:00+00:00</updated>
+    <link href="http://arquillian.org/blog/2013/06/18/arquillian-extension-spring-1-0-0-Beta2/" rel="alternate" type="text/html" />
+    <category scheme="http://arquillian.org/blog/tags" term="release" />
+    <category scheme="http://arquillian.org/blog/tags" term="extension" />
+    <category scheme="http://arquillian.org/blog/tags" term="spring" />
+    <category scheme="http://arquillian.org/blog" term="arquillian" />
+    <summary>
+      The Arquillian team is proud to announce the 1.0.0.Beta2 release of the Arquillian Spring Framework Extension component!
+      It has been a while since that last Arquillian Spring extension release, but it&#8217;s finally here. This release focus more on improving existing features rather then introducing completely new ones.
+      I would like to thank Jakub Kurlenda and John Ament for helping with this release.
+      Some of the highlights in this release
+       Managing the Spring&#8217;s ApplicationContext lifecycle
+       New ways of configuring Spring&#8217;s context
+       Warp Spring extension
+       Deployer new functionality
+      Managing the Spring&#8217;s ApplicationContext lifecycle
+      Previous versions had one common drawback, each test were running using a separate instance......
+    </summary>
+    <content type="html">
+      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.Beta2&lt;/em&gt; release of the &lt;em&gt;Arquillian Spring Framework Extension&lt;/em&gt; component!&lt;/p&gt;
+      &lt;p&gt;It has been a while since that last Arquillian Spring extension release, but it’s finally here. This release focus more on improving existing features rather then introducing completely new ones.&lt;/p&gt;
+      &lt;p&gt;I would like to thank Jakub Kurlenda and John Ament for helping with this release.&lt;/p&gt;
+      &lt;h3 class=&quot;highlights&quot;&gt;Some of the highlights in this release&lt;/h3&gt;
+      &lt;p&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Managing the Spring’s ApplicationContext lifecycle&lt;/p&gt;
+      &lt;p&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; New ways of configuring Spring’s context&lt;/p&gt;
+      &lt;p&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Warp Spring extension&lt;/p&gt;
+      &lt;p&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Deployer new functionality&lt;/p&gt;
+      &lt;h3&gt;Managing the Spring’s ApplicationContext lifecycle&lt;/h3&gt;
+      &lt;p&gt;Previous versions had one common drawback, each test were running using a separate instance of  Spring’s &lt;code&gt;ApplicationContext&lt;/code&gt;. Although the &lt;code&gt;ApplicationContext&lt;/code&gt; were destroyed and all of its resources were freed after the test execution, this brought additional overhead for each test. From now on the developer has the control whether he want to create only a single context per test case or to have each test run with a new “clean” context, which in some situation might be handy. By default the context will be created only once, but it can easly be  changed by adding the &lt;code&gt;@ContextLifeCycle&lt;/code&gt; annotation to the test case.&lt;/p&gt;
+      &lt;h3&gt;New ways of configuring Spring’s context&lt;/h3&gt;
+      &lt;p&gt;This release also bring a couple of new features to ease the test configuration. First are smart defaults used for configuration. Each &lt;code&gt;@SpringConfiguration&lt;/code&gt; annotated test do not need to explicitly define the location of the XML file anymore. If no file has been defined, by default the extension will look for file in classpath with exactly the same name as the class located in the class package. The same goes for &lt;code&gt;@SpringAnnotationConfiguration&lt;/code&gt;, which now allow to add a static non final internal class which needs to be marked with &lt;code&gt;@Configuration&lt;/code&gt;. The extension will use that class by default when configuring Spring.&lt;/p&gt;
+      &lt;p&gt;Example:&lt;/p&gt;
+      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;@SpringClientAnnotationConfiguration
+      public class TestCase {&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    @Configuration
+          public static class ContextConfiguration {&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;        @Bean
+              public EmployeeService employeeService() {
+                  return new EmployeeServiceImpl();
+              }
+          }
+      }&lt;/code&gt;&lt;/pre&gt;
+      &lt;p&gt;The last new feature is programmatic creation of the ApplicationContext from within a test. From now on it is possible to create the instance of the Spring &lt;code&gt;ApplicationContext&lt;/code&gt; for each test via code. This is done by adding a static factory method to the test which needs to be annotated with &lt;code&gt;@SpringContextConfiguration&lt;/code&gt;. The extension will invoke this method prior to test execution (all context lifecycle rules mentioned above also apply here) and use it’s result afterwards.&lt;/p&gt;
+      &lt;p&gt;Example:&lt;/p&gt;
+      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;@SpringContextConfiguration
+      public static ApplicationContext contextConfiguration() {&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;   return new ClassPathXmlApplicationContext(
+             new String[]{&quot;classpath:service.xml&quot;, &quot;classpath:repository.xml&quot;});
+      }&lt;/code&gt;&lt;/pre&gt;
+      &lt;p&gt;Why would this be needed? In some cases you needs to have greater control over the context; for instance at the moment this is the only way to pragmatically set the Spring profiles to use for the test. The other possibility could be integration with other frameworks in which the context should not be managed by the test itself.&lt;/p&gt;
+      &lt;h3&gt;Warp Spring extension&lt;/h3&gt;
+      &lt;p&gt;The Warp Spring extension has been updated to the latest Alpha 2 release. For consistency with other Warp extensions the &lt;code&gt;SpringMvcResult&lt;/code&gt; can be now injected using &lt;code&gt;@ArquillianResource&lt;/code&gt; annotation. The custom &lt;code&gt;@SpringResource&lt;/code&gt; has been deprecated and might be remove in next releases.&lt;/p&gt;
+      &lt;h3&gt;Deployer new functionality&lt;/h3&gt;
+      &lt;p&gt;The Spring deployer, which is used for automatic packaging the Spring artifacts and enriching the test deployment, has received some updates. It now allows for importing the dependencies directly from the Maven POM file, and could aid with setting up the deployment. The deployer can be configured in the arquillian.xml file through the &lt;code&gt;spring-deployer&lt;/code&gt; section. Additional properties like &lt;code&gt;pomFile&lt;/code&gt; allow you to specify the location of the pom file to load; &lt;code&gt;useMavenOffline&lt;/code&gt; controls the offline mode of the maven resolver in use, and &lt;code&gt;enableCache&lt;/code&gt; controls whether the deployer should cache the artifacts in memory. Finally the &lt;code&gt;excludedArtifacts&lt;/code&gt; allow you to exclude artifacts that are unwanted from the deployment&lt;/p&gt;
+      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;&amp;lt;extension qualifier=&quot;spring-deployer&quot;&amp;gt;&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;        &amp;lt;property name=&quot;importPomDependencies&quot;&amp;gt;true&amp;lt;/property&amp;gt;&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;        &amp;lt;property name=&quot;pomFile&quot;&amp;gt;src/main/resources/test_pom.xml&amp;lt;/property&amp;gt;&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;        &amp;lt;property name=&quot;useMavenOffline&quot;&amp;gt;false&amp;lt;/property&amp;gt;&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;        &amp;lt;property name=&quot;excludedArtifacts&quot;&amp;gt;org.jboss.arquillian:*&amp;lt;/property&amp;gt;&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;        &amp;lt;property name=&quot;enableCache&quot;&amp;gt;true&amp;lt;/property&amp;gt;
+      &amp;lt;/extension&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+      &lt;p&gt;We look forward to your feedback on this new release on the &lt;a href=&quot;http://community.jboss.org/en/arquillian&quot;&gt;community forums&lt;/a&gt;!&lt;/p&gt;
+      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
+      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
+      &lt;h3&gt;Release details&lt;/h3&gt;
+      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;&lt;tbody&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Component&lt;/th&gt;
+            &lt;td&gt;
+              &lt;a href=&quot;http://arquillian.org/modules/spring-extension/&quot;&gt;Arquillian Spring Framework Extension&lt;/a&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Version&lt;/th&gt;
+            &lt;td&gt;
+              1.0.0.Beta2
+              &lt;span class=&quot;label tag&quot;&gt;
+                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-extension-spring/commits/e61bbd6d447f6d397166149b6311713cb6677bcc&quot;&gt;view tag&lt;/a&gt;
+              &lt;/span&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Release date&lt;/th&gt;
+            &lt;td&gt;2013-06-19&lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Released by&lt;/th&gt;
+            &lt;td&gt;Aslak Knutsen&lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Compiled against&lt;/th&gt;
+            &lt;td&gt;
+              &lt;ul class=&quot;unstyled&quot;&gt;
+      &lt;li&gt;Arquillian Core – 1.0.4.Final&lt;/li&gt;
+                &lt;li&gt;JUnit – 4.8.1&lt;/li&gt;
+              &lt;/ul&gt;
+      &lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;/tbody&gt;&lt;/table&gt;&lt;h3&gt;
+        Published artifacts
+        &lt;small&gt;org.jboss.arquillian.extension&lt;/small&gt;
+      &lt;/h3&gt;
+      &lt;ul&gt;
+      &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-service-container-spring
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-container-spring/1.0.0.Beta2/arquillian-service-container-spring-1.0.0.Beta2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-container-spring/1.0.0.Beta2/arquillian-service-container-spring-1.0.0.Beta2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-service-deployer-spring-2.5
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Beta2/arquillian-service-deployer-spring-2.5-1.0.0.Beta2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Beta2/arquillian-service-deployer-spring-2.5-1.0.0.Beta2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-service-deployer-spring-3
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Beta2/arquillian-service-deployer-spring-3-1.0.0.Beta2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Beta2/arquillian-service-deployer-spring-3-1.0.0.Beta2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-service-deployer-spring-common
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Beta2/arquillian-service-deployer-spring-common-1.0.0.Beta2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Beta2/arquillian-service-deployer-spring-common-1.0.0.Beta2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-service-integration-spring
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Beta2/arquillian-service-integration-spring-1.0.0.Beta2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Beta2/arquillian-service-integration-spring-1.0.0.Beta2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-service-integration-spring-inject
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Beta2/arquillian-service-integration-spring-inject-1.0.0.Beta2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Beta2/arquillian-service-integration-spring-inject-1.0.0.Beta2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-service-integration-spring-javaconfig
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Beta2/arquillian-service-integration-spring-javaconfig-1.0.0.Beta2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Beta2/arquillian-service-integration-spring-javaconfig-1.0.0.Beta2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-transaction-spring
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spring/1.0.0.Beta2/arquillian-transaction-spring-1.0.0.Beta2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spring/1.0.0.Beta2/arquillian-transaction-spring-1.0.0.Beta2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-warp-spring
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Beta2/arquillian-warp-spring-1.0.0.Beta2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Beta2/arquillian-warp-spring-1.0.0.Beta2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-warp-spring-ftest
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring-ftest/1.0.0.Beta2/arquillian-warp-spring-ftest-1.0.0.Beta2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring-ftest/1.0.0.Beta2/arquillian-warp-spring-ftest-1.0.0.Beta2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+      &lt;/ul&gt;&lt;h3&gt;
+        Release notes and resolved issues
+        &lt;small&gt;16&lt;/small&gt;
+      &lt;/h3&gt;
+      &lt;p&gt;Improvements&lt;/p&gt;
+      &lt;dl&gt;
+      &lt;dt&gt;Bug&lt;/dt&gt;
+        &lt;dd&gt;
+          &lt;ul class=&quot;unstyled&quot;&gt;
+      &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1079&quot;&gt;ARQ-1079&lt;/a&gt; -         SpringEmbeddedApplicationContextProducer testApplicationContext is missing the scope definition.&lt;/li&gt;
+          &lt;/ul&gt;
+      &lt;/dd&gt;
+      &lt;/dl&gt;&lt;dl&gt;
+      &lt;dt&gt;Feature Request&lt;/dt&gt;
+        &lt;dd&gt;
+          &lt;ul class=&quot;unstyled&quot;&gt;
+      &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-960&quot;&gt;ARQ-960&lt;/a&gt; -         Provide the way to specify the strategy on instantiting AppllicationContext e.g. each test method  or each test case&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1104&quot;&gt;ARQ-1104&lt;/a&gt; -         Spring deployer should include all spring artifacts&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1105&quot;&gt;ARQ-1105&lt;/a&gt; -         Spring deployer - add maven offline property&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1106&quot;&gt;ARQ-1106&lt;/a&gt; -         Spring deployer - allow caching the resolved libraries between deployments&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1108&quot;&gt;ARQ-1108&lt;/a&gt; -         Register the spring transaction provider on the client side.&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1134&quot;&gt;ARQ-1134&lt;/a&gt; -         Spring deployer - change the implementation of MavenDependencyBuilder.&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1269&quot;&gt;ARQ-1269&lt;/a&gt; -         Upgrade Spring MVC integration to use Warp 1.0.0.Alpha2.&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1270&quot;&gt;ARQ-1270&lt;/a&gt; -         Upgrade Spring extension to Arquillian Core 1.0.3&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1277&quot;&gt;ARQ-1277&lt;/a&gt; -         Allow the SpringMvcResult to be injected through @ArquillianResource.&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1304&quot;&gt;ARQ-1304&lt;/a&gt; -         Create test ApplicationContext through factory method.&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1305&quot;&gt;ARQ-1305&lt;/a&gt; -         Defaults values for @SpringConfiguration and @SpringAnnotationConfiguration&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1317&quot;&gt;ARQ-1317&lt;/a&gt; -         Warp Spring MVC - capture the execution state through HandlerInterceptor&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1358&quot;&gt;ARQ-1358&lt;/a&gt; -         Define ApplicationContext life cycle events.&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1408&quot;&gt;ARQ-1408&lt;/a&gt; -         Upgrade Spring extension to Arquillian 1.0.4.Final.&lt;/li&gt;
+          &lt;/ul&gt;
+      &lt;/dd&gt;
+      &lt;/dl&gt;&lt;p&gt;
+        Thanks to the following list of contributors:
+        &lt;a href=&quot;https://community.jboss.org/people/jmnarloch&quot;&gt;Jakub Narloch&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;, &lt;a href=&quot;https://github.com/kurlenda&quot;&gt;Jakub Kurlenda&lt;/a&gt;, &lt;a href=&quot;https://github.com/kurlenda&quot;&gt;Jakub Kurlenda&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/meetoblivion&quot;&gt;John D. Ament&lt;/a&gt;
+      &lt;/p&gt;
+    </content>
+  </entry>
+  <entry>
     <id>http://arquillian.org/blog/2013/06/10/arquillian-container-osgi-2-0-0-CR4/</id>
     <title>Arquillian OSGi 2.0.0.CR4 Released</title>
     <updated>2013-06-11T00:00:00+00:00</updated>
@@ -8412,221 +8649,6 @@
       &lt;/dl&gt;&lt;p&gt;
         Thanks to the following list of contributors:
         &lt;a href=&quot;https://community.jboss.org/people/kpiwko&quot;&gt;Karel Piwko&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/lfryc&quot;&gt;Lukas Fryc&lt;/a&gt;, &lt;a href=&quot;https://github.com/john7doe&quot;&gt;Simon Søndergaard&lt;/a&gt;, &lt;a href=&quot;https://github.com/papousek&quot;&gt;Jan Papoušek&lt;/a&gt;
-      &lt;/p&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>http://arquillian.org/blog/2012/06/27/arquillian-extension-drone-1-1-0-CR1/</id>
-    <title>Arquillian Drone Extension 1.1.0.CR1 Released</title>
-    <updated>2012-06-28T00:00:00+00:00</updated>
-    <link href="http://arquillian.org/blog/2012/06/27/arquillian-extension-drone-1-1-0-CR1/" rel="alternate" type="text/html" />
-    <category scheme="http://arquillian.org/blog/tags" term="release" />
-    <category scheme="http://arquillian.org/blog/tags" term="extension" />
-    <category scheme="http://arquillian.org/blog/tags" term="drone" />
-    <category scheme="http://arquillian.org/blog" term="arquillian" />
-    <summary>
-      The Arquillian team is proud to announce the 1.1.0.CR1 release of the Arquillian Drone Extension component!
-      Some of the Highlights in This Release
-      
-      	underlying Selenium upgraded to 2.24.1
-      	support for Opera browser added
-      	webdriver configuration improved
-      	reusable session for RemoteWebDriver introduced
-      
-      Configuration Improvement
-      Have you ever been stucked because you didn&#8217;t remember full qualified class name of the webdriver you wanted to use in your tests? Last Drone version required setting of implementationClass property and we should admit it wasn&#8217;t really comfortable. So we present a new property called browserCapabilities which can have the following values: android, chrome, firefox, htmlUnit, internetExplorer, iphone and opera. The values ​​correspond......
-    </summary>
-    <content type="html">
-      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.1.0.CR1&lt;/em&gt; release of the &lt;em&gt;Arquillian Drone Extension&lt;/em&gt; component!&lt;/p&gt;
-      &lt;h3&gt;Some of the Highlights in This Release&lt;/h3&gt;
-      &lt;ul&gt;
-      &lt;li&gt;underlying &lt;strong&gt;Selenium&lt;/strong&gt; upgraded to 2.24.1&lt;/li&gt;
-      	&lt;li&gt;support for Opera browser added&lt;/li&gt;
-      	&lt;li&gt;webdriver configuration improved&lt;/li&gt;
-      	&lt;li&gt;reusable session for &lt;a href=&quot;http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/remote/RemoteWebDriver.html&quot;&gt;RemoteWebDriver&lt;/a&gt; introduced&lt;/li&gt;
-      &lt;/ul&gt;&lt;h3&gt;Configuration Improvement&lt;/h3&gt;
-      &lt;p&gt;Have you ever been stucked because you didn’t remember full qualified class name of the webdriver you wanted to use in your tests? Last Drone version required setting of &lt;strong&gt;implementationClass&lt;/strong&gt; property and we should admit it wasn’t really comfortable. So we present a new property called &lt;strong&gt;browserCapabilities&lt;/strong&gt; which can have the following values: android, chrome, firefox, htmlUnit, internetExplorer, iphone and opera. The values ​​correspond to the factory methods of &lt;a href=&quot;http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/remote/DesiredCapabilities.html&quot;&gt;DesiredCapabilities&lt;/a&gt; class.&lt;/p&gt;
-      &lt;p&gt;We have also enabled webdriver configuration via &lt;a href=&quot;http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/Capabilities.html&quot;&gt;Capabilities&lt;/a&gt; interface. Now you can use the configuration as you know it from documentation of each webdriver. Use &lt;strong&gt;capability&lt;/strong&gt; prefix and camel case instead of dots in the property name to set the capability value.&lt;/p&gt;
-      &lt;p&gt;So assume you want to use Firefox browser and specify the path to its binary file. We know &lt;strong&gt;webdriver.firefox.bin&lt;/strong&gt; configuration property from &lt;a href=&quot;http://code.google.com/p/selenium/wiki/FirefoxDriver&quot;&gt;FirefoxDriver documention&lt;/a&gt;.&lt;/p&gt;
-      &lt;div class=&quot;filename&quot;&gt;arquillian.xml&lt;/div&gt;
-      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;&amp;lt;extension qualifier=&quot;webdriver&quot;&amp;gt;
-          &amp;lt;property name=&quot;browserCapabilities&quot;&amp;gt;firefox&amp;lt;/property&amp;gt;
-          &amp;lt;property name=&quot;capabilityWebdriverFirefoxBin&quot;&amp;gt;/path/to/my/firefox/installation/firefox&amp;lt;/property&amp;gt;
-      &amp;lt;/extension&amp;gt;&lt;/code&gt;&lt;/pre&gt;
-      &lt;h3&gt;Reusable Session for RemoteWebDriver&lt;/h3&gt;
-      &lt;p&gt;To increase your productivity in test development Drone presents a new feature to reuse session from previous test execution. Skip creating a new session to save your time. You can check the speed-up in the following table. The table contains time needed to run a test (including deployment on JBoss AS 7.1.1.Final).&lt;/p&gt;
-      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;
-      &lt;tr&gt;
-      &lt;td&gt;                   &lt;/td&gt;
-      		&lt;th&gt;Common Session      &lt;/th&gt;
-      		&lt;th&gt;Reusable Session    &lt;/th&gt;
-      	&lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Firefox         &lt;/th&gt;
-      		&lt;td&gt; 3.98 ± 0.27 s  &lt;/td&gt;
-      		&lt;td&gt; 2.15 ± 0.15 s  &lt;/td&gt;
-      	&lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Google Chrome   &lt;/th&gt;
-      		&lt;td&gt; 4.75 ± 0.03 s  &lt;/td&gt;
-      		&lt;td&gt; 2.57 ± 0.05 s  &lt;/td&gt;
-      	&lt;/tr&gt;
-      &lt;/table&gt;&lt;p&gt;The feature requires &lt;a href=&quot;http://code.google.com/p/selenium/downloads/list&quot;&gt;standalone selenium server&lt;/a&gt; running, &lt;strong&gt;remoteReusable&lt;/strong&gt; enabled and &lt;strong&gt;remoteAddress&lt;/strong&gt; pointed to your selenium server.&lt;/p&gt;
-      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;&amp;lt;extension qualifier=&quot;webdriver&quot;&amp;gt;
-          &amp;lt;property name=&quot;browserCapabilities&quot;&amp;gt;firefox&amp;lt;/property&amp;gt;
-          &amp;lt;property name=&quot;remoteReusable&quot;&amp;gt;true&amp;lt;/property&amp;gt;
-          &amp;lt;property name=&quot;remoteAddress&quot;&amp;gt;http://localhost:4444/wd/hub&amp;lt;/property&amp;gt;
-      &amp;lt;/extension&amp;gt;&lt;/code&gt;&lt;/pre&gt;
-      &lt;p&gt;Using the reusable session the browser stays open after the test completion, so all its settings are kept alive. If you need to debug your tests on the client side, you can easily prepare break points in the browser and run tests with &lt;strong&gt;remoteReusable&lt;/strong&gt; flag.&lt;/p&gt;
-      &lt;p&gt;After the proper configuration of reusable session &lt;a href=&quot;http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/remote/RemoteWebDriver.html&quot;&gt;RemoteWebDriver&lt;/a&gt; will be chosen automatically. That means you have to use compatible types in your test code (&lt;a href=&quot;http://selenium.googlecode.com/svn/tags/selenium-2.24.1/docs/api/java/org/openqa/selenium/WebDriver.html&quot;&gt;WebDriver&lt;/a&gt; ideally).&lt;/p&gt;
-      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;public void testMethod(@Drone WebDriver driver) {
-          // test code
-      }&lt;/code&gt;&lt;/pre&gt;
-      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
-      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
-      &lt;h3&gt;Release details&lt;/h3&gt;
-      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;&lt;tbody&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Component&lt;/th&gt;
-            &lt;td&gt;
-              &lt;a href=&quot;http://arquillian.org/modules/drone-extension/&quot;&gt;Arquillian Drone Extension&lt;/a&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Version&lt;/th&gt;
-            &lt;td&gt;
-              1.1.0.CR1
-              &lt;span class=&quot;label tag&quot;&gt;
-                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-extension-drone/commits/ec8a04877edac248ac4b37cfcf1ea324859da700&quot;&gt;view tag&lt;/a&gt;
-              &lt;/span&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Release date&lt;/th&gt;
-            &lt;td&gt;2012-06-27&lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Released by&lt;/th&gt;
-            &lt;td&gt;Lukas Fryc&lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Compiled against&lt;/th&gt;
-            &lt;td&gt;
-              &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;Arquillian Core – 1.0.0.Final&lt;/li&gt;
-              &lt;/ul&gt;
-      &lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;/tbody&gt;&lt;/table&gt;&lt;h3&gt;
-        Published artifacts
-        &lt;small&gt;org.jboss.arquillian.extension&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;ul&gt;
-      &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-drone-api
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR1/arquillian-drone-api-1.1.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.0.CR1/arquillian-drone-api-1.1.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-drone-bom
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-bom/1.1.0.CR1/arquillian-drone-bom-1.1.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-drone-configuration
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR1/arquillian-drone-configuration-1.1.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.0.CR1/arquillian-drone-configuration-1.1.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-drone-impl
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR1/arquillian-drone-impl-1.1.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.0.CR1/arquillian-drone-impl-1.1.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-drone-selenium
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR1/arquillian-drone-selenium-1.1.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.0.CR1/arquillian-drone-selenium-1.1.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-drone-selenium-depchain
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-depchain/1.1.0.CR1/arquillian-drone-selenium-depchain-1.1.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-drone-selenium-server
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR1/arquillian-drone-selenium-server-1.1.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.0.CR1/arquillian-drone-selenium-server-1.1.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-drone-spi
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR1/arquillian-drone-spi-1.1.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.0.CR1/arquillian-drone-spi-1.1.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-drone-webdriver
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR1/arquillian-drone-webdriver-1.1.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.0.CR1/arquillian-drone-webdriver-1.1.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-drone-webdriver-depchain
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver-depchain/1.1.0.CR1/arquillian-drone-webdriver-depchain-1.1.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-      &lt;/ul&gt;&lt;h3&gt;
-        Release notes and resolved issues
-        &lt;small&gt;6&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;p&gt;Support for Reusable sessions&lt;/p&gt;
-      &lt;dl&gt;
-      &lt;dt&gt;Feature Request&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-847&quot;&gt;ARQ-847&lt;/a&gt; -         Support OperaDriver in Drone&lt;/li&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-926&quot;&gt;ARQ-926&lt;/a&gt; -         Fast development turnaround using Selenium Server and RemoteWebDriver session reusal&lt;/li&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-995&quot;&gt;ARQ-995&lt;/a&gt; -         Allow Arquillian Drone configuration to map java.util.Map for property values&lt;/li&gt;
-          &lt;/ul&gt;
-      &lt;/dd&gt;
-      &lt;/dl&gt;&lt;dl&gt;
-      &lt;dt&gt;Task&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-868&quot;&gt;ARQ-868&lt;/a&gt; -         Update Selenium version to 2.24.1&lt;/li&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-970&quot;&gt;ARQ-970&lt;/a&gt; -         Drone: Merge tests for reusable remote session&lt;/li&gt;
-          &lt;/ul&gt;
-      &lt;/dd&gt;
-      &lt;/dl&gt;&lt;dl&gt;
-      &lt;dt&gt;Sub-task&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-927&quot;&gt;ARQ-927&lt;/a&gt; -         Configuration for RemoteWebDriver Drone extension&lt;/li&gt;
-          &lt;/ul&gt;
-      &lt;/dd&gt;
-      &lt;/dl&gt;&lt;p&gt;
-        Thanks to the following list of contributors:
-        &lt;a href=&quot;https://community.jboss.org/people/lfryc&quot;&gt;Lukas Fryc&lt;/a&gt;, &lt;a href=&quot;https://github.com/papousek&quot;&gt;Jan Papoušek&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/kpiwko&quot;&gt;Karel Piwko&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;
       &lt;/p&gt;
     </content>
   </entry>
