@@ -29,9 +29,9 @@
 
 source :rubygems
 
-#gem "awestruct", "0.5.1"
+gem "awestruct", "0.5.2"
 #gem "awestruct", :path => '../awestruct'
-gem "awestruct", :git => 'git@github.com:awestruct/awestruct.git'
+#gem "awestruct", :git => 'git@github.com:awestruct/awestruct.git'
 gem "puma"
 gem "rest-client", "1.6.7"
 gem "hpricot"
