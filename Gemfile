@@ -47,3 +47,5 @@ gem "tzinfo", "0.3.33"
 gem "therubyracer", "0.10.1"
 gem "jruby-openssl", "0.7.7", :platforms => :jruby
 gem "rb-inotify", :platforms => [:ruby, :jruby]
+
+gem 'rspec', '>= 2.9'

@@ -2,6 +2,7 @@
 require 'git'
 require 'fileutils'
 require 'rexml/document'
+require_relative 'repository'
 
 class Artifact
   attr_reader :name, :coordinates
@@ -90,8 +91,14 @@ module Awestruct::Extensions::Repository::Visitors
           repository.master_branch = master_branch
         end
         rc.checkout(master_branch)
-        # nil argument required to work around bug in git library
-        rc.pull('origin', ['origin', master_branch] * '/', nil)
+        begin
+          # attempt a light pull
+          rc.pull('origin')
+        rescue
+          # do hard reset to master branch, some forced change might have occured upstream
+          rc.fetch('origin')
+          rc.reset_hard("origin/#{master_branch}")
+        end
       end
       repository.clone_dir = clone_dir
       repository.client = rc
@@ -152,6 +159,24 @@ module Awestruct::Extensions::Repository::Visitors
         url = repository.html_url + '/commit/' + sha + '.' + ext
       end
       return url
+    end
+  end
+
+  module MavenHelpers
+
+    # Traverse all modules recursivly in a repository from a given rev:root
+    def self.traverse_modules(rev, repository)
+      pomrev = repository.client.revparse("#{rev}pom.xml")
+      pom = REXML::Document.new(repository.client.cat_file(pomrev))
+      yield rev, pom
+      pom.each_element('/project/modules/module') do |mod|
+        submodule = mod.text()
+        MavenHelpers.traverse_modules("#{rev}#{submodule}/", repository) { |y, x| yield(y, x)}
+      end
+    end
+
+    def self.to_relative_sub_path(rev, relative_repository_path)
+      rev.gsub(/.*:/, '').gsub(relative_repository_path, '')
     end
   end
 
@@ -217,7 +242,7 @@ module Awestruct::Extensions::Repository::Visitors
         :parent => true,
         :lead => resolve_current_lead(repository, site.component_leads),
         # we should not assume the license for external modules (hardcoding is not ideal either)
-        :license => ['jbossas', 'jsfunit'].include?(repository.owner) ? 'LGPL-2.1' : 'Apache-2.0',
+        :license => ['jbossas', 'wildfly' 'jsfunit'].include?(repository.owner) ? 'LGPL-2.1' : 'Apache-2.0',
         :releases => [],
         :contributors => []
       })
@@ -353,7 +378,7 @@ module Awestruct::Extensions::Repository::Visitors
         end
         if lead.nil?
           # FIXME parameterize (keep in mind the JIRA extension hits most of the leads)
-          if repository.path.eql? 'jboss-as'
+          if repository.path.eql? 'jboss-as' or repository.path.eql? 'wildfly'
             lead = OpenStruct.new({
               :name => 'Jason T. Greene',
               :jboss_username => 'jason.greene'
@@ -519,7 +544,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def handles(repository)
       repository.path != 'arquillian-container-reloaded' and
-          (repository.path =~ /^arquillian\-container\-.+/ or ['jboss-as', 'openejb'].include? repository.path)
+          (repository.path =~ /^arquillian\-container\-.+/ or ['jboss-as', 'wildfly', 'openejb'].include? repository.path)
     end
 
     def visit(repository, site)
@@ -544,39 +569,43 @@ module Awestruct::Extensions::Repository::Visitors
     # component (repository) itself has not yet been released
     def resolve_container_adapters(repository, component)
       vendor = (repository.path == 'jboss-as' ? 'jbossas7' : repository.path.match(/([^-]+)$/)[1])
+      vendor = 'wildfly' if repository.path == 'wildfly'
       adapters = []
       rev = component.latest_tag
+      rev = "HEAD" unless rev
       begin
         pomrev = repository.client.revparse("#{rev}:#{repository.relative_path}pom.xml")
       rescue
         puts "Using HEAD for #{repository.path} since repository structure is inconsistent at #{rev}"
-        pomrev = repository.client.revparse("HEAD:#{repository.relative_path}pom.xml")
+        rev = "HEAD"
+        pomrev = repository.client.revparse("#{rev}:#{repository.relative_path}pom.xml")
       end
-      pom = REXML::Document.new(repository.client.cat_file(pomrev))
       module_cnt = 0
-      pom.each_element('/project/modules/module') do |mod|
-        module_cnt += 1
-        if mod.text =~ /.*?-(remote|managed|embedded)(-(.+))?$/
+      parent_path = ("#{rev}:#{repository.relative_path}")
+      MavenHelpers.traverse_modules(parent_path, repository) do |pathrev, pom|
+        mod = pom.text('/project/artifactId')
+        puts "#{pom.text('/project/name')} - #{mod}"
+        if mod =~ /.*?-(remote|managed|embedded)(-(.+))?$/
           (management, min_version) = [$1, $3]
+          module_cnt += 1
           adapters << OpenStruct.new({
-            :relative_path => mod.text + '/',
-            :basepath => mod.text.sub(/container(?=-)/, vendor),
+            :relative_path => MavenHelpers.to_relative_sub_path(pathrev, repository.relative_path),
+            :basepath => mod.sub(/container(?=-)/, vendor),
             :vendor => vendor,
             :management => management,
             :min_version => min_version
           })
-        elsif mod.text.eql? 'openshift-express'
-          # FIXME this should be openshift-express-remote
+        elsif mod.eql? 'arquillian-openshift' or
+          (mod.eql? 'arquillian-openshift-express' and !(pom.text('/project/name') =~ /.*Relocation/))
+          # FIXME this should be openshift-remote
+          module_cnt += 1
           adapters << OpenStruct.new({
-            :relative_path => mod.text + '/',
-            :basepath => mod.text,
+            :relative_path => MavenHelpers.to_relative_sub_path(pathrev, repository.relative_path),
+            :basepath => mod,
             :vendor => vendor,
             :management => 'remote'
           })
         end
-      end
-      if module_cnt.zero?
-        adapters << OpenStruct.new({:relative_path => '', :basepath => component.basepath, :vendor => vendor, :management => 'remote'})
       end
       adapters
     end
@@ -596,6 +625,9 @@ module Awestruct::Extensions::Repository::Visitors
       container.name = pom.root.text('name').sub(/ Container$/, '\0 Adapter').sub(/^Arquillian Container (.*)/, 'Arquillian \1 Container Adapter')
       if repository.path == 'jboss-as'
         container.name = container.name.sub(/.*Arquillian /, 'Arquillian JBoss AS 7 ')
+      end
+      if repository.path == 'wildfly'
+        container.name = container.name.sub(/.*Arquillian /, 'Arquillian WildFly 8 ')
       end
       container.desc = pom.root.text('description') || '!!!Missing description!!!'
       container.artifacts = [
