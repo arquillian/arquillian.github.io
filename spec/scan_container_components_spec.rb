@@ -5,16 +5,16 @@ require_relative '../_ext/arquillian.rb'
 
 describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
 
-  class Cloner 
+  class Cloner
     include Awestruct::Extensions::Repository::Visitors::Clone
   end
 
-  class Visitor 
+  class ContainerVisitor
     include Awestruct::Extensions::Repository::Visitors::ContainerComponent
   end
 
   before :each do
-    @visitor = Visitor.new
+    @visitor = ContainerVisitor.new
     @site = OpenStruct.new
     @site.tmp_dir = '/tmp/'
     @site.repos_dir = '/tmp/arqrepos'
@@ -78,7 +78,7 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
 
   it "should discover containers in non arquillian org repository" do
     @repository.clone_url = 'git://github.com/wildfly/wildfly.git'
-      @repository.relative_path = 'arquillian/'
+    @repository.relative_path = 'arquillian/'
     link_components_modules
     Cloner.new().visit(@repository, @site)
 
@@ -144,6 +144,26 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
 
       names = comp.modules.map {|x| x.name}
       names.should include('Arquillian OpenShift Express Container Adapter')
+    end
+  end
+
+  it "should discover TomEE and OpenEJB External Containers" do
+    @repository.clone_url = 'git://github.com/apache/tomee.git'
+    @repository.relative_path = 'arquillian/'
+    @repository.master_branch = 'trunk'
+    link_components_modules
+    Cloner.new().visit(@repository, @site)
+
+    @visitor.visit(@repository, @site)
+    @site.components.size.should equal(1)
+
+    @site.components.each_value do |comp|
+      comp.modules.size.should eql(3)
+
+      names = comp.modules.map {|x| x.name}
+      names.should include('Arquillian TomEE Embedded Container Adapter')
+      names.should include('Arquillian TomEE Remote Container Adapter')
+      names.should include('Arquillian OpenEJB Container Adapter')
     end
   end
 end

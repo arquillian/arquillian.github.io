@@ -32,8 +32,8 @@ class Artifact
       buf = "<dependency>\n".
           concat("  <groupId>#{@groupId}</groupId>\n").
           concat("  <artifactId>#{@artifactId}</artifactId>\n")
-      buf.concat("  <type>#{@packaging}</type>\n") if !packaging.to_sym.eql? :jar
       buf.concat("  <version>#{@version}</version>\n") if include_version and !version.nil?
+      buf.concat("  <type>#{@packaging}</type>\n") if !packaging.to_sym.eql? :jar
       buf.concat("  <scope>#{scope}</scope>\n") if !scope.to_sym.eql? :compile
       buf.concat("</dependency>")
     end
@@ -250,8 +250,8 @@ module Awestruct::Extensions::Repository::Visitors
       rc.tags.select {|t|
           # supports formats: 1.0.0.Alpha1
           #t.name =~ /^[1-9]\d*\.\d+\.\d+\.((Alpha|Beta|CR)[1-9]\d*|Final)$/
-          # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1
-          t.name =~ /^[1-9]\d*\.\d+\.\d+[\.-]((alpha|beta|cr)-?[1-9]\d*|final)$/i
+          # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0
+          t.name =~ /^([a-z]+-?)?[1-9]\d*\.\d+\.\d+([\.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
       }.sort_by{|t| rc.gcommit(t).author_date}.each do |t|
         # skip tag if arquillian has nothing to do with it
         next if repository.relative_path and rc.log(1).object(t.name).path(repository.relative_path).size.zero?
@@ -260,7 +260,8 @@ module Awestruct::Extensions::Repository::Visitors
         commit = rc.gcommit(sha)
         committer = commit.committer
         release = OpenStruct.new({
-          :version => t.name,
+          :tag => t.name,
+          :version => t.name.gsub(/^([a-z]+-?)/, ''),
           :key => (c.key.eql?('core') ? '' : c.key + '_') + t.name, # jira release version key, should we add owner?
           #:license => 'track?',
           :sha => sha,
@@ -281,13 +282,15 @@ module Awestruct::Extensions::Repository::Visitors
         #if site.release_notes_by_version.has_key? release.key
         #  release.issues = site.release_notes_by_version[release.key]
         #end
-        depversions = resolve_dep_versions(repository, release.version)
+        depversions = resolve_dep_versions(repository, release.tag)
         release.compiledeps = []
         {
           'arquillian' => 'Arquillian Core',
           'arquillian_core' => 'Arquillian Core',
+          'jboss_arquillian_core' => 'Arquillian Core',
           'org_jboss_arquillian_core' => 'Arquillian Core',
           'shrinkwrap_shrinkwrap' => 'ShrinkWrap Core',
+          'jboss_shrinkwrap' => 'ShrinkWrap Core',
           'shrinkwrap_descriptors' => 'ShrinkWrap Descriptors',
           'shrinkwrap_resolver' => 'ShrinkWrap Resolvers',
           'junit_junit' => 'JUnit',
@@ -301,7 +304,7 @@ module Awestruct::Extensions::Repository::Visitors
         prev_sha = sha
       end
       c.latest_version = (!c.releases.empty? ? c.releases.last.version : resolve_head_version(repository))
-      c.latest_tag = (!c.releases.empty? ? c.releases.last.version : 'HEAD')
+      c.latest_tag = (!c.releases.empty? ? c.releases.last.tag : 'HEAD')
       c.releases.each do |r|
         # FIXME not dry!
         r.contributors.each do |contrib|
@@ -398,6 +401,11 @@ module Awestruct::Extensions::Repository::Visitors
               :name => 'Aslak Knutsen',
               :jboss_username => 'aslak'
             })
+          elsif repository.path.eql? 'tomee'
+            lead = OpenStruct.new({
+              :name => 'David Blevins',
+              :jboss_username => 'dblevins'
+            })
           end
         end
         # update the global index (why not?)
@@ -412,7 +420,7 @@ module Awestruct::Extensions::Repository::Visitors
       rc = repository.client
       versions = {}
       # FIXME Android extension defines versions in android-bom/pom.xml
-      ['pom.xml', 'build/pom.xml', 'android-bom/pom.xml'].each do |path|
+      ['pom.xml', 'build/pom.xml', 'android-bom/pom.xml', "#{repository.relative_path}pom.xml"].each do |path|
         # skip if path is not present in this revision
         next if rc.log(1).object(rev).path(path).size.zero?
 
@@ -544,7 +552,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def handles(repository)
       repository.path != 'arquillian-container-reloaded' and
-          (repository.path =~ /^arquillian\-container\-.+/ or ['jboss-as', 'wildfly', 'openejb'].include? repository.path)
+          (repository.path =~ /^arquillian\-container\-.+/ or ['jboss-as', 'wildfly', 'tomee'].include? repository.path)
     end
 
     def visit(repository, site)
@@ -584,8 +592,8 @@ module Awestruct::Extensions::Repository::Visitors
       parent_path = ("#{rev}:#{repository.relative_path}")
       MavenHelpers.traverse_modules(parent_path, repository) do |pathrev, pom|
         mod = pom.text('/project/artifactId')
-        puts "#{pom.text('/project/name')} - #{mod}"
-        if mod =~ /.*?-(remote|managed|embedded)(-(.+))?$/
+        # Need a sub extension point to clean up for specific containers
+        if mod =~ /.*?-(remote|managed|embedded)(-(.+))?$/ and !(repository.path == 'tomee' and mod =~ /.*webapp.*/)
           (management, min_version) = [$1, $3]
           module_cnt += 1
           adapters << OpenStruct.new({
@@ -625,9 +633,13 @@ module Awestruct::Extensions::Repository::Visitors
       container.name = pom.root.text('name').sub(/ Container$/, '\0 Adapter').sub(/^Arquillian Container (.*)/, 'Arquillian \1 Container Adapter')
       if repository.path == 'jboss-as'
         container.name = container.name.sub(/.*Arquillian /, 'Arquillian JBoss AS 7 ')
-      end
-      if repository.path == 'wildfly'
+      elsif repository.path == 'wildfly'
         container.name = container.name.sub(/.*Arquillian /, 'Arquillian WildFly 8 ')
+      elsif repository.path == 'tomee'
+        container.name = container.name.sub(/.*:: /, 'Arquillian TomEE ')
+        container.name = container.name.sub(/ Adaptor/, ' Container Adapter')
+        container.name = container.name + ' Container Adapter' unless container.name =~/Adapter/
+        container.name = container.name.sub(/TomEE /, '') if container.name =~/openejb/i
       end
       container.desc = pom.root.text('description') || '!!!Missing description!!!'
       container.artifacts = [

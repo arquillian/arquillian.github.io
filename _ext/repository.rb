@@ -82,16 +82,16 @@ module Awestruct
             :clone_url => 'git://github.com/wildfly/wildfly.git'
           )
 
-          # still some funkiness supporting this one (page title, tags, compiled with, etc)
           @repositories << OpenStruct.new(
-            :path => 'openejb',
+            :path => 'tomee',
+            :master_branch => 'trunk',
             :desc => nil,
-            :relative_path => 'openejb/arquillian/',
+            :relative_path => 'arquillian/',
             :owner => 'apache',
             :host => 'github.com',
             :type => 'git',
-            :html_url => 'https://github.com/apache/openejb',
-            :clone_url => 'git://github.com/apache/openejb.git'
+            :html_url => 'https://github.com/apache/tomee',
+            :clone_url => 'git://github.com/apache/tomee.git'
           )
 
           @repositories << OpenStruct.new(
