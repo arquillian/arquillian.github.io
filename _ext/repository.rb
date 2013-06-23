@@ -18,23 +18,6 @@ module Awestruct
         end
 
         def execute(site)
-          if @use_data_cache
-            modules_data_file = File.join(site.tmp_dir, 'datacache', 'components.yml')
-            # TEMPORARY, but right now can't load components data if no identities data
-            identities_data_file = File.join(site.tmp_dir, 'datacache', 'identities.yml')
-            if File.exist? modules_data_file and File.exist? identities_data_file
-              (site.components, site.modules) = YAML.load_file(modules_data_file)
-              ## TEMPORARY! -> turn this into a post processor
-              generate_pages(site)
-              ## TEMPORARY!
-              return
-            else
-              if File.exist? identities_data_file
-                # we are going to rebuild identities
-                File.unlink identities_data_file
-              end
-            end
-          end
 
           more_pages = true
           page = 1
@@ -144,24 +127,53 @@ module Awestruct
 
           }
 
-          site.components = {}
-          site.modules = {}
+          all_components = {}
+          all_modules = {}
+
           site.git_author_index = {}
           @repositories.each do |r|
-            ##next unless r.path.eql? 'arquillian-extension-warp' #test filter
-            ## REVIEW BEGIN
-            if r.host.eql? 'github.com'
-              @observers.each do |o|
-                o.add_repository(r) if o.respond_to? 'add_repository'
+
+            # Store and Rest site state
+            site.components = {}
+            site.modules = {}
+
+            repo_cache_file = File.join(site.tmp_dir, 'datacache', "#{r.path}.yml")
+            if File.exist? repo_cache_file and @use_data_cache
+              (site.components, site.modules) = YAML.load_file(repo_cache_file)
+            else
+              ## REVIEW BEGIN
+              if r.host.eql? 'github.com'
+                @observers.each do |o|
+                  o.add_repository(r) if o.respond_to? 'add_repository'
+                end
+              end
+              ## REVIEW END
+              Visitors.defined.each do |v|
+                if v.handles(r)
+                  v.visit(r, site)
+                end
+              end
+
+              if @use_data_cache
+                FileUtils.mkdir_p File.dirname repo_cache_file
+                File.open(repo_cache_file, 'w') do |out|
+                  site.components.each_pair {|k, c| c.repository.delete_field('client') }
+                  YAML.dump([site.components, site.modules], out)
+                end
               end
             end
-            ## REVIEW END
-            Visitors.defined.each do |v|
-              if v.handles(r)
-                v.visit(r, site)
-              end
+            all_components.merge!(site.components || {})
+            site.modules.each_pair do |k, v|
+              all_modules[k] = [] unless all_modules[k]
+              all_modules[k].concat(v)
             end
+
           end
+
+          site.components = all_components
+          site.modules = all_modules
+
+          puts "Loaded #{site.components.size} components and #{site.modules.size} modules"
 
           # use sample commits to get the github_id for each author
           rekeyed_index = {}
@@ -239,14 +251,6 @@ module Awestruct
 
           @observers.each do |o|
             o.add_match_filter(rekeyed_index) if o.respond_to? 'add_match_filter'
-          end
-
-          if @use_data_cache
-            FileUtils.mkdir_p File.dirname modules_data_file
-            File.open(modules_data_file, 'w') do |out|
-              site.components.each_pair {|k, c| c.repository.delete_field('client') }
-              YAML.dump([site.components, site.modules], out)
-            end
           end
 
           ## TEMPORARY! -> turn this into a post processor

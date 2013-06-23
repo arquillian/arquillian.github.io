@@ -130,6 +130,22 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
     end
   end
 
+  it "should discover CloudBees specially, not using embedded|managed|remote naming" do
+    @repository.clone_url = 'git://github.com/arquillian/arquillian-container-cloudbees.git'
+    link_components_modules
+    Cloner.new().visit(@repository, @site)
+
+    @visitor.visit(@repository, @site)
+    @site.components.size.should equal(1)
+
+    @site.components.each_value do |comp|
+      comp.modules.size.should eql(1)
+
+      names = comp.modules.map {|x| x.name}
+      names.should include('Arquillian Cloudbees Container Adapter')
+    end
+  end
+
   it "should discover OpenShift specially, relocated artifact" do
     @repository.clone_url = 'git://github.com/arquillian/arquillian-container-openshift.git'
     link_components_modules

@@ -604,7 +604,8 @@ module Awestruct::Extensions::Repository::Visitors
             :min_version => min_version
           })
         elsif mod.eql? 'arquillian-openshift' or
-          (mod.eql? 'arquillian-openshift-express' and !(pom.text('/project/name') =~ /.*Relocation/))
+          (mod.eql? 'arquillian-openshift-express' and !(pom.text('/project/name') =~ /.*Relocation/)) or
+          mod.eql? 'arquillian-cloudbees'
           # FIXME this should be openshift-remote
           module_cnt += 1
           adapters << OpenStruct.new({
