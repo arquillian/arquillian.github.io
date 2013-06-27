@@ -1,11 +1,15 @@
 require 'ri_cal'
 require 'tzinfo'
-
+require 'nokogiri'
+require 'rest-client'
+require_relative 'common.rb'
 ##
 # Lanyrd is an Awestruct extension module for interacting with lanyrd.com
 # to retrieve conference session listings, speakers and related info.
 
-module Awestruct::Extensions::Lanyrd
+module Awestruct
+  module Extensions
+    module Lanyrd
 
   ##
   # Awestruct::Extensions::Lanyrd::Search retrieves sessions from
@@ -59,11 +63,10 @@ module Awestruct::Extensions::Lanyrd
       
       pages = []
       
-      page1 = Hpricot(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-1.html"), search_url))
+      page1 = Nokogiri::HTML(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-1.html"), search_url))
       pages << page1
       
       extract_pages(page1, pages, search_url)
-      
       pages.each do |page|
         extract_sessions(page, sessions)
       end
@@ -76,42 +79,42 @@ module Awestruct::Extensions::Lanyrd
       # lanyrd pageination show 1, 2, 3... 5
       # Get the last index and loop
       last_page_index = 1
-      root.search('div[@class*=pagination]') do |p|
+      root.css('div[@class*=pagination]').each do |p|
         last_page_index = Integer(p.search('li').last.at('a').inner_text) +1
       end
       for index in 2...last_page_index
-		pageinated_url = "#{search_url}&page=#{index}"
-		pageX = Hpricot(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-#{index}.html"), pageinated_url))
-		pages << pageX
+        pageinated_url = "#{search_url}&page=#{index}"
+        pageX = Nokogiri::HTML(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-#{index}.html"), pageinated_url))
+        pages << pageX
       end
     end
     
     # Find all sessions in Page
     def extract_sessions(page, sessions)
-      page.search('li[@class*=s-session]').each do |raw|
+      page.css('li[@class*=s-session]').each do |raw|
         
-        event_link = raw.search('h3').at('a')
+        event_link = raw.css('h3').at('a')
         
         session = OpenStruct.new
         session.title = event_link.inner_text
         
-        session_detail_url = "#{@base}#{event_link.attributes['href']}"
-        session.slug = event_link.attributes['href'].split('/').last
-        session_detail = Hpricot(getOrCache(File.join(@lanyrd_tmp, "session-#{session.slug}.html"), session_detail_url))
+        session_detail_url = "#{@base}#{event_link.attribute('href')}"
+        session.slug = event_link.attribute('href').to_s.split('/').last
+        session_detail = Nokogiri::HTML(getOrCache(File.join(@lanyrd_tmp, "session-#{session.slug}.html"), session_detail_url))
         session.updated = File.mtime(File.join(@lanyrd_tmp, "session-#{session.slug}.html"))
         
-        session_meta_node = session_detail.at('div[@class=session-meta]')
-        timezone_node = session_detail.at('abbr[@class=timezone]')
+        session_meta_node = session_detail.css('div[@class=session-meta]').first
+        timezone_node = session_detail.css('abbr[@class=timezone]').first
         if timezone_node
-          session.timezone = timezone_node.attributes['title']
+          session.timezone = timezone_node.attribute('title').to_s
         end
 
         tz = nil
-        tz = TZInfo::Timezone.get(session.timezone) unless session.timezone.nil?
+        tz = TZInfo::Timezone.get(session.timezone.to_s) unless session.timezone.nil?
 
-        dtstart_node = session_meta_node.at('abbr[@class=dtstart]')
+        dtstart_node = session_meta_node.css('abbr[@class=dtstart]').first
         if dtstart_node
-          session.start_datetime = Time.parse dtstart_node.attributes['title']
+          session.start_datetime = Time.parse dtstart_node.attribute('title')
           session.start_datetime = tz.local_to_utc(session.start_datetime) unless tz.nil?
         end
 
@@ -119,33 +122,47 @@ module Awestruct::Extensions::Lanyrd
         if session.start_datetime and session.start_datetime >= @since
           dtend_node = session_meta_node.at('abbr[@class=dtend]')
           if dtend_node
-            session.end_datetime = Time.parse dtend_node.attributes['title']
+            session.end_datetime = Time.parse dtend_node.attribute('title')
             session.end_datetime = tz.local_to_utc(session.end_datetime) unless tz.nil?
           end
 
-          session.description = session_detail.search('div[@class*=abstract]').inner_html
+          session.description = session_detail.css('div[@class*=abstract]').first.inner_html
           session.detail_url = session_detail_url
 
-          session.event_location = session_detail.at('p[@class=location]').inner_text.split(/\//).map{|l| l.strip}.reverse.join(', ')
+          session.event_location = session_detail.css('p[@class=location]').first.inner_text.split(/\//).map{|l| l.strip}.reverse.join(', ')
           
           session.speaker_names = []
           session.speakers = []
 
-          raw.search('p[@class*=meta]').each do |meta|
-            type = meta.search('strong').inner_html
-            meta.search('strong').remove()
+          raw.css('p[@class*=meta]').each do |meta|
+            type = meta.css('strong').inner_html
+            meta.css('strong').remove()
             session.event = meta.inner_text.strip if type.eql? 'Event'
-            session.event_url = "#{meta.at('a').attributes['href']}" if type.eql? 'Event'
+            session.event_url = "#{meta.css('a').first.attribute('href')}" if type.eql? 'Event'
             
             if type.eql? 'Speakers'
               session.speaker_names = meta.inner_text.strip.split(', ')
-              meta.search('a').each do |speaker_node|
+              meta.css('a').each do |speaker_node|
                 name = speaker_node.inner_text.strip
-                username = speaker_node.attributes['href'].match(/\/profile\/([^\/]*)/)[1]
+                username = speaker_node.attribute('href').match(/\/profile\/([^\/]*)/)[1]
                 # QUESTION add identities for speakers if not exist?
                 session.speakers << {'name' => name, 'username' => username }
                 end
             end
+          end
+
+          # updated Speaker lanyrd layout 2013-06-26
+          session_detail.css('ul[@class*=user-list]').each do |users|
+            name = nil
+            users.css('span[@class*=user-name]').each do |user|
+              name = user.text()
+              session.speaker_names << name
+            end
+            username = nil
+            users.css('li a').each do |a|
+              username = a.attribute('href').to_s.match(/\/profile\/([^\/]*)/)[1]
+            end
+            session.speakers << {'name' => name, 'username' => username }
           end
           
           sessions << session
@@ -212,6 +229,9 @@ module Awestruct::Extensions::Lanyrd
         site.pages << page
 
       end
+    end
+  end
+
     end
   end
 end
