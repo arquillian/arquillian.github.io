@@ -27,7 +27,7 @@
 #
 # bundle exec awestruct -s
 
-source :rubygems
+source 'https://rubygems.org'
 
 gem "awestruct", "0.5.2"
 #gem "awestruct", :path => '../awestruct'

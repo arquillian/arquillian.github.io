@@ -182,4 +182,24 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
       names.should include('Arquillian OpenEJB Container Adapter')
     end
   end
+
+  it "should discover WAS containers in profiles" do
+    @repository.clone_url = 'git://github.com/arquillian/arquillian-container-was.git'
+    link_components_modules
+    Cloner.new().visit(@repository, @site)
+
+    @visitor.visit(@repository, @site)
+    @site.components.size.should equal(1)
+
+    @site.components.each_value do |comp|
+      comp.modules.size.should eql(4)
+
+      names = comp.modules.map {|x| x.name}
+      names.should include('Arquillian WebSphere AS Remote 7.x Container Adapter')
+      names.should include('Arquillian WebSphere AS Embedded 8.x Container Adapter')
+      names.should include('Arquillian WebSphere AS Remote 8.x Container Adapter')
+      names.should include('Arquillian WebSphere Liberty Profile Managed 8.5 Container Adapter')
+    end
+  end
+
 end

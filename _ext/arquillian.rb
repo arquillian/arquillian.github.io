@@ -169,8 +169,16 @@ module Awestruct::Extensions::Repository::Visitors
       pomrev = repository.client.revparse("#{rev}pom.xml")
       pom = REXML::Document.new(repository.client.cat_file(pomrev))
       yield rev, pom
+
+      unique_modules = Set.new
       pom.each_element('/project/modules/module') do |mod|
-        submodule = mod.text()
+        unique_modules << mod.text()
+      end
+      pom.each_element('/project/profiles/profile/modules/module') do |mod|
+        unique_modules << mod.text()
+      end
+
+      unique_modules.each do |submodule|
         MavenHelpers.traverse_modules("#{rev}#{submodule}/", repository) { |y, x| yield(y, x)}
       end
     end
