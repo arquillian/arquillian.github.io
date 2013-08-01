@@ -1,0 +1,65 @@
+---
+---
+
+h3(highlights). Some of the highlights in this release
+
+- <i class="icon-star"></i> Servlet integration :=
+This release bring one new cool feature, integration with "Guice Servlet":https://code.google.com/p/google-guice/wiki/Servlets extension =:
+
+p. The whole integration requires only two simple steps to make the test use the web configured Guice injector.
+
+First of all the @GuiceFilter@ needs to be replaced with the @ArquillianGuiceFilter@:
+
+div(filename). web.xml
+
+bc(prettify)..
+<filter>
+   <filter-name>guiceFilter</filter-name>
+   <filter-class>org.jboss.arquillian.guice.api.servlet.ArquillianGuiceFilter</filter-class>
+</filter>
+
+<filter-mapping>
+   <filter-name>guiceFilter</filter-name>
+   <url-pattern>/*</url-pattern>
+</filter-mapping> =:
+
+This can be also done at runtime, by doing a simple string replacement in the web descriptor when creating the deployment.
+
+The only remaining step is to annotate your test with @@GuiceWebConfiguration@, which will instruct the extension to
+retrieve the injector from the servlet context.
+
+Example test:
+
+div(filename). WebInjectorTestCase.java
+
+bc(prettify).. @GuiceWebConfiguration
+@RunWith(Arquillian.class)
+public class WebInjectorTestCase {
+
+   @Deployment
+   public static Archive createTestArchive() {
+       return ShrinkWrap.create(WebArchive.class, "guice-test.war")
+               .addClasses(Employee.class,
+                       EmployeeService.class, DefaultEmployeeService.class,
+                       EmployeeRepository.class, DefaultEmployeeRepository.class,
+                       EmployeeModule.class, EmployeeModuleContextListener.class)
+               .addAsWebInfResource("WEB-INF/web.xml", "web.xml");
+   }
+
+   @Inject
+   private EmployeeService employeeService;
+
+   @Test
+   public void testGetEmployees() {
+
+       List<Employee> result = employeeService.getEmployees();
+
+       assertNotNull("Method returned null list as result.", result);
+       assertEquals("Two employees were expected.", 2, result.size());
+   }
+} =:
+
+The tests can go way beyond such simple example, allowing to inject order resources like Guice configured servlets,
+filters and listeners.
+
+p. We look forward to hearing your feedback about this release in the "community forums":#{site.project_space}!
