@@ -13,4 +13,22 @@
  *   http://me.boo.uz
  *
  */
-!function($){$.extend({jGFeed:function(url,fnk,num,key){if(null==url)return!1;var gurl="http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&callback=?&q="+url;null!=num&&(gurl+="&num="+num),null!=key&&(gurl+="&key="+key),$.getJSON(gurl,function(data){return"function"!=typeof fnk?!1:(fnk.call(this,data.responseData.feed),void 0)})}})}(jQuery);
+(function($){
+  $.extend({
+    jGFeed : function(url, fnk, num, key){
+      // Make sure url to get is defined
+      if(url == null) return false;
+      // Build Google Feed API URL
+      var gurl = "http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&callback=?&q="+url;
+      if(num != null) gurl += "&num="+num;
+      if(key != null) gurl += "&key="+key;
+      // AJAX request the API
+      $.getJSON(gurl, function(data){
+        if(typeof fnk == 'function')
+		  fnk.call(this, data.responseData.feed);
+		else
+		  return false;
+      });
+    }
+  });
+})(jQuery);
