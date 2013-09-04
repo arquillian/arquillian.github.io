@@ -87,7 +87,7 @@ module Awestruct::Extensions::Repository::Visitors
         rc = Git.open(clone_dir)
         master_branch = repository.master_branch
         if master_branch.nil?
-          master_branch = rc.branches.find{|b| !b.remote and !b.name.eql? '(no branch)'}.name
+          master_branch = rc.branches.find{|b| !b.remote and  !(b.name.include? 'detached' or b.name.include? 'no branch')}.name
           repository.master_branch = master_branch
         end
         rc.checkout(master_branch)

@@ -16,4 +16,13 @@ module Awestruct::Extensions::RestClientExtensions
       RestClient.enable RestJsonConverter
     end
   end
+
+  class EnableAuth
+    def initialize(auth_modules)
+      @auth_modules = auth_modules
+    end
+    def execute(site)
+      RestClient.enable RestAuth, @auth_modules
+    end
+  end
 end

@@ -14,7 +14,6 @@ module Awestruct
           @ohloh_api_key = ohloh_api_key
           @use_data_cache = opts[:use_data_cache] || true
           @observers = opts[:observers] || []
-          @auth = opts[:auth]
         end
 
         def execute(site)
@@ -109,7 +108,7 @@ module Awestruct
             more_pages = true
             org_url = "https://api.github.com/orgs/#{org_name}/repos"
             while more_pages
-              org_repos_data = RestClient.get @auth.with_credentials(org_url), :accept => 'application/json'
+              org_repos_data = RestClient.get org_url, :accept => 'application/json'
               @repositories.each {|r|
                 #repo_data = org_repos_data.select {|c| r.owner == org_name and r.host == 'github.com' and c['name'] == r.path}
                 repo_data = org_repos_data.select {|c| r.clone_url.eql? c['git_url']}
@@ -178,7 +177,7 @@ module Awestruct
           # use sample commits to get the github_id for each author
           rekeyed_index = {}
           site.git_author_index.each do |email, author|
-            commit_data = RestClient.get(@auth.with_credentials(author.sample_commit_url), :accept => 'application/json')
+            commit_data = RestClient.get(author.sample_commit_url, :accept => 'application/json')
 
             github_id = commit_data['commit']['author']['login']
             unless commit_data['author'].nil?

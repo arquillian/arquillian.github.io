@@ -45,7 +45,7 @@ module RestClient
       end
 
       if response.nil?
-        puts 'Fetching ' + self.url.gsub(/(:\/\/)(.+:.+)(@)/, '\1xxx:xxx\3') ## don't show auth
+        puts 'Fetching ' + self.url
         response = _execute &block
         instances.each do |instance|
           instance.cache_miss(response) if instance.respond_to? 'cache_miss'
@@ -172,6 +172,14 @@ class RestJsonConverter
       RestClient::Response.create(content, response.net_http_res, response.args)
     else
       response
+    end
+  end
+end
+
+class RestAuth
+  def initialize(request, auth_modules = [])
+    auth_modules.each do |auth_module|
+      auth_module.invoke(request) if auth_module.supports? request.url 
     end
   end
 end
