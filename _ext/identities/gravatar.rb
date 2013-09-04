@@ -27,13 +27,13 @@ module Identities
         end
 
         data = JSON.parse response
-
         if data.empty?
           return
         end
 
         entry = data['entry'].first
-
+        # update with found hash. should be the same, but if we created it, we need to set identity
+        identity.gravatar_id = entry['hash']
         keys_to_gravatar = {
           'id' => 'id',
           'hash' => 'hash',
