@@ -135,7 +135,7 @@ module Identities
 
       def invoke(request)
         token = get_token
-        request.headers["Authorization"] = "token #{token}" unless token.nil?
+        request.processed_headers["Authorization"] = "token #{token}" unless token.nil?
       end
 
       def get_token()
