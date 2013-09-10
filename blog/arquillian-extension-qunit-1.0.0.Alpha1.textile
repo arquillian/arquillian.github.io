@@ -1,0 +1,83 @@
+---
+date: 2013-09-10
+author: tolis-e
+---
+
+This is the first release of the Arquillian QUnit extension which aims to automate QUnit JavaScript unit testing. 
+
+h3. Highlighted Features
+
+- <i class="icon-star"></i> Integration with JUnit
+
+This means that the extension integrates transparently with the JUnit testing framework and therefore can be easily used in continuous integration environments. Each QUnit test is considered to be a JUnit test. In case of failures, the failed assertions are reported.
+
+- <i class="icon-star"></i> Execute QUnit Test Suites using CLI or from IDE
+
+This means that you can execute one or more QUnit Test Suites using CLI or from IDE.
+
+h3. Getting Started
+
+To start using the Arquillian QUnit extension, add the following dependency to your project:
+
+div(filename). pom.xml
+
+bc(prettify).. <dependency>
+    <groupId>org.jboss.arquillian.extension</groupId>
+    <artifactId>arquillian-qunit</artifactId>
+    <version>1.0.0.Alpha1</version>
+</dependency>
+
+h3. Writing Arquillian QUnit test classes
+
+To create an Arquillian QUnit test class, annotate the test class with the @@RunWith(QUnitRunner.class)@ and @@QUnitResources@ annotations. The @@QUnitResources@ annotation's value should be the path of the folder which contains all the QUnit resources and dependencies which are required for your QUnit tests execution. For each QUnit Test Suite that you would like to execute, create a method and annotate it with the @@QUnitTest@ annotation. The annotation's value should be the QUnit Test Suite path, relative to the @@QUnitResources@ path. On the below example, the src folder contains all the resources required from our QUnit tests in order to be executed and our QUnit Test Suite (qunit-tests.html) is included inside the src/test/resources/qunit-assets folder.
+
+div(filename). MyTestClass.java
+
+bc(prettify).. 
+@RunWith(QUnitRunner.class)
+@QUnitResources("src/")
+public class MyTestClass {
+
+  @QUnitTest("test/resources/qunit-assets/qunit-tests.html")
+  public void myQUnitSuiteTest() {
+    // empty body
+  }
+}
+
+p. Here's a complete example:
+
+div(filename). ArquillianQUnitTestCase.java
+
+bc(prettify).. 
+@RunWith(QUnitRunner.class)
+@QUnitResources("src/test/resources/assets")
+public class ArquillianQUnitTestCase {
+
+    @Deployment
+    public static Archive<?> createDeployment() {
+        return ShrinkWrap.create(WebArchive.class, "rest-service.war")
+                .addClasses(Car.class, CarService.class, CarRepository.class, JaxRsActivator.class)
+                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @QUnitTest("tests/rest-service/qunit-tests-ajax.html")
+    @InSequence(1)
+    public void qunitAjaxTest() {
+        // empty body - only the annotations are used
+    }
+
+    @QUnitTest("tests/generic/qunit-assertions.html")
+    @InSequence(2)
+    public void qunitAssertionsTest() {
+        // empty body - only the annotations are used
+    }
+}
+
+p. You might want to see some showcases: 
+
+"Showcase 1":https://github.com/arquillian/arquillian-extension-qunit/tree/master/arquillian-qunit-ftest contains a sample example which deploys a REST service along with the QUnit tests.
+"Showcase 2":https://github.com/tolis-e/aerogear-js-cors-jsonp-tests shows how to execute QUnit tests on TravisCI
+"Showcase 3":https://github.com/tolis-e/kitchensink-mobile-angularjs-topcoat depicts how Arquillian Qunit Extension can be used to test JavaScript code which uses the AngularJS JavaScript MVW framework
+
+We look forward to your feedback on this release in our "community forums":#{site.project_space} or the #arquillian channel on FreeNode!
+
