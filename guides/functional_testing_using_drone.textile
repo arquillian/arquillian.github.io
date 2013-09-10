@@ -1,7 +1,7 @@
 ---
 layout: guide
 title: Functional Testing using Graphene
-authors: [mojavelinux, kpiwko, jhuska]
+authors: [mojavelinux, kpiwko, jhuska, lfryc, bleathem]
 tags: [graphene, drone, selenium, as7]
 description: Discover how Arquillian Graphene simplifies testing the web UI of your application.
 guide_group: 2
@@ -108,11 +108,11 @@ p. Now that you understand how to run a test in client mode, let's check out how
 
 h3. Graphene Overview
 
-Arquillian Graphene is a set of extensions for "WebDriver API":http://docs.seleniumhq.org, focused on rapid development and usability in Java environment. Its API encourages people to write tests for AJAX-based web applications in consise and maintainable way. Graphene strives for reusable tests by simplifying the use of web page abstractions ("Page Objects":https://docs.jboss.org/author/display/ARQGRA2/Page+Objects and "Page Fragments":https://docs.jboss.org/author/display/ARQGRA2/Page+Fragments). You will get taste of Graphene API just in a minute!
+Arquillian Graphene is a set of extensions for "WebDriver API":http://docs.seleniumhq.org, focused on rapid development and usability in Java environment. Its API encourages people to write tests for AJAX-based web applications in concise and maintainable way. Graphene strives for reusable tests by simplifying the use of web page abstractions ("Page Objects":https://docs.jboss.org/author/display/ARQGRA2/Page+Objects and "Page Fragments":https://docs.jboss.org/author/display/ARQGRA2/Page+Fragments). You will get taste of Graphene API just in a minute!
 
-Arquillian Graphene depends on Arquillian Drone, which is an extension that manages the life cycle of tested browsers. Drone simplifies the initial test setup and prepares tests for continous integration in variety of web browsers.
+Arquillian Graphene depends on Arquillian Drone, which is an extension that manages the life cycle of tested browsers. Drone simplifies the initial test setup and prepares tests for continuous integration in variety of web browsers.
  
-Currently, the list of supported browsers is pretty large, a bounded set of those covered by Selenium project, e.g. Chrome, Firefox, Interner Explorer, Safari, Opera. It also supports "headless browsers":http://blog.arhg.net/2009/10/what-is-headless-browser.html PhantomJS and HTMLUnit. Like Arquillian Core, the Arquillian Graphene and  Arquillian Drone extensions are, well, pretty extensible.
+Currently, the list of supported browsers is pretty large, a bounded set of those covered by Selenium project, e.g. Chrome, Firefox, Internet Explorer, Safari, Opera. It also supports "headless browsers":http://blog.arhg.net/2009/10/what-is-headless-browser.html PhantomJS and HTMLUnit. Like Arquillian Core, the Arquillian Graphene and  Arquillian Drone extensions are, well, pretty extensible.
   
 Let's get Arquillian Graphene configured so that we can start writing some tests.
 
@@ -207,14 +207,14 @@ bc(prettify).. <!-- clip -->
 <!-- clip -->
 
 
-p. You have to specify the dependency on a container adapter. We will use JBoss AS 7 managed container since it boots extremely fast!
+p. You have to specify the dependency on a container adapter. We will use JBoss AS 7 remote container, because it is an effective way of tests development. You can read more about "rapid test development turnaround":http://lukas.fryc.eu/blog/2013/06/testing-jsf-richfaces-arquillian-2-rapid-test-development.html.
 
 div(filename). pom.xml
 
 bc(prettify).. <!-- clip -->
 <dependency>
     <groupId>org.jboss.as</groupId>
-    <artifactId>jboss-as-arquillian-container-managed</artifactId>
+    <artifactId>jboss-as-arquillian-container-remote</artifactId>
     <version>7.1.1.Final</version>
     <scope>test</scope>
 </dependency>
@@ -270,7 +270,7 @@ bc(prettify).. <!-- clip -->
 </build>
 <!-- clip -->
 
-p(info). %"PhantomJS":http://phantomjs.org/ can be used as default browser thanks to its ability to operate in resource-limited environments such as continous integration servers while closely simulating behavior of Chrome browser.%
+p(info). %"PhantomJS":http://phantomjs.org/ can be used as default browser. Thanks to its ability to operate in resource-limited environments such as continuous integration servers, while closely simulating behavior of Chrome browser.%
 
 h3. Create a Login Screen
 
@@ -340,7 +340,7 @@ public class User {
     }
 }
 
-p. Next up, create the @LoginController@ class, again in the same package. For the purpose of this example, this implementation only accepts a username and password of "demo" and issues a welcome message when the login is successful.
+p. Next up, create the @LoginController@ class, again in the same package. For the purpose of this example, this implementation only accepts a user name and password of "demo" and issues a welcome message when the login is successful.
 
 div(filename). src/main/java/org/arquillian/example/LoginController.java
 
@@ -571,7 +571,7 @@ public class LoginScreenGrapheneTest {
 
 p. *That's it!* The @@Drone@ injection point tells Drone to create an instance of the browser controller, "WebDriver":http://selenium.googlecode.com/git/docs/api/java/index.html, before the first client test is run, then inject that object into the test case.
 
-*Oh wait!* Where is the Graphene? In fact, Graphene wraps the instance of a browser you have just injected. It instruments the WebDriver API in order to enable more advanced features. Where possible, it doesn't persuade any own syntax
+*Oh wait!* Where is the Graphene? In fact, Graphene wraps the instance of a browser you have just injected. It instruments the WebDriver API in order to enable more advanced features. Where possible, it doesn't persuade any own syntax.
 
 There's one more thing. We're testing web UI, but how do we know the URL of deployed application? Well, Arquillian already has a solution. Just use @@ArquillianResource@ to inject the URL of the deployed application.
 
@@ -637,38 +637,39 @@ public void should_login_successfully() {
 
 p. Once the browser is started and Drone injects @WebDriver@ handle to the test instance, we need to open a tested page (*step 1*). Notice how we are leveraging URL of an application deployed into a container.
 
-p. Then we can finally start to control the page to test its behavior.
+p. We can finally start to control the page to test its behavior.
 
 p. But before you can dive into controlling the page, you need to describe the page you are going to test - you need to locate elements on the page.
 
-p. In *step 2*, we have injected a handle for element using @FindBy@ annotation. This annotation is known from being base for page logic encapsulation.
+p. In *step 2*, we have injected a handle for element using @FindBy@ annotation. This annotation is known from being a base for a page logic encapsulation.
 
 p. In *step 3*, we are just controlling the page using @WebElement@ API - the entry point for operations with DOM elements.
 
-p(info). %Do you like how HTML and CSS helps you to split logic and presentation? In the same sense, @FindBy@ annotation splits page structure and test logic. You will get know more advanced usage of page abstraction later in this guide.%
+p(info). %Do you like how HTML and CSS helps you to split page logic and its presentation? In the same sense, @FindBy@ annotation splits page structure and test logic. You will get to know more advanced usage of page abstraction later in this guide.%
 
 p. Finally you are able to run the test! Choose the @firefox@ profile in you project in your IDE (CTRL + P hotkey in Eclipse).
-Right click on the test in your IDE and select Run As > JUnit test. Do not forget to have JBoss AS 7.1.1.Final instance running. Arquillian will connect to both JBoss AS and selenium server in order to magically flip through the pages. The result of the test will appear as normal in your JUnit view.
+Right click on the test in your IDE and select Run As > JUnit test. Do not forget to have JBoss AS 7.1.1.Final instance running. Arquillian will connect to JBoss AS in order to magically flip through the pages. The result of the test will appear as normal in your JUnit view.
 
 !/images/guides/arquillian_drone_tutorial_junit_green_bar.png!
 
-*Congratulations!* You've just tested that your application login page works correctly in Firefox! Try to rerun the test again with remote-reusable switched off, and see the difference. *(greenbar)Green bar*!
+*Congratulations!* You've just tested, that your application login page works correctly in Firefox! *(greenbar)Green bar*!
 
-You can also run the test on the commandline using Maven:
+You can also run the test on the command line using Maven:
 
 bc(command). $ mvn test -Pfirefox
 
-p. You don't get a pretty green bar, but you should have seen that the same Firefox instance is being used for the very same test, then Maven wrap up with no test failures or errors.
+p. You don't get a pretty green bar, but you should have seen Maven wrap up with no test failures or errors.
 
-p(info). %The test works in Firefox, but what about another browser? Switching browsers is easy, with the current setup you just need to select the right maven profile. You also need to point Arquillian to the chrome driver, which you have downloaded from this "site":https://code.google.com/p/chromedriver/downloads/list. You will also need to specify @chromeDriverBinary@ into @pom.xml@.
-In order to test your page without executing any real browsers, let's disable all profiles. Your test will run against headless PhantomJS browser you have specified as default earlier.%
+p(info). %The test works in Firefox, but what about another browser? Switching browsers is easy with the current setup, you just need to select the right maven profile. You also need to point Arquillian to the chrome driver, which you have downloaded from this "site":https://code.google.com/p/chromedriver/downloads/list. You will also need to specify @chromeDriverBinary@ into @pom.xml@.
 
-*Oh, wait!* But we haven't tested anything yet, we have just opened the page and written text into text inputs.
+p. In order to test your page without executing any real browsers, let's disable all profiles. Your test will run against headless PhantomJS browser, you have specified as default earlier.%
+
+*Oh, wait!* But we haven't tested anything yet, we have just opened the page and have written text into text inputs.
 
 
 h3. Defining the Test Logic
 
-Let's define what we will actually test: when user logs into into the application, he can use an AJAX widget which prints his name.
+Let's define what we will actually test: when a user logs into into the application, he can use an AJAX widget which prints his name.
 
 For that, we will need to describe all the elements which we can find on a tested pages:
 
@@ -692,15 +693,13 @@ private WebElement signedAs;
 private WebElement whoAmI;
 // clip
 
-p. As you can see, we use @@FindBy@ annotation again to inject more elements. However now we specify how to locate the element in more detail.
+p. As you can see, we use @@FindBy@ annotation again to inject more elements. However, now we specify how to locate the element in more detail.
 
-p. There are number of strategies how to locate an element on the tested page and you should always prefer the most effective way:
+p. There are number of strategies how to locate an element on the tested page, and you should always prefer the most effective way:
 
 * @@FindBy(id = "id")@ - fastest strategy
 * @@FindBy(css = "selector")@ - CSS selectors (uses DOM method @querySelectorAll()@), familiar to web developers
-* @@FindByJQuery("selector")@ - jQuery selectors is CSS selector syntax with powerful extensions
-
-
+* @@FindByJQuery("selector")@ - jQuery selectors are CSS selectors syntax with powerful extensions
 
 p(info). %If you don't specify the location strategy, you will use the default one: finding elements by their ID or name. In this case you don't have to specify String as a @@FindBy@ parameter.%
 
@@ -728,13 +727,13 @@ p. You can now run the test again: *(redbar)Red bar*
 
 p. *Ah, what happened?!* If you weren't lucky (as I wasn't), you got a failure.
 
-p. The problem which you might run into is one of the tedious issues during Selenium test: every action you instruct the browser to do might lead into an update of the page state.
+p. The problem which you might run into, is one of the tedious issues during Selenium test: every action you instruct the browser to do, might lead into an update of the page state.
 
-p(info). %As you will experience, most of the actions on the AJAX-enabled pages doesn't block the Selenium execution. In the end, you will need to synchronize almost the page interactions. In fact, in order to be sure the tests weren't fail intermitently no matter where they run, you should synchronize each manipulation with the page. Only that way you will ensure reproducibility.%
+p(info). %As you will experience, most of the actions on the AJAX-enabled pages don't block the Selenium execution. In the end, you will need to synchronize almost all the page interactions. In fact, in order to be sure the tests weren't fail intermitently no matter where they run, you should synchronize each manipulation with the page. Only that way you will ensure reproducibility.%
 
-p(important). %You should forget about using delays as a method of synchronization in your tests. The poorely written test can run on your development machine but it can simply fail in more problematic environments.%
+p(important). %You should forget about using delays as a method of synchronization in your tests. The poorly written test can run on your development machine but it can simply fail in more problematic environments.%
 
-p. Graphene takes this challenge seriously and allows you to cope with it as simple as possible.
+p. Graphene takes this challenge seriously, and allows you to cope with it as simple as possible.
 
 p. There is Graphene's way how to concisely synchronize a page state:
 
@@ -751,19 +750,19 @@ guardAjax(whoAmI).click();                                 // 2. synchronize AJA
 assertTrue(signedAs.getText().contains("demo"));
 // clip
 
-p. *That's it!* It is necessary just wrap two page interactions!
+p. *That's it!* It is necessary to just wrap two page interactions!
 
-p. When we click on the login button (*step 1*), we are re-locating to another page, so we have used "Request Guards":https://docs.jboss.org/author/display/ARQGRA2/Request+Guards to wait until the full-page update ends.
+p. When we click on the login button (*step 1*), we are re-locating to another page, so we are using "Request Guards":https://docs.jboss.org/author/display/ARQGRA2/Request+Guards to wait until the full-page update ends.
 
-p. Then we click on a button which discovers user's name and we guard AJAX request - the test won't continue until the page is fully updated as a consequence of an AJAX request.
+p. Then we click on a button which discovered user's name, and we guard AJAX request - the test won't continue until the page is fully updated as a consequence of an AJAX request.
 
 p. Let's run the test again: *(greenbar)Green bar*
 
-p. We were able to improve the test so that no matter on how slow or resource-limited machine your test will run, it will always deterministically verify the web page logic.
+p. We were able to improve the test, so that no matter on how slow or resource-limited machine your test will run, it will always deterministically verify the web page logic.
 
 p(info). %Sometimes you will run into situations where Request Guards can't help you. In this case you can always use precise Waiting API - it allows you to describe conditions on which the test should wait precisely and concisely.%
 
-The situations where the waiting API or implicit waiting won't help you:
+The situations where the Request guards API or implicit waiting won't help you:
 
 * the page is updated without any prior server interaction
 * JavaScript updates the pages once the request ends
@@ -784,18 +783,18 @@ guardAjax(whoAmI).click();
 waitAjax().until().element(signedAs).text().contains("demo"); // use condition as an assertion
 // clip
 
-p. Let's use the Request Guards where you can as they are simplest synchronization API and use Waiting API everywhere else.
+p. Let's use the Request Guards where you can, as they are simplest synchronization API. Use Waiting API elsewhere.
 
 h3. Abstract the Pages and their Fragments
 
-p. As you would continue to author new tests as application grows, it will quickly become apparent that you need to tame a size of growing functional test suite.
+p. As you would continue to author new tests as an application grows, it will quickly become apparent that you need to tame the size of a growing functional test suite.
 
 p(important). %Huge functional test suite without a proper structure might become a maintainance nightmare.%
 
 p. It is possible that your bell already started to ring, when you read the logic of a test defined before:
 
 * it's mixing elements for two pages into one test class
-* as each action in application needs to be authentizated, tests will need to go through login action repeatedly
+* as each action in application needs to be authorized, tests will need to go through login action repeatedly
 
 These are exactly the cases where Graphene might help you to give the test proper structure.
 
@@ -876,7 +875,7 @@ public class HomePage {
 }
 //clip
 
-p. Since we have abstracted the pages into own classes, we are now able to thoroughtly simplify the test:
+p. Since we have abstracted the pages into own classes, we are now able to thoroughly simplify the test:
 
 div(filename). src/test/java/org/arquillian/example/HomePage.java
 
@@ -896,17 +895,17 @@ public void should_login_successfully( @InitialPage LoginPage loginPage ) {
 }
 //clip
 
-p. Run the tests and againt... *(greenbar)Green Bar*
+p. Run the tests and again... *(greenbar)Green Bar*
 
 p. Awesome! Page Objects pattern has been applied.
 
-p. Graphene initializes the page objects wherever it see @Page@ annotation. In a special case it injects an @InitialPage@ which looks into the page object class for @Location@ annotation.
+p. Graphene initializes the page objects wherever it sees a @Page@ annotation. In a special case it injects an @InitialPage@ which looks into the page object class for @Location@ annotation and loads it in the browser automatically.
 
-p(info). %What is the added value of this refactoring? Tests are decoupled from the HTML code, so they are more readable. Introduction of any a change to the application would be less error prone as tests are more robust.%
+p(info). %What is the added value of this refactoring? Tests are decoupled from the HTML code, so they are more readable. Introduction of a change to the application would be less error prone as tests are more robust.%
 
 p. But that's not where our refactoring ends.
 
-p. In our use case, we have just one login form, but some applications provides the same login form on various pages so they can navigate visitors to authenticated areas. They could also define more than one form on one page? How to avoid those duplications?
+p. In our use case, we have just one login form. But some applications provides the same login form on various pages, so they can navigate visitors to authenticated areas. They could also define more than one form on one page! How to avoid those duplications?
 
 p. Fortunately Graphene provides you "Page Fragments":https://docs.jboss.org/author/display/ARQGRA2/Page+Fragments pattern - Page Fragments allow you to encapsulate small reocurring pieces of pages to reusable abstractions.
 
@@ -965,6 +964,6 @@ _Arquillian makes integration testing a breeze. Arquillian Drone adds a great su
 
 If you are looking for more Graphene goodness, be sure to check "Graphene Reference Documentation":https://docs.jboss.org/author/display/ARQGRA2/Home.
 
-p(info). %During the test development, we have used a managed container. This really isn't the fastest way how to develop functional tests, but the goal of this guide is just teach you the basics. You can refer to tips & tricks how to achieve "rapid test development turnaround":http://lukas.fryc.eu/blog/2013/06/testing-jsf-richfaces-arquillian-2-rapid-test-development.html.%
+p(info). %This tutorial really isn't the fastest way how to develop functional tests, but the goal of this guide is just teach you the basics. You can refer to tips & tricks how to achieve "rapid test development turnaround":http://lukas.fryc.eu/blog/2013/06/testing-jsf-richfaces-arquillian-2-rapid-test-development.html.%
 
-p(info). %Even though this guide follows best practices to manage Graphene guide including few tricks for allowing continuous integration, you should really "get know more if you thrives to achieve good coverage":http://lukas.fryc.eu/blog/2013/06/testing-jsf-richfaces-arquillian-4-continous-integration.html and guard your test against regressions across multiple browsers.%
+p(info). %Even though this guide follows best practices to manage Graphene, including few tricks for allowing continuous integration, you should really "get know more if you thrives to achieve good coverage":http://lukas.fryc.eu/blog/2013/06/testing-jsf-richfaces-arquillian-4-continous-integration.html, and guard your test against regressions across multiple browsers.%
