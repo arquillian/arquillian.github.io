@@ -6,7 +6,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="An innovative testing platform for the Java Virtual Machine (JVM). Open source. Highly extensible." name="description">
     <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml">
-    <link href="/stylesheets/screen.css?7fba2f0c759b5322799a0d09ad385c6b44b5ac25" rel="stylesheet">
+    <link href="/stylesheets/screen.css?3a95f337475949627fca063d48f7a9bfea2b1c90" rel="stylesheet">
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.js"></script>
@@ -52,6 +52,531 @@
       </div>
       <div class="container">
         <div id="content">
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2013/02/26/arquillian-extension-gwt-1-0-0-Alpha1/">Arquillian GWT Testing extension 1.0.0.Alpha1 Released</a>
+              </h2>
+              <div class="byline">
+                <img class="avatar" src="http://gravatar.com/avatar/c475fcc688edcfe3181103372e51402e?s=44" />
+                <span class="author">Posted by
+                <a href="https://community.jboss.org/people/csa">Christian Sadilek</a></span>
+                <span class="dateinline">on Feb 26, 2013</span>
+                <div class="date"><abbr>Feb</abbr> 26</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2013/02/26/arquillian-extension-gwt-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="9a0a04ea136586e95be8113e0da54e316ef18f75">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha1</em> release of the <em>Arquillian GWT Testing extension</em> component!</p>
+              <p>This is the first release of the Arquillian GWT extension which aims to bring true integration testing to GWT.</p>
+              <h3>Highlighted Features</h3>
+              <dl>
+              	<dt><i class="icon-star"></i> Run GWT integration tests in Arquillian containers</dt>
+              	<dd><p>This means that GWT integration tests can break free and execute in the actual runtime container instead of being tied to GWT’s embedded Jetty server.</p></dd>
+              </dl>
+              <dl>
+              	<dt><i class="icon-star"></i> Combining client-side and in-container tests</dt>
+              	<dd><p>It is possible to combine GWT client-side and standard in-container tests in the same test class. This allows to test features without having to worry about the client-server bridge and should pave the way for future support of Arquillian Warp and Drone in GWT integration tests.</p></dd>
+              </dl>
+              <h3>Getting Started</h3>
+              <p>To start using the Arquillian GWT extension just add the following dependency to your project:</p>
+              <div class="filename">pom.xml</div>
+              <pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.extension&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-gwt&lt;/artifactId&gt;&#x000A;    &lt;version&gt;1.0.0.Alpha1&lt;/version&gt;&#x000A;&lt;/dependency&gt;</code></pre>
+              <h3>Writing Arquillian GWT tests</h3>
+              <p>To run a test method as a GWT integration test either annotate the test class or test method with <code>@RunAsGwtClient</code> and specifiy the GWT module. If you annotate the test class all test methods in that class will run as GWT integration tests.</p>
+              <div class="filename">MyTestClass.java</div>
+              <pre class="prettify"><code class="prettify">&#x000A;@RunWith(Arquillian.class)&#x000A;public class MyTestClass {</code>&#x000A;&#x000A;<code class="prettify">  @Test &#x000A;  @RunAsGwtClient(moduleName = "org.myapp.MyGwtModule")&#x000A;  public void myGwtTest() {</code>&#x000A;&#x000A;<code class="prettify">  }&#x000A;}</code></pre>
+              <p>To help packaging your app for the test deployment Arquillian GWT provides a simple utility called <code>GwtArchive</code>. The next version of Arquillian GWT will automatically enhance the used <code>WebArchive</code>. So, you won&#8217;t need to use this utility in the future. Here&#8217;s a complete example:</p>
+              <div class="filename">GreeterRpcTest.java</div>
+              <pre class="prettify"><code class="prettify">&#x000A;@RunWith(Arquillian.class)&#x000A;public class GreeterRpcTest extends ArquillianGwtTestCase {</code>&#x000A;&#x000A;<code class="prettify">  @Deployment&#x000A;  public static WebArchive createDeployment() {&#x000A;    return GwtArchive.get()&#x000A;      .addClass(Greeter.class)&#x000A;      .addClass(GreetingService.class)&#x000A;      .addClass(GreetingServiceImpl.class);&#x000A;  }</code>&#x000A;&#x000A;<code class="prettify">  @Test&#x000A;  @RunAsGwtClient(moduleName = "org.myapp.MyGwtModule")&#x000A;  public void testGreetingService() {&#x000A;    GreetingServiceAsync greetingService = GWT.create(GreetingService.class);&#x000A;    greetingService.greetServer("Hello!", new AsyncCallback&lt;String&gt;() {&#x000A;      @Override&#x000A;      public void onFailure(Throwable caught) {&#x000A;        Assert.fail("Request failure: " + caught.getMessage());&#x000A;      }</code>&#x000A;&#x000A;<code class="prettify">      @Override&#x000A;      public void onSuccess(String result) {&#x000A;        assertEquals("Received invalid response from Server", "Welcome!", result);&#x000A;        finishTest();&#x000A;      }&#x000A;    });&#x000A;    delayTestFinish(5000);&#x000A;  }&#x000A;}</code></pre>
+              <p>Note that you will only need to extend <code>ArquillianGwtTestCase</code> if you want to inherit GWT&#8217;s asynchronous testing methods (<code>finishTest</code> and <code>delayTestFinish</code>).</p>
+              <p>We look forward to your feedback on this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
+              <h3>What is Arquillian?</h3>
+              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+              <h3>Release details</h3>
+              <table class="table table-bordered table-striped">
+                <tbody>
+                  <tr>
+                    <th>Component</th>
+                    <td>
+                      <a href="/modules/gwt-extension/">Arquillian GWT Testing extension</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Version</th>
+                    <td>
+                      1.0.0.Alpha1
+                      <span class="label tag">
+                        <a href="https://api.github.com/repos/arquillian/arquillian-extension-gwt/commits/91f792066d3d9660ec8f66864241a7d5cac2cfcd">view tag</a>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Release date</th>
+                    <td>2013-02-23</td>
+                  </tr>
+                  <tr>
+                    <th>Released by</th>
+                    <td>Christian Sadilek</td>
+                  </tr>
+                  <tr>
+                    <th>Compiled against</th>
+                    <td>
+                      <ul class="unstyled">
+                        <li>Arquillian Core &#8211; 1.0.2.Final</li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>
+                Published artifacts
+                <small>org.jboss.arquillian.extension</small>
+              </h3>
+              <ul>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-gwt
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-gwt/1.0.0.Alpha1/arquillian-gwt-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-gwt/1.0.0.Alpha1/arquillian-gwt-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+              </ul>
+              <h3>
+                Release notes and resolved issues
+                <small>1</small>
+              </h3>
+              <p>Initial prototype release</p>
+              <p>
+                Thanks to the following list of contributors:
+                <a href="https://community.jboss.org/people/csa">Christian Sadilek</a>, <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
+              </p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2013/02/26/arquillian-extension-gwt-1-0-0-Alpha1/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/gwt/">gwt</a>
+            </div>
+          </article>
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2013/02/16/devconf-hackfest/">Hackfest: DevConf 2013, Czech Republic, Brno</a>
+              </h2>
+              <div class="byline">
+                <img class="avatar" src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" />
+                <span class="author">Posted by
+                <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a></span>
+                <span class="dateinline">on Feb 16, 2013</span>
+                <div class="date"><abbr>Feb</abbr> 16</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2013/02/16/devconf-hackfest/#disqus_thread" data-disqus-identifier="09e41ddf271f21aab78d2ef338f4b9802228db11">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>In about a weeks time DevConf 2013 in Brno, Czech Republic will kick of for the 5. year in a row.<br />
+              This year, as last, we will take part in the HackFest spanning from Saturday 23. to Sunday 24. of February. And for the eager hackers even Monday 25. February.</p>
+              <h3>Introducing the candidates</h3>
+              <p>Without any more fuzz, let&#8217;s jump straight into some of the ideas we have for this hackfest. Of course, you&#8217;re free to bring your own as well!</p>
+              <h4>Gradle Container Controller</h4>
+              <p>One of the hacks that was started during the <a href="/blog/2012/11/15/devoxx-2012-hackergarten-overdrive/">Devoxx 2012 Hackergarten</a>: was the Arquillian Gradle integration. The basic idea is to leverage Arquillian&#8217;s Container support to control Containers and Deployments within the Gradle build system, much like we do for Maven via the Arquillian Maven Plugin. This in particular is a very interesting integration since it opens up Arquillian to a new type of usage, as a pure Container Controller.</p>
+              <p>Why would Gradle use Arquillian for this? It&#8217;s a simple matter of focus. Gradle care about build systems and don&#8217;t have the resources to implement support for all the Containers. Arquillian on the other hand care very much of the Containers and already support much more than Gradle currently do in this area. Perfect combination of two tools with different capabilities.</p>
+              <p>You can read up on some of the <a href="https://community.jboss.org/thread/213638">discussions</a> and see look at the early <a href="https://github.com/aslakknutsen/arquillian-gradle-plugin">prototype</a>.</p>
+              <p>The end goal would be to match as much as possible of the <a href="https://github.com/gradle/gradle/blob/master/design-docs/deploying-applications-for-testing.md">Gradle Design docs</a> and have Arquillian be the internal runner.</p>
+              <h4>Arquillian Forge Plugin &#8211; Extensions</h4>
+              <p><a href="http://forge.jboss.org/">JBoss Forge</a> is best described by them selves.</p>
+              <blockquote>
+              <p>A core framework and next-generation shell for tooling and automation at a command line level; with APIs for integration in IDEs, extending built in functionality with plugins, and scripting for automating repetitive tasks, Forge is a tool every open-source developer should be looking at.</p>
+              </blockquote>
+              <blockquote>
+              <p>A core framework for rapid-application development in a standards-based environment. Plugins / incremental project enhancement for Java EE, and more.</p>
+              </blockquote>
+              <p>There exists already an <a href="https://github.com/forge/plugin-arquillian">Arquillian Plugin</a> for Forge which handles setup of Arquillian Core and Container dependencies, Container configuration and simple TestClass generation.</p>
+              <p>But the missing bit is set up and support for the Arquillian Extensions. This hack should be able to answer, by using Forge, questions like:</p>
+              <ul>
+              	<li>How do I setup Drone, Persistence, Transactions?</li>
+              	<li>How do I configure Drone?</li>
+              	<li>Which configuration options does Persistence support?</li>
+              </ul>
+              <h4>Arquillian Warp</h4>
+              <p><a href="https://github.com/arquillian/arquillian-extension-warp">Arquillian Warp</a> fills the void between client-side and server-side testing. Using Warp, you can initiate an HTTP request using a client-side testing tool such as WebDriver and, in the same request cycle, execute in-container server-side tests. This powerful combination lets you cover integration across client and server.</p>
+              <h5>SeamTest</h5>
+              <p>Warp leverages any HTTP client (such as httpclient or WebDriver), to produce testable requests and provides server-side hooks which allows you to execute arbitrary logic in any part of the request lifecycle. However the fact that developer needs to provide HTTP request in order to test is limiting &#8211; sometimes you need to test using any request type: such as conversations. The goal is designing an API and implementation for testing sequence of requests without providing an HTTP client logic. (This extension should provide a migration layer for <a href="http://docs.jboss.org/seam/2.0.1.GA/reference/en/html/testing.html">SeamTest</a> )</p>
+              <h5>CDI events</h5>
+              <p>Warp plays nicely with IoC principles &#8211; your test does not need to tightly couple with container, it will bring all the necessary dependencies to the test. In Java EE, Warp leverages CDI to inject user-defined beans into the test. Warp has the potential to use much more from the concepts brought by CDI: observe CDI events, produce beans or intercept calls to existing beans. The idea is to provide hooks which would make testing of client request interaction with CDI beans as easy as defining Warp&#8217;s lifecycle hooks.</p>
+              <h4>Arquillian Google Web Toolkit</h4>
+              <p>The <a href="https://developers.google.com/web-toolkit/" title="GWT">Google Web Toolkit</a> is a development tool for building complex browser-based applications written in pure Java. The new Arquillian GWT extension brings true integration testing to GWT. This means that GWT integration tests can break free and execute in the actual runtime container instead of being tied to GWT&#8217;s embedded Jetty server. Further it is now possible to combine GWT client-side and standard in-container tests in the same test class. This allows to test features without having to worry about the client-server bridge and should pave the way for future support of Arquillian Warp and Drone in GWT integration tests.</p>
+              <h5>Remove the need for GwtArchive</h5>
+              <p>Currently the Arquillian GWT extension uses a custom utility (GwtArchive) to enrich WebArchives for GWT deployments. This causes the API for Arquillian GWT tests to deviate from standard Arquillian tests. It should be possible to automatically enhance the deployment archive to include all dependencies and configurations that are relevant to the GWT deployment, possibly by leveraging an Arquillian packaging SPI&#8217;s. As a result of this, GWT integration tests will use the same API as all other Arquillian tests.</p>
+              <h5>Leverage Arquillian Warp in GWT integration tests</h5>
+              <p>Warp enables tests to assert on both client-side and server-side logic and is an extremely useful tool for writing compact integration tests. The focus will be on brainstorming to come up with a battle plan for how Warp could be integrated with Arquillian GWT.</p>
+              <h4>Arquillian Distribution Extension</h4>
+              <p>This is probably the hardest and largest of them all. But even more interesting, right?. As Arquillian work today it will allow you to interact with local and remote Containers. But the big assumption with Remote Containers is that the Container is already up and running and we only need to connect to it. As we&#8217;re growing out to support more and more advanced use cases we&#8217;re starting to see the need for the ability to control and distribute infrastructure. Infrastructure being servers, containers or clouds.</p>
+              <p>A very brief description of what this extension should do:</p>
+              <ul>
+              	<li>Install Container A on Server B (copy source and configure)</li>
+              	<li>Install Container X on Server Y (copy source and configure)</li>
+              	<li>Configure Arquillian to use Container A on Server B</li>
+              	<li>Configure Arquillian to use Container X on Server Y</li>
+              </ul>
+              <p>From here on Arquillian Test takes over and run tests as described by the Test Suite. Next steps would be:</p>
+              <ul>
+              	<li>Uninstall Container X on Server Y</li>
+              	<li>Uninstall Container A on Server B</li>
+              </ul>
+              <p>This is particularly useful for the upcoming Performance Extension to allow it to install a full environment, including clients and targets, for performance testing.</p>
+              <h3>What is Arquillian?</h3>
+              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application&#8217;s behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+              <h4>When and where are we hacking?</h4>
+              <p>We are going to use the free Hackfest at DevConf 2013 as an opportunity to put our heads together to make progress on these ideas. Here are the details:</p>
+              <ul>
+              	<li>When: Saturday February 23 12:30 &#8211; 18:30 CET, Sunday February 24 09:00 &#8211; 18:30 CET, Monday February 25 09:00 &#8211; 17:00 CET</li>
+              	<li>Where: Hackfest at DevConf 2013 (Masaryk University, Faculty of Informatics, Brno, Czech Republic)</li>
+              	<li>Conference URL: <a href="http://devconf.cz/">http://devconf.cz/</a></li>
+              	<li>Hashtag: <a href="https://twitter.com/search/%23hackdevconf">#hackdevconf</a> and <a href="https://twitter.com/search/%23arquillian">#arquillian</a></li>
+              	<li>Lanyrd: <a href="http://lanyrd.com/2013/hackdevconf/">http://lanyrd.com/2013/hackdevconf/</a></li>
+              	<li>IRC: #arquillian on Freenode</li>
+              </ul>
+              <p>Of course, anyone is welcome to hack on these ideas at anytime from anywhere. This is open source!</p>
+              <h4>Who will be there hacking?</h4>
+              <ul>
+              	<li><a href="https://github.com/kpiwko">Karel Piwko</a> (Arquillian Drone Lead)</li>
+              	<li><a href="https://github.com/lfryc">Lukáš Fryč</a> (Arquillian Warp &amp; Graphene Lead)</li>
+              	<li><a href="https://github.com/mojavelinux">Dan Allen</a> (Arquillian team member)</li>
+              	<li><a href="http://github.com/aslakknutsen">Aslak Knutsen</a> (Arquillian Lead)</li>
+              	<li><strong>You</strong></li>
+              </ul>
+              <p><strong>Happy hacking!</strong></p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2013/02/16/devconf-hackfest/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/hack-idea/">hack-idea</a> <a class="tag" href="/blog/tags/2013/">2013</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
+            </div>
+          </article>
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2013/01/31/arquillian-extension-portal-1-0-0-Beta1/">Arquillian Portal Extension 1.0.0.Beta1 Released</a>
+              </h2>
+              <div class="byline">
+                <img class="avatar" src="http://gravatar.com/avatar/74e721dd22b0d509b85746c5edf559c8?s=44" />
+                <span class="author">Posted by
+                <a href="https://community.jboss.org/people/kenfinni">Ken Finnigan</a></span>
+                <span class="dateinline">on Jan 31, 2013</span>
+                <div class="date"><abbr>Jan</abbr> 31</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2013/01/31/arquillian-extension-portal-1-0-0-Beta1/#disqus_thread" data-disqus-identifier="21548fb65a2a400c6343f2f02053931ba9de3b92">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>The Arquillian team is proud to announce the <em>1.0.0.Beta1</em> release of the <em>Arquillian Portal Extension</em> component!</p>
+              <h3>Highlighted Features</h3>
+              <dl>
+              	<dt><i class="icon-star"></i> Shrinkwrap Archive type for portlets</dt>
+              	<dd><p>We now have <code>PortletArchive</code> for creating Shrinkwrap archives for portlets. (<a href="#portlet-archive">read more</a>)</p></dd>
+              </dl>
+              <dl>
+              	<dt><i class="icon-star"></i> Helpers for creating portlet.xml</dt>
+              	<dd><p>Within <code>PortletArchive</code> there are some simple helpers for creating the contents of portlet.xml. (<a href="#portlet-descriptor-helper">read more</a>)</p></dd>
+              </dl>
+              <h3 id="portlet-archive">Shrinkwrap Archive type for portlets</h3>
+              <p>We can now use <code>PortletArchive</code> instead of <code>WebArchive</code> when we&#8217;re creating micro deployments for testing a portlet. In it includes methods for setting the content of portlet.xml without needing to specify the path, in a similar manner that <code>WebArchive</code> provides setWebXML() methods.</p>
+              <h3 id="portlet-descriptor-helper">Helpers for creating portlet.xml</h3>
+              <p><code>PortletArchive</code> also adds some nice helpers for creating <code>GenericPortlet</code> or <code>GenericFacesPortlet</code> portlet definitions within portlet.xml. A <code>GenericPortlet</code> can be added to portlet.xml by:</p>
+              <pre class="prettify"><code class="prettify">Shrinkwrap.create(PortletArchive.class)&#x000A;	.createSimplePortlet(MyPortletClass.class);</code></pre>
+              <p>And adding a portlet for JSF is:</p>
+              <pre class="prettify"><code class="prettify">Shrinkwrap.create(PortletArchive.class)&#x000A;	.createFacesPortlet("portletName", "Portlet Title", "index.xhtml");</code></pre>
+              <p>For examples on how to use these extensions with their respective portal containers, you can take a look at the <a href="https://github.com/portletbridge/portletbridge/tree/master/testsuites">testsuite</a> of Portlet Bridge.</p>
+              <p>We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
+              <h3>What is Arquillian?</h3>
+              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+              <h3>Release details</h3>
+              <table class="table table-bordered table-striped">
+                <tbody>
+                  <tr>
+                    <th>Component</th>
+                    <td>
+                      <a href="/modules/portal-extension/">Arquillian Portal Extension</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Version</th>
+                    <td>
+                      1.0.0.Beta1
+                      <span class="label tag">
+                        <a href="https://api.github.com/repos/arquillian/arquillian-extension-portal/commits/2ae05012ae25887d4369e0f27263438a03c57df1">view tag</a>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Release date</th>
+                    <td>2013-01-31</td>
+                  </tr>
+                  <tr>
+                    <th>Released by</th>
+                    <td>Ken Finnigan</td>
+                  </tr>
+                  <tr>
+                    <th>Compiled against</th>
+                    <td>
+                      <ul class="unstyled">
+                        <li>Arquillian Core &#8211; 1.0.3.Final</li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>
+                Published artifacts
+                <small>org.jboss.arquillian.extension</small>
+              </h3>
+              <ul>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-portal
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal/1.0.0.Beta1/arquillian-portal-1.0.0.Beta1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal/1.0.0.Beta1/arquillian-portal-1.0.0.Beta1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-portal-api
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-api/1.0.0.Beta1/arquillian-portal-api-1.0.0.Beta1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-api/1.0.0.Beta1/arquillian-portal-api-1.0.0.Beta1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-portal-impl
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-impl/1.0.0.Beta1/arquillian-portal-impl-1.0.0.Beta1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-impl/1.0.0.Beta1/arquillian-portal-impl-1.0.0.Beta1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-portal-shrinkwrap-api
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-shrinkwrap-api/1.0.0.Beta1/arquillian-portal-shrinkwrap-api-1.0.0.Beta1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-shrinkwrap-api/1.0.0.Beta1/arquillian-portal-shrinkwrap-api-1.0.0.Beta1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-portal-shrinkwrap-impl
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-shrinkwrap-impl/1.0.0.Beta1/arquillian-portal-shrinkwrap-impl-1.0.0.Beta1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-shrinkwrap-impl/1.0.0.Beta1/arquillian-portal-shrinkwrap-impl-1.0.0.Beta1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-portal-spi
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-spi/1.0.0.Beta1/arquillian-portal-spi-1.0.0.Beta1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-spi/1.0.0.Beta1/arquillian-portal-spi-1.0.0.Beta1.pom" target="_blank">pom</a>
+                </li>
+              </ul>
+              <h3>
+                Release notes and resolved issues
+                <small>2</small>
+              </h3>
+              <p></p>
+              <dl>
+                <dt>Feature Request</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1279">ARQ-1279</a> -         Create PortletArchive as Shrinkwrap archive type for portlets</li>
+                  </ul>
+                </dd>
+              </dl>
+              <p>
+                Thanks to the following list of contributors:
+                <a href="https://community.jboss.org/people/kenfinni">Ken Finnigan</a>
+              </p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2013/01/31/arquillian-extension-portal-1-0-0-Beta1/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/portal/">portal</a>
+            </div>
+          </article>
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2013/01/24/arquillian-extension-drone-1-1-1-Final/">Arquillian Drone Extension 1.1.1.Final Released</a>
+              </h2>
+              <div class="byline">
+                <img class="avatar" src="http://gravatar.com/avatar/739e72e6563e5a221b69c19c31ce6228?s=44" />
+                <span class="author">Posted by
+                <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a></span>
+                <span class="dateinline">on Jan 24, 2013</span>
+                <div class="date"><abbr>Jan</abbr> 24</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2013/01/24/arquillian-extension-drone-1-1-1-Final/#disqus_thread" data-disqus-identifier="3d6eaf84bd42c21003032ccb132ca3c7b512a286">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>The Arquillian team is proud to announce the <em>1.1.1.Final</em> release of the <em>Arquillian Drone Extension</em> component!</p>
+              
+              <h3>What is Arquillian?</h3>
+              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+              <h3>Release details</h3>
+              <table class="table table-bordered table-striped">
+                <tbody>
+                  <tr>
+                    <th>Component</th>
+                    <td>
+                      <a href="/modules/drone-extension/">Arquillian Drone Extension</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Version</th>
+                    <td>
+                      1.1.1.Final
+                      <span class="label tag">
+                        <a href="https://api.github.com/repos/arquillian/arquillian-extension-drone/commits/338c33cb570e2011c6f617e12978fe998e712fe7">view tag</a>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Release date</th>
+                    <td>2013-01-24</td>
+                  </tr>
+                  <tr>
+                    <th>Released by</th>
+                    <td>Lukas Fryc</td>
+                  </tr>
+                  <tr>
+                    <th>Compiled against</th>
+                    <td>
+                      <ul class="unstyled">
+                        <li>Arquillian Core &#8211; 1.0.3.Final</li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>
+                Published artifacts
+                <small>org.jboss.arquillian.extension</small>
+              </h3>
+              <ul>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-drone-api
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.1.Final/arquillian-drone-api-1.1.1.Final.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.1.1.Final/arquillian-drone-api-1.1.1.Final.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-drone-bom
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-bom/1.1.1.Final/arquillian-drone-bom-1.1.1.Final.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-drone-configuration
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.1.Final/arquillian-drone-configuration-1.1.1.Final.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.1.1.Final/arquillian-drone-configuration-1.1.1.Final.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-drone-impl
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.1.Final/arquillian-drone-impl-1.1.1.Final.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.1.1.Final/arquillian-drone-impl-1.1.1.Final.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-drone-selenium
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.1.Final/arquillian-drone-selenium-1.1.1.Final.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.1.1.Final/arquillian-drone-selenium-1.1.1.Final.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-drone-selenium-depchain
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-depchain/1.1.1.Final/arquillian-drone-selenium-depchain-1.1.1.Final.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-drone-selenium-server
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.1.Final/arquillian-drone-selenium-server-1.1.1.Final.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.1.1.Final/arquillian-drone-selenium-server-1.1.1.Final.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-drone-spi
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.1.Final/arquillian-drone-spi-1.1.1.Final.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.1.1.Final/arquillian-drone-spi-1.1.1.Final.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-drone-webdriver
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.1.Final/arquillian-drone-webdriver-1.1.1.Final.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.1.1.Final/arquillian-drone-webdriver-1.1.1.Final.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-drone-webdriver-depchain
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver-depchain/1.1.1.Final/arquillian-drone-webdriver-depchain-1.1.1.Final.pom" target="_blank">pom</a>
+                </li>
+              </ul>
+              <h3>
+                Release notes and resolved issues
+                <small>7</small>
+              </h3>
+              <p>Bug fix release for Arquillian Drone 1.1.0.Final</p>
+              <dl>
+                <dt>Bug</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1251">ARQ-1251</a> -         Arquillian Drone is unable to instantiate Firefox driver if acceptSslCerts, webStorageEnabled, loggingPrefs properties are used in arquillian.xml</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1258">ARQ-1258</a> -         Allow Chrome switches to contain spaces</li>
+                  </ul>
+                </dd>
+              </dl>
+              <dl>
+                <dt>Component  Upgrade</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1252">ARQ-1252</a> -         Upgrade to Selenium 2.28.0 and use Selenium BOM</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1280">ARQ-1280</a> -         Update selenium to 2.29.0</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1281">ARQ-1281</a> -         Update Arquillian Core in Drone to 1.0.3.Final</li>
+                  </ul>
+                </dd>
+              </dl>
+              <dl>
+                <dt>Task</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-952">ARQ-952</a> -         Avoid heavy-weight tests for Drone functional testing</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1268">ARQ-1268</a> -         Prepare Drone 1.1.1.Final release</li>
+                  </ul>
+                </dd>
+              </dl>
+              <p>
+                Thanks to the following list of contributors:
+                <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/trepel">Tomas Repel</a>, <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>
+              </p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2013/01/24/arquillian-extension-drone-1-1-1-Final/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/drone/">drone</a> <a class="tag" href="/blog/tags/jbosscentral/">jbosscentral</a>
+            </div>
+          </article>
           <article class="post">
             <header class="header">
               <h2 class="title">
@@ -367,779 +892,6 @@
               tagged as
               <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/graphene/">graphene</a>
             </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2013/01/15/arquillian-extension-warp-1-0-0-Alpha2/">Arquillian Warp 1.0.0.Alpha2 Released</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/739e72e6563e5a221b69c19c31ce6228?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a></span>
-                <span class="dateinline">on Jan 15, 2013</span>
-                <div class="date"><abbr>Jan</abbr> 15</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2013/01/15/arquillian-extension-warp-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="a4c1eba3027f804c93f29250780079c9a93fbda4">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha2</em> release of the <em>Arquillian Warp</em> component!</p>
-              <p>It has been a pretty long road from Alpha1 to this release, focused primarily on polishing the user experience.</p>
-              <p>So without any further ado, let’s look at the new shiny features!</p>
-              <h3>Highlighted Features</h3>
-              <dl>
-              	<dt><i class="icon-star"></i> Renaming Warp API methods</dt>
-              	<dd><p>The API methods were renamed according to the results of our public survey. (<a href="#renaming-warp-api">read more</a>)</p></dd>
-              </dl>
-              <p>In the simplest scenario you want to inspect the first request after performing a given client activity. For this purpose, you can use a basic Warp API known from Alpha1:</p>
-              <pre class="prettify"><code class="prettify">Warp&#x000A;    .initiate(Activity)&#x000A;    .inspect(Inspection);</code></pre>
-              <p>This will intercept the first request coming from the client and ignore the rest of the potential requests.</p>
-              <p>Additionally, Warp will ignore requests for <tt>favicon.ico</tt> which could fail your test unexpectadly.</p>
-              <p>You can find more samples for this <a href="https://github.com/arquillian/arquillian-extension-warp/blob/1.0.0.Alpha2/api/src/test/java/org/jboss/arquillian/warp/TestExecutionAPI.java#L62">API in a source</a> .</p>
-              <dl>
-              	<dt><i class="icon-star"></i> Anonymous and Inner Classes</dt>
-              	<dd><p>It&#8217;s now much easier to define a verification code, which is also more readable.</p></dd>
-              </dl>
-              <p>In <em>Alpha1</em>, you had to use a <em>top-level</em> or a <em>static inner classes</em> to define inspections.</p>
-              <p>In <em>Alpha2</em>, you can provide <em>non-static inner class</em> or even <em>anonymous class</em>.</p>
-              <div class="filename">HelloWarp.java</div>
-              <pre class="prettify"><code class="prettify">Warp&#x000A;    // first you need to initiate activity which triggers HTTP request&#x000A;    .initiate(new Activity() {&#x000A;        public void perform() {&#x000A;            ajaxButton.click();&#x000A;        }&#x000A;    })</code>&#x000A;&#x000A;<code class="prettify">    // and then specify what behavior should be inspected on the server&#x000A;    .inspect(new Inspection() {</code>&#x000A;&#x000A;<code class="prettify">        // don't forget to specify serialVerionUID to allow serialization&#x000A;        private static final long serialVersionUID = 1L;</code>&#x000A;        &#x000A;<code class="prettify">        // bring JSF context via dependency injection&#x000A;        @ArquillianResource&#x000A;        FacesContext facesContext;</code>&#x000A;&#x000A;<code class="prettify">        // verify expected behavior in given request phase&#x000A;        @AfterPhase(RESTORE_VIEW)&#x000A;        public void beforeServlet() {&#x000A;            assertTrue(facesContext.isPostback());&#x000A;        }&#x000A;    });</code></pre>
-              <p>This example showed how to use the new API together with anonymous inspections</p>
-              <dl>
-              	<dt><i class="icon-star"></i> Multiple Requests / Request Groups</dt>
-              	<dd><p>It is possible to intercept several requests during one Warp execution.</p></dd>
-              </dl>
-              <p>Warp allows you to verify more than one request triggered by a single client activity. This allows you to verify e.g. a request for HTML page and all its resources (JS, CSS, images) separately. This feature is called <em>Request Groups</em>.</p>
-              <div class="filename">TestRequestGroups.java</div>
-              <pre class="prettify"><code class="prettify">// Request Group execution will return WarpResult&#x000A;WarpResult result = Warp&#x000A;    .initiate(Activity)&#x000A;    // a group specification without name - the name will be generated&#x000A;    .group()&#x000A;        .observe(HttpRequestFilter)&#x000A;        .inspect(Inspection1)&#x000A;    // a named group specification - the result can be easily accessed&#x000A;    .group("second")&#x000A;        .observe(HttpRequestFilter)&#x000A;        .inspect(Inspection2)&#x000A;    // you need to execute whole Request Group once it is completely specified&#x000A;    .execute();</code>&#x000A;    &#x000A;<code class="prettify">    // you can access details of finished execution&#x000A;    result.getGroup("second").getInspection();</code></pre>
-              <p>The <em>Request Groups</em> execution returns a <code>WarpResult</code> which contains details about the finished execution. In order to access the results related to a specific group, you can give the group a name</p>
-              <dl>
-              	<dt><i class="icon-star"></i> Request Observers &amp; Fluent API</dt>
-              	<dd><p>The new API for observing the correct request allows you to select which request should be verified on a server.</p></dd>
-              </dl>
-              <p>When using <em>Request Groups</em>, all of the requests will be inspected by the inspections defined in that group. There might be one or more requests verified by each group.</p>
-              <p>Since multiple request can be triggered, you might want to choose the correct request to observe. For this purpose, we have the <code>HttpRequestFilter</code> interface, where you specify which <code>HttpRequest</code> should matches the current group.</p>
-              <pre class="prettify"><code class="prettify">import static org.jboss.arquillian.warp.client.filter.http.HttpFilters.request;</code>&#x000A;&#x000A;<code class="prettify">// will accept only requests for HTML&#x000A;...group()&#x000A;    .observe(request().uri().contains(".html"))</code>&#x000A;&#x000A;<code class="prettify">// will accept only REST requests for JSON&#x000A;...group()&#x000A;    .observe(request().header().containsValue("Accept", "application/json"))</code>&#x000A;&#x000A;<code class="prettify">// will accept only POST requests&#x000A;...group()&#x000A;   .observe(request().method().equal(POST))</code></pre>
-              <p>In order to simplify writing the Warp specifications, you can define the observer using a fluent API and static factory methods.</p>
-              <dl>
-              	<dt><i class="icon-star"></i> Dependency Injection for Servlets and JSF</dt>
-              	<dd><p>Test enrichers now allow the the injection of Servlet and JSF resources. (<a href="#servlet-jsf-enrichments">read more</a>)</p></dd>
-              </dl>
-              <dl>
-              	<dt><i class="icon-star"></i> Renaming Phaser to Warp JSF</dt>
-              	<dd><p>The JSF specific extension was renamed from Phaser to Warp JSF. (<a href="#renaming-phaser-to-warp-jsf">read more</a>)</p></dd>
-              </dl>
-              <dl>
-              	<dt><i class="icon-star"></i> Introduction of Dependency Chain</dt>
-              	<dd><p>The dependency chain was introduced to bring in all necessary dependencies by specifying just one dependency. (<a href="#warp-dependency-chain">read more</a>)</p></dd>
-              </dl>
-              <dl>
-              	<dt><i class="icon-star"></i> Warp Extensions for REST and Spring MVC</dt>
-              	<dd><p>Thanks to <a href="/community/contributors/">Jakub Narloch</a>, we have two new additions to Arquillian Galaxy. (<a href="#warp-extensions-rest-spring">read more</a>)</p></dd>
-              </dl>
-              <h3>Under the Hood</h3>
-              <dl>
-              	<dt><i class="icon-star"></i> Usability and Debugging Improvements</dt>
-              	<dd><p>A focus of Alpha2 was to polishing the way Warp behave in case of failures and on debuggability of Warp execution.</p></dd>
-              </dl>
-              <dl>
-              	<dt><i class="icon-star"></i> Validation of Warp Specification</dt>
-              	<dd><p>Warp now validates that the number of observed requests match a number of expected requests. It also makes sure that all of defined lifecycle callbacks are executed on the server, to avoid any false positives.</p></dd>
-              </dl>
-              <p>As you can see there are many of new features, so let&#8217;s look at them separately:</p>
-              <h3 id="renaming-warp-api">Renaming Warp API</h3>
-              <p>After Alpha1 we <a href="https://community.jboss.org/message/777404#777404">got several requests</a> for clarifying the Warp high-level API:</p>
-              <pre class="prettify"><code class="prettify">Warp.execute(ClientAction).verify(ServerAssertion)</code></pre>
-              <p>The <a href="https://docs.google.com/spreadsheet/viewform?formkey=dFlZeGI3ZklOUVlDX2M2V2owUkFmYVE6MQ">announced survey</a> helped us choose the new API. As a result, <a href="https://issues.jboss.org/secure/attachment/12358992/warp-api-method-naming-survey-responses.pdf">88&#37; of participants reported</a> they found this new API more natural:</p>
-              <pre class="prettify"><code class="prettify">Warp.initiate(Activity).inspect(Inspection)</code></pre>
-              <p>Big thanks to everyone who participated in the survey! This type of collaboration makes me really proud to be part of the team.</p>
-              <h3 id="warp-extensions-rest-spring">Warp Extensions: REST and Spring MVC</h3>
-              <p>Warp was from the beginning built as a project that focused on any framework/technology that is based on top of the Servlet API.</p>
-              <p>Thus it&#8217;s not surprising that there are already two extensions shaping out thanks to <a href="/community/contributors/">Jakub Narloch</a>:</p>
-              <ul>
-              	<li><a href="/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/">Spring MVC</a></li>
-              	<li><a href="https://github.com/jmnarloch/arquillian-extension-warp-rest">REST</a></li>
-              </ul>
-              <h3 id="warp-dependency-chain">Introduction of Dependency Chain</h3>
-              <p>Putting Warp to work in your Maven project is now as easy as defining a single dependency:</p>
-              <div class="filename">pom.xml</div>
-              <pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.extension&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-warp&lt;/artifactId&gt;&#x000A;    &lt;version&gt;1.0.0.Alpha2&lt;/version&gt;&#x000A;    &lt;type&gt;pom&lt;/type&gt;&#x000A;&lt;/dependency&gt;</code></pre>
-              <p>This declaration will bring Warp core, which supports Servlet API lifecycle callbacks.</p>
-              <h3 id="renaming-phaser-to-warp-jsf">Renaming Phaser to Warp JSF</h3>
-              <p>Initially we had created Phaser as the next generation of the successful <a href="http://www.jboss.org/jsfunit/">JSFUnit</a>. It occured to use that Phaser is an unfortunate name and it just makes it harded to understand the Arquillian eco-system.</p>
-              <p>That&#8217;s why we have come up with a simpler variant &#8211; so let me introduce the Warp JSF extension.</p>
-              <p>You can bring Warp JSF to your project just by adding the following declaration:</p>
-              <div class="filename">pom.xml</div>
-              <pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.extension&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-warp-jsf&lt;/artifactId&gt;&#x000A;    &lt;version&gt;1.0.0.Alpha2&lt;/version&gt;&#x000A;&lt;/dependency&gt;</code></pre>
-              <h3 id="servlet-jsf-enrichments">Dependency Injection for Servlets and JSF</h3>
-              <p>After the announcement of the Alpha1 release, we focused on improving Warp to come closer to the Arquillian goal: bring all necessary dependencies to the test (in our case to inspection).</p>
-              <p>Now, you can not only inject all CDI managed beans (<code>@Inject</code>), EJB beans (<code>@EJB</code>) or container managed resources <code>@Resource</code>, but you can also inject the following resources:</p>
-              <ul>
-              	<li><strong>Servlet resources</strong>
-              	<ul>
-              		<li><code>ServletRequest</code> or <code>HttpServletRequest</code></li>
-              		<li><code>ServletResponse</code> or <code>HttpServletResponse</code></li>
-              	</ul></li>
-              </ul>
-              <ul>
-              	<li><strong>JSF resources</strong>
-              	<ul>
-              		<li><code>FacesContext</code></li>
-              		<li><code>Application</code></li>
-              		<li><code>ELContext</code>, <code>ELResolver</code>, <code>ExpressionFactory</code></li>
-              		<li><code>ExceptionHandler</code></li>
-              		<li><code>Flash</code></li>
-              		<li><code>NavigationHandler</code></li>
-              		<li><code>PartialViewContext</code></li>
-              		<li><code>RenderKit</code></li>
-              		<li><code>ResourceHandler</code></li>
-              		<li><code>StateManager</code></li>
-              		<li><code>UIViewRoot</code></li>
-              		<li><code>ViewHandler</code></li>
-              	</ul></li>
-              </ul>
-              <h3>Migration from Alpha1</h3>
-              <p>We&#8217;ve create a little <a href="https://gist.github.com/4275537">bash script</a> to convert the java source from Alpha1 API to Alpha2 that might help you with the upgrade.</p>
-              <h3>How to Learn Warp?</h3>
-              <p>The best way now is to look at functional tests for <a href="https://github.com/arquillian/arquillian-extension-warp/tree/master/ftest/src/test/java/org/jboss/arquillian/warp/ftest">Warp</a> or <a href="https://github.com/arquillian/arquillian-extension-warp/tree/master/extension/jsf-ftest/src/test/java/org/jboss/arquillian/warp/jsf/ftest">Warp JSF</a>.</p>
-              <h3>Roadmap</h3>
-              <p>The roadmap to <em>Beta1</em> is pretty clear:</p>
-              <ul>
-              	<li>documentation and guides</li>
-              	<li>adding features known from <a href="http://docs.jboss.org/seam/2.0.1.GA/reference/en/html/testing.html">SeamTest</a> and <a href="http://www.jboss.org/jsfunit/">JSFUnit</a></li>
-              	<li>new injections and event hooks (e.g. improved CDI integration)</li>
-              	<li>hardering and usability enhancements (here we rely on your issue reports!)</li>
-              </ul>
-              <p>Along the way we will welcome <strong>every idea for integrating Warp with your favorite web framework</strong> &#8211; so don&#8217;t be a stranger and come to us!</p>
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/warp-extension/">Arquillian Warp</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.0.0.Alpha2
-                      <span class="label tag">
-                        <a href="https://api.github.com/repos/arquillian/arquillian-extension-warp/commits/10187c5c719c6bc8c96a550e5cde82aaf2a49dd7">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2013-01-08</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Lukas Fryc</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>Arquillian Core &#8211; 1.0.3.Final</li>
-                        <li>ShrinkWrap Resolvers &#8211; 2.0.0-alpha-1</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.extension</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-warp-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-api/1.0.0.Alpha2/arquillian-warp-api-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-api/1.0.0.Alpha2/arquillian-warp-api-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-warp-bom
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-bom/1.0.0.Alpha2/arquillian-warp-bom-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-warp-build-resources
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-build-resources/1.0.0.Alpha2/arquillian-warp-build-resources-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-build-resources/1.0.0.Alpha2/arquillian-warp-build-resources-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-warp-ftest
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-ftest/1.0.0.Alpha2/arquillian-warp-ftest-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-ftest/1.0.0.Alpha2/arquillian-warp-ftest-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-warp-impl
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-impl/1.0.0.Alpha2/arquillian-warp-impl-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-impl/1.0.0.Alpha2/arquillian-warp-impl-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-warp-jsf
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf/1.0.0.Alpha2/arquillian-warp-jsf-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf/1.0.0.Alpha2/arquillian-warp-jsf-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-warp-jsf-ftest
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf-ftest/1.0.0.Alpha2/arquillian-warp-jsf-ftest-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-jsf-ftest/1.0.0.Alpha2/arquillian-warp-jsf-ftest-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-warp-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spi/1.0.0.Alpha2/arquillian-warp-spi-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spi/1.0.0.Alpha2/arquillian-warp-spi-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <h3>
-                Release notes and resolved issues
-                <small>35</small>
-              </h3>
-              <p>Renaming API methods according to survey; Anonymous/Inner Class; Request Observers/Filters</p>
-              <dl>
-                <dt>Bug</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-972">ARQ-972</a> -         Warp tests should be excluded from scanning by CDI container</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-973">ARQ-973</a> -         Warp: if primitive field in ServerAssertion is changed during test, it is wrongly changed to initial value on deenrichment</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-976">ARQ-976</a> -         The exceptions that occurrs in @AfterServlet test is not being propagated back to the client.</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-982">ARQ-982</a> -         Response header size exceeded in Warp test.</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-992">ARQ-992</a> -         Warp does not support request redirection.</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1063">ARQ-1063</a> -         Warp: when both ServerAssertion and ClientAction fails, server error should be reported</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1163">ARQ-1163</a> -         Warp: response is not properly commited</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1174">ARQ-1174</a> -         Warp: DeploymentEnricher should check whether current TestClass is annotated with WarpTest</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1195">ARQ-1195</a> -         Warp: do not remove static inner classes from deployment</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1197">ARQ-1197</a> -         Warp: report that serialVersionUID was not set for Inspection</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1254">ARQ-1254</a> -         Warp: RequestPayload decides whether transform class for all inspections instead of each inspection at own</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Component  Upgrade</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1052">ARQ-1052</a> -         Upgrade Arquillian Core to 1.0.3.Final</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1053">ARQ-1053</a> -         Upgrade Arquillian Drone to 1.1.0.Final</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Enhancement</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-979">ARQ-979</a> -         Exposed BeforeServlet and AfterServlet events to SPI</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-980">ARQ-980</a> -         Make ServletRequest an injectable resource</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-981">ARQ-981</a> -         Move BeforeServlet and AfterServlet events to SPI</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1060">ARQ-1060</a> -         Fail to start a Warp test when @Deployment(testable=false) and when no @RunAsClient present</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1120">ARQ-1120</a> -         Warp: safe propagation server-side failures to client-side</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1223">ARQ-1223</a> -         Warp JSF: refactor PhaseLifecycleEvent to expose name of the event when debugging</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1224">ARQ-1224</a> -         Warp: expose RequestContext and RequestScope to SPI</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1236">ARQ-1236</a> -         Warp: filter favicon.ico requests by default</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1246">ARQ-1246</a> -         Warp: single execution should observe only first request</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Feature Request</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-932">ARQ-932</a> -         Warp: support for inner/anonymous classes</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-937">ARQ-937</a> -         Add usage examples to API/SPI classes</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-964">ARQ-964</a> -         Verify that all tests in ServerAssertion has been called - prevents false negatives</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-965">ARQ-965</a> -         Warp: Enable common JSF objects (FacesContext, Application) to be injected using @ArquillianResource</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-967">ARQ-967</a> -         Warp: client-side filters for waiting for "right" request or enriching several requests</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1056">ARQ-1056</a> -         Warp: Enable common JSF objects (FacesContext, Application) to be injected using @Inject</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1057">ARQ-1057</a> -         Warp: Resource provider for HttpServletRequest/HttpServletResponse</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1061">ARQ-1061</a> -         Debug output from Warp when Arquillian logging enabled</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1073">ARQ-1073</a> -         Warp: buffering writer/stream re-initializes on each getWriter/getOutputStream call</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1204">ARQ-1204</a> -         Builder for Warp filters.</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Task</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1054">ARQ-1054</a> -         Warp: rename arquillian-warp-phaser to arquillian-warp-jsf</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1055">ARQ-1055</a> -         Introduce Warp depchain</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1233">ARQ-1233</a> -         Warp: rename API according to results of survey</li>
-                  </ul>
-                </dd>
-              </dl>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://community.jboss.org/people/jmnarloch">Jakub Narloch</a>, <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://community.jboss.org/people/mkouba">Martin Kouba</a>, <a href="https://community.jboss.org/people/bleathem">Brian Leathem</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2013/01/15/arquillian-extension-warp-1-0-0-Alpha2/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/warp/">warp</a>
-            </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2013/01/15/arquillian-extension-drone-1-2-0-Alpha1/">Arquillian Drone Extension 1.2.0.Alpha1 Released</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
-                <span class="dateinline">on Jan 15, 2013</span>
-                <div class="date"><abbr>Jan</abbr> 15</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2013/01/15/arquillian-extension-drone-1-2-0-Alpha1/#disqus_thread" data-disqus-identifier="81436c6d19b98a604a6e8e959896ec753b9c409f">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.2.0.Alpha1</em> release of the <em>Arquillian Drone Extension</em> component!</p>
-              <p><img src="/images/blog/drone_400.png" class="graphic pull-right" alt="" /> We&#8217;ve introduced new features and bugfixes in 1.2.0.Alpha1 while still preserving backwards compatibility with 1.1.0.Final. We fixed an annoying bug that made usage of some capabilities impossible and have delivered some Firefox goodies.</p>
-              <h3 class="highlights">Significant changes since 1.1.0.Final</h3>
-              <dl>
-              	<dt><i class="icon-star"></i> Updated Selenium to 2.28.0 and introduced Selenium BOM</dt>
-              	<dd><p>Now you can switch to next Selenium version only by including following snippet in your pom.xml file.</p>
-              <div class="filename">pom.xml</div>
-              <pre class="prettify"><code class="prettify">&lt;dependencyManagement&gt;<br />&#x000A;    &lt;dependencies&gt;<br />&#x000A;        &lt;groupId&gt;org.jboss.arquillian.selenium&lt;/groupId&gt;<br />&#x000A;        &lt;artifactId&gt;selenium-bom&lt;/artifactId&gt;<br />&#x000A;        &lt;version&gt;${version.selenium}&lt;/version&gt;<br />&#x000A;        &lt;type&gt;pom&lt;/type&gt;<br />&#x000A;        &lt;scope&gt;import&lt;/scope&gt;<br />&#x000A;    &lt;/dependencies&gt;<br />&#x000A;&lt;/dependencyManagement&gt;</code></pre></dd>
-              </dl>
-              <p class="warning"><span>This snippet must be placed above arquillian-drone-bom in order to override Selenium versions.</span></p>
-              <dl>
-              	<dt><i class="icon-star"></i> Support for loading XPI into Firefox profile</dt>
-              	<dd><p>There is no need to work with a separate Firefox profile. Simply use the WebDriver generated one and let Drone install all extensions you need.</p>
-              <div class="filename">arquillian.xml</div>
-              <pre class="prettify"><code class="prettify">&lt;extension qualifier=&#8220;webdriver&#8221;&gt;<br />&#x000A;    &lt;property name=&#8220;browserCapabilities&#8221;&gt;firefox&lt;/property&gt;<br />&#x000A;    &lt;property name=&#8220;firefoxExtensions&#8221;&gt;/path/to/extension1 &#8220;/path/to extension2/with/space&#8221;&lt;/property&gt;<br />&#x000A;&lt;/extension&gt;</code></pre></dd>
-              </dl>
-              <dl>
-              	<dt><i class="icon-star"></i> Ability to set WebDriver logging level</dt>
-              	<dd><p>Drone allows to to set the logging level for Firefox WebDriver directly from Arquillian configuration.</p>
-              <div class="filename">arquillian.xml</div>
-              <pre class="prettify"><code class="prettify">&lt;extension qualifier=&#8220;webdriver&#8221;&gt;<br />&#x000A;    &lt;property name=&#8220;browserCapabilities&#8221;&gt;firefox&lt;/property&gt;<br />&#x000A;    &lt;property name=&#8220;loggingPrefs&#8221;&gt;driver=INFO,profiler=WARNING&lt;/property&gt;<br />&#x000A;&lt;/extension&gt;</code></pre></dd>
-              </dl>
-              <p class="info"><span>Logging level are the same as for JUL, that is SEVERE, WARNING, INFO, CONFIG, FINE, FINER and FINEST.</span></p>
-              <p>I&#8217;d like to thank everybody involved in this release. <em>You guys make testing a breeze!</em></p>
-              <p>We hope that you&#8217;ll enjoy the improvements. We look forward to hear your feedback in the <a href="http://community.jboss.org/en/arquillian">community forums</a>.</p>
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/drone-extension/">Arquillian Drone Extension</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.2.0.Alpha1
-                      <span class="label tag">
-                        <a href="https://api.github.com/repos/arquillian/arquillian-extension-drone/commits/5f0f37d7f5f30a1e7f29f1af51b3aa5fb52c05cf">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2013-01-09</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Lukas Fryc</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>Arquillian Core &#8211; 1.0.2.Final</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.extension</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-drone-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.2.0.Alpha1/arquillian-drone-api-1.2.0.Alpha1.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-api/1.2.0.Alpha1/arquillian-drone-api-1.2.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-drone-bom
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-bom/1.2.0.Alpha1/arquillian-drone-bom-1.2.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-drone-configuration
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.2.0.Alpha1/arquillian-drone-configuration-1.2.0.Alpha1.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-configuration/1.2.0.Alpha1/arquillian-drone-configuration-1.2.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-drone-impl
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.2.0.Alpha1/arquillian-drone-impl-1.2.0.Alpha1.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-impl/1.2.0.Alpha1/arquillian-drone-impl-1.2.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-drone-selenium
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.2.0.Alpha1/arquillian-drone-selenium-1.2.0.Alpha1.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium/1.2.0.Alpha1/arquillian-drone-selenium-1.2.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-drone-selenium-depchain
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-depchain/1.2.0.Alpha1/arquillian-drone-selenium-depchain-1.2.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-drone-selenium-server
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.2.0.Alpha1/arquillian-drone-selenium-server-1.2.0.Alpha1.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-selenium-server/1.2.0.Alpha1/arquillian-drone-selenium-server-1.2.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-drone-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.2.0.Alpha1/arquillian-drone-spi-1.2.0.Alpha1.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-spi/1.2.0.Alpha1/arquillian-drone-spi-1.2.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-drone-webdriver
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.2.0.Alpha1/arquillian-drone-webdriver-1.2.0.Alpha1.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver/1.2.0.Alpha1/arquillian-drone-webdriver-1.2.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-drone-webdriver-depchain
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-drone-webdriver-depchain/1.2.0.Alpha1/arquillian-drone-webdriver-depchain-1.2.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <h3>
-                Release notes and resolved issues
-                <small>6</small>
-              </h3>
-              <p></p>
-              <dl>
-                <dt>Bug</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1251">ARQ-1251</a> -         Arquillian Drone is unable to instantiate Firefox driver if acceptSslCerts, webStorageEnabled, loggingPrefs properties are used in arquillian.xml</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1258">ARQ-1258</a> -         Allow Chrome switches to contain spaces</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Component  Upgrade</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1252">ARQ-1252</a> -         Upgrade to Selenium 2.28.0 and use Selenium BOM</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Feature Request</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1138">ARQ-1138</a> -         Drone: provide selenium-bom to manage Selenium dependencies</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1259">ARQ-1259</a> -         Make possible to load an xpi as firefox Extension</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Task</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-952">ARQ-952</a> -         Avoid heavy-weight tests for Drone functional testing</li>
-                  </ul>
-                </dd>
-              </dl>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="https://community.jboss.org/people/trepel">Tomas Repel</a>, <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://github.com/papousek">Jan Papoušek</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2013/01/15/arquillian-extension-drone-1-2-0-Alpha1/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/drone/">drone</a>
-            </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2013/01/15/arquillian-extension-android-1-0-0-Alpha2/">Arquillian Android Extension 1.0.0.Alpha2 Released</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a></span>
-                <span class="dateinline">on Jan 15, 2013</span>
-                <div class="date"><abbr>Jan</abbr> 15</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2013/01/15/arquillian-extension-android-1-0-0-Alpha2/#disqus_thread" data-disqus-identifier="a40db49ac7b77c6bdc7565a73a67bba7f7c46b8b">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha2</em> release of the <em>Arquillian Android Extension</em> component!</p>
-              <p>Arquillian Android Extension has reached the Alpha2 milestone. This is a bugfix release with a few new nice features.</p>
-              <h3 class="highlights">Significant changes in 1.0.0.Alpha2</h3>
-              <dl>
-              	<dt><i class="icon-star"></i> Ability to specify ABI</dt>
-              	<dd><p>Since Android 4 the SDK allows to define multiple ABI types for the emulator. We now honor this property and fail fast if multiple ABIs are available during creation of the emulator.</p>
-              <div class="filename">arquillian.xml</div>
-              <pre class="prettify"><code class="prettify">&lt;extension qualifier=&#8220;android&#8221;&gt;<br />&#x000A;   &lt;property name=&#8220;abi&#8221;&gt;armeabi-v7a&lt;/property&gt;<br />&#x000A;&lt;/extension&gt;</code></pre></dd>
-              </dl>
-              <dl>
-              	<dt><i class="icon-star"></i> Ability to inject Android Driver instance into the test</dt>
-              	<dd><p>You now have limited control of the device from the test itself.</p>
-              <div class="filename">AndroidApkInstallationTestCase.java</div>
-              <pre class="prettify"><code class="prettify">@ArquillianResource&#x000A;AndroidDevice device;</code>&#x000A;          &#x000A;          <code class="prettify">@Test&#x000A;public void installAndUninstallApk() throws AndroidExecutionException {&#x000A;    device.installPackage(new File("src/test/apk/calculator.apk"), true);</code>&#x000A;          &#x000A;          <code class="prettify">    List&lt;String&gt; installedApps = getInstalledPackages(device);</code>&#x000A;          &#x000A;          <code class="prettify">    Assert.assertTrue("Calculator app was installed", installedApps.contains(CALCULATOR_APP));&#x000A;    device.uninstallPackage(CALCULATOR_APP);</code>&#x000A;          &#x000A;          <code class="prettify">installedApps = getInstalledPackages(device);<br />&#x000A;    Assert.assertFalse(&#8220;Calculator app was uninstalled&#8221;, installedApps.contains(CALCULATOR_APP));<br />&#x000A;}</code></pre></dd>
-              </dl>
-              <p>Big thanks go to Jan Papousek (@jan_papousek) for improving and testing this release!</p>
-              <p>We hope that you&#8217;ll enjoy the improvements. We look forward to hear your feedback in the <a href="http://community.jboss.org/en/arquillian">community forums</a>.</p>
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/android-extension/">Arquillian Android Extension</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.0.0.Alpha2
-                      <span class="label tag">
-                        <a href="https://api.github.com/repos/arquillian/arquillian-extension-android/commits/9bb2bf33f780b92b6f9c73f8598b5cd5f594e093">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2013-01-09</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Lukas Fryc</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>Arquillian Core &#8211; 1.0.3.Final</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.extension</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-android-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-api/1.0.0.Alpha2/arquillian-android-api-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-api/1.0.0.Alpha2/arquillian-android-api-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-android-bom
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-bom/1.0.0.Alpha2/arquillian-android-bom-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-android-configuration
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-configuration/1.0.0.Alpha2/arquillian-android-configuration-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-configuration/1.0.0.Alpha2/arquillian-android-configuration-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-android-depchain
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-depchain/1.0.0.Alpha2/arquillian-android-depchain-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-android-drone
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-drone/1.0.0.Alpha2/arquillian-android-drone-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-drone/1.0.0.Alpha2/arquillian-android-drone-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-android-impl
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-impl/1.0.0.Alpha2/arquillian-android-impl-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-impl/1.0.0.Alpha2/arquillian-android-impl-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.extension
-                  &raquo;
-                  arquillian-android-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-spi/1.0.0.Alpha2/arquillian-android-spi-1.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-android-spi/1.0.0.Alpha2/arquillian-android-spi-1.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="https://community.jboss.org/people/kpiwko">Karel Piwko</a>, <a href="https://community.jboss.org/people/lfryc">Lukas Fryc</a>, <a href="https://github.com/papousek">Jan Papoušek</a>, <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2013/01/15/arquillian-extension-android-1-0-0-Alpha2/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/android/">android</a>
-            </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/12/06/arquillian-container-osgi-2-0-0-Alpha2/">Arquillian OSGi 2.0.0.Alpha2 Released</a>
-              </h2>
-              <div class="byline">
-                <img class="avatar" src="http://gravatar.com/avatar/ddc41dadd5d79e396783e82ba8e862f6?s=44" />
-                <span class="author">Posted by
-                <a href="https://community.jboss.org/people/thomas.diesler">Thomas Diesler</a></span>
-                <span class="dateinline">on Dec 06, 2012</span>
-                <div class="date"><abbr>Dec</abbr> 06</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2012/12/06/arquillian-container-osgi-2-0-0-Alpha2/#disqus_thread" data-disqus-identifier="c66be105f46d19cfd5b0d54eba5af396d8ff117d">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>2.0.0.Alpha2</em> release of the <em>Arquillian OSGi</em> component!</p>
-              
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/arquillian-osgi-embedded-container-adapter/">Arquillian OSGi</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      2.0.0.Alpha2
-                      <span class="label tag">
-                        <a href="https://api.github.com/repos/arquillian/arquillian-container-osgi/commits/1e1eacc1267da960f9b054258a86f69245c5031d">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2012-12-06</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Thomas Diesler</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>Arquillian Core &#8211; 1.0.2.Final</li>
-                        <li>ShrinkWrap Core &#8211; 1.0.0</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.container</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-osgi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/2.0.0.Alpha2/arquillian-container-osgi-2.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/2.0.0.Alpha2/arquillian-container-osgi-2.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-osgi-embedded
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-embedded/2.0.0.Alpha2/arquillian-container-osgi-embedded-2.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi-embedded/2.0.0.Alpha2/arquillian-container-osgi-embedded-2.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.protocol
-                  &raquo;
-                  arquillian-protocol-osgi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/2.0.0.Alpha2/arquillian-protocol-osgi-2.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/2.0.0.Alpha2/arquillian-protocol-osgi-2.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testenricher
-                  &raquo;
-                  arquillian-testenricher-osgi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-osgi/2.0.0.Alpha2/arquillian-testenricher-osgi-2.0.0.Alpha2.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-osgi/2.0.0.Alpha2/arquillian-testenricher-osgi-2.0.0.Alpha2.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="https://community.jboss.org/people/thomas.diesler">Thomas Diesler</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/12/06/arquillian-container-osgi-2-0-0-Alpha2/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/osgi/">osgi</a>
-            </div>
             
                         <script type="text/javascript">
                         var disqus_shortname = 'arquillian';
@@ -1154,7 +906,7 @@
             <li class="previous">
               <a href="/blog/page/8/">&laquo; Older</a>
             </li>
-            <li class="pages">Page 7 of 31</li>
+            <li class="pages">Page 7 of 32</li>
             <li class="next">
               <a href="/blog/page/6/">Newer &raquo;</a>
             </li>
@@ -1172,42 +924,42 @@
             <ul>
               <li>
                 <div class="title">
+                  <a href="/blog/2013/09/12/arquillian-graphene-2-0-0-Beta1/">Graphene 2.0.0.Beta1 Released</a>
+                </div>
+                <div class="meta">
+                  Sep 12, 2013
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2013/09/12/arquillian-extension-warp-1-0-0-Alpha4/">Arquillian Warp 1.0.0.Alpha4 Released</a>
+                </div>
+                <div class="meta">
+                  Sep 12, 2013
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2013/09/12/arquillian-extension-qunit-1-0-0-Alpha1/">Arquillian Extension QUnit 1.0.0.Alpha1 Released</a>
+                </div>
+                <div class="meta">
+                  Sep 12, 2013
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2013/09/11/arquillian-extension-drone-1-2-0-Beta2/">Arquillian Drone Extension 1.2.0.Beta2 Released</a>
+                </div>
+                <div class="meta">
+                  Sep 11, 2013
+                </div>
+              </li>
+              <li>
+                <div class="title">
                   <a href="/blog/2013/09/04/arquillian-graphene-2-0-0-Alpha5/">Graphene 2.0.0.Alpha5 Released</a>
                 </div>
                 <div class="meta">
                   Sep 04, 2013
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2013/09/04/arquillian-extension-drone-1-2-0-Beta1/">Arquillian Drone Extension 1.2.0.Beta1 Released</a>
-                </div>
-                <div class="meta">
-                  Sep 04, 2013
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2013/08/17/arquillian-extension-drone-1-2-0-Alpha3/">Arquillian Drone Extension 1.2.0.Alpha3 Released</a>
-                </div>
-                <div class="meta">
-                  Aug 17, 2013
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2013/08/04/arquillian-core-1-1-1-Final/">Arquillian Core 1.1.1.Final Released</a>
-                </div>
-                <div class="meta">
-                  Aug 04, 2013
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2013/08/01/arquillian-extension-guice-1-0-0-Alpha2/">Arquillian Google Guice Extension 1.0.0.Alpha2 Released</a>
-                </div>
-                <div class="meta">
-                  Aug 01, 2013
                 </div>
               </li>
             </ul>
@@ -1399,6 +1151,9 @@
               </span>
               <span class="tag tag-1">
                 <a href="http://arquillian.org/blog/tags/portal/">portal</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/qunit/">qunit</a>
               </span>
               <span class="tag tag-6">
                 <a href="http://arquillian.org/blog/tags/release/">release</a>
