@@ -7,24 +7,24 @@ description: Aprenda como usar o JBoss Forge para começar mais rápido os teste
 guide_group: 1
 guide_order: 30
 ---
-This guide gets you acquainted with the Arquillian plugin for JBoss Forge. After reading this guide, you'll be able to:
+Este guia irá te familiar com o plugin do Arquillian para o JBoss Forge. Depois de ler este guia, você será capaz de:
 
-* Install the Arquillian plugin into your Forge installation
-* Use the plugin to add the Arquillian infrastructure to a Maven-based Java project
-* Generate a component and corresponding Arquillian test
-* Execute the Arquillian test on multiple containers without manual configuration
+* Instalar o plugin do Arquillian na sua instalação do Forge;
+* Usar o plugin para adicionar a infraestrutura do Arquillian nos projetos Java baseado em Maven;
+* Gerar um componente e seu correspondente teste Arquillian;
+* Executar o teste Arquillian em múltiplos containers sem configuração manual.
 
-You'll be performing many of the same steps described in the "Getting Started":/guides/getting_started/ guide, only you'll be letting Forge handle the dirty work for you. We've designed this guide to be a fast read to get you started quicker than ever before!
+Você irá executar muitos passos iguais aos descritos no guia "Começando":/guides/getting_started_pt/, só que você deixará para o Forge fazer o trabalho pesado para você. Desenhamos esse guia para uma leitura rápida, assim o seu começo será mais rápido!
 
-h3. Assumptions
+h3. Considerações
 
-This guide assumes you have "JBoss Forge":http://jboss.org/forge setup. Installing Forge is a relatively short process. Refer to the "Getting Started":/guides/getting_started/ guide or the "official Forge documentation":https://docs.jboss.org/author/display/FORGE/Home for download and installation instructions. You'll also need "JDK(Java Development Kit) 1.6":http://www.oracle.com/technetwork/java/javase/downloads/jdk-6u29-download-513648.html or higher installed on your machine.
+Esse guia assume que você já tem configurado o "JBoss Forge":http://jboss.org/forge. A instalação do Forge é um processo relativamente simples. Veja no guia "Começando":/guides/getting_started_pt/ ou na "documentação oficial do Forge":https://docs.jboss.org/author/display/FORGE/Home as instruções para baixar e instalar o Forge. Você também precisará do "JDK(Java Development Kit) 1.6":http://www.oracle.com/technetwork/java/javase/downloads/jdk-6u29-download-513648.html ou superior instalado na sua maquina.
 
-p(info). %This guide simulates output for a user with a home directory of /home/ike who creates projects in the projects folder and puts applications in the applications folder. Adjust these paths to match your system.%
+p(info). %Esse guia simula a saída para um usuário que tem o diretório home em /home/ike, e que criou os projetos na pasta projects e colocou as aplicações na pasta applications. Ajuste esses caminhos para ficarem iguais no seu sistema.%
 
-h3. Create a Project
+h3. Criando um projeto
 
-Before we can get started with Arquillian, we first need a project. If you have not created one yet, use the following Forge commands to generate a basic Java EE 6 project that includes CDI.
+Antes de começarmos com o Arquillian, precisamos de um projeto. Se você não tem um criado, use os seguintes comandos do Forge para gerar um projeto básico com Java EE 6 que inclui o CDI.
 
 bc(command). $ new-project --named arquillian-demo --topLevelPackage org.arquillian.example
 
@@ -39,16 +39,16 @@ Wrote /home/ike/projects/arquillian-demo/src/test/resources
 Wrote /home/ike/projects/arquillian-demo/src/main/java/org/arquillian/example
 Wrote /home/ike/projects/arquillian-demo/src/main/resources/META-INF/forge.xml
 
-Forge adds the JBoss Community repository to the pom.xml file. This repository is not required to use Arquillian. You can easily remove the repository from the pom.xml file using this Forge command:
+O Forge adicionar o repositório da comunidade JBoss no arquivo pom.xml. Esse repositório não é obrigatório para usar o Arquillian. Você pode remover facilmente o repositório do arquivo pom.xml usando o comando do Forge:
 
 bc(command). $ project remove-repository http://repository.jboss.org/nexus/content/groups/public 
 
 bc(output). Removed repository [JBOSS_NEXUS->http://repository.jboss.org/nexus/content/groups/public]
 Wrote /home/ike/projects/arquillian-demo/pom.xml
 
-Your new project is now created! Next, we need to create some code to test. Let's use Forge to create a new CDI bean.
+Seu novo projeto está criado! Agora precisamos criar algum código para testar. Vamos usar o Forge para criar um novo bean CDI.
 
-p. First, we will install CDI into our project using the beans plugin.
+p. Primeiro, vamos instalar o CDI em nosso projeto usando o plugin beans.
 
 bc(command). $ beans setup
 
@@ -57,22 +57,22 @@ bc(output). ***SUCCESS*** Installed [forge.spec.cdi] successfully.
 Wrote /home/ike/projects/arquillian-demo/src/main/resources/META-INF/beans.xml
 Wrote /home/ike/projects/arquillian-demo/pom.xml
 
-Next we will use the plugin to create a new dependent-scoped bean.
+A seguir, vamos usar o plugin para criar um novo bean com escopo dependent (dependente).
 
 bc(command). $ beans new-bean --type org.arquillian.example.MySimpleBean --scoped DEPENDENT
 
 bc(output). Picked up type <JavaResource>: org.arquillian.example.MySimpleBean
 Wrote /home/ike/projects/arquillian-demo/src/main/java/org/arquillian/example/MySimpleBean.java
 
-The project now has a component. Switch back to the project root and get ready to test it!
+O projeto agora tem um componente. Vamos voltar para o diretório raiz do projeto e vamos testá-lo!
 
 bc(command). $ cd ~~
 
-h3. Setup Arquillian
+h3. Configurando o Arquillian
 
-Setting up Arquillian is easy, as you might have seen in the "Getting Started":/guides/getting_started/ guide. However, there is a lot of copy/paste work required to setup a new Arquillian container adapter in the pom.xml. Forge can do that for you with a single command!
+A configuração do Arquillian é fácil, como você pode ver no guia "Começando":/guides/getting_started_pt/. No entanto, há muito trabalho de copiar e colar que necessários para configurar um novo adaptador de container do Arquillian no arquivo pom.xml. O Forge pode fazer isso para você com um único comando!
 
-First you will need to install the "Forge Arquillian plugin":https://github.com/forge/plugin-arquillian.
+Primeiro você precisa instalar o "plugin Arquillian no Forge":https://github.com/forge/plugin-arquillian.
 
 bc(command). $ forge install-plugin arquillian
 
@@ -85,20 +85,20 @@ bc(output). Connecting to remote repository [https://raw.github.com/forge/plugin
 ***SUCCESS*** Installed from [https://github.com/forge/plugin-arquillian.git] successfully.
 ...
 
-The plugin is ready to use. Now we need to set up Arquillian and a container adapter. We'll configure Arquillian to use JBoss AS 7.
+O plugin já está pronto para ser usado. Agora precisamos configurar o Arquillian e o adaptador do container. Iremos configurar o Arquillian para usar com o JBoss AS7.
 
 bc(command). $ arquillian setup --container JBOSS_AS_MANAGED_7.X
 
-Forge will prompt you which version of JUnit, Arquillian and JBoss AS 7 to use. Use the latest final versions for each.
+O Forge irá sugerir a versão do JUnit, Arquillian e JBoss AS 7 que serão usados. Use a ultima versão de cada um.
 
-Forge can even download JBoss AS 7 for you automatically, which it prompts for in the setup command:
+O Forge pode até mesmo baixar o JBoss AS 7 para você automaticamente, te perguntando durante a configuração:
 
 bc(output).  ? Do you want Arquillian to install the container? [y/N]
 
-- If you answer @y@: := Forge will ask you where you want to install JBoss AS 7 (e.g., /home/ike/applications). Forge then configures the Maven dependency plugin to download and unpack AS 7 to that location (if it's not already there) before the tests are run.
-- If you answer @N@: := You'll need an existing installation of JBoss AS 7 on your machine.
+- Se você responder @y@: := O Forge te perguntará o local que você quer instalar o JBoss AS 7 (por exemplo: /home/ike/applications). O Forge então configura as dependências do plugin do Maven para baixar e descompactar o AS 7 nesse local antes dos testes iniciarem.
+- Se você responder @n@: := Você precisa ter uma instalação do JBoss AS 7 na sua maquina.
 
-In either case, you need to tell Arquillian where JBoss AS 7 is installed. One way is to set the JBOSS_HOME environment variable to the location where AS 7 is installed. The preferred way is to set the installation path explicitly using the @jbossHome@ container configuration property in the arquillian.xml file. Forge can help us out with that:
+Nesse caso, você precisará informar para o Arquillian o local que o JBoss AS 7 está instalado. Uma maneira é configurar a variável de ambiente JBOSS_HOME com a localização da instalação do JBoss AS 7. A forma mais comum é configurar o caminho da instalação explicitamente usando a propriedade de configuração do container @jbossHome@ no arquivo arquillian.xml. O Forge nós ajuda a fazer isso:
 
 bc(command). $ arquillian configure-container --profile JBOSS_AS_MANAGED_7.X
 
@@ -110,7 +110,7 @@ bc(output).. Which property do you want to set?
  ? What value do you want to set? /home/ike/applications/jboss-as-7.1.1.Final
 Wrote /home/ike/projects/arquillian-demo/src/test/resources/arquillian.xml
 
-p. Here's the resulting arquillian.xml file (formatted for clarity):
+p. A seguir temos o resultado do arquivo arquillian.xml (formatado para melhor leitura):
 
 div(filename). src/test/resources/arquillian.xml
 
@@ -126,23 +126,23 @@ bc(prettify). <arquillian xmlns="http://jboss.org/schema/arquillian"
     </container>
 </arquillian>
 
-In order to use this container configuration, you either have to:
+Para usar as configurações do container, você tem que:
 
-* Add the attribute @default="true"@ to the @<container>@ element in arquillian.xml
-* Write the qualifier @JBOSS_AS_MANAGED_7.X@ as the only contents of the file src/test/resources/arquillian.launch
+* Adicionar o atributo @default="true"@ no elemento @<container>@ do arquillian.xml;
+* Escrever o qualificador  @JBOSS_AS_MANAGED_7.X@ com apenas os conteúdos do arquivo src/test/resources/arquillian.launch.
 
-That's it! Arquillian is configured and ready to run tests inside JBoss AS 7.
+É isso! O Arquillian está configurado e pronto para executar os testes dentro do JBoss AS 7.
 
-h3. Write a Test
+h3. Escreva um teste
 
-Now let's write a test. Once again, Forge can help you get started quickly.
+Agora vamos escrever um teste. Mais uma vez, o Forge pode te ajudar nisso rapidamente:
 
 bc(command). $ arquillian create-test --class org.arquillian.example.MySimpleBean.java
 
 bc(output). Picked up type <JavaResource>: org.arquillian.example.MySimpleBeanTest
 Wrote /home/ike/projects/arquillian-demo/src/test/java/org/arquillian/example/MySimpleBeanTest.java
 
-A new test class with a deployment and test method is added to the project.
+Uma nova classe de teste com a publicação (deployment) e o método de teste é adicionado no projeto.
 
 div(filename). src/test/java/org/arquillian/example/MySimpleBeanTest.java
 
@@ -177,9 +177,9 @@ public class MySimpleBeanTest {
     }
 }
 
-p. As you can see, the test injects the class under test (i.e., @MySimpleBean@) using CDI, so this will immediately prove if the test really runs in a container.
+p. Como você pode ver, o teste injeta a classe dentro do teste (tal como: @MySimpleBean@) usando o CDI, então isso irá provar imediatamente se você está executando o teste em um container.
 
-You can run the test from your IDE, from Maven (outside of Forge) or from Forge itself. Let's stick with Forge.
+Você agora pode executar o teste da sua IDE, através do Maven (fora do Forge) ou pelo próprio Forge. Vamos ficar com o Forge.
 
 bc(command). $ build test --profile JBOSS_AS_MANAGED_7.X
 
@@ -193,13 +193,13 @@ Results :
 
 Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
 
-p. *Congratulations!* You've earned your first *(greenbar)green bar* with Arquillian and JBoss Forge!
+p. *Parabéns!* Você conseguiu sua primeira *(greenbar)barra verde* com o Arquillian e o JBoss Forge!
 
-Now let's try to test some JPA code.
+Agora vamos tentar testar algum código JPA.
 
-h3. Test Persistence
+h3. Teste de persistência
 
-Before we can start writing tests that use the Java Persistence API (JPA), we need to configure JPA. We will then create an Entity and a corresponding Data Access Object. These are the classes we will test.
+Antes de escrevermos o teste que usa o Java Persistence API (JPA), precisamos configurar o JPA. Então vamos criar uma Entity e seu correspondente Data Access Object (DAO). Essas são as classes que iremos testar.
 
 bc(command). $ persistence setup --provider HIBERNATE --container JBOSS_AS7
 
@@ -210,7 +210,7 @@ bc(output). ***SUCCESS*** Installed [forge.spec.jpa] successfully.
 Wrote /home/ike/projects/arquillian-demo/src/main/resources/META-INF/persistence.xml
 Wrote /home/ike/projects/arquillian-demo/pom.xml
 
-Now create our entity.
+Agora vamos criar a entity.
 
 bc(command). $ entity --named Language --package org.arquillian.example.domain
 
@@ -218,16 +218,16 @@ bc(output). Created @Entity [org.arquillian.example.domain.Language]
 Picked up type <JavaResource>: org.arquillian.example.domain.Language
 Wrote /home/ike/projects/arquillian-demo/src/main/java/org/arquillian/example/domain/Language.java
 
-Then add some fields to our entity.
+Então, vamos adicionar alguns campos na nossa entity.
 
 bc(command). $ field string --named name
 
 bc(output). Added field to org.arquillian.example.domain.Language: @Column private String name;
 Wrote /home/ike/projects/arquillian-demo/src/main/java/org/arquillian/example/domain/Language.java
 
-If you open the @Language@ class, you'll see a typical JPA entity structure.
+Se você abrir a classe @Language@, você verá uma estrutura de entidade JPA típica.
 
-Now we need a Data Access Object (DAO) to manage this entity. Copy this dao class into your project.
+Agora precisamos de um Data Access Object (DAO) para gerenciar essa entity. Copie essa classe DAO para o seu projeto:
 
 div(filename). src/main/java/org/arquillian/example/dao/LanguageDao.java
 
@@ -267,7 +267,7 @@ public class LanguageDao {
     }
 }
 
-p. To compile this class, you'll need to add the EJB APIs to the project.
+p. Para compilar essa classe, você precisará adicionar as APIs do EJB no projeto.
 
 bc(command). $ ejb setup
 
@@ -275,14 +275,14 @@ bc(output). ***SUCCESS*** Installed [forge.spec.ejb] successfully.
 ***SUCCESS*** Enterprise Java Beans (EJB) is installed.
 Wrote /home/ike/projects/arquillian-demo/pom.xml
 
-It's now time to create our test class. This part should look familiar from the first half of this tutorial, except this time we instruct the @create-test@ command to prepare the test for testing JPA.
+Agora está na hora de criar nossa classe de teste. Essa parte é muito parecida com a primeira metade desse tutorial, exceto que dessa vez instruiremos o comando @create-test@ para preparar um teste para JPA.
 
 bc(command). $ arquillian create-test --class org.arquillian.example.dao.LanguageDao.java --enableJPA
 
 bc(output). Picked up type <JavaResource>: org.arquillian.example.dao.LanguageDaoTest
 Wrote /home/ike/projects/arquillian-demo/src/test/java/org/arquillian/example/dao/LanguageDaoTest.java
 
-This again creates a new test, but also adds your persistence.xml to the deployment. Here's the test it generated:
+Isso cria novamente um novo teste, mas também adiciona o seu persistence.xml na publicação. A seguir temos o teste gerado:
 
 div(filename). src/test/java/org/arquillian/example/dao/LanguageDaoTest.java
 
@@ -318,15 +318,15 @@ public class LanguageDaoTest {
     }
 }
 
-p. Open the test in your IDE and add the @Language@ entity to the deployment. Add the proper import, then change this line:
+p. Abra o teste na sua IDE e adicione a entidade @Language@ na publicação. Adicione o import adequado, então modifique essa linha:
 
 bc(prettify). .addClass(LanguageDao.class)
 
-...to this one:
+... para essa:
 
 bc(prettify). .addClasses(Language.class, LanguageDao.class)
 
-Now write a new test method to assert the behavior of @listLanguages()@.
+Agora escreva um novo método de teste para validar o comportamento da @listLanguages()@.
 
 div(filename). src/test/java/org/arquillian/example/dao/LanguageDaoTest.java
 
@@ -335,41 +335,41 @@ public void testListLanguages() {
     Assert.assertEquals(3, languagedao.listLanguages().size());
 }
 
-Now run the tests.
+Agora execute os testes.
 
 bc(command). $ build test --profile JBOSS_AS_MANAGED_7.X
  
-*Congratulations!* Another *(greenbar)green bar* with Arquillian!
+*Parabéns!* Outra *(greenbar) barra verde* com o Arquillian!
 
-h3. Add More Container Adapters
+h3. Adicionando mais adaptadores de containers
 
-Adding more container adapters is as easy as executing the setup command again. For example, let's add a Glassfish remote adapter.
+Adicionar mais adaptadores de containers é tão simples como executar o comando de configuração anterior. Por exemplo, vamos adicionar o adaptador remoto do GlassFish.
 
 bc(command). $ arquillian setup --container GLASSFISH_REMOTE_3_1_(REST)
 
-Simply switch between containers by switching the Maven profile. For example in Forge:
+Simplesmente troque os containers através da troca do profile do Maven. Por exemplo no Forge:
 
 bc(command). $ build test --profile GLASSFISH_REMOTE_3_1_(REST)
 
-p(warning). %Some additional setup is required to get this test to work on a standalone GlassFish instance. Call it homework ~:)%
+p(warning). %Algumas configurações adicionais são necessárias para fazer os testes funcionarem em uma instância standalone do GlassFish. Chame isso de lição de casa ~:)%
 
-h3. Export the Deployment
+h3. Exportando a publicação
 
-For debugging purposes, it can be useful to export your deployment to a file. You can do so using Forge.
+Por motivos de depuração, pode ser útil exportar a sua publicação para um arquivo. Você pode fazer isso usando o Forge.
 
-First navigate to an Arquillian test:
+Primeiro navegue até o teste Arquillian:
 
 bc(command). $ cd src/test/java/org/arquillian/example/MySimpleBeanTest.java
 
-Then export the deployment:
+Então exporte a publicação:
 
 bc(command). $ arquillian export
 
-You can find the exported archive in the project's target directory.
+Você poderá encontrar o arquivo exportado no diretório target do projeto.
 
 bc(command). $ cd ~~
 $ ls target/*.jar
 
 bc(output). arquillian-demo.jar
 
-If you inspect that jar file using an archive program, you'll find that it matches the ShrinkWrap archive you defined in the @@Deployment@ method of the test.
+Se você inspecionar o arquivo .jar usando um programa de arquivo, você encontrará que ele coincide com o ShrinkWrap que você definiu no método @@Deployment@ do teste.
