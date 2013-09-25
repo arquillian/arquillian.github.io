@@ -1,0 +1,119 @@
+---
+title: Arquillian Droidium 1.0.0.Alpha1 Released
+date: 2013-09-25
+author: smiklosovic
+tags: [release, extension, container, android]
+---
+
+This is the very first release of ongoing effort of Arquillian community to bring Arquillian goodies even to your mobile environment! Arquillian Droidium container adapter and supplement plugins for it are enabling you to execute functional tests with Arquillian Graphene and Arquillian Drone in Arquillian way on your Android devices - emulators and physical devices as well.
+
+h3. Arquillian Droidium bits
+
+Droidium consists of three components:
+
+h4. Arquillian container adapter for Android devices
+
+Regarding of container adapter, we took unique approach here since when you really think about it, Android device is in the principle also some kind of container you are installing your APKs (depoyments) to and uninstalling them from it afterwards once your tests are done. Arquillian container adapter takes care of device management meaning starting and stopping your emulator or connecting to it if it is already started (following remote and managed container abstraction). It even dynamically creates your AVD according to your preferencies and deletes it once tests are done. Android container adapter does not test on its own. The actual testing is delegated to the next plugins for it.
+
+h4. Droidium native plugin
+
+Droidium native plugin enables you to test your native APK applications with WebDriver API functionally. APK you want to test is deployed to Android emulator, you start your activities from your test method and you are good to go with your WebDriver tests! And wait a minute, we have not stopped here. You can deploy multiple APKs to your emulator prior to test execution and functionally test them all. Is there some APK you do not want to test but it is required as a dependency? No problem at all, just add them to your deployment methods.
+
+p. Lets see how you can do your native testing:
+
+bc(prettify).. @RunWith(Arquillian.class)
+@RunAsClient
+public class MyMobileAppTestCase {
+
+    // injection for switching between activities and
+    // interacting with Android device on lowlevel
+    @ArquillianResource
+    AndroidDevice android;
+
+    // you have the possibility to take screenshots as you are 
+    // doing tests, they are stored in target, lot of options behind this
+    @ArquillianResource
+    Screenshooter screenshooter;
+
+    // class scoped Drone, it will be available to use during whole test execution
+    @Drone @MyApp WebDriver test_app;
+
+    // Deployments you want to test by WebDriver has to be annotated 
+    // with @Instrumentable annotation. Port forwarding from Android device to 
+    // localhost is done and WebDriver instance is listening to it. Port on 
+    // localhost side is taken from extension configuration in arquillian.xml
+
+    // Every deployment you want to test has to have its own WebDriver
+
+    @Deployment(name = "my-app")
+    @Instrumentable(viaPort = 8081)
+    public static Archive<?> myAppDeployment() {
+        return ShrinkWrap.createFromZipFile(JavaArchive.class, new File("my-app.apk"));
+    }
+
+    @Deployment(name = "my-another-app")
+    @Instrumentable(viaPort = 8082) // another app so another port, you have second WebDriver
+    public static Archive<?> myAnotherAppDeployment() {
+        return ShrinkWrap.createFromZipFile(JavaArchive.class, new File("my-another-app.apk"));
+    }
+
+    // This APK will not be instrumented. You just need to put it to Android device 
+    // e.g. to safisfy APKs dependencies
+    @Deployment(name = "resource-apk")
+    public static Archive<?> myResourceDeployment() {
+        return ShrinkWrap.createFromZipFile(JavaArchive.class, new File("resources.apk"));
+    }
+
+    @Test
+    @InSequence(1)
+    @OperateOnDeployment("my-app")
+    public void test01() {
+        // activities in APKs are automatically scanned upon deployment installation and Android
+        // activity manager knows on which WebDriver instance it should start that activity up
+        android.getActivityManagerProvider()
+            .getActivityManager()
+            .startActivity("my.testapp.HomeScreenActivity");
+
+        // ... tests with test_app Drone
+    }
+
+    @Test
+    @InSequence(2)
+    @OperateOnDeployment("my-another-app")
+    public void test02(@Drone @MyTestApp WebDriver myTestApp) {
+        android.getActivityManagerProvider()
+            .getActivityManager()
+            .startActivity("my.another.testapp.MainActivity");
+
+        // ... tests
+
+        // you can do something like this after you want to switch to another activity
+        // android.getActivityManagerProvider()
+        //      .getActivityManager().startActivity("another.activity")
+
+        // since you have both Drones available here (class scoped and method scoped as well)
+        // you can choose whatever activity from both deployments you want. After this method
+        // ends, you can start activities only from the "my-app" deployment since the second
+        // WebDriver is destroyed
+    }
+}
+
+h4. Droidium web plugin
+
+Web plugin for Droidium container enables you to test your web applications which are deployed into application servers as JBoss AS on your mobile phone. One you coded your web application, you take your war file (or construct it with ShrinkWrap), Droidium starts application container and Android emulator or device automatically for you, web app is deployed to JBoss AS, Android server from Selenium project is installed to Android device and you are automagically ready to fully use Graphene to test that web application in mobile phone's web browser. Is not that sweet?
+
+h3. See it in action
+
+There is lot of example projects which tests various scenarios when you are dealing with Android testing. They are directly in the "project repository":https://github.com/arquillian/arquillian-droidium  in "tests directory":https://github.com/arquillian/arquillian-droidium/tree/master/tests
+
+h3. Next releases are comming soon
+
+Do not hesitate to drop a message to us on our IRC channel regarding this set of extensions. We are trying to release next versions with quite high cadence and we will do our best to bring you betas as soon as possible. We look forward to your feedback on this release in our "community forums":#{site.project_space} or the #arquillian channel on FreeNode!
+
+h3. Google Summer of Code 2013 project
+
+This project was sponsored by Google Summer of Code 2013 programme where <a href="http://miklosovic.net">Stefan Miklosovic</a> took his chance to contribute very responsibly. Arquillian project is very open to new developers willing to help and we are always excited to hear from them. You are welcome to take your part as well.
+
+h3. Acknowledgements
+
+I, Stefan Miklosovic, author of these extensions, would like to thank Aslak Knutsen, Karel Piwko, Dan Allen and Tadeas Kriz for their advises, insights and encouragements during the coding period. I would like to thank Dominik Dary from Selendroid project as well on which Droidium native plugin is heavily based on.
