@@ -2,9 +2,399 @@
 <feed xml:lang="en-US" xmlns="http://www.w3.org/2005/Atom">
   <id>http://arquillian.org/</id>
   <title>Arquillian</title>
-  <updated>2013-09-20T00:00:00+00:00</updated>
+  <updated>2013-09-27T00:00:00+00:00</updated>
   <link href="http://arquillian.org/blog/atom.xml" rel="self" type="application/atom+xml" />
   <link href="http://arquillian.org/blog" rel="alternate" type="text/html" />
+  <entry>
+    <id>http://arquillian.org/blog/2013/09/26/arquillian-droidium-1-0-0-Alpha1/</id>
+    <title>Arquillian Droidium 1.0.0.Alpha1 Released</title>
+    <updated>2013-09-27T00:00:00+00:00</updated>
+    <link href="http://arquillian.org/blog/2013/09/26/arquillian-droidium-1-0-0-Alpha1/" rel="alternate" type="text/html" />
+    <category scheme="http://arquillian.org/blog/tags" term="release" />
+    <category scheme="http://arquillian.org/blog/tags" term="extension" />
+    <category scheme="http://arquillian.org/blog/tags" term="droidium" />
+    <category scheme="http://arquillian.org/blog" term="arquillian" />
+    <summary>
+      The Arquillian team is proud to announce the 1.0.0.Alpha1 release of the Arquillian Droidium component!
+      This is the very first release of ongoing effort from the Arquillian community to bring Arquillian goodies even to your mobile environment! Arquillian Droidium container adapter and supplement plugins for it are enabling you to execute functional tests with Arquillian Graphene and Arquillian Drone in the Arquillian way on your Android devices &#8211; emulators and physical devices as well.
+      Arquillian Droidium bits
+      Droidium consists of three components:
+      Arquillian container adapter for Android devices
+      When you think about it, an Android device is in principle some kind of a container where......
+    </summary>
+    <content type="html">
+      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.Alpha1&lt;/em&gt; release of the &lt;em&gt;Arquillian Droidium&lt;/em&gt; component!&lt;/p&gt;
+      &lt;p&gt;This is the very first release of ongoing effort from the Arquillian community to bring Arquillian goodies even to your mobile environment! Arquillian Droidium container adapter and supplement plugins for it are enabling you to execute functional tests with Arquillian Graphene and Arquillian Drone in the Arquillian way on your Android devices – emulators and physical devices as well.&lt;/p&gt;
+      &lt;h3&gt;Arquillian Droidium bits&lt;/h3&gt;
+      &lt;p&gt;Droidium consists of three components:&lt;/p&gt;
+      &lt;h4&gt;Arquillian container adapter for Android devices&lt;/h4&gt;
+      &lt;p&gt;When you think about it, an Android device is in principle some kind of a container where you install your APKs (depoyments) to and uninstalling them from afterwards once your tests are done. The Arquillian container adapter takes care of the device management, meaning starting and stopping your emulator or connecting to it if it is already started (following the remote and managed container abstraction). It even dynamically creates your AVD according to your preferences and deletes it once the tests are done. Android container adapter does not test on its own. The actual testing is delegated to other plugins.&lt;/p&gt;
+      &lt;h4&gt;Droidium native plugin&lt;/h4&gt;
+      &lt;p&gt;Droidium native plugin enables you to test your native APK applications by using the WebDriver API. The APK you want to test is deployed to the Android emulator, you start your activities from within your test method and from there you are good to go with your WebDriver tests! But wait a minute, we did not stopped there. You can deploy multiple APKs to your emulator prior to test execution and functionally test them all in one go. Is there some APK you do not want to test but it is required as a dependency? No problem at all, just add them to your deployment methods.&lt;/p&gt;
+      &lt;p&gt;Lets see how you can do native testing:&lt;/p&gt;
+      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;@RunWith(Arquillian.class)
+      @RunAsClient
+      public class MyMobileAppTestCase {&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    // injection for switching between activities and
+          // interacting with Android device on lowlevel
+          @ArquillianResource
+          AndroidDevice android;&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    // you have the possibility to take screenshots as you are 
+          // doing tests, they are stored in target, lot of options behind this
+          @ArquillianResource
+          Screenshooter screenshooter;&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    // class scoped Drone, it will be available to use during whole test execution
+          @Drone @MyApp WebDriver test_app;&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    // Deployments you want to test by WebDriver has to be annotated 
+          // with @Instrumentable annotation. Port forwarding from Android device to 
+          // localhost is done and WebDriver instance is listening to it. Port on 
+          // localhost side is taken from extension configuration in arquillian.xml&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    // Every deployment you want to test has to have its own WebDriver&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    @Deployment(name = &quot;my-app&quot;)
+          @Instrumentable(viaPort = 8081)
+          public static Archive&amp;lt;?&amp;gt; myAppDeployment() {
+              return ShrinkWrap.createFromZipFile(JavaArchive.class, new File(&quot;my-app.apk&quot;));
+          }&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    @Deployment(name = &quot;my-another-app&quot;)
+          @Instrumentable(viaPort = 8082) // another app so another port, you have second WebDriver
+          public static Archive&amp;lt;?&amp;gt; myAnotherAppDeployment() {
+              return ShrinkWrap.createFromZipFile(JavaArchive.class, new File(&quot;my-another-app.apk&quot;));
+          }&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    // This APK will not be instrumented. You just need to put it to Android device 
+          // e.g. to safisfy APKs dependencies
+          @Deployment(name = &quot;resource-apk&quot;)
+          public static Archive&amp;lt;?&amp;gt; myResourceDeployment() {
+              return ShrinkWrap.createFromZipFile(JavaArchive.class, new File(&quot;resources.apk&quot;));
+          }&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    @Test
+          @InSequence(1)
+          @OperateOnDeployment(&quot;my-app&quot;)
+          public void test01() {
+              // activities in APKs are automatically scanned upon deployment installation and Android
+              // activity manager knows on which WebDriver instance it should start that activity up
+              android.getActivityManagerProvider()
+                  .getActivityManager()
+                  .startActivity(&quot;my.testapp.HomeScreenActivity&quot;);&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;        // ... tests with test_app Drone
+          }&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;    @Test
+          @InSequence(2)
+          @OperateOnDeployment(&quot;my-another-app&quot;)
+          public void test02(@Drone @MyTestApp WebDriver myTestApp) {
+              android.getActivityManagerProvider()
+                  .getActivityManager()
+                  .startActivity(&quot;my.another.testapp.MainActivity&quot;);&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;        // ... tests&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;        // you can do something like this after you want to switch to another activity
+              // android.getActivityManagerProvider()
+              //      .getActivityManager().startActivity(&quot;another.activity&quot;)&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;        // since you have both Drones available here (class scoped and method scoped as well)
+              // you can choose whatever activity from both deployments you want. After this method
+              // ends, you can start activities only from the &quot;my-app&quot; deployment since the second
+              // WebDriver is destroyed
+          }
+      }&lt;/code&gt;&lt;/pre&gt;
+      &lt;h4&gt;Droidium web plugin&lt;/h4&gt;
+      &lt;p&gt;The web plugin for the Droidium container enables you to test your web applications that are deployed on an application servers like JBoss AS/Wildfly from your mobile phone. Once you’ve coded your web application, you construct the &lt;code&gt;@Deployment&lt;/code&gt;. Droidium will then starts the application container and the Android emulator(or device) automatically for you. The web app is deployed to JBoss AS/Wildfly, the Android server from the Selenium project is installed to the Android device and you are automagically ready to fully use Graphene to test the web application from your mobile phone’s web browser. Sweet?&lt;/p&gt;
+      &lt;h3&gt;See it in action&lt;/h3&gt;
+      &lt;p&gt;There is lot of example projects which tests various scenarios that deals with Android testing. They can be foundin the &lt;a href=&quot;https://github.com/arquillian/arquillian-droidium&quot;&gt;project repository&lt;/a&gt; in &lt;a href=&quot;https://github.com/arquillian/arquillian-droidium/tree/master/tests&quot;&gt;the tests directory&lt;/a&gt;&lt;/p&gt;
+      &lt;h3&gt;Next release is comming soon&lt;/h3&gt;
+      &lt;p&gt;Do not hesitate to drop a message to us on our IRC channel regarding the Droidium extension. We’ll try to release next version fairly soon and we’ll do our best to bring you betas as soon as possible. We look forward to your feedback on this release in our &lt;a href=&quot;http://community.jboss.org/en/arquillian&quot;&gt;community forums&lt;/a&gt; or the #arquillian channel on FreeNode!&lt;/p&gt;
+      &lt;h3&gt;Google Summer of Code 2013 project&lt;/h3&gt;
+      &lt;p&gt;This project was sponsored by the Google Summer of Code 2013 program where &lt;a href=&quot;http://miklosovic.net&quot;&gt;Stefan Miklosovic&lt;/a&gt; had a chance to participate. The Arquillian project is very open to new developers willing to help and we are always excited to hear from them. You are welcome to take part as well.&lt;/p&gt;
+      &lt;h3&gt;Acknowledgements&lt;/h3&gt;
+      &lt;p&gt;I, Stefan Miklosovic, author of these extensions, would like to thank Aslak Knutsen, Karel Piwko, Dan Allen and Tadeas Kriz for their advise, insights and encouragements during the coding period. I would like to thank Dominik Dary from Selendroid project as well on which Droidium native plugin is heavily based.&lt;/p&gt;
+      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
+      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
+      &lt;h3&gt;Release details&lt;/h3&gt;
+      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;&lt;tbody&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Component&lt;/th&gt;
+            &lt;td&gt;
+              &lt;a href=&quot;http://arquillian.org/modules/droidium-extension/&quot;&gt;Arquillian Droidium&lt;/a&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Version&lt;/th&gt;
+            &lt;td&gt;
+              1.0.0.Alpha1
+              &lt;span class=&quot;label tag&quot;&gt;
+                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-droidium/commits/17d9c362bb58e2ee0457ee5b9427591951b1d78c&quot;&gt;view tag&lt;/a&gt;
+              &lt;/span&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Release date&lt;/th&gt;
+            &lt;td&gt;2013-09-18&lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Released by&lt;/th&gt;
+            &lt;td&gt;Karel Piwko&lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Compiled against&lt;/th&gt;
+            &lt;td&gt;
+              &lt;ul class=&quot;unstyled&quot;&gt;
+      &lt;li&gt;Arquillian Core – 1.1.1.Final&lt;/li&gt;
+                &lt;li&gt;ShrinkWrap Core – 1.1.3&lt;/li&gt;
+              &lt;/ul&gt;
+      &lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;/tbody&gt;&lt;/table&gt;&lt;h3&gt;
+        Published artifacts
+        &lt;small&gt;org.arquillian.droidium.archetypes&lt;/small&gt;
+      &lt;/h3&gt;
+      &lt;ul&gt;
+      &lt;li&gt;
+          org.arquillian.droidium.archetypes
+          »
+          arquillian-droidium-archetype-native-test
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/droidium/archetypes/arquillian-droidium-archetype-native-test/1.0.0.Alpha1/arquillian-droidium-archetype-native-test-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/droidium/archetypes/arquillian-droidium-archetype-native-test/1.0.0.Alpha1/arquillian-droidium-archetype-native-test-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.droidium.archetypes
+          »
+          arquillian-droidium-archetype-web-test
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/droidium/archetypes/arquillian-droidium-archetype-web-test/1.0.0.Alpha1/arquillian-droidium-archetype-web-test-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/droidium/archetypes/arquillian-droidium-archetype-web-test/1.0.0.Alpha1/arquillian-droidium-archetype-web-test-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.container
+          »
+          arquillian-droidium-container-api
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/container/arquillian-droidium-container-api/1.0.0.Alpha1/arquillian-droidium-container-api-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/container/arquillian-droidium-container-api/1.0.0.Alpha1/arquillian-droidium-container-api-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.container
+          »
+          arquillian-droidium-container-depchain
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/container/arquillian-droidium-container-depchain/1.0.0.Alpha1/arquillian-droidium-container-depchain-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.container
+          »
+          arquillian-droidium-container-impl
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/container/arquillian-droidium-container-impl/1.0.0.Alpha1/arquillian-droidium-container-impl-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/container/arquillian-droidium-container-impl/1.0.0.Alpha1/arquillian-droidium-container-impl-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.container
+          »
+          arquillian-droidium-container-spi
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/container/arquillian-droidium-container-spi/1.0.0.Alpha1/arquillian-droidium-container-spi-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/container/arquillian-droidium-container-spi/1.0.0.Alpha1/arquillian-droidium-container-spi-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.extension
+          »
+          arquillian-droidium-multiple-containers
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-multiple-containers/1.0.0.Alpha1/arquillian-droidium-multiple-containers-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-multiple-containers/1.0.0.Alpha1/arquillian-droidium-multiple-containers-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.extension
+          »
+          arquillian-droidium-native-api
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-native-api/1.0.0.Alpha1/arquillian-droidium-native-api-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-native-api/1.0.0.Alpha1/arquillian-droidium-native-api-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.extension
+          »
+          arquillian-droidium-native-depchain
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-native-depchain/1.0.0.Alpha1/arquillian-droidium-native-depchain-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-native-depchain/1.0.0.Alpha1/arquillian-droidium-native-depchain-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.extension
+          »
+          arquillian-droidium-native-impl
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-native-impl/1.0.0.Alpha1/arquillian-droidium-native-impl-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-native-impl/1.0.0.Alpha1/arquillian-droidium-native-impl-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.extension
+          »
+          arquillian-droidium-native-spi
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-native-spi/1.0.0.Alpha1/arquillian-droidium-native-spi-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-native-spi/1.0.0.Alpha1/arquillian-droidium-native-spi-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.extension
+          »
+          arquillian-droidium-web-depchain
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-web-depchain/1.0.0.Alpha1/arquillian-droidium-web-depchain-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-web-depchain/1.0.0.Alpha1/arquillian-droidium-web-depchain-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.extension
+          »
+          arquillian-droidium-web-impl
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-web-impl/1.0.0.Alpha1/arquillian-droidium-web-impl-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-web-impl/1.0.0.Alpha1/arquillian-droidium-web-impl-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.arquillian.extension
+          »
+          arquillian-droidium-web-spi
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-web-spi/1.0.0.Alpha1/arquillian-droidium-web-spi-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-droidium-web-spi/1.0.0.Alpha1/arquillian-droidium-web-spi-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+      &lt;/ul&gt;&lt;p&gt;
+        Thanks to the following list of contributors:
+        &lt;a href=&quot;https://github.com/smiklosovic&quot;&gt;Stefan Miklosovic&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/kpiwko&quot;&gt;Karel Piwko&lt;/a&gt;, Tadeas Kriz, Tadeas Kriz, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;
+      &lt;/p&gt;
+    </content>
+  </entry>
+  <entry>
+    <id>http://arquillian.org/blog/2013/09/26/arquillian-extension-portal-1-0-0-CR1/</id>
+    <title>Arquillian Portal Extension 1.0.0.CR1 Released</title>
+    <updated>2013-09-27T00:00:00+00:00</updated>
+    <link href="http://arquillian.org/blog/2013/09/26/arquillian-extension-portal-1-0-0-CR1/" rel="alternate" type="text/html" />
+    <category scheme="http://arquillian.org/blog/tags" term="release" />
+    <category scheme="http://arquillian.org/blog/tags" term="extension" />
+    <category scheme="http://arquillian.org/blog/tags" term="portal" />
+    <category scheme="http://arquillian.org/blog" term="arquillian" />
+    <summary>
+      The Arquillian team is proud to announce the 1.0.0.CR1 release of the Arquillian Portal Extension component!
+      There are several important fixes in this release for those testing portlets with Arquillian.
+      Some of the highlights in this release
+       Fix exceptions where there are multiple portlet deployments present on a Test class.
+       Allow @PortalURL to be present on a test method parameter, in addition to a field.
+       Modify the parsing of portlet.xml to occur for each test instead of once per Test class.
+      We look forward to hearing your feedback about this release in the community forums!
+      What is Arquillian?
+      Arquillian is open source software that empowers......
+    </summary>
+    <content type="html">
+      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.CR1&lt;/em&gt; release of the &lt;em&gt;Arquillian Portal Extension&lt;/em&gt; component!&lt;/p&gt;
+      &lt;p&gt;There are several important fixes in this release for those testing portlets with Arquillian.&lt;/p&gt;
+      &lt;h3&gt;Some of the highlights in this release&lt;/h3&gt;
+      &lt;p&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Fix exceptions where there are multiple portlet deployments present on a Test class.&lt;/p&gt;
+      &lt;p&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Allow &lt;code&gt;@PortalURL&lt;/code&gt; to be present on a test method parameter, in addition to a field.&lt;/p&gt;
+      &lt;p&gt;&lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Modify the parsing of portlet.xml to occur for each test instead of once per Test class.&lt;/p&gt;
+      &lt;p&gt;We look forward to hearing your feedback about this release in the &lt;a href=&quot;http://community.jboss.org/en/arquillian&quot;&gt;community forums&lt;/a&gt;!&lt;/p&gt;
+      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
+      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
+      &lt;h3&gt;Release details&lt;/h3&gt;
+      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;&lt;tbody&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Component&lt;/th&gt;
+            &lt;td&gt;
+              &lt;a href=&quot;http://arquillian.org/modules/portal-extension/&quot;&gt;Arquillian Portal Extension&lt;/a&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Version&lt;/th&gt;
+            &lt;td&gt;
+              1.0.0.CR1
+              &lt;span class=&quot;label tag&quot;&gt;
+                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-extension-portal/commits/0525dc54bb8984fac889d8a0b0b9d7755e5265dc&quot;&gt;view tag&lt;/a&gt;
+              &lt;/span&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Release date&lt;/th&gt;
+            &lt;td&gt;2013-09-20&lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Released by&lt;/th&gt;
+            &lt;td&gt;Ken Finnigan&lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;tr&gt;
+      &lt;th&gt;Compiled against&lt;/th&gt;
+            &lt;td&gt;
+              &lt;ul class=&quot;unstyled&quot;&gt;
+      &lt;li&gt;Arquillian Core – 1.0.3.Final&lt;/li&gt;
+              &lt;/ul&gt;
+      &lt;/td&gt;
+          &lt;/tr&gt;
+      &lt;/tbody&gt;&lt;/table&gt;&lt;h3&gt;
+        Published artifacts
+        &lt;small&gt;org.jboss.arquillian.extension&lt;/small&gt;
+      &lt;/h3&gt;
+      &lt;ul&gt;
+      &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-portal
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal/1.0.0.CR1/arquillian-portal-1.0.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal/1.0.0.CR1/arquillian-portal-1.0.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-portal-api
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-api/1.0.0.CR1/arquillian-portal-api-1.0.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-api/1.0.0.CR1/arquillian-portal-api-1.0.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-portal-impl
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-impl/1.0.0.CR1/arquillian-portal-impl-1.0.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-impl/1.0.0.CR1/arquillian-portal-impl-1.0.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-portal-shrinkwrap-api
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-shrinkwrap-api/1.0.0.CR1/arquillian-portal-shrinkwrap-api-1.0.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-shrinkwrap-api/1.0.0.CR1/arquillian-portal-shrinkwrap-api-1.0.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-portal-shrinkwrap-impl
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-shrinkwrap-impl/1.0.0.CR1/arquillian-portal-shrinkwrap-impl-1.0.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-shrinkwrap-impl/1.0.0.CR1/arquillian-portal-shrinkwrap-impl-1.0.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.extension
+          »
+          arquillian-portal-spi
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-spi/1.0.0.CR1/arquillian-portal-spi-1.0.0.CR1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-portal-spi/1.0.0.CR1/arquillian-portal-spi-1.0.0.CR1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+      &lt;/ul&gt;&lt;h3&gt;
+        Release notes and resolved issues
+        &lt;small&gt;4&lt;/small&gt;
+      &lt;/h3&gt;
+      &lt;p&gt;&lt;/p&gt;
+      &lt;dl&gt;
+      &lt;dt&gt;Bug&lt;/dt&gt;
+        &lt;dd&gt;
+          &lt;ul class=&quot;unstyled&quot;&gt;
+      &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1484&quot;&gt;ARQ-1484&lt;/a&gt; -         ConcurrentModificationException when TestClass contains multiple Portlet Archive Deployments&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1485&quot;&gt;ARQ-1485&lt;/a&gt; -         PortletXMLProcessor does not check for PortalURL annotation on test method parameters&lt;/li&gt;
+            &lt;li&gt;
+      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1486&quot;&gt;ARQ-1486&lt;/a&gt; -         Parsing of portlet.xml needs to occur for a deployment to provide correct list of available portlets for a test&lt;/li&gt;
+          &lt;/ul&gt;
+      &lt;/dd&gt;
+      &lt;/dl&gt;&lt;p&gt;
+        Thanks to the following list of contributors:
+        &lt;a href=&quot;https://community.jboss.org/people/kenfinni&quot;&gt;Ken Finnigan&lt;/a&gt;
+      &lt;/p&gt;
+    </content>
+  </entry>
   <entry>
     <id>http://arquillian.org/blog/2013/09/19/arquillian-graphene-2-0-0-Beta2/</id>
     <title>Graphene 2.0.0.Beta2 Released</title>
@@ -8454,271 +8844,6 @@
       &lt;a href=&quot;https://github.com/VineetReynolds/thucydides-arquillian-example&quot;&gt;Prototype of Arquillian and Thucydides integration&lt;/a&gt; by Vineet Reynolds&lt;/li&gt;
       	&lt;li&gt;&lt;a href=&quot;https://community.jboss.org/message/772475&quot;&gt;Arquillian Thucydides integration discussion post&lt;/a&gt;&lt;/li&gt;
       &lt;/ul&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>http://arquillian.org/blog/2012/11/02/arquillian-container-weld-1-0-0-CR5/</id>
-    <title>Arquillian Container 1.0.0.CR5 Released</title>
-    <updated>2012-11-03T00:00:00+00:00</updated>
-    <link href="http://arquillian.org/blog/2012/11/02/arquillian-container-weld-1-0-0-CR5/" rel="alternate" type="text/html" />
-    <category scheme="http://arquillian.org/blog/tags" term="release" />
-    <category scheme="http://arquillian.org/blog/tags" term="container-adapter" />
-    <category scheme="http://arquillian.org/blog/tags" term="weld" />
-    <category scheme="http://arquillian.org/blog" term="arquillian" />
-    <summary>
-      The Arquillian team is proud to announce the 1.0.0.CR5 release of the Arquillian Container component!
-      
-      What is Arquillian?
-      Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.
-      Release details
-      
-        
-          
-            Component
-      ......
-    </summary>
-    <content type="html">
-      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.CR5&lt;/em&gt; release of the &lt;em&gt;Arquillian Container&lt;/em&gt; component!&lt;/p&gt;
-      
-      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
-      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
-      &lt;h3&gt;Release details&lt;/h3&gt;
-      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;&lt;tbody&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Component&lt;/th&gt;
-            &lt;td&gt;Arquillian Container&lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Modules&lt;/th&gt;
-            &lt;td&gt;
-              &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-weld-ee-embedded-1.1-container-adapter/&quot;&gt;Arquillian Weld EE Embedded 1.1.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-weld-se-embedded-1-container-adapter/&quot;&gt;Arquillian Weld SE Embedded 1.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-weld-se-embedded-1.1-container-adapter/&quot;&gt;Arquillian Weld SE Embedded 1.1.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-              &lt;/ul&gt;
-      &lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Version&lt;/th&gt;
-            &lt;td&gt;
-              1.0.0.CR5
-              &lt;span class=&quot;label tag&quot;&gt;
-                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-container-weld/commits/0761871ad37e26b7b73a42ef15b42c8b7b704fb9&quot;&gt;view tag&lt;/a&gt;
-              &lt;/span&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Release date&lt;/th&gt;
-            &lt;td&gt;2012-11-02&lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Released by&lt;/th&gt;
-            &lt;td&gt;Aslak Knutsen&lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Compiled against&lt;/th&gt;
-            &lt;td&gt;
-              &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;Arquillian Core – 1.0.2.Final&lt;/li&gt;
-              &lt;/ul&gt;
-      &lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;/tbody&gt;&lt;/table&gt;&lt;h3&gt;
-        Published artifacts
-        &lt;small&gt;org.jboss.arquillian.container&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;ul&gt;
-      &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-weld-ee-embedded-1.1
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-ee-embedded-1.1/1.0.0.CR5/arquillian-weld-ee-embedded-1.1-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-ee-embedded-1.1/1.0.0.CR5/arquillian-weld-ee-embedded-1.1-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-weld-se-embedded-1
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1/1.0.0.CR5/arquillian-weld-se-embedded-1-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1/1.0.0.CR5/arquillian-weld-se-embedded-1-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-weld-se-embedded-1.1
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1.1/1.0.0.CR5/arquillian-weld-se-embedded-1.1-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-weld-se-embedded-1.1/1.0.0.CR5/arquillian-weld-se-embedded-1.1-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-      &lt;/ul&gt;&lt;h3&gt;
-        Release notes and resolved issues
-        &lt;small&gt;3&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;p&gt;Minor enhancement&lt;/p&gt;
-      &lt;dl&gt;
-      &lt;dt&gt;Feature Request&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1148&quot;&gt;ARQ-1148&lt;/a&gt; -         weld-ee-container should remove duplicate entries when merging multiple beans.xml files&lt;/li&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1168&quot;&gt;ARQ-1168&lt;/a&gt; -         Merge beans.xml files for Embedded Weld Containers&lt;/li&gt;
-          &lt;/ul&gt;
-      &lt;/dd&gt;
-      &lt;/dl&gt;&lt;p&gt;
-        Thanks to the following list of contributors:
-        &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;
-      &lt;/p&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>http://arquillian.org/blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha2/</id>
-    <title>Arquillian Transaction Extension 1.0.0.Alpha2 Released</title>
-    <updated>2012-11-02T00:00:00+00:00</updated>
-    <link href="http://arquillian.org/blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha2/" rel="alternate" type="text/html" />
-    <category scheme="http://arquillian.org/blog/tags" term="release" />
-    <category scheme="http://arquillian.org/blog/tags" term="extension" />
-    <category scheme="http://arquillian.org/blog/tags" term="transaction" />
-    <category scheme="http://arquillian.org/blog" term="arquillian" />
-    <summary>
-      The Arquillian team is proud to announce the 1.0.0.Alpha2 release of the Arquillian Transaction Extension component!
-      JTA implementation
-      The time has come to extract the JTA transactions support from Arquillian Persistence Extension and move it over to the Transaction Extension. It was in fact quite a natural refactoring step. This opens the possibility of providing a different transaction manager to your (not only) persistence related tests. Many thanks to Jakub Narloch for bringing the Transaction Extension to life as a top level module and helping with this release!
-      Future releases of the Arquillian Persistence Extension will ship with the JTA extension implementation as......
-    </summary>
-    <content type="html">
-      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.Alpha2&lt;/em&gt; release of the &lt;em&gt;Arquillian Transaction Extension&lt;/em&gt; component!&lt;/p&gt;
-      &lt;h3&gt;JTA implementation&lt;/h3&gt;
-      &lt;p&gt;The time has come to extract the JTA transactions support from &lt;a href=&quot;http://arquillian.org/modules/persistence-extension&quot;&gt;Arquillian Persistence Extension&lt;/a&gt; and move it over to the Transaction Extension. It was in fact quite a natural refactoring step. This opens the possibility of providing a different transaction manager to your (not only) persistence related tests. Many thanks to &lt;a href=&quot;https://github.com/jmnarloch&quot;&gt;Jakub Narloch&lt;/a&gt; for bringing the Transaction Extension to life as a top level module and helping with this release!&lt;/p&gt;
-      &lt;p class=&quot;info&quot;&gt;&lt;span&gt;Future releases of the &lt;a href=&quot;http://arquillian.org/modules/persistence-extension&quot;&gt;Arquillian Persistence Extension&lt;/a&gt; will ship with the JTA extension implementation as a dependency, but the Persistence Extension API will change to the new API from the Transaction Extension. Since the Persistence Extension is using the transaction provider SPI you will be able to change the implementation without a need to adopt your test code to whatever comes in the future.&lt;/span&gt;&lt;/p&gt;
-      &lt;h3&gt;Usage&lt;/h3&gt;
-      &lt;p&gt;Just include this in your dependencies to leverage the JTA implementation within the container of your choice.&lt;/p&gt;
-      &lt;div class=&quot;filename&quot;&gt;pom.xml&lt;/div&gt;
-      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;&amp;lt;dependency&amp;gt;
-        &amp;lt;groupId&amp;gt;org.jboss.arquillian.extension&amp;lt;/groupId&amp;gt;
-        &amp;lt;artifactId&amp;gt;arquillian-transaction-jta&amp;lt;/artifactId&amp;gt;
-        &amp;lt;version&amp;gt;1.0.0.Alpha2&amp;lt;/version&amp;gt;
-      &amp;lt;/dependency&amp;gt;&lt;/code&gt;&lt;/pre&gt;
-      &lt;h3&gt;New SPI hook&lt;/h3&gt;
-      &lt;p&gt;The &lt;code&gt;TransactionEnabler&lt;/code&gt; interface has been introduced to the &lt;strong&gt;SPI&lt;/strong&gt;. It gives the option to alternate the strategy for enabling transactions. This is particularly handy for the Persistence Extension where we automatically wrap annotations like &lt;code&gt;@UsingDataSet&lt;/code&gt; or &lt;code&gt;@ShouldMatchDataSet&lt;/code&gt; in a transaction. For reference you may take a look at the &lt;a href=&quot;https://github.com/arquillian/arquillian-extension-transaction/blob/master/spi/src/main/java/org/jboss/arquillian/transaction/spi/provider/TransactionEnabler.java&quot;&gt;new SPI interface&lt;/a&gt; and the related tests.&lt;/p&gt;
-      &lt;p&gt;That’s pretty much it! We look forward to hearing your feedback about this release in the &lt;a href=&quot;http://community.jboss.org/en/arquillian&quot;&gt;community forums&lt;/a&gt;!&lt;/p&gt;
-      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
-      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
-      &lt;h3&gt;Release details&lt;/h3&gt;
-      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;&lt;tbody&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Component&lt;/th&gt;
-            &lt;td&gt;
-              &lt;a href=&quot;http://arquillian.org/modules/transaction-extension/&quot;&gt;Arquillian Transaction Extension&lt;/a&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Version&lt;/th&gt;
-            &lt;td&gt;
-              1.0.0.Alpha2
-              &lt;span class=&quot;label tag&quot;&gt;
-                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-extension-transaction/commits/b30f831c7a47a7fc9f7a7da7a75ad76e380612f0&quot;&gt;view tag&lt;/a&gt;
-              &lt;/span&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Release date&lt;/th&gt;
-            &lt;td&gt;2012-10-30&lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Released by&lt;/th&gt;
-            &lt;td&gt;Aslak Knutsen&lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;tr&gt;
-      &lt;th&gt;Compiled against&lt;/th&gt;
-            &lt;td&gt;
-              &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;Arquillian Core – 1.0.2.Final&lt;/li&gt;
-                &lt;li&gt;ShrinkWrap Resolvers – 2.0.0-alpha-1&lt;/li&gt;
-              &lt;/ul&gt;
-      &lt;/td&gt;
-          &lt;/tr&gt;
-      &lt;/tbody&gt;&lt;/table&gt;&lt;h3&gt;
-        Published artifacts
-        &lt;small&gt;org.jboss.arquillian.extension&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;ul&gt;
-      &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-transaction-api
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-api/1.0.0.Alpha2/arquillian-transaction-api-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-api/1.0.0.Alpha2/arquillian-transaction-api-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-transaction-bom
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-bom/1.0.0.Alpha2/arquillian-transaction-bom-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-transaction-impl-base
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-impl-base/1.0.0.Alpha2/arquillian-transaction-impl-base-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-impl-base/1.0.0.Alpha2/arquillian-transaction-impl-base-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-transaction-jta
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-jta/1.0.0.Alpha2/arquillian-transaction-jta-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-jta/1.0.0.Alpha2/arquillian-transaction-jta-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-transaction-spi
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spi/1.0.0.Alpha2/arquillian-transaction-spi-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spi/1.0.0.Alpha2/arquillian-transaction-spi-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-      &lt;/ul&gt;&lt;h3&gt;
-        Release notes and resolved issues
-        &lt;small&gt;6&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;p&gt;Embedded Container and JTA support&lt;/p&gt;
-      &lt;dl&gt;
-      &lt;dt&gt;Enhancement&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1137&quot;&gt;ARQ-1137&lt;/a&gt; -         Provide a way to alter logic determining if transaction support is required&lt;/li&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1156&quot;&gt;ARQ-1156&lt;/a&gt; -         Improve resource handling&lt;/li&gt;
-          &lt;/ul&gt;
-      &lt;/dd&gt;
-      &lt;/dl&gt;&lt;dl&gt;
-      &lt;dt&gt;Feature Request&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1074&quot;&gt;ARQ-1074&lt;/a&gt; -         TransactionProvider should be supported on client side&lt;/li&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1155&quot;&gt;ARQ-1155&lt;/a&gt; -         Make JNDI transaction name configurable&lt;/li&gt;
-          &lt;/ul&gt;
-      &lt;/dd&gt;
-      &lt;/dl&gt;&lt;dl&gt;
-      &lt;dt&gt;Sub-task&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-      &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1069&quot;&gt;ARQ-1069&lt;/a&gt; -         JTA implementation for Transaction Extension&lt;/li&gt;
-          &lt;/ul&gt;
-      &lt;/dd&gt;
-      &lt;/dl&gt;&lt;p&gt;
-        Thanks to the following list of contributors:
-        &lt;a href=&quot;https://community.jboss.org/people/bmajsak&quot;&gt;Bartosz Majsak&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/jmnarloch&quot;&gt;Jakub Narloch&lt;/a&gt;
-      &lt;/p&gt;
     </content>
   </entry>
 </feed>
