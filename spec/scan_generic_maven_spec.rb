@@ -104,4 +104,45 @@ describe Awestruct::Extensions::Repository::Visitors::GenericMavenComponent do
       deps.should include('ShrinkWrap Core')
     end
   end
+
+  it "should discover QUnit name" do
+    @repository.clone_url = 'git://github.com/arquillian/arquillian-extension-qunit.git'
+    link_components_modules
+    Cloner.new().visit(@repository, @site)
+
+    @visitor.visit(@repository, @site)
+    @site.components.size.should equal(1)
+
+    @site.components.each_value do |comp|
+      comp.name.should eql('Arquillian Extension QUnit')
+    end
+  end
+
+  it "should discover WebSphere name" do
+    @repository.clone_url = 'git://github.com/arquillian/arquillian-container-was.git'
+    link_components_modules
+    Cloner.new().visit(@repository, @site)
+
+    @visitor.visit(@repository, @site)
+    @site.components.size.should equal(1)
+
+    @site.components.each_value do |comp|
+      comp.name.should eql('Arquillian Container WebSphere AS')
+    end
+  end
+
+  it "should discover TestRunner Spock name" do
+    @repository.clone_url = 'git://github.com/arquillian/arquillian-testrunner-spock.git'
+
+    @site.component_leads = {'arquillian-testrunner-spock' => ''}
+    link_components_modules
+    Cloner.new().visit(@repository, @site)
+
+    @visitor.visit(@repository, @site)
+    @site.components.size.should equal(1)
+
+    @site.components.each_value do |comp|
+      comp.name.should eql('Arquillian TestRunner Spock')
+    end
+  end
 end

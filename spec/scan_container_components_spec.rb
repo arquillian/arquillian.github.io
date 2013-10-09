@@ -201,5 +201,4 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
       names.should include('Arquillian WebSphere Liberty Profile Managed 8.5 Container Adapter')
     end
   end
-
 end

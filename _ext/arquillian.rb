@@ -354,7 +354,7 @@ module Awestruct::Extensions::Repository::Visitors
       pom = load_root_head_pom(repository)
       name = pom.root.text('name')
       # FIXME note misspelling of Aggregator in Drone extension
-      name.nil? ? repository.path : name.sub(/[ :]*(Aggregator|Agreggator|Parent).*/, '')
+      name.nil? ? repository.path : name.gsub(/[ :]*(Aggregator|Agreggator|Parent|module)+/, '')
     end
 
     def resolve_group_id(repository)
