@@ -1,0 +1,86 @@
+---
+date: 2013-10-08
+author: kpiwko
+---
+
+!(graphic pull-right)/images/blog/drone_400.png! 
+
+Arquillian Drone has reached 1.2.0.Final version. The focus of this release was to improve its usage for other Arquillian extension developer.
+That said, it still brings a lot of goodies and bugfixes since previous version. And the best part, if you are using it in tests, it it fully backward compatible with Arquillian Drone 1.1.1.Final.
+So, update and enjoy new features! And don't forget to check our "updated documentation":https://docs.jboss.org/author/display/ARQ/Drone
+
+<br/>
+
+h3. What's new in Drone since 1.1.1.Final?
+
+- <i class="icon-star"></i> Browser capabilities shorthand :=
+Configuration property @browserCapabilities@ is now replaced with simple @browser@. The original property still works, of course.
+
+div(filename). arquillian.xml
+
+bc(prettify).. <extension qualifier="webdriver">
+    <!-- since now, you can simply write "browser" -->
+    <property name="browser">chrome</property>
+</extension> 
+=:
+
+- <i class="icon-star"></i> PhantomJS support :=
+Drone allows you to use PhantomJS as a browser. Moreover, it automatically fetches binary needed for your platform. All you need to do is:
+
+div(filename). arquillian.xml
+
+bc(prettify).. <extension qualifier="webdriver">
+    <property name="browser">phantomjs</property>
+</extension> 
+=:
+
+- <i class="icon-star"></i> Selenium BOM :=
+It is now much easier to override Selenium version by importing a single BOM in @<dependencyManagement>@ section, *before* arquillian-drone-bom. By default, Drone uses Selenium 2.35.0.
+
+div(filename). pom.xml
+
+bc(prettify).. <depenency>
+     <dependency>  
+         <groupId>org.jboss.arquillian.selenium</groupId>  
+         <artifactId>selenium-bom</artifactId>  
+         <version>${version.selenium}</version>  
+         <type>pom</type>  
+         <scope>import</scope>  
+     </dependency>
+</dependency>
+=:
+
+- <i class="icon-star"></i> Lime limited Drone creation :=
+Drone now injects Selenium and WebDriver instances using a time limit, avoiding your tests to get stuck. Also, Drone now creates instances before the are used for the first time, not bound anymore to BeforeClass event. 
+Time limit is 60 seconds by default and can be modified in _arquillian.xml_ file globally for all supported Drones. Also, the limit is disabled if you set @arquillian.debug@ property to @true@.
+
+div(filename). arquillian.xml
+
+bc(prettify).. <extension qualifier="drone">
+    <!-- set this to zero if you want to disable timeout -->
+    <property name="instantiationTimeoutInSeconds">0</property>
+</extension> 
+=:
+
+- <i class="icon-star"></i> Browser goodies :=
+Drone add @dimensions@ property that allow you to resize the window. This becomes handy especially if default viewport is small and some elements are not visible, like with PhantomJS. Firefox configuration now accepts two new properties, @firefox_profile@ and @firefoxUserPreferences@. While the first one is not really new, it allows you to set a path to the Firefox profile template, the latter makes it possible to modify _prefs.js_ for the created Firefox profile. And reusable browser are now able to remove property before each test class or method (depends on where you inject Drone) using @reuseCookies@ property.
+
+div(filename). arquillian.xml
+
+bc(prettify).. <extension qualifier="webdriver">
+    <property name="firefox_profile">/path/to/profile</property>
+    <property name="firefoxUserPreferences">/path/to/preferences/file</property>
+    <property name="dimensions">1680x1050</property>
+    <property name="reuseCookies">false</property>
+</extension> 
+=:
+
+- <i class="icon-star"></i> New SPI :=
+
+Any extension should now profit from much richer event model. Additionally, Drone 1.2.0.Final brings a new concept of @DroneInstanceEnricher@, which allows you to modify Drone instance that Drone creates for you by any means. We use it for instance to automatically augment browser object to implement all the interfaces defined by its capabilities.
+
+=:
+
+I'd like to thank everybody involved in this release. _You guys make testing a breeze!_
+ 
+We hope that you'll enjoy the improvements and look forward to hear your feedback in the "community forums":#{site.project_space}.
