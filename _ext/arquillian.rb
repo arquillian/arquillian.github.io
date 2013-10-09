@@ -296,13 +296,22 @@ module Awestruct::Extensions::Repository::Visitors
           'arquillian' => 'Arquillian Core',
           'arquillian_core' => 'Arquillian Core',
           'jboss_arquillian_core' => 'Arquillian Core',
+          'org_jboss_arquillian' => 'Arquillian Core',
           'org_jboss_arquillian_core' => 'Arquillian Core',
+          'arquillian_drone' => 'Arquillian Drone',
+          'arquillian_warp' => 'Arquillian Warp',
+          'arquillian_transaction' => 'Arquillian Transaction',
+          'org_jboss_arquillian_graphene' => 'Arquillian Graphene',
           'shrinkwrap_shrinkwrap' => 'ShrinkWrap Core',
           'jboss_shrinkwrap' => 'ShrinkWrap Core',
+          'shrinkwrap' => 'ShrinkWrap Core',
           'shrinkwrap_descriptors' => 'ShrinkWrap Descriptors',
+          'shrinkwrap_descriptor' => 'ShrinkWrap Descriptors',
           'shrinkwrap_resolver' => 'ShrinkWrap Resolvers',
+          'selenium' => 'Selenium',
           'junit_junit' => 'JUnit',
-          'testng_testng' => 'TestNG'
+          'testng_testng' => 'TestNG',
+          'spock' => 'Spock'
         }.each do |key, name|
           if depversions.has_key? key
             release.compiledeps << OpenStruct.new({:name => name, :key => key, :version => depversions[key]})
