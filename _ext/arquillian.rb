@@ -710,7 +710,7 @@ module Awestruct::Extensions::Repository::Visitors
       primary = nil
       pom.each_element('/project/modules/module') do |m|
         count += 1
-        if (m.text.eql? 'depchain' or m.text.end_with? '-depchain') or
+        if (m.text.eql? 'depchain' or m.text.end_with? '-depchain' or m.text =~ /depchains/) or
             (primary.nil? and (m.text.eql? 'impl' or m.text.end_with? '-impl'))
           primary = m.text 
         end
