@@ -29,7 +29,7 @@
 
 source 'https://rubygems.org'
 
-gem "awestruct", "0.5.2"
+gem "awestruct", "0.5.3"
 #gem "awestruct", :path => '../awestruct'
 #gem "awestruct", :git => 'git@github.com:awestruct/awestruct.git'
 gem "puma"
@@ -41,6 +41,7 @@ gem "coffee-script"
 gem "haml"
 gem "uglifier"
 gem "htmlcompressor"
+gem "listen", "1.3.1"
 gem "git", "1.2.5"
 gem "ri_cal", "0.8.8"
 gem "tzinfo", "0.3.33"
