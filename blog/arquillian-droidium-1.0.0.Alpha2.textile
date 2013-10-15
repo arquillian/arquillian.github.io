@@ -4,8 +4,72 @@ author: smiklosovic
 ---
 There are several important fixes in this release for those testing Android native and web applications in connection with Arquillian Drone and Graphene.
 
-This release is packed with bugfixes and features which make testing experience more smooth. Arquillian Droidium container can be from now on used as a standalone container which does not depend on any plugin, native nor web. Even no plugin is on class path, you can still deploy APKs to Android device and you can fully interact with your device and automate it as you wish. Only sky is the limit ...
+This release is packed with bugfixes and features which make the testing experience much smoother. The Arquillian Droidium container can from now on be used as a standalone container which does not depend on any plugin, native nor web. Even with no plugins on class path, you can still deploy APKs to Android device and you can fully interact with your device and automate it as you wish. Skys the limit...
 
-Arquillian Droidium uses Arquillian Drone and Graphene extensions heavilly. Have you known that you can use Page fragments from Graphene even on your native Android activities? That's right, there is almost zero difference between functional web and Android native application testing. Since you can use ordinary application container and Droidium container together in one test run, you can from now on test complex scenarios which require interaction between web application and Android application.
+Arquillian Droidium uses the Arquillian Drone and Graphene extensions heavily. Did you known that you can use Page fragments from Graphene on your native Android activities? That's right, there is almost no difference between functional web and Android native application testing.
 
-We look forward to hearing your feedback about this release in the "community forums":#{site.project_space}!
+bc(prettify).. @RunWith(Arquillian.class)
+@RunAsClient
+public class AeroGearTestCase {
+
+    @Drone
+    @Browser
+    WebDriver browser;
+
+    @Drone
+    @Mobile
+    WebDriver mobile;
+
+    ...
+
+    @Browser
+    @FindBy(id = "task-container")
+    private TaskWebFragment taskFragment;
+
+    @Mobile
+    @FindBy(id = "todo")
+    private TaskMobileFragment taskMobileFragment;
+
+    ...
+
+    @Test
+    @InSequence(3)
+    @OperateOnDeployment("todo-ear-app")
+    public void addTask() {
+
+        taskFragment.addTask("groceries", "buy some milk", "2020", "10", "20", "buy some fresh milk around the corner");
+
+        Assert.assertEquals(taskFragment.getAddedTask().getTitle(), "buy some milk");
+        Assert.assertEquals(taskFragment.getAddedTask().getDescription(), "buy some fresh milk around the corner");
+    }
+
+    @Test
+    @InSequence(5)
+    @OperateOnDeployment("todo-mobile-app")
+    public void addMobileTask() {
+        taskMobileFragment.addTask("mobile task", "2014-10-20", "task from mobile phone!");
+    }
+
+}
+
+p. To see a full example of the Aerogear TODO demo app tested using Arquillian Droidium check out "this repository":https://github.com/kpiwko/arquillian-safari/blob/master/arquillian-droidium-scenario/src/test/java/org/arquillian/droidium/openblend/AeroGearTestCase.java.
+
+p(info). %Don't know what @Page Fragments@ are? You might want to read this blog post: "Introducing Arquillian Graphene Page Fragments":/blog/2012/09/19/introducting-arquillian-graphene-page-fragments/%
+
+p. Since you use can use the ordinary application container and Droidium container together in one test run, you can now test complex scenarios which require interaction between web application and Android application.
+
+bc(prettify).. @Test
+@InSequence(5)
+@OperateOnDeployment("todo-mobile-app")
+public void addMobileTask() {
+    taskMobileFragment.addTask("mobile task", "2014-10-20", "task from mobile phone!");
+}
+
+@Test
+@InSequence(6)
+@OperateOnDeployment("todo-ear-app")
+public void seeMobileTaskInWebClient() {
+    browser.navigate().refresh();
+}
+
+p. We look forward to hearing your feedback about this release in the "community forums":#{site.project_space}!
