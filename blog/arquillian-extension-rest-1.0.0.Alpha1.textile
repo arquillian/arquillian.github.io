@@ -1,0 +1,116 @@
+---
+---
+
+This is the first release of the Arquillian REST extension.
+
+At the moment it consist of two complementary parts:
+
+- <i class="icon-star"></i> REST client :=
+It simplifies writing the client side test of the REST service =:
+
+- <i class="icon-star"></i> Warp REST extension :=
+An extension that with a bit of magic allows to intercept the state of the Service prior or after it's execution =:
+
+h3. REST client
+
+p. Sometimes you need to test your REST app as a black box. You know the interface (the contract), you have some input
+and know what results you expect. For that purpose Arquillian REST Client Extension is your friend. It makes your code
+shorter by injecting configured artifacts. The extension is based on RestEasy client library. Both RestEasy 2.x and
+3.x are supported. You only need to add proper dependency to your classpath.
+
+bc(prettify)..@RunWith(Arquillian.class)
+public class RestClientTestCase {
+
+  @ArquillianResource
+  private URL deploymentURL;
+
+  @Deployment(testable = false)
+  public static WebArchive create()
+  {
+      return ShrinkWrap.create(WebArchive.class)
+          .addPackage(Customer.class.getPackage())
+          .addClasses(CustomerResource.class, CustomerResourceImpl.class, JaxRsActivator.class);
+  }
+
+  /**
+   * Arquillian calculates resource path by using deployment URL+ArquillianResteasyResource.value which is by default "rest".
+   * If your API is located under different root i.e. "api_v2" then use @ArquillianResteasyResource("api_v2")
+   *
+   * @param customerResource configured resource ready for use, injected by Arquillian
+   */
+  @Test
+  public void getCustomerById(@ArquillianResteasyResource CustomerResource customerResource)
+  {
+//        Given
+      final String name = "Acme Corporation";
+      final long customerId = 1L;
+
+//        When
+      final Customer result = customerResource.getCustomerById(customerId);
+
+//        Then
+      assertNotNull(result);
+      assertNotNull(result.getId());
+      assertEquals(name, result.getName());
+  }
+}
+
+p. For more examples on how to use these extensions and quickly get started with development you can take a look
+at the "integration tests":https://github.com/arquillian/arquillian-extension-rest/tree/master/rest-client/ftest
+ that are part of project source code.
+
+h3. Warp REST
+"Arquillian Warp":http://arquillian.org/blog/2013/09/12/arquillian-extension-warp-1-0-0-Alpha4/ makes it possible to
+perform a gray-box testing of any servlet based in-container application, now we are introducing an API that allows to
+intercept the state of the service and validate the generated response including but not limiting to the security
+context, response HTTP status code, HTTP headers and the response entity. Besides that the actual HTTP servlet request
+and responses are being also recorded allowing to verify them directly on the server. All of that happens directly in
+the application container, even before the response will be returned to the invoking client!
+
+p. The WARP extension targets JAX-RS major versions and already has support for JAX-RS 1.1 and 2.0.
+
+p. The JAX-RS 1.1 specification did not define any support for request interception, while this has been widely supported
+through implementation specific hooks, that is way in order to use the extension with JAX-RS 1.1 one of JAX-RS provider
+specific implementation need to be choose. Fortunately we already support most popular libraries:
+
+* RESTEasy
+* Jersey
+* CXF
+
+Now, let's write some code:
+
+div(filename). StockServiceResourceTestCase.java
+
+bc(prettify)..@Test
+@RunAsClient
+public void testStockGetWarp() {
+
+  Warp.initiate(new Activity() {
+      @Override
+      public void perform() {
+
+          // invokes the service
+          stockService.getStock(1L);
+      }
+  }).inspect(new Inspection() {
+
+      private static final long serialVersionUID = 1L;
+
+      @ArquillianResource
+      private RestContext restContext;
+
+      @AfterServlet
+      public void testGetStock() {
+
+          // validates the service response
+          assertEquals(HttpMethod.GET, restContext.getHttpRequest().getMethod());
+          assertEquals(200, restContext.getHttpResponse().getStatusCode());
+          assertEquals("application/json", restContext.getHttpResponse().getContentType());
+          assertNotNull(restContext.getHttpResponse().getEntity());
+      }
+  });
+}
+
+p. For more examples on how to use these extensions and quickly get started with development you can take a look at the "integration tests":https://github.com/arquillian/arquillian-extension-rest/tree/master/warp-rest/ftest that are part of project source code.
+
+p. We look forward to hearing your feedback about this release in the "community forums":#{site.project_space}!
