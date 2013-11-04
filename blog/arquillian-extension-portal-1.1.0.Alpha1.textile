@@ -1,0 +1,90 @@
+---
+date: 2013-11-04
+author: kenfinnigan
+---
+You may have noticed that we jumped from 1.0.0.CR1 to 1.1.0.Alpha1! No, we're not going crazy, but given the stability inherit within 1.0.0.CR1 and the changes we were
+looking to introduce into the extension, it made sense to bump the version to 1.1.0.
+
+This release contained quite a large amount of changes, compared to previously.
+
+h3. Some of the highlights in this release
+
+<i class="icon-star"></i> GateIn and Pluto portlet container implementations are now included as implementations of the portal extension instead of being in separate repositories.
+
+<i class="icon-star"></i> Add the ability to run integration testing against the portlet containers, and different servlet containers.
+
+<i class="icon-star"></i> Extend "Warp":/modules/warp-extension/ to cater for regular and JSF Portlets.
+
+h3. Warp extensions for portlets
+
+For non JSF portlets we can specify an Inspection method with either @@BeforePortletPhase@ or @@AfterPortletPhase@ to specify whether we want to the method executed before or after the particular @PortletRequest@ specified by the value on the annotation. An example of executing an inspection after a @RenderRequest@ would be:
+
+bc(prettify).. @AfterPortletPhase(Phase.RENDER)
+public void afterRender() {
+    assertTrue(true);
+}
+
+It's also possible to inject the request and response objects into the Inspection. You can choose to either use a generic @PortletRequest@ or more specific request types based on the portlet lifecycle phase, such as @ActionRequest@. Here's an example:
+
+bc(prettify).. @ArquillianResource
+ActionResponse actionResponse;
+
+@BeforePortletPhase(Phase.ACTION)
+public void beforeActionRequest() {
+    String[] values = actionResponse.getRenderParameterMap().get("data");
+    assertNull("Render parameter for data should not be set.", values);
+}
+
+@AfterPortletPhase(Phase.ACTION)
+public void afterActionRequest() {
+    String[] values = actionResponse.getRenderParameterMap().get("data");
+    assertTrue("Render parameter for data should be set.", values.length == 1);
+    assertEquals("Render parameter set to incorrect value.", BasicPortlet.ACTION, values[0]);
+}
+
+For JSF portlets we can still use @@BeforePortletPhase@ and @@AfterPortletPhase@, but these don't allow us to inspect the JSF lifecycle. To perform inspection on the JSF lifecycle, we need to use @@PortletPhase@ in combination with the JSF lifecycle annotations from Warp. To inspect when JSF changes the value of a bean on form submission for a portlet:
+
+bc(prettify).. @ManagedProperty("#{bean}")
+Bean bean;
+
+@PortletPhase(ACTION) @BeforePhase(Phase.UPDATE_MODEL_VALUES)
+public void testBeanValueBeforeUpdate() {
+    assertEquals("Bean value should not be updated yet.", "originalValue", bean.getText());
+}
+
+@PortletPhase(ACTION) @AfterPhase(Phase.UPDATE_MODEL_VALUES)
+public void testBeanValueAfterUpdate() {
+    assertEquals("Bean value should now be updated.", "newValue", bean.getText());
+}
+
+One point of note when writing Warp tests for portlets is that most portlet containers perform a redirect after an Action or Event request, but before the portlet is rendered. To be able to inspect on both an Action and Render request, we need to use Warp request groups:
+
+bc(prettify).. Warp
+    .initiate(new Activity() {
+        public void perform() {
+            // Do something
+        }
+    })
+    .group()
+        .observe(request().index(1))
+        .inspect(new Inspection() {
+            private static final long serialVersionUID = 1L;
+
+            @PortletPhase(ACTION) @BeforePhase(Phase.UPDATE_MODEL_VALUES)
+            public void testBeanValueBeforeUpdate() {
+                // Asserts
+            }
+        })
+    .group()
+        .observe(request().index(2))
+        .inspect(new Inspection() {
+            private static final long serialVersionUID = 1L;
+
+            @PortletPhase(RENDER) @BeforePhase(Phase.RENDER_RESPONSE)
+            public void testBeanValueBeforeRenderResponse() {
+                // Asserts
+            }
+        })
+    .execute();
+
+We look forward to hearing your feedback about this release in the "community forums":#{site.project_space}!
