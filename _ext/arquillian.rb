@@ -385,7 +385,7 @@ module Awestruct::Extensions::Repository::Visitors
         pom = load_root_head_pom(repository)
         pom.each_element('/project/developers/developer') do |dev|
           # capture first developer as fallback lead
-          if lead.nil?
+          if lead.nil? and !dev.text('email').nil?
             lead = OpenStruct.new({:name => dev.text('name'), :email => dev.text('email').downcase})
           end
 
