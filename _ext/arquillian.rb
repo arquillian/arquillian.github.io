@@ -219,6 +219,159 @@ module Awestruct::Extensions::Repository::Visitors
     end
   end
 
+  module GenericGradleComponent
+    include Base
+
+    def initialize
+      @root_head_build = nil
+    end
+
+    def handles(repository)
+      repository.path != 'arquillian-showcase' and
+          File.exist? File.join(repository.clone_dir, repository.relative_path, 'build.gradle')
+    end
+
+    def visit(repository, site)
+      rc = repository.client
+      c = OpenStruct.new({
+        :repository => repository,
+        :basepath => repository.path.eql?(repository.owner) ? repository.path : repository.path.sub(/^#{repository.owner}-/, ''),
+        :key => repository.path.split('-').last, # this is how components are matched in jira
+        :owner => repository.owner,
+        :html_url => repository.relative_path.empty? ? repository.html_url : "#{repository.html_url}/tree/#{repository.master_branch}/#{repository.relative_path.chomp('/')}",
+        :external => !repository.owner.eql?('arquillian'),
+        :name => resolve_name(repository),
+        :desc => repository.desc,
+        :groupId => resolve_group_id(repository),
+        :parent => true,
+        :lead => resolve_current_lead(repository, site.component_leads),
+        # we should not assume the license for external modules (hardcoding is not ideal either)
+        :license => ['jbossas', 'wildfly' 'jsfunit'].include?(repository.owner) ? 'LGPL-2.1' : 'Apache-2.0',
+        :releases => [],
+        :contributors => []
+      })
+      prev_sha = nil
+      rc.tags.select {|t|
+          # supports formats: 1.0.0.Alpha1
+          #t.name =~ /^[1-9]\d*\.\d+\.\d+\.((Alpha|Beta|CR)[1-9]\d*|Final)$/
+          # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0 or 0.1
+          t.name =~ /^([a-z]+-?)?[0-9]\d*\.\d+(\.\d+)?([\.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
+      }.sort_by{|t| rc.gcommit(t).author_date}.each do |t|
+        # skip tag if arquillian has nothing to do with it
+        next if repository.relative_path and rc.log(1).object(t.name).path(repository.relative_path).size.zero?
+        # for some reason, we have to use ^0 to get to the actual commit, can't use t.sha
+        sha = rc.revparse(t.name + '^0')
+        commit = rc.gcommit(sha)
+        committer = commit.committer
+        release = OpenStruct.new({
+          :tag => t.name,
+          :version => t.name.gsub(/^([a-z]+-?)/, ''),
+          :key => (c.key.eql?('core') ? '' : c.key + '_') + t.name, # jira release version key, should we add owner?
+          #:license => 'track?',
+          :sha => sha,
+          :html_url => RepositoryHelpers.build_commit_url(repository, sha, 'html'),
+          :json_url => RepositoryHelpers.build_commit_url(repository, sha, 'json'),
+          :date => commit.author_date,
+          :released_by => OpenStruct.new({
+            :name => committer.name,
+            :email => committer.email.downcase
+          }),
+          :contributors => RepositoryHelpers.resolve_contributors_between(site, repository, prev_sha, sha),
+          :published_artifacts => []
+        })
+        release.compiledeps = []
+        c.releases << release
+        prev_sha = sha
+      end
+      c.latest_version = (!c.releases.empty? ? c.releases.last.version : resolve_head_version(repository))
+      c.latest_tag = (!c.releases.empty? ? c.releases.last.tag : 'HEAD')
+      c.releases.each do |r|
+        # FIXME not dry!
+        r.contributors.each do |contrib|
+          i = c.contributors.index {|n| n.email == contrib.email}
+          if i.nil?
+            c.contributors << contrib
+          else
+            c.contributors[i].commits += contrib.commits
+          end
+        end
+      end
+
+      # FIXME not dry!
+      RepositoryHelpers.resolve_contributors_between(site, repository, prev_sha, rc.revparse('HEAD')).each do |contrib|
+        i = c.contributors.index {|n| n.email == contrib.email}
+        if i.nil?
+          c.contributors << contrib
+        else
+          c.contributors[i].commits += contrib.commits
+        end
+      end
+
+      # we can be pretty sure we'll have at least one commit, otherwise why the repository ;)
+      last = rc.log(1).path(repository.relative_path).first
+      c.last_commit = OpenStruct.new({
+        :author => last.author,
+        :date => last.date,
+        :message => last.message,
+        :sha => last.sha,
+        :html_url => RepositoryHelpers.build_commit_url(repository, last.sha, 'html'),
+        :json_url => RepositoryHelpers.build_commit_url(repository, last.sha, 'json')
+      })
+      c.unreleased_commits = RepositoryHelpers.resolve_commits_between(repository, prev_sha, rc.revparse('HEAD')).size
+
+      c.modules = []
+      site.components[repository.path] = c
+    end
+
+    def resolve_name(repository)
+      build = load_root_head_build(repository)
+      name = $1 if build =~ /root.+'name',.+'(.+)'/
+
+      # FIXME note misspelling of Aggregator in Drone extension
+      name.nil? ? repository.path : name.gsub(/[ :]*(Aggregator|Agreggator|Parent|module)+/, '')
+    end
+
+    def resolve_group_id(repository)
+      build = load_root_head_build(repository)
+      $1 if build =~ /group = '(.+arquillian.+)'/
+    end
+
+    def resolve_head_version(repository)
+      build = load_root_head_build(repository)
+      build.root.text('version')
+    end
+
+    def resolve_head_version(repository)
+      build = load_root_head_build(repository)
+      $1 if build =~ /version = '(.+)'/
+    end
+
+    def load_root_head_build(repository)
+      @root_head_build ||= repository.client.cat_file(repository.client.revparse("HEAD:#{repository.relative_path}build.gradle"))
+    end
+
+    def resolve_current_lead(repository, component_leads)
+      if !component_leads.nil? and component_leads.has_key? repository.path
+        lead = component_leads[repository.path]
+      else
+        if lead.nil?
+          # FIXME parameterize (keep in mind the JIRA extension hits most of the leads)
+          if repository.path.eql? 'arquillian-gradle-plugin'
+            lead = OpenStruct.new({
+              :name => 'Benjamin Muschko',
+              :github_id => 'bmuschko'
+            })
+          end
+        end
+        # update the global index (why not?)
+        if !lead.nil?
+          component_leads[repository.path] = lead
+        end
+      end
+      lead
+    end
+  end
+
   module GenericMavenComponent
     include Base
 
@@ -258,8 +411,8 @@ module Awestruct::Extensions::Repository::Visitors
       rc.tags.select {|t|
           # supports formats: 1.0.0.Alpha1
           #t.name =~ /^[1-9]\d*\.\d+\.\d+\.((Alpha|Beta|CR)[1-9]\d*|Final)$/
-          # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0
-          t.name =~ /^([a-z]+-?)?[1-9]\d*\.\d+\.\d+([\.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
+          # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0 or 0.1
+          t.name =~ /^([a-z]+-?)?[0-9]\d*\.\d+(\.\d+)?([\.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
       }.sort_by{|t| rc.gcommit(t).author_date}.each do |t|
         # skip tag if arquillian has nothing to do with it
         next if repository.relative_path and rc.log(1).object(t.name).path(repository.relative_path).size.zero?
@@ -738,7 +891,7 @@ module Awestruct::Extensions::Repository::Visitors
     include Base
 
     def handles(repository)
-      repository.path =~ /^(arquillian-maven|plugin-arquillian)$/ 
+      repository.path =~ /^(arquillian-maven|plugin-arquillian|arquillian-gradle-plugin)$/ 
     end
 
     def visit(repository, site)
