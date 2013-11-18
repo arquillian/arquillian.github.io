@@ -54,7 +54,7 @@ module Identities
         }.inject({}) {|h,(k,v)| h.store(keys_to_identity[k], v); h}), false)
 
         # TODO check if we need a merge here
-        if entry.has_key? 'name' and !entry['name'].to_s.strip.empty?
+        if entry.has_key? 'name' and !(entry['name'].is_a? Array) and !(name = entry['name'].to_s.strip).empty?
           if identity.names.nil?
             identity.names = OpenStruct.new(entry['name'])
           end
