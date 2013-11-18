@@ -8,4 +8,4 @@ SASS_CACHE_DIR="$ROOT_DIR/.sass-cache"
 rm -rf "$SITE_DIR"
 rm -rf "$SASS_CACHE_DIR"
 
-awestruct -s
+awestruct -s "$@"
