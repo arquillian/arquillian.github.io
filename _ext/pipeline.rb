@@ -1,4 +1,5 @@
 require File.join File.dirname(__FILE__), 'tweakruby'
+require_relative 'awestruct_ext'
 require_relative 'restclient_extensions_enabler'
 require_relative 'identities'
 require_relative 'jira'
@@ -23,13 +24,17 @@ require_relative 'asset_fingerprinter'
 require 'bootstrap-sass'
 
 Awestruct::Extensions::Pipeline.new do
+  # can use engine to tune pipeline per environment by checking profile
+  # the convenience methods development? and blogging? are provided
+  engine = Engine.instance
+
   # Custom tags and syntax for textile markup
   extension Awestruct::Extensions::TextilePlus.new
 
   # GitHub API calls should be wrapped with credentials to up limit
   github_auth = Identities::GitHub::Auth.new('.github-auth')
 
-  # You need to have the file $HOME/.github-auth containing username:password on one line
+  # You need to have the file $HOME/.github-auth containing a GitHub oauth token
   github_collector = Identities::GitHub::Collector.new(:teams =>
     [
       {:id => 146647, :name => 'speaker'},
