@@ -32,6 +32,8 @@ source 'https://rubygems.org'
 gem "awestruct", "0.5.3"
 #gem "awestruct", :path => '../awestruct'
 #gem "awestruct", :git => 'git@github.com:awestruct/awestruct.git'
+gem 'bootstrap-sass', '< 3.0'
+gem 'asciidoctor'
 gem "puma"
 gem "rest-client", "1.6.7"
 gem "hpricot"
