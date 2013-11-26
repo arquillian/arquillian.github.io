@@ -27,6 +27,7 @@ module Identities
         search = nil
         queries = []
         data = nil
+        return unless identity.send(@assign_username_to).nil?
         @identity_search_keys.each do |k|
           search = identity.send(k)
           next if search.nil?
