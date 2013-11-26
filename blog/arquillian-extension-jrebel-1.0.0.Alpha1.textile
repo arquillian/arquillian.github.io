@@ -1,0 +1,30 @@
+---
+author: blabno
+---
+
+It's great that we can write integration tests and that Arquillian can automatically deploy them into a container. However, *writing* these tests arn't always that great. It takes precious time to wait for redeploys and often you need to fix datasets (for persistence extension), test logic or the implementation.
+
+The JRebel extension is meant to save developers time. It leverages JRebel to hot deploy classes you have changed. The IDE takes care of recompiling the modified class and all you need to do is rerun the test.
+
+h3. How does JRebel extension avoid redeploys?
+
+It creates a special metadata file for each deployment in target/jrebel-temp directory. When you run your tests it checks for this file. If the file is present then no redeploy happens.
+
+h3. How do I enable the JRebel extension for Arquillian?
+
+All you need to do is add arquillian-jrebel-impl to class path (i.e. as a Maven dependency) and configure your contianer to run with the JRebel agent (I assume you have JRebel installed).
+
+Here is an example configuration for JBoss AS7 bin/standalone.conf:
+
+bc(prettify).. JAVA_OPTS="-javaagent:%JREBEL_HOME%/jrebel.jar $JAVA_OPTS"
+
+h3. Do I need rebel.xml?
+
+Not neccesarily. Arquillian JRebel Extension can automatically generate rebel.xml based on your archives content. (Note that in cases where you add new class or resource to the archive after deployment: JRebel will most likely not pick it up).
+
+You may of course provide your own rebel.xml and add it to testable archive with ShrinkWrap. If a rebel.xml file is found, the Arquillian JRebel Extension will skip generating it's own.
+
+h3. Further reading
+
+* "Arquillian meets JRebel":http://blog.itcrowd.pl/2012/04/arquillian-meets-jrebel.html
+* "Arquillian Persistence+REST+JRebel":http://blog.itcrowd.pl/2013/11/arquillian-persistencerestjrebel.html
