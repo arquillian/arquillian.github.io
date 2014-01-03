@@ -1,0 +1,224 @@
+---
+layout: guide
+authors: [alrubinger]
+translators: [rafaelsakurai]
+title: Criando arquivos publicáveis com ShrinkWrap
+tags: [shrinkwrap, arquillian]
+description: Aprenda como usar o ShrinkWrap e como declarar publicações para o Arquillian.
+guide_group: 1
+guide_order: 40
+---
+O ShrinkWrap é uma maneira simples de empacotar arquivos em Java e aprimorar o mecanismo de publicação do Arquillian. Esse guia serve como um curso intensivo na criação de objetos que representaram arquivos publicáveis. Será abordado:
+
+* A motivação e os benefícios do ShrinkWrap sobre o modo tradicional de empacotamento de arquivos;
+* Criar um novo arquivo a partir do zero;
+* Vários mecanismos utilizados para adicionar conteúdo;
+* Importar arquivos de uma estrutura de arquivo existente.
+
+h3. Justificativa
+
+Desde o inicio, o ShrinkWrap foi criado para atender a necessidade de facilitar a publicação de testes Java Enterprise. Tradicionalmente definido como arquivos simples (flat-file) que seguem o padrão ZIP, esses arquivos precisam seguir alguns passos introdutórios para empacotar todos os recursos. E os passos para a construção de um build leva pouco tempo:
+
+bc(output).. $ mvn clean install
+... terrifying output trace ...
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 1:13.492s
+[INFO] ------------------------------------------------------------------------
+
+p. Mas, como desenvolvedores, nós vivemos em nossos ambientes de desenvolvimento. E precisamos mudar a mentalidade de que é um desperdício montar um build.
+
+Então perguntamos: "E se pudéssemos declarar, em Java, um objeto que representa esse arquivo de build?"
+
+O resultado seria uma API Java similar a ferramenta de "jar", um arquivo de sistemas virtual com uma sintaxe intuitiva.
+
+div(filename). Criando um arquivo ShrinkWrap
+
+bc(prettify).. JavaArchive archive = ShrinkWrap.create(JavaArchive.class,"myarchive.jar") 
+   .addClasses(MyClass.class, MyOtherClass.class)
+   .addResource("mystuff.properties");
+
+p. O resultado foi uma forma de tirar vantagem da funcionalidade de compilação incremental da IDE, que nós permite pular o build.
+
+!/images/guides/shrinkwrap_incremental_compilation.png!
+
+p. Resultando em uma maneira de executar os testes através da IDE.
+
+!/images/guides/shrinkwrap_runas_junit.png!
+
+p. O resultado foi o ShrinkWrap.
+
+h3. Começando
+
+O primeiro passo é obter os binários do ShrinkWrap. O núcleo (Core) é composto de três partes:
+
+|_.Name|_.Maven Coordinates|
+|API|org.jboss.shrinkwrap:shrinkwrap-api|
+|SPI|org.jboss.shrinkwrap:shrinkwrap-spi|
+|Implementation|org.jboss.shrinkwrap:shrinkwrap-impl-base|
+
+A API deve estar disponível no ClassPath apenas durante a compilação, no entanto o SPI e os módulos de implementação são necessários para a execução. Isso é para garantir uma boa separação entre as classes usadas diretamente e as classes internas do projeto.
+
+No Maven, isso pode ser definido facilmente através de escopos adequados usando o encadeamento de dependências do ShrinkWrap no POM, disponível no Maven Central:
+
+div(filename). O pom.xml do seu projeto:
+
+bc(prettify).. <project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="
+  http://maven.apache.org/POM/4.0.0
+  http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <!-- snip -->
+  
+  <dependency>
+    <groupId>org.jboss.shrinkwrap</groupId>
+    <artifactId>shrinkwrap-depchain</artifactId>
+    <version>${version.shrinkwrap}</version>
+    <type>pom</type>
+  </dependency>
+
+  <!-- snip -->
+</project>
+
+p. Para os projetos que não utilizam o sistema de repositório do Maven, a distribuição do ShrinkWrap disponibiliza todos os módulos para download, e você pode definir a dependência manualmente conforme a necessidade.
+
+h4. Pré-requisitos
+
+* JRE5+ Runtime;
+* Nenhuma dependência adicional.
+
+O ShrinkWrap executa na Runtime do Java 5 ou superior, mas necessita pelo menos da versão JDK 6 para compilar.
+
+h4. Documentação da API
+
+O JavaDoc de cada versão está localizado "aqui":http://docs.jboss.org/shrinkwrap .
+
+h4. Código fonte aberto
+
+Faça um fork do projeto e participe do "Desenvolvimento":http://github.com/shrinkwrap/shrinkwrap .
+
+h3. Criação de arquivos (empacotamento)
+
+O principal ponto de entrada da biblioteca ShrinkWrap é a classe @org.jboss.shrinkwrap.api.ShrinkWrap@. Através dela você pode chamar o método @create@ para fazer um novo @Archive@, uma visão genérica do sistema de arquivo virtual que permite adicionar conteúdos chamados @Asset@ dentro do local chamado @ArchivePath@. A tabela a seguir apresenta uma visão simples das nomenclaturas do ShrinkWrap para os termos mais comuns:
+
+|_.Termo Comum|_.Class do ShrinkWrap|_.Descrição|
+|Archive|@org.jboss.shrinkwrap.api.Archive@|Uma coleção de recursos, essencialmente um sistema de arquivos virtual|
+|File|@org.jboss.shrinkwrap.api.Node@|Uma entrada no @Archive@; pode representar um conteúdo ou diretório|
+|Path|@org.jboss.shrinkwrap.api.ArchivePath@|Localização no @Archive@ em que um @Node@ vive|
+|Asset|@org.jboss.shrinkwrap.api.Asset@|Conteúdo na base dos bytes dentro de um @Node@|
+
+Para complementar, o @Archive@ tem vários formatos, e você normalmente não precisa mexer diretamente na classe do @Archive@. Ao invés disso, o ShirinkWrap fornece algumas extensões para o @Archive@ que oferecem formas úteis de manipulação de conteúdo relevante dentro dele.
+
+|_.Tipo de Arquivo|_.Descrição|
+|@org.jboss.shrinkwrap.api.GenericArchive@|O tipo mais simples da visão de usuário concreta de um @Archive@; suporte operações genericas.|
+|@org.jboss.shrinkwrap.api.spec.JavaArchive@|Tipo JAR; permite adicionar @Class@ es, @Package@ s e operações no Manifest|
+|@org.jboss.shrinkwrap.api.spec.EnterpriseArchive@|Tipo Java EE EAR; suporta operações no Manifest e especificações relacionadas|
+|@org.jboss.shrinkwrap.api.spec.WebArchive@|Tipo Java EE WAR; suporta operações comuns para publicação de aplicações web|
+|@org.jboss.shrinkwrap.api.spec.ResourceAdaptorArchive@|Tipo Java EE RAR; suporta operações comuns para implementação de adaptadores de recursos|
+
+Para criar um @Archive@, escolha o tipo de arquivo que deseja gerar e opcionalmente fornecer o nome estático do método @ShrinkWrap:create@ :
+
+bc(prettify).. GenericArchive myArchive = ShrinkWrap.create(GenericArchive.class,"myArchive.jar");
+
+p. É isso! Você criou o seu primeiro arquivo com ShrinkWrap!
+
+h3. Adicionando conteúdo
+
+Claro que um objeto que representa um arquivo vazio é inútil. Então vamos ver como adicionar algum conteúdo. Como você viu anteriormente, o conteúdo é modelado através da classe @Asset@, então para começar primeiro vamos dar uma olhada em algumas implementações do @Asset@ que são fornecidas pelo ShrinkWrap:
+
+|_.Asset|_.Representa|
+|@org.jboss.shrinkwrap.api.asset.ArchiveAsset@|O conteúdo do @Archive@|
+|@org.jboss.shrinkwrap.api.asset.ByteArrayAsset@|Conteúdo no formato @byte[]@ ou @InputStream@|
+|@org.jboss.shrinkwrap.api.asset.ClassAsset@|Conteúdo de uma @Class@ Java|
+|@org.jboss.shrinkwrap.api.asset.ClassLoaderAsset@|Um recurso que pode ser carregado de um @ClassLoader@ opcionalmente especificado|
+|@org.jboss.shrinkwrap.api.asset.FileAsset@|Conteúdo no formato @File@|
+|@org.jboss.shrinkwrap.api.asset.StringAsset@|Conteúdo @String@|
+|@org.jboss.shrinkwrap.api.asset.UrlAsset@|Conteúdo localizado em uma determinada @URL@|
+|@org.jboss.shrinkwrap.api.asset.EmptyAsset@|Conteúdo vázio (0-byte)|
+
+Para complementar, como @Asset@ é uma interface, você pode fornecer sua própria implementação para fornecer qualquer conteúdo baseado em bytes que possa ser representado como um @InputStream@ . Por exemplo, o trecho de código a seguir mostra como representar um @DataSource@ do Activation Framework como um @Asset@ :
+
+bc(prettify).. final DataSource dataSource = null; // Assume que você tenha isso
+  Asset asset = new Asset() {
+  @Override
+  public InputStream openStream() {
+    try {
+      return dataSource.getInputStream();
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+};
+
+p. O método @Archive:add@ nos permite passar algum conteúdo no formato @Asset@ e adiciona-lo dentro do @ArchivePath@.
+  
+bc(prettify).. myArchive.add(myAsset,"path/to/content");
+System.out.println(myArchive.toString(true));
+
+p. Passando a flag @true@ para o método @toString@ do @Archive@ cria uma saída recursiva no estilo do @"ls -l"@ :
+
+bc(output).. myArchive.jar:
+/path/
+/path/to/
+/path/to/content
+
+p. As representações do @Archive@ apresentados anteriormente são realmente úteis, dependendo do tipo de conteúdo que você está trabalhando. Por exemplo, um arquivo no padrão JAR normalmente contém alguns arquivos @.class@ e outros recursos, então o tipo @JavaArchive@ permite que você adicione nele.
+
+O ShirinkWrap fornece um mecanismo simples que permite trocar o "formato" dos seus arquivos através do método @as@ da interface @org.jboss.shrinkwrap.api.Assignable@; cada formato extende a @Assignable@. Para conseguir um arquivo que use o formato do @JavaArchive@ para adicionar facilmente os recursos como @Class@, você pode simplesmente:
+
+bc(prettify).. myArchive.as(JavaArchive.class).addClasses(String.class, Integer.class);
+System.out.println(myArchive.toString(true));
+
+bc(output).. archive.jar:
+/java/
+/java/lang/
+/java/lang/String.class
+/java/lang/Integer.class
+
+p. Esse mecanismo é muito importante para manter o uso do ShirinkWrap simples e intuitivo, e ao mesmo tempo fornece uma versatilidade normalmente encontrada em verdadeiras linguagens de herança múltipla.
+
+h3. Trabalhando com o conteúdo do arquivo
+
+Como o ShrinkWrap tem as suas raízes no Java EE e estreitas camadas com a plataforma de testes do Arquillian, ele certamente não está limitado apenas a esses domínios. De fato, o ShrinkWrap foi intencionalmente criado para ir mais adiante e agir como um sistema de arquivos virtual.
+
+Pegando o exemplo anterior, só que agora queremos usar o ShrinkWrap para empacotar todos os arquivos @.class@ do package atual e colocar eles como um padrão JAR no formato ZIP. O código para fazer isso é normalmente bem simples:
+
+bc(prettify).. JavaArchive archive = ShrinkWrap.create(JavaArchive.class,
+  "myPackage.jar").addPackage(this.getClass().getPackage());
+  System.out.println(archive.toString(true));
+  archive.as(ZipExporter.class).exportTo(
+    new File("/home/alr/Desktop/myPackage.jar"), true);
+
+bc(output).. javalang.jar:
+/org/
+/org/alr/
+/org/alr/test/
+/org/alr/test/TestClass.class
+
+p. Então vamos ver o que aconteceu aqui. Primeiro criamos um @JavaArchive@ e adicionamos todos conteúdos das @Class@ do @Package@ atual. Então mostramos no console como ficou a estrutura do conteúdo que foi incluído. Na última linha, utilizamos novamente as facilidades do @Assignable@ no @JavaArchive@ para obtermos um novo formato: com a capacidade para exportar no formato ZIP. Nesse caso usamos o @ZipExporter@, que permite exportar para @File@, @OutputStream@, ou mesmo obter o conteúdo como um @InputStream@, assim podemos lidar nós mesmos com os bytes.
+
+Há 3 tipos de exportadores disponível no  ShrinkWrap:
+
+|_.Exportador|_.Formato de Saída|
+|@org.jboss.shrinkwrap.api.exporter.TarExporter@|TAR|
+|@org.jboss.shrinkwrap.api.exporter.TarGzExporter@|TAR.GZ|
+|@org.jboss.shrinkwrap.api.exporter.ZipExporter@|ZIP|
+
+Claro que também podemos obter um arquivo ShrinkWrap de um arquivo simples de forma semelhante, usando um dos importadores padrão:
+
+|_.Importador|_.Formato de Saída|
+|@org.jboss.shrinkwrap.api.importer.TarImporter@|TAR|
+|@org.jboss.shrinkwrap.api.importer.TarGzImporter@|TAR.GZ|
+|@org.jboss.shrinkwrap.api.importer.ZipImporter@|ZIP|
+
+O código que executa uma importação de ida e volta do exemplo anterior é muito parecido com esse:
+
+bc(prettify).. JavaArchive roundtrip = ShrinkWrap
+  .create(ZipImporter.class, "myPackageRoundtrip.jar")
+  .importFrom(new File("/home/alr/Desktop/myPackage.jar"))
+  .as(JavaArchive.class);
+
+p. Note que passamos @ZipImporter@ no método @ShrinkWrap.create@, bem como o próprio @Assignable@ também! Começou a notar algum tema aqui?
+
+Isso conclui nossa breve introdução da manipulação do conteúdo de um arquivo com o ShrinkWrap. Esperemos que você ache a API intuitiva e consistente, e bem vindo a nossa comunidade.
