@@ -239,7 +239,7 @@ module Awestruct::Extensions::Repository::Visitors
         :key => repository.path.split('-').last, # this is how components are matched in jira
         :owner => repository.owner,
         :html_url => repository.relative_path.empty? ? repository.html_url : "#{repository.html_url}/tree/#{repository.master_branch}/#{repository.relative_path.chomp('/')}",
-        :external => !repository.owner.eql?('arquillian'),
+        :external => !repository.owner =~ /arquillian|shrinkwrap/,
         :name => resolve_name(repository),
         :desc => repository.desc,
         :groupId => resolve_group_id(repository),
@@ -396,7 +396,7 @@ module Awestruct::Extensions::Repository::Visitors
         :key => repository.path.split('-').last, # this is how components are matched in jira
         :owner => repository.owner,
         :html_url => repository.relative_path.empty? ? repository.html_url : "#{repository.html_url}/tree/#{repository.master_branch}/#{repository.relative_path.chomp('/')}",
-        :external => !repository.owner.eql?('arquillian'),
+        :external => !repository.owner =~ /arquillian|shrinkwrap/,
         :name => resolve_name(repository),
         :desc => repository.desc,
         :groupId => resolve_group_id(repository),
@@ -436,7 +436,7 @@ module Awestruct::Extensions::Repository::Visitors
           :contributors => RepositoryHelpers.resolve_contributors_between(site, repository, prev_sha, sha),
           :published_artifacts => []
         })
-        if site.resolve_published_artifacts and repository.owner.eql? 'arquillian'
+        if site.resolve_published_artifacts and repository.owner =~ /arquillian|shrinkwrap/
           resolve_published_artifacts(site.dir, repository, release)
         end
         # not assigning to release for now since it can be very space intensive
@@ -516,7 +516,7 @@ module Awestruct::Extensions::Repository::Visitors
       pom = load_root_head_pom(repository)
       name = pom.root.text('name')
       # FIXME note misspelling of Aggregator in Drone extension
-      name.nil? ? repository.path : name.gsub(/[ :]*(Aggregator|Agreggator|Parent|module)+/, '')
+      name.nil? ? repository.path : name.gsub(/[ :]*(Aggregator|Agreggator|Parent|module|and Build)+/, '').strip
     end
 
     def resolve_group_id(repository)
@@ -592,9 +592,14 @@ module Awestruct::Extensions::Repository::Visitors
       # FIXME Android extension defines versions in android-bom/pom.xml
       ['pom.xml', 'build/pom.xml', 'android-bom/pom.xml', "#{repository.relative_path}pom.xml"].each do |path|
         # skip if path is not present in this revision
-        next if rc.log(1).object(rev).path(path).size.zero?
-
-        pom = REXML::Document.new(rc.cat_file(rc.revparse("#{rev}:#{path}")))
+        #next if rc.log(1).object(rev).path(path).size.zero?
+        pom_content = nil
+        begin
+          pom_content = rc.cat_file(rc.revparse("#{rev}:#{path}"))
+        rescue
+          next
+        end
+        pom = REXML::Document.new(pom_content)
         pom.each_element('/project/properties/*') do |prop|
           if (prop.name.start_with? 'version.' or prop.name.end_with? '.version') and
               not prop.name =~ /[\._]plugin$/ and
@@ -832,7 +837,7 @@ module Awestruct::Extensions::Repository::Visitors
     include Base
 
     def handles(repository)
-      repository.path =~ /^(arquillian-extension-.+|jsfunit|arquillian-graphene|arquillian-droidium)$/ 
+      repository.path =~ /^(arquillian-extension-.+|jsfunit|arquillian-graphene|arquillian-droidium|arquillian-spacelift)$/ 
     end
 
     def visit(repository, site)
@@ -913,5 +918,29 @@ module Awestruct::Extensions::Repository::Visitors
       site.modules[c.type] << m
     end
   end
-  # QUICK HACK!
+
+  module ShrinkWrapComponent
+    include Base
+
+    def handles(repository)
+      repository.owner.eql? 'shrinkwrap'
+    end
+
+    def visit(repository, site)
+      c = site.components[repository.path]
+      c.type = 'shrinkwrap'
+      c.type_name = c.type.humanize.titleize
+      if site.modules[c.type].nil?
+        site.modules[c.type] = []
+      end
+      m = OpenStruct.new({
+        :basepath => c.repository.path,
+        :name => c.name,
+        :desc => c.desc,
+        :component => c
+      })
+      c.modules << m
+      site.modules[c.type] << m
+    end
+  end
 end

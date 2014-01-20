@@ -54,6 +54,40 @@ module Awestruct
           end
 
           @repositories << OpenStruct.new(
+            :path => 'shrinkwrap',
+            :desc => nil,
+            :relative_path => '',
+            :owner => 'shrinkwrap',
+            :host => 'github.com',
+            :type => 'git',
+            :commits_url => 'https://api.github.com/repos/shrinkwrap/shrinkwrap/commits{/sha}',
+            :html_url => 'https://github.com/shrinkwrap/shrinkwrap',
+            :clone_url => 'git://github.com/shrinkwrap/shrinkwrap.git'
+          )
+          @repositories << OpenStruct.new(
+            :path => 'resolver',
+            :desc => nil,
+            :relative_path => '',
+            :owner => 'shrinkwrap',
+            :host => 'github.com',
+            :type => 'git',
+            :commits_url => 'https://api.github.com/repos/shrinkwrap/resolver/commits{/sha}',
+            :html_url => 'https://github.com/shrinkwrap/resolver',
+            :clone_url => 'git://github.com/shrinkwrap/resolver.git'
+          )
+          @repositories << OpenStruct.new(
+            :path => 'descriptors',
+            :desc => nil,
+            :relative_path => '',
+            :owner => 'shrinkwrap',
+            :host => 'github.com',
+            :type => 'git',
+            :commits_url => 'https://api.github.com/repos/shrinkwrap/descriptors/commits{/sha}',
+            :html_url => 'https://github.com/shrinkwrap/descriptors',
+            :clone_url => 'git://github.com/shrinkwrap/descriptors.git'
+          )
+
+          @repositories << OpenStruct.new(
             :path => 'wildfly',
             :desc => nil,
             :relative_path => 'arquillian/',

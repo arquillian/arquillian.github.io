@@ -50,6 +50,9 @@ Awestruct::Extensions::Pipeline.new do
   # the JIRA extension registers its own extensions
   Awestruct::Extensions::Jira::Project.new(self, 'ARQ:12310885')
   extension Awestruct::Extensions::Jira::ReleaseNotes.new('ARQGRA:12312222', 'graphene')
+  extension Awestruct::Extensions::Jira::ReleaseNotes.new('SHRINKWRAP:12310884', 'shrinkwrap')
+  extension Awestruct::Extensions::Jira::ReleaseNotes.new('SHRINKRES:12312120', 'resolver')
+  extension Awestruct::Extensions::Jira::ReleaseNotes.new('SHRINKDESC:12311080', 'descriptors')
   extension Awestruct::Extensions::Repository::Collector.new(480465, 'sGiJRdK2Cq8Nz0TkTNAKyw', :observers => [github_collector])
   extension Awestruct::Extensions::Identities::Collect.new(github_collector)
   extension Awestruct::Extensions::Identities::Crawl.new(
@@ -61,7 +64,7 @@ Awestruct::Extensions::Pipeline.new do
   )
 
   # Releases extension must be after jira and repository extensions and before posts extension 
-  extension Awestruct::Extensions::Releases::Posts.new('/blog', :for_repo_owners => ['arquillian'], :since => '2011-01-01')
+  extension Awestruct::Extensions::Releases::Posts.new('/blog', :for_repo_owners => ['arquillian', 'shrinkwrap'], :since => '2011-01-01')
 
   extension Awestruct::Extensions::Lanyrd::Search.new('arquillian')
   extension Awestruct::Extensions::Lanyrd::Export.new('/invasion/events/arquillian.ics')
