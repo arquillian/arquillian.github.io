@@ -29,7 +29,7 @@
 
 source 'https://rubygems.org'
 
-gem "awestruct", "0.5.3"
+gem "awestruct", "0.5.4.rc3"
 #gem "awestruct", :path => '../awestruct'
 #gem "awestruct", :git => 'git@github.com:awestruct/awestruct.git'
 gem 'bootstrap-sass', '< 3.0'
@@ -40,7 +40,7 @@ gem "hpricot"
 gem "RedCloth"
 gem "redcarpet"
 gem "coffee-script"
-gem "haml"
+gem "haml", "4.0.1"
 gem "uglifier"
 gem "htmlcompressor"
 gem "listen", "1.3.1"
