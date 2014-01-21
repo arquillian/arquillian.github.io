@@ -577,6 +577,11 @@ module Awestruct::Extensions::Repository::Visitors
               :name => 'Aslak Knutsen',
               :jboss_username => 'aslak'
             })
+          elsif repository.owner.eql? 'shrinkwrap'
+            lead = OpenStruct.new({
+              :name => 'Andrew Lee Rubinger',
+              :jboss_username => 'alrubinger'
+            })
           elsif repository.path.eql? 'tomee'
             lead = OpenStruct.new({
               :name => 'David Blevins',
