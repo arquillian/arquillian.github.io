@@ -16,6 +16,7 @@ describe Awestruct::Extensions::Repository::Visitors::GenericMavenComponent do
   before :each do
     @visitor = MavenVisitor.new
     @site = OpenStruct.new
+    @site.dir = File.expand_path (File.dirname(__FILE__) + "/../")
     @site.tmp_dir = '/tmp/'
     @site.repos_dir = '/tmp/arqrepos'
     @site.modules = {}
@@ -55,7 +56,7 @@ describe Awestruct::Extensions::Repository::Visitors::GenericMavenComponent do
     @site.components.size.should equal(1)
 
     @site.components.each_value do |comp|
-      comp.releases.size.should eql(3)
+      expect(comp.releases.size).to be > 3
 
       versions = comp.releases.map {|x| x.version}
       versions.should include('1.5.0')
@@ -144,5 +145,19 @@ describe Awestruct::Extensions::Repository::Visitors::GenericMavenComponent do
     @site.components.each_value do |comp|
       comp.name.should eql('Arquillian TestRunner Spock')
     end
+  end
+
+  it "should extract published artifacts" do
+    @repository.clone_url = 'git://github.com/arquillian/arquillian-extension-drone.git'
+
+    link_components_modules
+    @site.resolve_published_artifacts = true
+    Cloner.new().visit(@repository, @site)
+
+    @visitor.visit(@repository, @site)
+    @site.components.size.should equal(1)
+    puts @site.components['arquillian-extension-drone'].releases.last.published_artifacts.each {|a|
+      puts a.to_s
+    }
   end
 end

@@ -183,7 +183,9 @@ module Awestruct
               ## REVIEW END
               Visitors.defined.each do |v|
                 if v.handles(r)
+                  start_time = Time.now
                   v.visit(r, site)
+                  puts "#{r.path.ljust(40)} #{v.name.split('::').last.rjust(25)} => #{'%.3f' % (Time.now - start_time)}"
                 end
               end
 

@@ -166,7 +166,13 @@ module Awestruct::Extensions::Repository::Visitors
 
     # Traverse all modules recursivly in a repository from a given rev:root
     def self.traverse_modules(rev, repository)
-      pomrev = repository.client.revparse("#{rev}pom.xml")
+      pomrev = nil
+      begin
+        pomrev = repository.client.revparse("#{rev}pom.xml")
+      rescue
+        puts "info: missing pom.xml in #{rev}"
+        return
+      end
       pom = REXML::Document.new(repository.client.cat_file(pomrev))
       yield rev, pom
 
@@ -612,13 +618,28 @@ module Awestruct::Extensions::Repository::Visitors
     end
 
     def resolve_published_artifacts(sitedir, repository, release)
-      rc = repository.client
-      rc.checkout(release.sha)
-      if File.exist? File.join(repository.clone_dir, 'pom.xml')
-        artifacts = `cd #{repository.clone_dir} && #{sitedir}/_bin/list-reactor-artifacts`.split("\n")
-        release.published_artifacts = artifacts.map{|a| Artifact::Coordinates.parse a}.sort_by{|a| a.artifactId}
+      parent_path = "#{release.tag}:#{repository.relative_path}"
+      begin
+        repository.client.revparse "#{parent_path}pom.xml"
+      rescue
+        return
       end
-      rc.checkout(repository.master_branch)
+
+      MavenHelpers.traverse_modules(parent_path, repository) do |pathrev, pom|
+        artifactId = pom.root.text('artifactId')
+        #puts "#{artifactId} -> #{version}"
+        packaging = (pom.root.text('packaging') || "jar").to_sym
+
+
+        next unless artifactId =~ /.*bom|.*depchain.*|graphene/ or packaging == :jar
+        next if artifactId =~/.*(tests?|ftest.*|inttest|example.*|build|build-config|build-resources)/
+        next unless packaging == :pom || :jar
+
+        version = pom.root.text('version') || pom.root.elements['parent'].text('version')
+        groupId = pom.root.text('groupId') || pom.root.elements['parent'].text('groupId')
+        release.published_artifacts ||= []
+        release.published_artifacts << Artifact::Coordinates.new(groupId, artifactId, packaging, version)
+      end
     end
 
     def load_root_head_pom(repository)
@@ -638,14 +659,19 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      if c.releases.size > 0
+      if !c.nil? and !c.releases.nil? and c.releases.size > 0
         rev = c.latest_tag
         parent_path = "#{rev}:#{repository.relative_path}"
+        # verify pom exists in this rev
+        begin
+          repository.client.revparse "#{parent_path}pom.xml"
+        rescue
+          return
+        end
         MavenHelpers.traverse_modules(parent_path, repository) do |pathrev, pom|
           artifactId = pom.text('/project/artifactId')
           unless artifactId.index('bom').nil?
             name = pom.root.text('name')
-            packaging = pom.root.text('packaging')
             groupId = pom.root.text('groupId') || pom.root.elements['parent'].text('groupId')
             c.bom = Artifact::Coordinates.new(groupId, artifactId, :pom, c.latest_version)
             return
@@ -664,9 +690,15 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      if c.releases.size > 0
+      if !c.nil? and !c.releases.nil? and c.releases.size > 0
         rev = c.latest_tag
         parent_path = "#{rev}:#{repository.relative_path}"
+        # verify pom exists in this rev
+        begin
+          repository.client.revparse "#{parent_path}pom.xml"
+        rescue
+          return
+        end
         MavenHelpers.traverse_modules(parent_path, repository) do |pathrev, pom|
           artifactId = pom.text('/project/artifactId')
           name = pom.text('/project/name')
@@ -674,10 +706,10 @@ module Awestruct::Extensions::Repository::Visitors
           # Some have x-module-depchain and others x-module
           unless "#{artifactId} #{name.to_s.downcase}".index('depchain').nil?
             name = pom.root.text('name')
-            packaging = pom.root.text('packaging')
+            packaging = pom.root.text('packaging') || "pom"
             groupId = pom.root.text('groupId') || pom.root.elements['parent'].text('groupId')
             c.depchains ||= []
-            c.depchains << Artifact.new(name, Artifact::Coordinates.new(groupId, artifactId, packaging, c.latest_version))
+            c.depchains << Artifact.new(name, Artifact::Coordinates.new(groupId, artifactId, packaging.to_sym, c.latest_version))
           end
         end
       end
