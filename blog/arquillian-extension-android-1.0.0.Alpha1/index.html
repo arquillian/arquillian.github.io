@@ -1,0 +1,62 @@
+<p>The Arquillian Android extension allows you to use the Android SDK in your Arquillian tests. Most notably, it allows you to start an Android Virtual device or connect to a real device. A part of the Android Extension for Arquillian is the Android Drone Extension. This extension allows you to easily configure WebDriver based tests which will be executed directly in an emulator device.</p>
+<p>When testing your application, you can then easily switch between desktop and mobile UI or develop mobile specific tests.</p>
+<h4>How to use it?</h4>
+<p>First, download the Android SDK from <a href="http://developer.android.com/sdk/index.html">developer.android.com</a> and point the ANDROID_HOME system variable to the directory where you extracted the SDK. You can then update and install specific SDK versions by running the `android` command.</p>
+<p>Next, add Android extension to dependencies. This depchain will add both Arquillian Android and Android Drone extensions.</p>
+<pre class="prettify"><code class="prettify">&lt;dependency&gt;
+    &lt;groupId&gt;org.jboss.arquillian.extension&lt;/groupId&gt;
+    &lt;artifactId&gt;arquillian-android-depchain&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0.Alpha1&lt;/version&gt;
+    &lt;type&gt;pom&lt;/type&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;</code></pre>
+<p><em>Note: Make sure you do <strong>NOT</strong> have the Arquillian Drone Selenium Server on classpath, as it will collide with the Android SDK unless configured to run on a different port. If you can&#8217;t remove it from classpath, you should disable it in <code>arquillian.xml</code></em></p>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="selenium-server"&gt;
+    &lt;!-- this must be skipped, we run /wd/hub on emulator --&gt;
+    &lt;property name="skip"&gt;true&lt;/property&gt;
+&lt;/extension&gt;</code></pre>
+<p>Download the Android Server APK to be installed to you mobile device from <a href="http://code.google.com/p/selenium/downloads/list">code.google.com</a>. Use <strong>android-server-2.6.0.apk</strong> for devices including Android 2.3.4, latest version for Android 3.0 and newer.</p>
+<p>Set up WebDriver in arquillian.xml</p>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="webdriver"&gt;
+    &lt;!-- this makes WebDriver connect hub on Android device --&gt;
+    &lt;property name="remoteAddress"&gt;http://localhost:14444/wd/hub&lt;/property&gt;
+&lt;/extension&gt;</code></pre>
+<p>Set up Android in arquillian.xml</p>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="android"&gt;
+    &lt;!-- this is optional, can be set via ANDROID_HOME property --&gt;
+    &lt;property name="home"&gt;/home/kpiwko/apps/android-sdk-linux_x86&lt;/property&gt;
+    &lt;!-- Nexus S --&gt;
+    &lt;!-- &lt;property name="serialId"&gt;3233E8EDB21700EC&lt;/property&gt;--&gt;</code>
+
+<code class="prettify">    &lt;property name="verbose"&gt;true&lt;/property&gt;
+    &lt;property name="apiLevel"&gt;13&lt;/property&gt;
+    &lt;property name="avdName"&gt;SnapshotEnabled&lt;/property&gt;
+    &lt;property name="emulatorBootupTimeoutInSeconds"&gt;180&lt;/property&gt;
+&lt;/extension&gt;</code></pre>
+<p>Properties explained, required in <strong>bold</strong>:</p>
+<ul>
+	<li><strong>home</strong> &#8211; Android SDK home, can be ommited if set via <code>ANDROID_HOME</code> property</li>
+	<li><strong>avdName</strong> &#8211; name of the Android Virtual Device. It will be either created or reused</li>
+	<li>apiLevel &#8211; (10) denotates API level, use <code>android list target</code> to get more variants</li>
+	<li>serialId &#8211; replaces avdName if set and available, represents a real device. Use <code>adb devices</code> to get the list</li>
+	<li>skip &#8211; (false) skip execution</li>
+	<li>verbose &#8211; (false) be verbose</li>
+	<li>force &#8211; (false) force emulator recreationg</li>
+	<li>sdSize &#8211; (128M) SD card size for emulator</li>
+	<li>emulatorBootupTimeoutInSeconds &#8211; (180) maximal time to get emulator started, use Snapshot enabled device if it takes too long</li>
+	<li>emulatorOptions &#8211; emulator options</li>
+</ul>
+<p>Emulators are created by default in <code>${basedir}/${avdName}</code>.</p>
+<p>Set up Android Drone in arquillian.xml</p>
+<pre class="prettify"><code class="prettify">&lt;extension qualifier="android-drone"&gt;
+    &lt;property name="androidServerApk"&gt;android-server-2.16.apk&lt;/property&gt;
+&lt;/extension&gt;</code></pre>
+<p>Properties explained, required in <strong>bold</strong>:</p>
+<ul>
+	<li><strong>androidServerApk</strong> &#8211; path to the Android Server APK you&#8217;ve downloaded</li>
+	<li>skip &#8211; (false) skip execution</li>
+	<li>verbose &#8211; (false) be verbose</li>
+	<li>webdriverPortHost &#8211; (14444) port on Host connected with port on device</li>
+	<li>webdriverPortGuest &#8211; (8080) port on Guest connected with port on Host</li>
+</ul>
+<p>Big thanks go to Jan Papousek (@jan_papousek) for improving and testing this release!</p>
