@@ -628,36 +628,59 @@ module Awestruct::Extensions::Repository::Visitors
     end
   end
 
+  # Combine Bom and Depchain in a common /scan Maven tree Base
   module BomModule
     include Base
 
     def handles(repository)
-      (File.exist? File.join(repository.clone_dir, 'bom', 'pom.xml') or
-          Dir.glob(File.join(repository.clone_dir, '*-bom', 'pom.xml')).size > 0)
+      true # we don't know until we do a full scan
     end
 
     def visit(repository, site)
       c = site.components[repository.path]
       if c.releases.size > 0
-        artifactId = resolve_bom_artifact_id(repository, c.latest_tag)
-        # QUESTION should bom be an artifact?
-        c.bom = Artifact::Coordinates.new(c.groupId, artifactId, :pom, c.latest_version)
-        # TODO could include what the bom includes (perhaps expandable div w/ bom contents?)
+        rev = c.latest_tag
+        parent_path = "#{rev}:#{repository.relative_path}"
+        MavenHelpers.traverse_modules(parent_path, repository) do |pathrev, pom|
+          artifactId = pom.text('/project/artifactId')
+          unless artifactId.index('bom').nil?
+            name = pom.root.text('name')
+            packaging = pom.root.text('packaging')
+            groupId = pom.root.text('groupId') || pom.root.elements['parent'].text('groupId')
+            c.bom = Artifact::Coordinates.new(groupId, artifactId, :pom, c.latest_version)
+            return
+          end
+        end
       end
     end
+  end
 
-    def resolve_bom_artifact_id(repository, rev)
-      rc = repository.client
-      clone_dir = repository.clone_dir
-      if repository.relative_path != ''
-        clone_dir = File.join(clone_dir, repository.relative_path)
+  module DepchainModule
+    include Base
+
+    def handles(repository)
+      true # we don't know until we do a full scan
+    end
+
+    def visit(repository, site)
+      c = site.components[repository.path]
+      if c.releases.size > 0
+        rev = c.latest_tag
+        parent_path = "#{rev}:#{repository.relative_path}"
+        MavenHelpers.traverse_modules(parent_path, repository) do |pathrev, pom|
+          artifactId = pom.text('/project/artifactId')
+          name = pom.text('/project/name')
+          #puts "#{name.to_s} > #{artifactId}"
+          # Some have x-module-depchain and others x-module
+          unless "#{artifactId} #{name.to_s.downcase}".index('depchain').nil?
+            name = pom.root.text('name')
+            packaging = pom.root.text('packaging')
+            groupId = pom.root.text('groupId') || pom.root.elements['parent'].text('groupId')
+            c.depchains ||= []
+            c.depchains << Artifact.new(name, Artifact::Coordinates.new(groupId, artifactId, packaging, c.latest_version))
+          end
+        end
       end
-      bom_dirname = 'bom'
-      if !File.exist? File.join(clone_dir, 'bom', 'pom.xml')
-        bom_dirname = File.basename(File.dirname(Dir.glob(File.join(clone_dir, '*-bom', 'pom.xml')).first))
-      end
-      pom = REXML::Document.new(rc.cat_file(rc.revparse("#{rev}:#{bom_dirname}/pom.xml")))
-      pom.root.text('artifactId')
     end
   end
 
@@ -861,6 +884,7 @@ module Awestruct::Extensions::Repository::Visitors
     end
 
     def resolve_extension_artifacts(repository, mod)
+      return unless mod.component.depchains.nil?
       rc = repository.client
       rev = mod.component.latest_tag
       pom = REXML::Document.new(rc.cat_file(rc.revparse("#{rev}:#{repository.relative_path}pom.xml")))
@@ -868,8 +892,7 @@ module Awestruct::Extensions::Repository::Visitors
       primary = nil
       pom.each_element('/project/modules/module') do |m|
         count += 1
-        if (m.text.eql? 'depchain' or m.text.end_with? '-depchain' or m.text =~ /depchains/) or
-            (primary.nil? and (m.text.eql? 'impl' or m.text.end_with? '-impl'))
+        if (m.text.eql? 'impl' or m.text.end_with? '-impl')
           primary = m.text 
         end
       end
