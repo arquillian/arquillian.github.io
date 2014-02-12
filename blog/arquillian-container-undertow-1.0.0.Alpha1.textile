@@ -1,0 +1,90 @@
+---
+author: lordofthejars
+---
+
+Aliens are conquering @Undertow@.
+
+@Undertow@ is a flexible performant web server written in java, providing both a blocking and a non-blocking API’s based on NIO.
+
+This extension enables us to write @Arquillian@ tests for @Undertow@.
+
+To simplify the development of tests on @Undertow@ we have created two @Shrinkwrap@ extensions:
+
+* Embedded Servlet Deployment
+* Non-blocking handler
+
+h3. Embedded Servlet Deployment
+
+When you want to deploy a servlet(s) inside @Undertow@, you need to create a _DeploymentInfo_ class and provide all the required information. For this, @Arquillian-Container-Undertow@ provide a @Shrinkwrap@ extension named @UndertowWebArchive@.
+
+
+div(filename). UndertowServletTest.java
+
+bc(prettify).. @Deployment(testable = false)
+public static Archive<WebArchive> createDeployment() {
+	return ShrinkWrap.create(UndertowWebArchive.class).from(
+			deployment()
+			.setContextPath("/myapp")
+			.setDeploymentName("test.war")
+			.setClassLoader(
+					EmbeddedUndertowClientWebContainerTest.class
+							.getClassLoader())
+			.addServlet(
+					servlet("MessageServlet", MessageServlet.class)
+						.addInitParam("message", "Hello World")
+						.addMapping(SERVLET_MAPPING)));
+}
+
+@Test
+public void shouldBeAbleToInvokeServletInDeployedWebApp(
+		@ArquillianResource URL url) throws Exception {
+
+	String body = readAllAndClose(new URL(url, "myservlet").openStream());
+		
+	assertThat(body, is("Hello World"));
+}
+
+p(info). %We are creating the deployment using the Fluent-API provided by @Undertow@.%
+
+h3. Non-blocking handler
+
+With @Undertow@ you can also write non-blocking handlers. For creating a non-blocking handler in @Undertow@ you create a class that implements the _HttpHandler_ interface and register it. For this, @Arquillian-Container-Undertow@ provide a @Shrinkwrap@ extension named _UndertowHttpHandlerArchive_.
+
+div(filename). UndertowNoneBlockTest.java
+
+bc(prettify).. @Deployment(testable = false)
+public static Archive<JavaArchive> createDeployment() {
+	return ShrinkWrap.create(UndertowHttpHandlerArchive.class).from(new HttpHandler() {
+           @Override
+           public void handleRequest(final HttpServerExchange exchange) throws Exception {
+               exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+               exchange.getResponseSender().send("Hello World");
+           }
+       });
+}
+
+@Test
+public void shouldBeAbleToInvokeHandlers(@ArquillianResource URL url) throws Exception {
+
+	String body = readAllAndClose(url.openStream());
+
+	assertThat(body, is("Hello World"));
+}
+
+p(info). %We are using the @HttpHandler@ interface provided by @Undertow@.%
+
+h3. Configuration
+
+You can configure the bind address and port of @Undertow@. By default @Undertow@ is started on _localhost:8080_.
+
+div(filename). arquillian.xml
+
+bc(prettify).. <container qualifier="undertow" default="true">
+	<configuration>
+		<property name="bindAddress">localhost</property>
+		<property name="bindHttpPort">9090</property> 
+	</configuration>
+</container>
+
+
+p(info). %If the @bindHttpPort@ is set to -1, a random port between 1024 and 49151 is used.%
