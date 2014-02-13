@@ -2,9 +2,166 @@
 <feed xml:lang="en-US" xmlns="http://www.w3.org/2005/Atom">
   <id>http://arquillian.org/</id>
   <title>Arquillian</title>
-  <updated>2014-02-12T00:00:00+00:00</updated>
+  <updated>2014-02-14T00:00:00+00:00</updated>
   <link href="http://arquillian.org/blog/atom.xml" rel="self" type="application/atom+xml" />
   <link href="http://arquillian.org/blog" rel="alternate" type="text/html" />
+  <entry>
+    <id>http://arquillian.org/blog/2014/02/13/arquillian-container-undertow-1-0-0-Alpha1/</id>
+    <title>Arquillian Container Undertow 1.0.0.Alpha1 Released</title>
+    <updated>2014-02-14T00:00:00+00:00</updated>
+    <link href="http://arquillian.org/blog/2014/02/13/arquillian-container-undertow-1-0-0-Alpha1/" rel="alternate" type="text/html" />
+    <category scheme="http://arquillian.org/blog/tags" term="release" />
+    <category scheme="http://arquillian.org/blog/tags" term="container-adapter" />
+    <category scheme="http://arquillian.org/blog/tags" term="undertow" />
+    <category scheme="http://arquillian.org/blog" term="arquillian" />
+    <summary>
+      The Arquillian team is proud to announce the 1.0.0.Alpha1 release of the Arquillian Container Undertow component!
+      Aliens are conquering Undertow.
+      Undertow is a flexible performant web server written in java, providing both a blocking and a non-blocking API’s based on NIO.
+      This extension enables us to write Arquillian tests for Undertow.
+      To simplify the development of tests on Undertow we have created two Shrinkwrap extensions:
+      
+      	Embedded Servlet Deployment
+      	Non-blocking handler
+      
+      Embedded Servlet Deployment
+      When you want to deploy a servlet(s) inside Undertow, you need to create a DeploymentInfo class and provide all the required information. For this, Arquillian-Container-Undertow provide a Shrinkwrap extension named UndertowWebArchive.
+      UndertowServletTest.java
+      @Deployment(testable = false)&#x000A;public static Archive&lt;WebArchive&gt;......
+    </summary>
+    <content type="html">
+      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.Alpha1&lt;/em&gt; release of the &lt;em&gt;Arquillian Container Undertow&lt;/em&gt; component!&lt;/p&gt;
+      &lt;p&gt;Aliens are conquering &lt;code&gt;Undertow&lt;/code&gt;.&lt;/p&gt;
+      &lt;p&gt;&lt;code&gt;Undertow&lt;/code&gt; is a flexible performant web server written in java, providing both a blocking and a non-blocking API’s based on NIO.&lt;/p&gt;
+      &lt;p&gt;This extension enables us to write &lt;code&gt;Arquillian&lt;/code&gt; tests for &lt;code&gt;Undertow&lt;/code&gt;.&lt;/p&gt;
+      &lt;p&gt;To simplify the development of tests on &lt;code&gt;Undertow&lt;/code&gt; we have created two &lt;code&gt;Shrinkwrap&lt;/code&gt; extensions:&lt;/p&gt;
+      &lt;ul&gt;
+      	&lt;li&gt;Embedded Servlet Deployment&lt;/li&gt;
+      	&lt;li&gt;Non-blocking handler&lt;/li&gt;
+      &lt;/ul&gt;
+      &lt;h3&gt;Embedded Servlet Deployment&lt;/h3&gt;
+      &lt;p&gt;When you want to deploy a servlet(s) inside &lt;code&gt;Undertow&lt;/code&gt;, you need to create a &lt;em&gt;DeploymentInfo&lt;/em&gt; class and provide all the required information. For this, &lt;code&gt;Arquillian-Container-Undertow&lt;/code&gt; provide a &lt;code&gt;Shrinkwrap&lt;/code&gt; extension named &lt;code&gt;UndertowWebArchive&lt;/code&gt;.&lt;/p&gt;
+      &lt;div class=&quot;filename&quot;&gt;UndertowServletTest.java&lt;/div&gt;
+      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;@Deployment(testable = false)
+      public static Archive&amp;lt;WebArchive&amp;gt; createDeployment() {
+      	return ShrinkWrap.create(UndertowWebArchive.class).from(
+      			deployment()
+      			.setContextPath(&quot;/myapp&quot;)
+      			.setDeploymentName(&quot;test.war&quot;)
+      			.setClassLoader(
+      					EmbeddedUndertowClientWebContainerTest.class
+      							.getClassLoader())
+      			.addServlet(
+      					servlet(&quot;MessageServlet&quot;, MessageServlet.class)
+      						.addInitParam(&quot;message&quot;, &quot;Hello World&quot;)
+      						.addMapping(SERVLET_MAPPING)));
+      }&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;@Test
+      public void shouldBeAbleToInvokeServletInDeployedWebApp(
+      		@ArquillianResource URL url) throws Exception {&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;	String body = readAllAndClose(new URL(url, &quot;myservlet&quot;).openStream());&lt;/code&gt;
+      		
+      &lt;code class=&quot;prettify&quot;&gt;	assertThat(body, is(&quot;Hello World&quot;));
+      }&lt;/code&gt;&lt;/pre&gt;
+      &lt;p class=&quot;info&quot;&gt;&lt;span&gt;We are creating the deployment using the Fluent-API provided by &lt;code&gt;Undertow&lt;/code&gt;.&lt;/span&gt;&lt;/p&gt;
+      &lt;h3&gt;Non-blocking handler&lt;/h3&gt;
+      &lt;p&gt;With &lt;code&gt;Undertow&lt;/code&gt; you can also write non-blocking handlers. For creating a non-blocking handler in &lt;code&gt;Undertow&lt;/code&gt; you create a class that implements the &lt;em&gt;HttpHandler&lt;/em&gt; interface and register it. For this, &lt;code&gt;Arquillian-Container-Undertow&lt;/code&gt; provide a &lt;code&gt;Shrinkwrap&lt;/code&gt; extension named &lt;em&gt;UndertowHttpHandlerArchive&lt;/em&gt;.&lt;/p&gt;
+      &lt;div class=&quot;filename&quot;&gt;UndertowNoneBlockTest.java&lt;/div&gt;
+      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;@Deployment(testable = false)
+      public static Archive&amp;lt;JavaArchive&amp;gt; createDeployment() {
+      	return ShrinkWrap.create(UndertowHttpHandlerArchive.class).from(new HttpHandler() {
+                 @Override
+                 public void handleRequest(final HttpServerExchange exchange) throws Exception {
+                     exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, &quot;text/plain&quot;);
+                     exchange.getResponseSender().send(&quot;Hello World&quot;);
+                 }
+             });
+      }&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;@Test
+      public void shouldBeAbleToInvokeHandlers(@ArquillianResource URL url) throws Exception {&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;	String body = readAllAndClose(url.openStream());&lt;/code&gt;
+      
+      &lt;code class=&quot;prettify&quot;&gt;	assertThat(body, is(&quot;Hello World&quot;));
+      }&lt;/code&gt;&lt;/pre&gt;
+      &lt;p class=&quot;info&quot;&gt;&lt;span&gt;We are using the &lt;code&gt;HttpHandler&lt;/code&gt; interface provided by &lt;code&gt;Undertow&lt;/code&gt;.&lt;/span&gt;&lt;/p&gt;
+      &lt;h3&gt;Configuration&lt;/h3&gt;
+      &lt;p&gt;You can configure the bind address and port of &lt;code&gt;Undertow&lt;/code&gt;. By default &lt;code&gt;Undertow&lt;/code&gt; is started on &lt;em&gt;localhost:8080&lt;/em&gt;.&lt;/p&gt;
+      &lt;div class=&quot;filename&quot;&gt;arquillian.xml&lt;/div&gt;
+      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;&amp;lt;container qualifier=&quot;undertow&quot; default=&quot;true&quot;&amp;gt;
+      	&amp;lt;configuration&amp;gt;
+      		&amp;lt;property name=&quot;bindAddress&quot;&amp;gt;localhost&amp;lt;/property&amp;gt;
+      		&amp;lt;property name=&quot;bindHttpPort&quot;&amp;gt;9090&amp;lt;/property&amp;gt; 
+      	&amp;lt;/configuration&amp;gt;
+      &amp;lt;/container&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+      &lt;p class=&quot;info&quot;&gt;&lt;span&gt;If the &lt;code&gt;bindHttpPort&lt;/code&gt; is set to -1, a random port between 1024 and 49151 is used.&lt;/span&gt;&lt;/p&gt;
+      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
+      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
+      &lt;h3&gt;Release details&lt;/h3&gt;
+      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;
+        &lt;tbody&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Component&lt;/th&gt;
+            &lt;td&gt;
+              &lt;a href=&quot;http://arquillian.org/modules/undertow-embedded-container-adapter/&quot;&gt;Arquillian Container Undertow&lt;/a&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Version&lt;/th&gt;
+            &lt;td&gt;
+              1.0.0.Alpha1
+              &lt;span class=&quot;label tag&quot;&gt;
+                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-container-undertow/commits/3dfa22d5aaeceffe1dcdeb8355fb62f90ea60635&quot;&gt;view tag&lt;/a&gt;
+              &lt;/span&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Release date&lt;/th&gt;
+            &lt;td&gt;2014-02-13&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Released by&lt;/th&gt;
+            &lt;td&gt;Aslak Knutsen&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Compiled against&lt;/th&gt;
+            &lt;td&gt;
+              &lt;ul class=&quot;unstyled&quot;&gt;
+                &lt;li&gt;Arquillian Core – 1.1.1.Final&lt;/li&gt;
+              &lt;/ul&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;h3&gt;
+        Published artifacts
+        &lt;small&gt;org.jboss.arquillian.container&lt;/small&gt;
+      &lt;/h3&gt;
+      &lt;ul&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.container
+          »
+          shrinkwrap-container-undertow
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/shrinkwrap-container-undertow/1.0.0.Alpha1/shrinkwrap-container-undertow-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/shrinkwrap-container-undertow/1.0.0.Alpha1/shrinkwrap-container-undertow-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.container
+          »
+          undertow-embedded
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/undertow-embedded/1.0.0.Alpha1/undertow-embedded-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/undertow-embedded/1.0.0.Alpha1/undertow-embedded-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+      &lt;/ul&gt;
+      &lt;p&gt;
+        Thanks to the following list of contributors:
+        &lt;a href=&quot;https://community.jboss.org/people/lexsoto&quot;&gt;Alex Soto&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;
+      &lt;/p&gt;
+    </content>
+  </entry>
   <entry>
     <id>http://arquillian.org/blog/2014/02/11/arquillian-testrunner-spock-1-0-0-Beta3/</id>
     <title>Arquillian TestRunner Spock 1.0.0.Beta3 Released</title>
@@ -991,7 +1148,7 @@
             &lt;td&gt;
               1.0.0.Alpha1
               &lt;span class=&quot;label tag&quot;&gt;
-                &lt;a href=&quot;https://github.com/arquillian/arquillian-spacelift/commit/c3376f72c3f8ee052d3927f4c3964e55a05329c9.html&quot;&gt;view tag&lt;/a&gt;
+                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-spacelift/commits/c3376f72c3f8ee052d3927f4c3964e55a05329c9&quot;&gt;view tag&lt;/a&gt;
               &lt;/span&gt;
             &lt;/td&gt;
           &lt;/tr&gt;
@@ -2164,6 +2321,130 @@
     </content>
   </entry>
   <entry>
+    <id>http://arquillian.org/blog/2013/11/30/arquillian-container-osgi-2-1-0-CR4/</id>
+    <title>Arquillian OSGi 2.1.0.CR4 Released</title>
+    <updated>2013-12-01T00:00:00+00:00</updated>
+    <link href="http://arquillian.org/blog/2013/11/30/arquillian-container-osgi-2-1-0-CR4/" rel="alternate" type="text/html" />
+    <category scheme="http://arquillian.org/blog/tags" term="release" />
+    <category scheme="http://arquillian.org/blog/tags" term="container-adapter" />
+    <category scheme="http://arquillian.org/blog/tags" term="osgi" />
+    <category scheme="http://arquillian.org/blog" term="arquillian" />
+    <summary>
+      The Arquillian team is proud to announce the 2.1.0.CR4 release of the Arquillian OSGi component!
+      
+      What is Arquillian?
+      Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.
+      Release details
+      
+        
+          
+            Component
+      ......
+    </summary>
+    <content type="html">
+      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;2.1.0.CR4&lt;/em&gt; release of the &lt;em&gt;Arquillian OSGi&lt;/em&gt; component!&lt;/p&gt;
+      
+      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
+      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
+      &lt;h3&gt;Release details&lt;/h3&gt;
+      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;
+        &lt;tbody&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Component&lt;/th&gt;
+            &lt;td&gt;Arquillian OSGi&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Modules&lt;/th&gt;
+            &lt;td&gt;
+              &lt;ul class=&quot;unstyled&quot;&gt;
+                &lt;li&gt;
+                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-osgi-jbosgi-embedded-container-adapter/&quot;&gt;Arquillian OSGi :: Container :: JBoss :: Embedded&lt;/a&gt;
+                &lt;/li&gt;
+                &lt;li&gt;
+                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-osgi-felix-embedded-container-adapter/&quot;&gt;Arquillian OSGi :: Container :: Felix :: Embedded&lt;/a&gt;
+                &lt;/li&gt;
+                &lt;li&gt;
+                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-osgi-karaf-embedded-container-adapter/&quot;&gt;Arquillian OSGi :: Container :: Karaf :: Embedded&lt;/a&gt;
+                &lt;/li&gt;
+              &lt;/ul&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Version&lt;/th&gt;
+            &lt;td&gt;
+              2.1.0.CR4
+              &lt;span class=&quot;label tag&quot;&gt;
+                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-container-osgi/commits/66ec6a6e514286f27d6ed18c3871e3b132d173a7&quot;&gt;view tag&lt;/a&gt;
+              &lt;/span&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Release date&lt;/th&gt;
+            &lt;td&gt;2013-11-30&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Released by&lt;/th&gt;
+            &lt;td&gt;Thomas Diesler&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Compiled against&lt;/th&gt;
+            &lt;td&gt;
+              &lt;ul class=&quot;unstyled&quot;&gt;
+                &lt;li&gt;Arquillian Core – 1.1.1.Final&lt;/li&gt;
+                &lt;li&gt;ShrinkWrap Core – 1.1.2&lt;/li&gt;
+              &lt;/ul&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;h3&gt;
+        Published artifacts
+        &lt;small&gt;org.jboss.arquillian.protocol&lt;/small&gt;
+      &lt;/h3&gt;
+      &lt;ul&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.protocol
+          »
+          arquillian-protocol-osgi
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/2.1.0.CR4/arquillian-protocol-osgi-2.1.0.CR4.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/2.1.0.CR4/arquillian-protocol-osgi-2.1.0.CR4.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.container
+          »
+          arquillian-container-osgi
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/2.1.0.CR4/arquillian-container-osgi-2.1.0.CR4.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/2.1.0.CR4/arquillian-container-osgi-2.1.0.CR4.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.container
+          »
+          arquillian-container-jbosgi-embedded
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-jbosgi-embedded/2.1.0.CR4/arquillian-container-jbosgi-embedded-2.1.0.CR4.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-jbosgi-embedded/2.1.0.CR4/arquillian-container-jbosgi-embedded-2.1.0.CR4.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.container
+          »
+          arquillian-container-felix-embedded
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-felix-embedded/2.1.0.CR4/arquillian-container-felix-embedded-2.1.0.CR4.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-felix-embedded/2.1.0.CR4/arquillian-container-felix-embedded-2.1.0.CR4.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.container
+          »
+          arquillian-container-karaf-embedded
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-karaf-embedded/2.1.0.CR4/arquillian-container-karaf-embedded-2.1.0.CR4.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-karaf-embedded/2.1.0.CR4/arquillian-container-karaf-embedded-2.1.0.CR4.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+      &lt;/ul&gt;
+      &lt;p&gt;
+        Thanks to the following list of contributors:
+        &lt;a href=&quot;https://community.jboss.org/people/thomas.diesler&quot;&gt;Thomas Diesler&lt;/a&gt;
+      &lt;/p&gt;
+    </content>
+  </entry>
+  <entry>
     <id>http://arquillian.org/blog/2013/11/26/arquillian-extension-jrebel-1-0-0-Alpha1/</id>
     <title>Arquillian Extension JRebel 1.0.0.Alpha1 Released</title>
     <updated>2013-11-27T00:00:00+00:00</updated>
@@ -2276,6 +2557,130 @@
       &lt;p&gt;
         Thanks to the following list of contributors:
         &lt;a href=&quot;https://community.jboss.org/people/blabno&quot;&gt;Bernard Labno&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/blabno&quot;&gt;Bernard Labno&lt;/a&gt;
+      &lt;/p&gt;
+    </content>
+  </entry>
+  <entry>
+    <id>http://arquillian.org/blog/2013/11/26/arquillian-container-osgi-2-1-0-CR3/</id>
+    <title>Arquillian OSGi 2.1.0.CR3 Released</title>
+    <updated>2013-11-27T00:00:00+00:00</updated>
+    <link href="http://arquillian.org/blog/2013/11/26/arquillian-container-osgi-2-1-0-CR3/" rel="alternate" type="text/html" />
+    <category scheme="http://arquillian.org/blog/tags" term="release" />
+    <category scheme="http://arquillian.org/blog/tags" term="container-adapter" />
+    <category scheme="http://arquillian.org/blog/tags" term="osgi" />
+    <category scheme="http://arquillian.org/blog" term="arquillian" />
+    <summary>
+      The Arquillian team is proud to announce the 2.1.0.CR3 release of the Arquillian OSGi component!
+      
+      What is Arquillian?
+      Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.
+      Release details
+      
+        
+          
+            Component
+      ......
+    </summary>
+    <content type="html">
+      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;2.1.0.CR3&lt;/em&gt; release of the &lt;em&gt;Arquillian OSGi&lt;/em&gt; component!&lt;/p&gt;
+      
+      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
+      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
+      &lt;h3&gt;Release details&lt;/h3&gt;
+      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;
+        &lt;tbody&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Component&lt;/th&gt;
+            &lt;td&gt;Arquillian OSGi&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Modules&lt;/th&gt;
+            &lt;td&gt;
+              &lt;ul class=&quot;unstyled&quot;&gt;
+                &lt;li&gt;
+                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-osgi-jbosgi-embedded-container-adapter/&quot;&gt;Arquillian OSGi :: Container :: JBoss :: Embedded&lt;/a&gt;
+                &lt;/li&gt;
+                &lt;li&gt;
+                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-osgi-felix-embedded-container-adapter/&quot;&gt;Arquillian OSGi :: Container :: Felix :: Embedded&lt;/a&gt;
+                &lt;/li&gt;
+                &lt;li&gt;
+                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-osgi-karaf-embedded-container-adapter/&quot;&gt;Arquillian OSGi :: Container :: Karaf :: Embedded&lt;/a&gt;
+                &lt;/li&gt;
+              &lt;/ul&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Version&lt;/th&gt;
+            &lt;td&gt;
+              2.1.0.CR3
+              &lt;span class=&quot;label tag&quot;&gt;
+                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-container-osgi/commits/fbd6730865b078dc18b1b8a079a347c7099cdb72&quot;&gt;view tag&lt;/a&gt;
+              &lt;/span&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Release date&lt;/th&gt;
+            &lt;td&gt;2013-11-26&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Released by&lt;/th&gt;
+            &lt;td&gt;Thomas Diesler&lt;/td&gt;
+          &lt;/tr&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Compiled against&lt;/th&gt;
+            &lt;td&gt;
+              &lt;ul class=&quot;unstyled&quot;&gt;
+                &lt;li&gt;Arquillian Core – 1.1.1.Final&lt;/li&gt;
+                &lt;li&gt;ShrinkWrap Core – 1.1.2&lt;/li&gt;
+              &lt;/ul&gt;
+            &lt;/td&gt;
+          &lt;/tr&gt;
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;h3&gt;
+        Published artifacts
+        &lt;small&gt;org.jboss.arquillian.protocol&lt;/small&gt;
+      &lt;/h3&gt;
+      &lt;ul&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.protocol
+          »
+          arquillian-protocol-osgi
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/2.1.0.CR3/arquillian-protocol-osgi-2.1.0.CR3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-osgi/2.1.0.CR3/arquillian-protocol-osgi-2.1.0.CR3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.container
+          »
+          arquillian-container-osgi
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/2.1.0.CR3/arquillian-container-osgi-2.1.0.CR3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-osgi/2.1.0.CR3/arquillian-container-osgi-2.1.0.CR3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.container
+          »
+          arquillian-container-jbosgi-embedded
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-jbosgi-embedded/2.1.0.CR3/arquillian-container-jbosgi-embedded-2.1.0.CR3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-jbosgi-embedded/2.1.0.CR3/arquillian-container-jbosgi-embedded-2.1.0.CR3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.container
+          »
+          arquillian-container-felix-embedded
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-felix-embedded/2.1.0.CR3/arquillian-container-felix-embedded-2.1.0.CR3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-felix-embedded/2.1.0.CR3/arquillian-container-felix-embedded-2.1.0.CR3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          org.jboss.arquillian.container
+          »
+          arquillian-container-karaf-embedded
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-karaf-embedded/2.1.0.CR3/arquillian-container-karaf-embedded-2.1.0.CR3.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
+          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-karaf-embedded/2.1.0.CR3/arquillian-container-karaf-embedded-2.1.0.CR3.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
+        &lt;/li&gt;
+      &lt;/ul&gt;
+      &lt;p&gt;
+        Thanks to the following list of contributors:
+        &lt;a href=&quot;https://community.jboss.org/people/thomas.diesler&quot;&gt;Thomas Diesler&lt;/a&gt;
       &lt;/p&gt;
     </content>
   </entry>
@@ -8337,479 +8742,6 @@
       &lt;p&gt;
         Thanks to the following list of contributors:
         &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/bmajsak&quot;&gt;Bartosz Majsak&lt;/a&gt;
-      &lt;/p&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>http://arquillian.org/blog/2013/08/01/arquillian-extension-guice-1-0-0-Alpha2/</id>
-    <title>Arquillian Google Guice Extension 1.0.0.Alpha2 Released</title>
-    <updated>2013-08-02T00:00:00+00:00</updated>
-    <link href="http://arquillian.org/blog/2013/08/01/arquillian-extension-guice-1-0-0-Alpha2/" rel="alternate" type="text/html" />
-    <category scheme="http://arquillian.org/blog/tags" term="release" />
-    <category scheme="http://arquillian.org/blog/tags" term="extension" />
-    <category scheme="http://arquillian.org/blog/tags" term="guice" />
-    <category scheme="http://arquillian.org/blog" term="arquillian" />
-    <summary>
-      The Arquillian team is proud to announce the 1.0.0.Alpha2 release of the Arquillian Google Guice Extension component!
-      Some of the highlights in this release
-      
-      	 Servlet integration
-      	This release bring one new cool feature, integration with the Guice Servlet extension
-      
-      The whole integration requires only two simple steps to make the test use the web configured Guice injector.
-      The first step is to replace the GuiceFilter with the ArquillianGuiceFilter:
-      web.xml
-      &lt;filter&gt;&#x000A;   &lt;filter-name&gt;guiceFilter&lt;/filter-name&gt;&#x000A;   &lt;filter-class&gt;org.jboss.arquillian.guice.api.servlet.ArquillianGuiceFilter&lt;/filter-class&gt;&#x000A;&lt;/filter&gt;&#x000A;&#x000A;&lt;filter-mapping&gt;&#x000A;   &lt;filter-name&gt;guiceFilter&lt;/filter-name&gt;&#x000A;   &lt;url-pattern&gt;/*&lt;/url-pattern&gt;&#x000A;&lt;/filter-mapping&gt; 
-      This can also be done at runtime; by doing a simple string replacement in the web descriptor when creating the deployment or by using......
-    </summary>
-    <content type="html">
-      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.Alpha2&lt;/em&gt; release of the &lt;em&gt;Arquillian Google Guice Extension&lt;/em&gt; component!&lt;/p&gt;
-      &lt;h3 class=&quot;highlights&quot;&gt;Some of the highlights in this release&lt;/h3&gt;
-      &lt;dl&gt;
-      	&lt;dt&gt;
-      &lt;i class=&quot;icon-star&quot;&gt;&lt;/i&gt; Servlet integration&lt;/dt&gt;
-      	&lt;dd&gt;&lt;p&gt;This release bring one new cool feature, integration with the &lt;a href=&quot;https://code.google.com/p/google-guice/wiki/Servlets&quot;&gt;Guice Servlet&lt;/a&gt; extension&lt;/p&gt;&lt;/dd&gt;
-      &lt;/dl&gt;
-      &lt;p&gt;The whole integration requires only two simple steps to make the test use the web configured Guice injector.&lt;/p&gt;
-      &lt;p&gt;The first step is to replace the &lt;code&gt;GuiceFilter&lt;/code&gt; with the &lt;code&gt;ArquillianGuiceFilter&lt;/code&gt;:&lt;/p&gt;
-      &lt;div class=&quot;filename&quot;&gt;web.xml&lt;/div&gt;
-      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;&amp;lt;filter&amp;gt;
-         &amp;lt;filter-name&amp;gt;guiceFilter&amp;lt;/filter-name&amp;gt;
-         &amp;lt;filter-class&amp;gt;org.jboss.arquillian.guice.api.servlet.ArquillianGuiceFilter&amp;lt;/filter-class&amp;gt;
-      &amp;lt;/filter&amp;gt;&lt;/code&gt;
-      
-      &lt;code class=&quot;prettify&quot;&gt;&amp;lt;filter-mapping&amp;gt;
-         &amp;lt;filter-name&amp;gt;guiceFilter&amp;lt;/filter-name&amp;gt;
-         &amp;lt;url-pattern&amp;gt;/*&amp;lt;/url-pattern&amp;gt;
-      &amp;lt;/filter-mapping&amp;gt; &lt;/code&gt;&lt;/pre&gt;
-      &lt;p&gt;This can also be done at runtime; by doing a simple string replacement in the web descriptor when creating the deployment or by using &lt;code&gt;ShrinkWrap Descriptors&lt;/code&gt;.&lt;/p&gt;
-      &lt;p&gt;The second step is to annotate your test with &lt;code&gt;@GuiceWebConfiguration&lt;/code&gt;. This will instruct the extension to retrieve the injector from the servlet context.&lt;/p&gt;
-      &lt;p&gt;Example test:&lt;/p&gt;
-      &lt;div class=&quot;filename&quot;&gt;WebInjectorTestCase.java&lt;/div&gt;
-      &lt;pre class=&quot;prettify&quot;&gt;&lt;code class=&quot;prettify&quot;&gt;@GuiceWebConfiguration
-      @RunWith(Arquillian.class)
-      public class WebInjectorTestCase {&lt;/code&gt;
-      
-      &lt;code class=&quot;prettify&quot;&gt;   @Deployment
-         public static Archive createTestArchive() {
-             return ShrinkWrap.create(WebArchive.class, &quot;guice-test.war&quot;)
-                     .addClasses(Employee.class,
-                             EmployeeService.class, DefaultEmployeeService.class,
-                             EmployeeRepository.class, DefaultEmployeeRepository.class,
-                             EmployeeModule.class, EmployeeModuleContextListener.class)
-                     .addAsWebInfResource(&quot;WEB-INF/web.xml&quot;, &quot;web.xml&quot;);
-         }&lt;/code&gt;
-      
-      &lt;code class=&quot;prettify&quot;&gt;   @Inject
-         private EmployeeService employeeService;&lt;/code&gt;
-      
-      &lt;code class=&quot;prettify&quot;&gt;   @Test
-         public void testGetEmployees() {&lt;/code&gt;
-      
-      &lt;code class=&quot;prettify&quot;&gt;       List&amp;lt;Employee&amp;gt; result = employeeService.getEmployees();&lt;/code&gt;
-      
-      &lt;code class=&quot;prettify&quot;&gt;       assertNotNull(&quot;Method returned null list as result.&quot;, result);
-             assertEquals(&quot;Two employees were expected.&quot;, 2, result.size());
-         }
-      }&lt;/code&gt;&lt;/pre&gt;
-      &lt;p&gt;The test can go beyond a simple example like this and allow for injection of other resources like Guice configured servlets, filters and listeners.&lt;/p&gt;
-      &lt;p&gt;We look forward to hearing your feedback about this release in the &lt;a href=&quot;http://community.jboss.org/en/arquillian&quot;&gt;community forums&lt;/a&gt;!&lt;/p&gt;
-      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
-      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
-      &lt;h3&gt;Release details&lt;/h3&gt;
-      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;
-        &lt;tbody&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Component&lt;/th&gt;
-            &lt;td&gt;
-              &lt;a href=&quot;http://arquillian.org/modules/guice-extension/&quot;&gt;Arquillian Google Guice Extension&lt;/a&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Version&lt;/th&gt;
-            &lt;td&gt;
-              1.0.0.Alpha2
-              &lt;span class=&quot;label tag&quot;&gt;
-                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-extension-guice/commits/8402a3eabfedf962e5b16fe0f5e962b1b852be82&quot;&gt;view tag&lt;/a&gt;
-              &lt;/span&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Release date&lt;/th&gt;
-            &lt;td&gt;2013-08-01&lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Released by&lt;/th&gt;
-            &lt;td&gt;Aslak Knutsen&lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Compiled against&lt;/th&gt;
-            &lt;td&gt;
-              &lt;ul class=&quot;unstyled&quot;&gt;
-                &lt;li&gt;Arquillian Core – 1.1.0.Final&lt;/li&gt;
-                &lt;li&gt;ShrinkWrap Resolvers – 2.0.0-alpha-1&lt;/li&gt;
-              &lt;/ul&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-        &lt;/tbody&gt;
-      &lt;/table&gt;
-      &lt;h3&gt;
-        Published artifacts
-        &lt;small&gt;org.jboss.arquillian.extension&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;ul&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-guice-api
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-api/1.0.0.Alpha2/arquillian-guice-api-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-api/1.0.0.Alpha2/arquillian-guice-api-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-guice-impl
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-impl/1.0.0.Alpha2/arquillian-guice-impl-1.0.0.Alpha2.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-impl/1.0.0.Alpha2/arquillian-guice-impl-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.extension
-          »
-          arquillian-guice-bom
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-bom/1.0.0.Alpha2/arquillian-guice-bom-1.0.0.Alpha2.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-      &lt;/ul&gt;
-      &lt;h3&gt;
-        Release notes and resolved issues
-        &lt;small&gt;3&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;p&gt;&lt;/p&gt;
-      &lt;dl&gt;
-        &lt;dt&gt;Bug&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1439&quot;&gt;ARQ-1439&lt;/a&gt; -         NoClassDefFoundError for MavenDependencyResolver when using Google Guice Extension&lt;/li&gt;
-          &lt;/ul&gt;
-        &lt;/dd&gt;
-      &lt;/dl&gt;
-      &lt;dl&gt;
-        &lt;dt&gt;Feature Request&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1447&quot;&gt;ARQ-1447&lt;/a&gt; -         Inject Injector created through GuiceFilter.&lt;/li&gt;
-          &lt;/ul&gt;
-        &lt;/dd&gt;
-      &lt;/dl&gt;
-      &lt;p&gt;
-        Thanks to the following list of contributors:
-        &lt;a href=&quot;https://community.jboss.org/people/jmnarloch&quot;&gt;Jakub Narloch&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;
-      &lt;/p&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>http://arquillian.org/blog/2013/07/26/arquillian-container-tomcat-1-0-0-CR5/</id>
-    <title>Arquillian Container Tomcat 1.0.0.CR5 Released</title>
-    <updated>2013-07-27T00:00:00+00:00</updated>
-    <link href="http://arquillian.org/blog/2013/07/26/arquillian-container-tomcat-1-0-0-CR5/" rel="alternate" type="text/html" />
-    <category scheme="http://arquillian.org/blog/tags" term="release" />
-    <category scheme="http://arquillian.org/blog/tags" term="container-adapter" />
-    <category scheme="http://arquillian.org/blog/tags" term="tomcat" />
-    <category scheme="http://arquillian.org/blog" term="arquillian" />
-    <summary>
-      The Arquillian team is proud to announce the 1.0.0.CR5 release of the Arquillian Container Tomcat component!
-      
-      What is Arquillian?
-      Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.
-      Release details
-      
-        
-          
-           ......
-    </summary>
-    <content type="html">
-      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.CR5&lt;/em&gt; release of the &lt;em&gt;Arquillian Container Tomcat&lt;/em&gt; component!&lt;/p&gt;
-      
-      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
-      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
-      &lt;h3&gt;Release details&lt;/h3&gt;
-      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;
-        &lt;tbody&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Component&lt;/th&gt;
-            &lt;td&gt;Arquillian Container Tomcat&lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Modules&lt;/th&gt;
-            &lt;td&gt;
-              &lt;ul class=&quot;unstyled&quot;&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-tomcat-managed-5.5-container-adapter/&quot;&gt;Arquillian Tomcat Managed 5.5.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-tomcat-embedded-6-container-adapter/&quot;&gt;Arquillian Tomcat Embedded 6.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-tomcat-remote-6-container-adapter/&quot;&gt;Arquillian Tomcat Remote 6.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-tomcat-managed-6-container-adapter/&quot;&gt;Arquillian Tomcat Managed 6.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-tomcat-embedded-7-container-adapter/&quot;&gt;Arquillian Tomcat Embedded 7.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-tomcat-managed-7-container-adapter/&quot;&gt;Arquillian Tomcat Managed 7.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-tomcat-remote-7-container-adapter/&quot;&gt;Arquillian Tomcat Remote 7.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-              &lt;/ul&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Version&lt;/th&gt;
-            &lt;td&gt;
-              1.0.0.CR5
-              &lt;span class=&quot;label tag&quot;&gt;
-                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-container-tomcat/commits/c501a831837bc126faf7fce1b6fe7d56e91ea39a&quot;&gt;view tag&lt;/a&gt;
-              &lt;/span&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Release date&lt;/th&gt;
-            &lt;td&gt;2013-07-26&lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Released by&lt;/th&gt;
-            &lt;td&gt;Aslak Knutsen&lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Compiled against&lt;/th&gt;
-            &lt;td&gt;
-              &lt;ul class=&quot;unstyled&quot;&gt;
-                &lt;li&gt;Arquillian Core – 1.0.0.Final&lt;/li&gt;
-              &lt;/ul&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-        &lt;/tbody&gt;
-      &lt;/table&gt;
-      &lt;h3&gt;
-        Published artifacts
-        &lt;small&gt;org.jboss.arquillian.container&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;ul&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-tomcat-common
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-common/1.0.0.CR5/arquillian-tomcat-common-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-common/1.0.0.CR5/arquillian-tomcat-common-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-tomcat-managed-5.5
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-5.5/1.0.0.CR5/arquillian-tomcat-managed-5.5-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-5.5/1.0.0.CR5/arquillian-tomcat-managed-5.5-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-tomcat-embedded-6
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-6/1.0.0.CR5/arquillian-tomcat-embedded-6-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-6/1.0.0.CR5/arquillian-tomcat-embedded-6-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-tomcat-remote-6
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-remote-6/1.0.0.CR5/arquillian-tomcat-remote-6-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-remote-6/1.0.0.CR5/arquillian-tomcat-remote-6-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-tomcat-managed-6
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-6/1.0.0.CR5/arquillian-tomcat-managed-6-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-6/1.0.0.CR5/arquillian-tomcat-managed-6-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-tomcat-embedded-7
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-7/1.0.0.CR5/arquillian-tomcat-embedded-7-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-embedded-7/1.0.0.CR5/arquillian-tomcat-embedded-7-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-tomcat-managed-7
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-7/1.0.0.CR5/arquillian-tomcat-managed-7-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-managed-7/1.0.0.CR5/arquillian-tomcat-managed-7-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-tomcat-remote-7
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-remote-7/1.0.0.CR5/arquillian-tomcat-remote-7-1.0.0.CR5.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-tomcat-remote-7/1.0.0.CR5/arquillian-tomcat-remote-7-1.0.0.CR5.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-      &lt;/ul&gt;
-      &lt;h3&gt;
-        Release notes and resolved issues
-        &lt;small&gt;3&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;p&gt;Support for ROOT&lt;/p&gt;
-      &lt;dl&gt;
-        &lt;dt&gt;Bug&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1393&quot;&gt;ARQ-1393&lt;/a&gt; -         Unable to deploy ROOT.war to Tomcat remote and managed containers&lt;/li&gt;
-          &lt;/ul&gt;
-        &lt;/dd&gt;
-      &lt;/dl&gt;
-      &lt;dl&gt;
-        &lt;dt&gt;Feature Request&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-963&quot;&gt;ARQ-963&lt;/a&gt; -         Support Tomcat 7 Remote&lt;/li&gt;
-          &lt;/ul&gt;
-        &lt;/dd&gt;
-      &lt;/dl&gt;
-      &lt;p&gt;
-        Thanks to the following list of contributors:
-        &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/ianbrandt&quot;&gt;Ian Brandt&lt;/a&gt;, &lt;a href=&quot;https://github.com/johntbush&quot;&gt;John Bush&lt;/a&gt;
-      &lt;/p&gt;
-    </content>
-  </entry>
-  <entry>
-    <id>http://arquillian.org/blog/2013/07/22/arquillian-container-was-1-0-0-Alpha1/</id>
-    <title>Arquillian Container WebSphere AS 1.0.0.Alpha1 Released</title>
-    <updated>2013-07-23T00:00:00+00:00</updated>
-    <link href="http://arquillian.org/blog/2013/07/22/arquillian-container-was-1-0-0-Alpha1/" rel="alternate" type="text/html" />
-    <category scheme="http://arquillian.org/blog/tags" term="release" />
-    <category scheme="http://arquillian.org/blog/tags" term="container-adapter" />
-    <category scheme="http://arquillian.org/blog/tags" term="was" />
-    <category scheme="http://arquillian.org/blog" term="arquillian" />
-    <summary>
-      The Arquillian team is proud to announce the 1.0.0.Alpha1 release of the Arquillian Container WebSphere AS component!
-      After a long wait; our first alpha release of a container implementation for WebSphere Application Server V8.5 Liberty Profile is finally out. Enjoy!
-      What is Arquillian?
-      Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and......
-    </summary>
-    <content type="html">
-      &lt;p&gt;The Arquillian team is proud to announce the &lt;em&gt;1.0.0.Alpha1&lt;/em&gt; release of the &lt;em&gt;Arquillian Container WebSphere AS&lt;/em&gt; component!&lt;/p&gt;
-      &lt;p&gt;After a long wait; our first alpha release of a container implementation for WebSphere Application Server V8.5 Liberty Profile is finally out. Enjoy!&lt;/p&gt;
-      &lt;h3&gt;What is Arquillian?&lt;/h3&gt;
-      &lt;p&gt;Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.&lt;/p&gt;
-      &lt;h3&gt;Release details&lt;/h3&gt;
-      &lt;table class=&quot;table table-bordered table-striped&quot;&gt;
-        &lt;tbody&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Component&lt;/th&gt;
-            &lt;td&gt;Arquillian Container WebSphere AS&lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Modules&lt;/th&gt;
-            &lt;td&gt;
-              &lt;ul class=&quot;unstyled&quot;&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-was-remote-7-container-adapter/&quot;&gt;Arquillian WebSphere AS Remote 7.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-was-embedded-8-container-adapter/&quot;&gt;Arquillian WebSphere AS Embedded 8.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-was-remote-8-container-adapter/&quot;&gt;Arquillian WebSphere AS Remote 8.x Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-                &lt;li&gt;
-                  &lt;a href=&quot;http://arquillian.org/modules/arquillian-wlp-managed-8.5-container-adapter/&quot;&gt;Arquillian WebSphere Liberty Profile Managed 8.5 Container Adapter&lt;/a&gt;
-                &lt;/li&gt;
-              &lt;/ul&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Version&lt;/th&gt;
-            &lt;td&gt;
-              1.0.0.Alpha1
-              &lt;span class=&quot;label tag&quot;&gt;
-                &lt;a href=&quot;https://api.github.com/repos/arquillian/arquillian-container-was/commits/08f4cb568da93396e1d257a82a1e5947deab878a&quot;&gt;view tag&lt;/a&gt;
-              &lt;/span&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Release date&lt;/th&gt;
-            &lt;td&gt;2013-07-20&lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Released by&lt;/th&gt;
-            &lt;td&gt;Aslak Knutsen&lt;/td&gt;
-          &lt;/tr&gt;
-          &lt;tr&gt;
-            &lt;th&gt;Compiled against&lt;/th&gt;
-            &lt;td&gt;
-              &lt;ul class=&quot;unstyled&quot;&gt;
-                &lt;li&gt;Arquillian Core – 1.0.0.Final&lt;/li&gt;
-              &lt;/ul&gt;
-            &lt;/td&gt;
-          &lt;/tr&gt;
-        &lt;/tbody&gt;
-      &lt;/table&gt;
-      &lt;h3&gt;
-        Published artifacts
-        &lt;small&gt;org.jboss.arquillian.container&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;ul&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-was-remote-7
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-was-remote-7/1.0.0-SNAPSHOT/arquillian-was-remote-7-1.0.0-SNAPSHOT.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-was-remote-7/1.0.0-SNAPSHOT/arquillian-was-remote-7-1.0.0-SNAPSHOT.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-was-embedded-8
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-was-embedded-8/1.0.0-SNAPSHOT/arquillian-was-embedded-8-1.0.0-SNAPSHOT.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-was-embedded-8/1.0.0-SNAPSHOT/arquillian-was-embedded-8-1.0.0-SNAPSHOT.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-was-remote-8
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-was-remote-8/1.0.0-SNAPSHOT/arquillian-was-remote-8-1.0.0-SNAPSHOT.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-was-remote-8/1.0.0-SNAPSHOT/arquillian-was-remote-8-1.0.0-SNAPSHOT.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-        &lt;li&gt;
-          org.jboss.arquillian.container
-          »
-          arquillian-wlp-managed-85
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-wlp-managed-85/1.0.0.Alpha1/arquillian-wlp-managed-85-1.0.0.Alpha1.jar&quot; target=&quot;_blank&quot;&gt;jar&lt;/a&gt;
-          &lt;a class=&quot;artifact&quot; href=&quot;http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-wlp-managed-85/1.0.0.Alpha1/arquillian-wlp-managed-85-1.0.0.Alpha1.pom&quot; target=&quot;_blank&quot;&gt;pom&lt;/a&gt;
-        &lt;/li&gt;
-      &lt;/ul&gt;
-      &lt;h3&gt;
-        Release notes and resolved issues
-        &lt;small&gt;2&lt;/small&gt;
-      &lt;/h3&gt;
-      &lt;p&gt;First release of WebSphere support&lt;/p&gt;
-      &lt;dl&gt;
-        &lt;dt&gt;Feature Request&lt;/dt&gt;
-        &lt;dd&gt;
-          &lt;ul class=&quot;unstyled&quot;&gt;
-            &lt;li&gt;
-      &lt;a href=&quot;https://issues.jboss.org/browse/ARQ-1221&quot;&gt;ARQ-1221&lt;/a&gt; -         Create a managed DeployableContainer integration for WAS Liberty Profile V8.5.Next&lt;/li&gt;
-          &lt;/ul&gt;
-        &lt;/dd&gt;
-      &lt;/dl&gt;
-      &lt;p&gt;
-        Thanks to the following list of contributors:
-        &lt;a href=&quot;https://community.jboss.org/people/gpoul&quot;&gt;Gerhard Poul&lt;/a&gt;, &lt;a href=&quot;https://community.jboss.org/people/aslak&quot;&gt;Aslak Knutsen&lt;/a&gt;
       &lt;/p&gt;
     </content>
   </entry>
