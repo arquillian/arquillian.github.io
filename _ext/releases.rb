@@ -1,4 +1,7 @@
 require 'time'
+require 'ri_cal'
+require 'tzinfo'
+require 'versionomy'
 
 module Awestruct::Extensions::Releases
   class Posts
@@ -133,6 +136,83 @@ module Awestruct::Extensions::Releases
       if !last_commit.nil?
         last_commit.author_date
       end
+    end
+  end
+
+
+  class FutureRelease
+
+    FORMAT = Versionomy.default_format.modified_copy do
+                 field(:release_type, :requires_previous_field => false,
+                       :default_style => :short) do
+                   recognize_regexp_map(:style => :long, :default_delimiter => '',
+                                        :delimiter_regexp => '-|\.|\s?') do
+                     map(:development, 'Dev')
+                     map(:alpha, 'Alpha')
+                     map(:beta, 'Beta')
+                     map(:final, 'Final')
+                     map(:release_candidate, 'CR')
+                   end
+                 end
+               end
+
+
+    def initialize(output_path)
+      @output_path = output_path
+    end
+
+    def execute(site)
+      cal = RiCal.Calendar do |cal|
+        site.components.each_value do |component|
+          next unless component.repository.owner.eql? 'arquillian'
+          next if component.releases.empty?
+          next unless component.unreleased_commits > 1
+
+          latest_version =  Versionomy.parse(component.latest_version, FORMAT)
+          latest_date = component.releases.find {|r| r.version.eql? component.latest_version}.date
+
+          future_date = latest_date + (60 * 60 * 24 * 30) # add a month
+          future_date = Time.now + (60 * 60 * 24 * 3) if future_date < Time.now
+          future_version = bump_version latest_version
+
+          cal.event do |e|
+            e.dtstart = future_date
+            e.dtend = future_date
+            e.summary = "Release #{component.name} #{future_version}"
+            e.description = YAML.dump({
+              "clone_url" => component.repository.clone_url,
+              "new_version" => future_version.to_s,
+              "old_version" => latest_version.to_s
+            })
+            e.categories ['RELEASE']
+            e.sequence = 0
+            e.security_class = 'PUBLIC'
+
+            e.created = latest_date
+            e.organizer = "CN=Arquillian Team"
+
+            e.alarm do |a|
+              a.action = "DISPLAY"
+              a.description = "Time to release #{component.name}"
+              a.trigger = "-P3D"
+              #a.duration = future_date - (60 * 60 * 3) # 3 days before release
+            end
+          end
+        end
+      end
+
+      input_page = File.join( File.dirname(__FILE__), 'lanyrd.export.haml' )
+      page = site.engine.load_page( input_page )
+      page.date = page.timestamp unless page.timestamp.nil?
+      page.output_path = @output_path
+      page.session_ical = cal.export
+      site.pages << page
+
+    end
+
+    def bump_version(v)
+      return v.bump(:tiny) if v.release_type == :final
+      return v.bump("#{v.release_type.to_s}_version")
     end
   end
 end
