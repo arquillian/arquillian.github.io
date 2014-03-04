@@ -60,6 +60,21 @@ module Awestruct::Extensions::Identities
         identity
       end
 
+      def lookup_by_emails(email)
+        identity = lookup_by_email(email)
+        identity = lookup_by_contributor_email(email) if identity.nil?
+        identity
+      end
+
+      # contributors[].email, return unique Identity
+      def unique_by_emails(contributors)
+        contributors.map do |a|
+          identity = lookup_by_emails(a.email)
+          identity = OpenStruct.new( {:name => a.name, :email => a.email} ) if identity.nil?
+          identity
+        end.uniq {|a| a.name }
+      end
+
       def lookup_by_contributor(contributor)
         identity = self.find {|e| e.contributor and e.contributor.emails and e.contributor.emails.include? contributor.email }
         if identity.nil?
@@ -68,7 +83,16 @@ module Awestruct::Extensions::Identities
         end
         identity
       end
-  
+
+     def lookup_by_contributor_email(email)
+        identity = self.find {|e| e.contributor and e.contributor.emails and e.contributor.emails.include? email }
+        if identity.nil?
+          # Indication that we have a mismatched account
+          puts "Could not find contributor with e-mail " + email
+        end
+        identity
+      end
+
       def lookup_by_email(email, create = false)
         return nil if email.nil?
         identity = self.find {|e| email.eql? e.email or !e.emails.nil? and e.emails.include? email}
@@ -175,6 +199,23 @@ module Awestruct::Extensions::Identities
       FileUtils.mkdir_p File.dirname data_file
       File.open(data_file, 'w') do |out|
         YAML.dump site.identities, out
+      end
+    end
+  end
+
+  class Page
+
+    def initialize(page_prefix, page_template)
+      @page_prefix = page_prefix
+      @page_template = page_template
+    end
+
+    def execute(site)
+      site.identities.each do |identity|
+        identity_page = site.engine.find_and_load_site_page(File.join(@page_template))
+        identity_page.output_path = File.join(@page_prefix, identity.github_id + '.html')
+        identity_page.identity = identity
+        site.pages << identity_page
       end
     end
   end

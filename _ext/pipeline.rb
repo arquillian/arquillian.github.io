@@ -70,6 +70,8 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Lanyrd::Search.new('arquillian')
   extension Awestruct::Extensions::Lanyrd::Export.new('/invasion/events/arquillian.ics')
 
+  #extension Awestruct::Extensions::Identities::Page.new('/community', '/community/_identity')
+
   extension Awestruct::Extensions::Posts.new('/blog')
   extension Awestruct::Extensions::AutoTag.new(:posts)
   extension Awestruct::Extensions::Paginator.new(:posts, '/blog/index', :per_page => 5)
