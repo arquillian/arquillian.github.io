@@ -1,0 +1,41 @@
+---
+date: 2014-03-16
+author: kpiwko
+---
+
+ShrinkWrap Resolver 2.1.0 brings you support for Maven 3.1.0, additional features and improved configuration API.
+
+h3. Significant additions in ShrinkWrap Resolver 2.1.0
+
+- <i class="icon-star"></i> Support for Maven 3.1.0 and newer :=
+
+This release was updated to sure Eclipse Aether, which makes it compatible with Maven 3.1.0 and newer. ShrinkWrap Resolver Maven Plugin now requires you run it with recent Maven version, other components are compatible with previous Maven version as well. I'd like to thank Tomaž Cerar and Michał Matłoka for making this update possible. =:
+
+- <i class="icon-star"></i> API for defining Maven repositories :=
+
+ShrinkWrap Resolver now allows you to specify Maven repositories directly in code. These repositories always have priority. For instance, if there is a repository with the same *id* defined anywhere in _setting.xml_ or _pom.xml_, this definition will override it. Kudos for this feature goes to Marc-Antoine Gouillart!
+
+bc(prettify).. Maven.configureResolver()
+    .withRemoteRepo("my-repository-id", "url://to/my/repository", "layout")
+    .resolve("G:A:V").withTransitivity().asFile();
+
+bc(prettify).. Maven.configureResolver()
+    .withRemoteRepo(MavenRemoteRepositories.createRemoteRepository("my-repository-id", "url://to/my/repository", "layout"))
+   .resolve("G:A:V").withTransitivity().asFile(); 
+
+p. =:
+
+- <i class="icon-star"></i> Configuration API updates :=
+
+In the past, methods that modified resolution sources, such as @withClassPathResolution(boolean)@ or @withMavenCentralRepo(boolean)@ were enabled too late in the resolution chain, namely if you loaded a _pom.xml_ file before, it was always loaded using default settings. To make setup clearer, configuration related methods were moved to @Maven.configureResolver()@ API instead. The biggest advantage of this API is that it influences all resolution calls, including the ones needed for construction of _pom.xml_ model.
+
+bc(prettify).. Maven.configureResolver()
+    .offline()
+    .withCentralRepo(false)
+    .withClasspathResolution(true)
+    .loadPomFromFile("/path/to/pom.xml")
+    .resolve("G:A").withTransitivity().asFile(); 
+
+p. While previous methods are still working, they are marked as deprecated. Please update your tests. =:
+
+We hope that you'll enjoy our new stuff and look forward to hear your feedback in the "community forums":#{site.project_space}.
