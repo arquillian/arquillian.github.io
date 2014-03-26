@@ -150,7 +150,8 @@ module Awestruct::Extensions::Identities
   module IdentityHelper
     # SEMI-HACK this should received contributions from crawlers
     def url
-      self.jbosscommunity ? self.jbosscommunity.profile_url : self.github.profile_url 
+      #self.jbosscommunity ? self.jbosscommunity.profile_url : self.github.profile_url
+      "/community/#{self.github_id}"
     end
 
     # TODO support for CSS class, or just attributes in general
