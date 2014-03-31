@@ -12,6 +12,9 @@ module Awestruct::Extensions::Releases
     end
 
     def execute(site)
+      # Create a map index of {component.name_release.version, release_page}
+      # for quick cross linking lookup from other related pages
+      site.release_index ||= {}
       site.pages.each do |page|
         # tag explicit blog entries w/ year
         if page.relative_source_path =~ /^#{@path_prefix}\/(\d{4})-\d{2}-\d{2}-/
@@ -100,6 +103,8 @@ module Awestruct::Extensions::Releases
           # Workaround for non inherited dynamic front matter. Manually inherit until fixed upstream #125
           inner_release_page.inherit_front_matter_from(release_page)
           site.pages << release_page
+
+          site.release_index["#{release_page.component.name}_#{release_page.release.version}"] = release_page
         end
       end
     end
