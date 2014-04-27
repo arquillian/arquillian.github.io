@@ -55,122 +55,6 @@
           <article class="post">
             <header class="header">
               <h2 class="title">
-                <a href="/blog/2014/02/13/arquillian-container-undertow-1-0-0-Alpha1/">Arquillian Container Undertow 1.0.0.Alpha1 Released</a>
-              </h2>
-              <div class="byline">
-                <a href="/community/lordofthejars">
-                  <img class="avatar" src="http://gravatar.com/avatar/8ac4459a1de90107204dbe42c2e687be?s=44" />
-                </a>
-                <span class="author">Posted by
-                <a href="/community/lordofthejars">Alex Soto</a></span>
-                <span class="dateinline">on Feb 13, 2014</span>
-                <div class="date"><abbr>Feb</abbr> 13</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2014/02/13/arquillian-container-undertow-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="feb5db2e8891b8f5ea6e3af37b16ddeb91167bc1">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha1</em> release of the <em>Arquillian Container Undertow</em> component!</p>
-              <p>Aliens are conquering <code>Undertow</code>.</p>
-              <p><code>Undertow</code> is a flexible performant web server written in java, providing both a blocking and a non-blocking API’s based on NIO.</p>
-              <p>This extension enables us to write <code>Arquillian</code> tests for <code>Undertow</code>.</p>
-              <p>To simplify the development of tests on <code>Undertow</code> we have created two <code>Shrinkwrap</code> extensions:</p>
-              <ul>
-              	<li>Embedded Servlet Deployment</li>
-              	<li>Non-blocking handler</li>
-              </ul>
-              <h3>Embedded Servlet Deployment</h3>
-              <p>When you want to deploy a servlet(s) inside <code>Undertow</code>, you need to create a <em>DeploymentInfo</em> class and provide all the required information. For this, <code>Arquillian-Container-Undertow</code> provide a <code>Shrinkwrap</code> extension named <code>UndertowWebArchive</code>.</p>
-              <div class="filename">UndertowServletTest.java</div>
-              <pre class="prettify"><code class="prettify">@Deployment(testable = false)&#x000A;public static Archive&lt;WebArchive&gt; createDeployment() {&#x000A;	return ShrinkWrap.create(UndertowWebArchive.class).from(&#x000A;			deployment()&#x000A;			.setContextPath("/myapp")&#x000A;			.setDeploymentName("test.war")&#x000A;			.setClassLoader(&#x000A;					EmbeddedUndertowClientWebContainerTest.class&#x000A;							.getClassLoader())&#x000A;			.addServlet(&#x000A;					servlet("MessageServlet", MessageServlet.class)&#x000A;						.addInitParam("message", "Hello World")&#x000A;						.addMapping(SERVLET_MAPPING)));&#x000A;}</code>&#x000A;&#x000A;<code class="prettify">@Test&#x000A;public void shouldBeAbleToInvokeServletInDeployedWebApp(&#x000A;		@ArquillianResource URL url) throws Exception {</code>&#x000A;&#x000A;<code class="prettify">	String body = readAllAndClose(new URL(url, "myservlet").openStream());</code>&#x000A;		&#x000A;<code class="prettify">	assertThat(body, is("Hello World"));&#x000A;}</code></pre>
-              <p class="info"><span>We are creating the deployment using the Fluent-API provided by <code>Undertow</code>.</span></p>
-              <h3>Non-blocking handler</h3>
-              <p>With <code>Undertow</code> you can also write non-blocking handlers. For creating a non-blocking handler in <code>Undertow</code> you create a class that implements the <em>HttpHandler</em> interface and register it. For this, <code>Arquillian-Container-Undertow</code> provide a <code>Shrinkwrap</code> extension named <em>UndertowHttpHandlerArchive</em>.</p>
-              <div class="filename">UndertowNoneBlockTest.java</div>
-              <pre class="prettify"><code class="prettify">@Deployment(testable = false)&#x000A;public static Archive&lt;JavaArchive&gt; createDeployment() {&#x000A;	return ShrinkWrap.create(UndertowHttpHandlerArchive.class).from(new HttpHandler() {&#x000A;           @Override&#x000A;           public void handleRequest(final HttpServerExchange exchange) throws Exception {&#x000A;               exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");&#x000A;               exchange.getResponseSender().send("Hello World");&#x000A;           }&#x000A;       });&#x000A;}</code>&#x000A;&#x000A;<code class="prettify">@Test&#x000A;public void shouldBeAbleToInvokeHandlers(@ArquillianResource URL url) throws Exception {</code>&#x000A;&#x000A;<code class="prettify">	String body = readAllAndClose(url.openStream());</code>&#x000A;&#x000A;<code class="prettify">	assertThat(body, is("Hello World"));&#x000A;}</code></pre>
-              <p class="info"><span>We are using the <code>HttpHandler</code> interface provided by <code>Undertow</code>.</span></p>
-              <h3>Configuration</h3>
-              <p>You can configure the bind address and port of <code>Undertow</code>. By default <code>Undertow</code> is started on <em>localhost:8080</em>.</p>
-              <div class="filename">arquillian.xml</div>
-              <pre class="prettify"><code class="prettify">&lt;container qualifier="undertow" default="true"&gt;&#x000A;	&lt;configuration&gt;&#x000A;		&lt;property name="bindAddress"&gt;localhost&lt;/property&gt;&#x000A;		&lt;property name="bindHttpPort"&gt;9090&lt;/property&gt; &#x000A;	&lt;/configuration&gt;&#x000A;&lt;/container&gt;</code></pre>
-              <p class="info"><span>If the <code>bindHttpPort</code> is set to -1, a random port between 1024 and 49151 is used.</span></p>
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/undertow-embedded-container-adapter/">Arquillian Container Undertow</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.0.0.Alpha1
-                      <span class="label tag">
-                        <a href="https://github.com/arquillian/arquillian-container-undertow/commit/3dfa22d5aaeceffe1dcdeb8355fb62f90ea60635.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2014-02-13</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Aslak Knutsen</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>
-                          <a href="/modules/core-platform/">Arquillian Core</a>
-                          &#8211;
-                          <a href="/blog/2013/08/04/arquillian-core-1-1-1-Final/">1.1.1.Final</a>
-                        </li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.container</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  shrinkwrap-container-undertow
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/shrinkwrap-container-undertow/1.0.0.Alpha1/shrinkwrap-container-undertow-1.0.0.Alpha1.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/shrinkwrap-container-undertow/1.0.0.Alpha1/shrinkwrap-container-undertow-1.0.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  undertow-embedded
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/undertow-embedded/1.0.0.Alpha1/undertow-embedded-1.0.0.Alpha1.jar" target="_blank">jar</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/undertow-embedded/1.0.0.Alpha1/undertow-embedded-1.0.0.Alpha1.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="/community/lordofthejars">Alex Soto</a>, <a href="/community/aslakknutsen">Aslak Knutsen</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2014/02/13/arquillian-container-undertow-1-0-0-Alpha1/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/undertow/">undertow</a>
-            </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
                 <a href="/blog/2014/02/13/arquillian-container-osgi-2-1-0-CR10/">Arquillian OSGi 2.1.0.CR10 Released</a>
               </h2>
               <div class="byline">
@@ -315,7 +199,123 @@
           <article class="post">
             <header class="header">
               <h2 class="title">
-                <a href="/blog/2014/02/11/arquillian-testrunner-spock-1-0-0-Beta3/">Arquillian TestRunner Spock 1.0.0.Beta3 Released</a>
+                <a href="/blog/2014/02/12/arquillian-container-undertow-1-0-0-Alpha1/">Arquillian Container Undertow 1.0.0.Alpha1 Released</a>
+              </h2>
+              <div class="byline">
+                <a href="/community/lordofthejars">
+                  <img class="avatar" src="http://gravatar.com/avatar/8ac4459a1de90107204dbe42c2e687be?s=44" />
+                </a>
+                <span class="author">Posted by
+                <a href="/community/lordofthejars">Alex Soto</a></span>
+                <span class="dateinline">on Feb 12, 2014</span>
+                <div class="date"><abbr>Feb</abbr> 12</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2014/02/12/arquillian-container-undertow-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="6630be7d300e4de2bc10df8a0587ab69046939d4">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha1</em> release of the <em>Arquillian Container Undertow</em> component!</p>
+              <p>Aliens are conquering <code>Undertow</code>.</p>
+              <p><code>Undertow</code> is a flexible performant web server written in java, providing both a blocking and a non-blocking API’s based on NIO.</p>
+              <p>This extension enables us to write <code>Arquillian</code> tests for <code>Undertow</code>.</p>
+              <p>To simplify the development of tests on <code>Undertow</code> we have created two <code>Shrinkwrap</code> extensions:</p>
+              <ul>
+              	<li>Embedded Servlet Deployment</li>
+              	<li>Non-blocking handler</li>
+              </ul>
+              <h3>Embedded Servlet Deployment</h3>
+              <p>When you want to deploy a servlet(s) inside <code>Undertow</code>, you need to create a <em>DeploymentInfo</em> class and provide all the required information. For this, <code>Arquillian-Container-Undertow</code> provide a <code>Shrinkwrap</code> extension named <code>UndertowWebArchive</code>.</p>
+              <div class="filename">UndertowServletTest.java</div>
+              <pre class="prettify"><code class="prettify">@Deployment(testable = false)&#x000A;public static Archive&lt;WebArchive&gt; createDeployment() {&#x000A;	return ShrinkWrap.create(UndertowWebArchive.class).from(&#x000A;			deployment()&#x000A;			.setContextPath("/myapp")&#x000A;			.setDeploymentName("test.war")&#x000A;			.setClassLoader(&#x000A;					EmbeddedUndertowClientWebContainerTest.class&#x000A;							.getClassLoader())&#x000A;			.addServlet(&#x000A;					servlet("MessageServlet", MessageServlet.class)&#x000A;						.addInitParam("message", "Hello World")&#x000A;						.addMapping(SERVLET_MAPPING)));&#x000A;}</code>&#x000A;&#x000A;<code class="prettify">@Test&#x000A;public void shouldBeAbleToInvokeServletInDeployedWebApp(&#x000A;		@ArquillianResource URL url) throws Exception {</code>&#x000A;&#x000A;<code class="prettify">	String body = readAllAndClose(new URL(url, "myservlet").openStream());</code>&#x000A;		&#x000A;<code class="prettify">	assertThat(body, is("Hello World"));&#x000A;}</code></pre>
+              <p class="info"><span>We are creating the deployment using the Fluent-API provided by <code>Undertow</code>.</span></p>
+              <h3>Non-blocking handler</h3>
+              <p>With <code>Undertow</code> you can also write non-blocking handlers. For creating a non-blocking handler in <code>Undertow</code> you create a class that implements the <em>HttpHandler</em> interface and register it. For this, <code>Arquillian-Container-Undertow</code> provide a <code>Shrinkwrap</code> extension named <em>UndertowHttpHandlerArchive</em>.</p>
+              <div class="filename">UndertowNoneBlockTest.java</div>
+              <pre class="prettify"><code class="prettify">@Deployment(testable = false)&#x000A;public static Archive&lt;JavaArchive&gt; createDeployment() {&#x000A;	return ShrinkWrap.create(UndertowHttpHandlerArchive.class).from(new HttpHandler() {&#x000A;           @Override&#x000A;           public void handleRequest(final HttpServerExchange exchange) throws Exception {&#x000A;               exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");&#x000A;               exchange.getResponseSender().send("Hello World");&#x000A;           }&#x000A;       });&#x000A;}</code>&#x000A;&#x000A;<code class="prettify">@Test&#x000A;public void shouldBeAbleToInvokeHandlers(@ArquillianResource URL url) throws Exception {</code>&#x000A;&#x000A;<code class="prettify">	String body = readAllAndClose(url.openStream());</code>&#x000A;&#x000A;<code class="prettify">	assertThat(body, is("Hello World"));&#x000A;}</code></pre>
+              <p class="info"><span>We are using the <code>HttpHandler</code> interface provided by <code>Undertow</code>.</span></p>
+              <h3>Configuration</h3>
+              <p>You can configure the bind address and port of <code>Undertow</code>. By default <code>Undertow</code> is started on <em>localhost:8080</em>.</p>
+              <div class="filename">arquillian.xml</div>
+              <pre class="prettify"><code class="prettify">&lt;container qualifier="undertow" default="true"&gt;&#x000A;	&lt;configuration&gt;&#x000A;		&lt;property name="bindAddress"&gt;localhost&lt;/property&gt;&#x000A;		&lt;property name="bindHttpPort"&gt;9090&lt;/property&gt; &#x000A;	&lt;/configuration&gt;&#x000A;&lt;/container&gt;</code></pre>
+              <p class="info"><span>If the <code>bindHttpPort</code> is set to -1, a random port between 1024 and 49151 is used.</span></p>
+              <h3>What is Arquillian?</h3>
+              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+              <h3>Release details</h3>
+              <table class="table table-bordered table-striped">
+                <tbody>
+                  <tr>
+                    <th>Component</th>
+                    <td>
+                      <a href="/modules/undertow-embedded-container-adapter/">Arquillian Container Undertow</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Version</th>
+                    <td>
+                      1.0.0.Alpha1
+                      <span class="label tag">
+                        <a href="https://github.com/arquillian/arquillian-container-undertow/commit/3dfa22d5aaeceffe1dcdeb8355fb62f90ea60635.html">view tag</a>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Release date</th>
+                    <td>2014-02-12</td>
+                  </tr>
+                  <tr>
+                    <th>Released by</th>
+                    <td>Aslak Knutsen</td>
+                  </tr>
+                  <tr>
+                    <th>Compiled against</th>
+                    <td>
+                      <ul class="unstyled">
+                        <li>
+                          <a href="/modules/core-platform/">Arquillian Core</a>
+                          &#8211;
+                          <a href="/blog/2013/08/04/arquillian-core-1-1-1-Final/">1.1.1.Final</a>
+                        </li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>
+                Published artifacts
+                <small>org.jboss.arquillian.container</small>
+              </h3>
+              <ul>
+                <li>
+                  org.jboss.arquillian.container
+                  &raquo;
+                  shrinkwrap-container-undertow
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/shrinkwrap-container-undertow/1.0.0.Alpha1/shrinkwrap-container-undertow-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/shrinkwrap-container-undertow/1.0.0.Alpha1/shrinkwrap-container-undertow-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.container
+                  &raquo;
+                  undertow-embedded
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/undertow-embedded/1.0.0.Alpha1/undertow-embedded-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/undertow-embedded/1.0.0.Alpha1/undertow-embedded-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+              </ul>
+              <p>
+                Thanks to the following list of contributors:
+                <a href="/community/lordofthejars">Alex Soto</a>, <a href="/community/aslakknutsen">Aslak Knutsen</a>
+              </p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2014/02/12/arquillian-container-undertow-1-0-0-Alpha1/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/undertow/">undertow</a>
+            </div>
+          </article>
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2014/02/10/arquillian-testrunner-spock-1-0-0-Beta3/">Arquillian TestRunner Spock 1.0.0.Beta3 Released</a>
               </h2>
               <div class="byline">
                 <a href="/community/aslakknutsen">
@@ -323,9 +323,9 @@
                 </a>
                 <span class="author">Posted by
                 <a href="/community/aslakknutsen">Aslak Knutsen</a></span>
-                <span class="dateinline">on Feb 11, 2014</span>
-                <div class="date"><abbr>Feb</abbr> 11</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2014/02/11/arquillian-testrunner-spock-1-0-0-Beta3/#disqus_thread" data-disqus-identifier="eac21a293127822ffe3b2fe4150336b921279e4e">Comments</a></span>
+                <span class="dateinline">on Feb 10, 2014</span>
+                <div class="date"><abbr>Feb</abbr> 10</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2014/02/10/arquillian-testrunner-spock-1-0-0-Beta3/#disqus_thread" data-disqus-identifier="edb7dc75e452410c22e0a0865ae653bc65a850c4">Comments</a></span>
               </div>
             </header>
             <div class="body">
@@ -353,7 +353,7 @@
                   </tr>
                   <tr>
                     <th>Release date</th>
-                    <td>2014-02-11</td>
+                    <td>2014-02-10</td>
                   </tr>
                   <tr>
                     <th>Released by</th>
@@ -420,7 +420,7 @@
               </p>
             </div>
             <div class="footer">
-              <a href="/blog/2014/02/11/arquillian-testrunner-spock-1-0-0-Beta3/">permalink</a>
+              <a href="/blog/2014/02/10/arquillian-testrunner-spock-1-0-0-Beta3/">permalink</a>
               |
               <i class="icon-tags"></i>
               tagged as
@@ -430,7 +430,7 @@
           <article class="post">
             <header class="header">
               <h2 class="title">
-                <a href="/blog/2014/02/11/arquillian-container-weld-1-0-0-CR8/">Arquillian Container Weld 1.0.0.CR8 Released</a>
+                <a href="/blog/2014/02/10/arquillian-container-weld-1-0-0-CR8/">Arquillian Container Weld 1.0.0.CR8 Released</a>
               </h2>
               <div class="byline">
                 <a href="/community/aslakknutsen">
@@ -438,9 +438,9 @@
                 </a>
                 <span class="author">Posted by
                 <a href="/community/aslakknutsen">Aslak Knutsen</a></span>
-                <span class="dateinline">on Feb 11, 2014</span>
-                <div class="date"><abbr>Feb</abbr> 11</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2014/02/11/arquillian-container-weld-1-0-0-CR8/#disqus_thread" data-disqus-identifier="83f132cf64de8a8a900aefe4f16e059c678695f1">Comments</a></span>
+                <span class="dateinline">on Feb 10, 2014</span>
+                <div class="date"><abbr>Feb</abbr> 10</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2014/02/10/arquillian-container-weld-1-0-0-CR8/#disqus_thread" data-disqus-identifier="967ca289670df87cf170dd1c531f2abb39709b5b">Comments</a></span>
               </div>
             </header>
             <div class="body">
@@ -482,7 +482,7 @@
                   </tr>
                   <tr>
                     <th>Release date</th>
-                    <td>2014-02-11</td>
+                    <td>2014-02-10</td>
                   </tr>
                   <tr>
                     <th>Released by</th>
@@ -556,7 +556,7 @@
               </p>
             </div>
             <div class="footer">
-              <a href="/blog/2014/02/11/arquillian-container-weld-1-0-0-CR8/">permalink</a>
+              <a href="/blog/2014/02/10/arquillian-container-weld-1-0-0-CR8/">permalink</a>
               |
               <i class="icon-tags"></i>
               tagged as
@@ -754,10 +754,10 @@
               </li>
               <li>
                 <div class="title">
-                  <a href="/blog/2014/04/05/descriptors-2-0-0-alpha-6/">ShrinkWrap Descriptors 2.0.0-alpha-6 Released</a>
+                  <a href="/blog/2014/04/04/descriptors-2-0-0-alpha-6/">ShrinkWrap Descriptors 2.0.0-alpha-6 Released</a>
                 </div>
                 <div class="meta">
-                  Apr 05, 2014
+                  Apr 04, 2014
                 </div>
               </li>
               <li>
