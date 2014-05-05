@@ -1,0 +1,89 @@
+---
+date: 2014-05-05
+author: kenfinnigan
+---
+
+h3. New Arquillian Extension for AngularJS!
+
+This is the first release of a new Arquillian Extension for use with AngularJS. Initially we're providing extensions to Arquillian Graphene, but we're interested in hearing your ideas for other possible extensions to the Arquillian universe for AngularJS testing.
+
+It might seem odd that the first release of a completely new extension is 1.2.0.Alpha1, but we're intending to tie the releases of this extension to the minor releases of AngularJS. What that means is that this release will be compatible with 1.2.x versions of AngularJS. Whether the extension is compatible with versions of AngularJS outside 1.2.x depends on the extent that we have depended on AngularJS internal APIs that were either not present in previous versions, or removed in future ones.
+
+h3. Graphene enhancements for AngularJS
+
+* WebDriver event synchronization
+* @@FindByNg@ selectors (see below)
+
+h4. @@FindByNg@ Selectors
+
+With this first release, we support the following use of @@FindByNg@:
+
+* Model bindings - @@FindByNg(model = "..")@
+* Button, link or form actions - @@FindByNg(action = "..")@
+* Repeated DOM blocks - @@FindByNg(repeat = "..")@
+
+Here's an example of these in use:
+
+bc(prettify).. @RunWith(Arquillian.class)
+    @RunAsClient
+    public class AngularTest {
+
+        ..
+
+        @FindByNg(model = "todo.done")
+        List<WebElement> todos;
+
+        @FindByNg(model = "todoText")
+        WebElement todoEntry;
+
+        @FindByNg(action = "archive()")
+        WebElement archive;
+
+        @FindByNg(action = "addTodo()")
+        WebElement addTodo;
+
+        @FindByNg(repeat = "todo in todos")
+        List<WebElement> todoRepeat;
+
+        @Before
+        public void loadPage() {
+            browser.navigate().to(contextRoot + "index.html");
+        }
+
+        @Test
+        public void testNumberOfTodos() {
+            assertEquals(2, todos.size());
+        }
+
+        @Test
+        public void testArchive() {
+            assertEquals(2, todos.size());
+            archive.click();
+            assertEquals(1, todos.size());
+        }
+
+        @Test
+        public void testAddTodo() {
+            assertEquals(2, todos.size());
+            todoEntry.sendKeys("This is a new TODO item");
+            addTodo.submit();
+            assertEquals(3, todos.size());
+        }
+
+        @Test
+        public void testRepeater() {
+            assertEquals(2, todoRepeat.size());
+            WebElement secondRow = todoRepeat.get(1);
+            WebElement checkbox = secondRow.findElement(By.tagName("input"));
+            WebElement todoItem = secondRow.findElement(By.tagName("span"));
+            assertEquals("second todo", todoItem.getText());
+
+            checkbox.click();
+            archive.click();
+
+            assertEquals(0, todoRepeat.size());
+        }
+    }
+
+
+We hope that you'll enjoy our new stuff and look forward to hear your feedback in the "community forums":#{site.project_space}.
