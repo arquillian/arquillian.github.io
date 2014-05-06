@@ -461,6 +461,7 @@ module Awestruct::Extensions::Repository::Visitors
           'org_jboss_arquillian_core' => 'Arquillian Core',
           'arquillian_drone' => 'Arquillian Drone Extension',
           'arquillian_warp' => 'Arquillian Warp',
+          'arquillian_graphene' => 'Graphene',
           'arquillian_transaction' => 'Arquillian Transaction Extension',
           'org_jboss_arquillian_graphene' => 'Graphene',
           'shrinkwrap_shrinkwrap' => 'ShrinkWrap',
