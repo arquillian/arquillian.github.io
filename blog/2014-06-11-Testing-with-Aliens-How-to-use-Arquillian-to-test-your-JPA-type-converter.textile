@@ -1,0 +1,189 @@
+---
+layout: post
+title: Testing with Aliens; How to test a JPA type converter with Arquillian
+author: thjanssen
+tags: [ testing, persistence, extension, howto ]
+---
+JPA type converters provide an easy way to define how an entity attribute gets persisted to the database. You can use them to implement lots of different features, e.g. to encrypt your data as I showed in a previous post: "How to use a JPA Type Converter to encrypt your data":http://www.thoughts-on-java.org/2014/06/how-to-use-jpa-type-converter-to.html
+But writing the type converter is not enough. We also need to make sure, that it is working correctly.
+
+In general, there are two ways to test a type converter. We could write a unit test to check, if the conversion works correctly. But a unit test performs a test of the isolated class without putting it into the real execution environment. That means that we will still not know, if the converter works in one of our applications. If everything is set up correctly, the persistence provider will call the converter before writing to and after reading from the database. So we also need to check if the type converter gets called by the persistence provider and if everything works fine under that condition. We need to test the converter inside of the container we want to use for our application.
+
+We will have a look at how this can be done with "Arquillian":http://www.arquillian.org/ and its persistence extension.
+
+h3. Something about Arqillian
+
+If you are already familiar with Arquillian, you can skip this part. For all of you who have never worked with Arquillian so far, I just want to give some basic information. You can find a more detailed description at the Arquillian "Getting Started guide":http://arquillian.org/guides/getting_started/.
+
+Arquillian is a test framework for in container testing. The idea is to do not mock the container you want to use but to test your code inside of it. This provides the advantage, that you can test if your code will also work in your execution environment and not only in your mocked up test scenario. Arquillian provides lots of functionality to manage the container, inject required resources like EJBs or an EntityManager and make your live much easier.
+
+The Arquillian tests are executed by junit. This is great, because you can use them everywhere, where you can execute junit tests. And that means in your IDE, as part of your build process, on your CI server, simply everywhere.
+
+h3. Object under test
+
+The following code snippet shows the object under test for this example. It is a type converter that encrypts and decrypts a String attribute. The converter gets called by the persistence provider before writing to and after reading from the database. If you want to read more about how this type converter works, check my "posting about it":http://www.thoughts-on-java.org/2014/06/how-to-use-jpa-type-converter-to.html.
+
+bc(prettify).. @Converter
+public class CryptoConverter implements AttributeConverter<String, String> {
+
+    private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
+    private static final byte[] KEY = "MySuperSecretKey".getBytes();
+
+    @Override
+    public String convertToDatabaseColumn(String ccNumber) {
+      // do some encryption
+      Key key = new SecretKeySpec(KEY, "AES");
+      try {
+         Cipher c = Cipher.getInstance(ALGORITHM);
+         c.init(Cipher.ENCRYPT_MODE, key);
+         return Base64.encodeBytes(c.doFinal(ccNumber.getBytes()));
+      } catch (Exception e) {
+         throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public String convertToEntityAttribute(String dbData) {
+      // do some decryption
+      Key key = new SecretKeySpec(KEY, "AES");
+      try {
+        Cipher c = Cipher.getInstance(ALGORITHM);
+        c.init(Cipher.DECRYPT_MODE, key);
+        return new String(c.doFinal(Base64.decode(dbData)));
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+}
+
+
+h3. Setting it up
+
+Before we can start to write our tests, we need to define a few dependencies. I will only show how to configure the dependencies we need for this example. If you have not already set up arquillian tests for your project, you will have to do a little bit more. Please check the "Getting Started guide":http://arquillian.org/guides/getting_started/#add_the_arquillian_apis to learn how to setup arquillian for your project. Don't be afraid, there is not too much to do.
+
+As you can see in the following snippet, we will use _JUnit 4.11_, _Arquillian 1.1.3.Final_, the _Arquillian Persistence Extension 1.0.0.Alpha7_ and the _WildFly Application Server 8.1.0.Final_.
+
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<project
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    
+    ...
+
+    <properties>
+        <version.junit>4.11</version.junit>
+        <version.arquillian>1.1.3.Final</version.arquillian>
+        <version.arquillian_persistence>1.0.0.Alpha7</version.arquillian_persistence>
+        <version.wildfly>8.1.0.Final</version.wildfly>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            ...
+            <dependency>
+                <groupId>org.jboss.arquillian</groupId>
+                <artifactId>arquillian-bom</artifactId>
+                <version>${version.arquillian}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        ...
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.junit}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.junit</groupId>
+            <artifactId>arquillian-junit-container</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.extension</groupId>
+            <artifactId>arquillian-persistence-dbunit</artifactId>
+            <version>${version.arquillian_persistence}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+h3. Writing the tests
+
+There are two things we need to do to setup our test environment. At first, we need to tell junit that this test shall be executed as a junit test. This is done by @@RunWith(Arquillian.class)@.
+
+Additionally, we need to create the test deployment, that will be deployed to the container. Therefore we need to implement at least one method and annotate it with @@Deployment@. As you can see in the following code snippet, we use ShrinkWrap to create a jar archive deployment. The archive contains the @CreditCard@ entity, the @CryptoConverter@ type converter and the test class. There is no need to include any EJBs or other classes which implement business logic. We can inject the EntityManager into our test case and use it directly to persist and read entities. We will have a more detailed look at it later on.
+
+Additionally, we need to add some manifest resources to create a  persistence unit, register the type converter and add an empty beans.xml to activate CDI. Please check the "getting started guide":http://arquillian.org/guides/getting_started/#write_an_arquillian_test to get more information on ShrinkWrap and creating deployments.
+
+bc(prettify).. @RunWith(Arquillian.class)
+public class TestCryptoConverter {
+
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap
+                .create(JavaArchive.class)
+                .addClasses(CreditCard.class, CryptoConverter.class,
+                        TestCryptoConverter.class)
+                .addAsManifestResource("META-INF/persistence.xml",
+                        "persistence.xml")
+                .addAsManifestResource("META-INF/orm.xml", "orm.xml")
+                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+
+p. After this is done, we can start to write the test cases. At first, we will persist a @CreditCard@ entity and check, if the credit card number gets encrypted by the @CryptoConverter@. Therefore we inject the EntityManager, create a @CreditCard@ entity and pass it to the persist method of the EntityManager. The validation of the persisted data, is done by the Arquillian persistence extension. We just need to define the data we expect to be written to the database. The expected data is defined in the cc.yml file, which is referenced in the @@ShouldMatchDataSet@ annotation. Because the id attribute is generated by the database, we want to exclude it from the validation. This can be done by referencing it in the excludeColumns attribute of the annotation.
+
+bc(prettify)..     @PersistenceContext
+    private EntityManager em;
+
+    @Test
+    @ShouldMatchDataSet(value = "data/cc.yml", excludeColumns = "id")
+    public void testEncryption() {
+        CreditCard cc = new CreditCard();
+        cc.setName("My Name");
+        cc.setCcNumber("123456789");
+
+        this.em.persist(cc);
+    }
+
+p. The cc.yml contains the following information.
+
+bc(prettify).. CreditCard:
+  - id: 1
+    name: My Name
+    ccNumber: egFfkhd8cRh82tvsh3VVUg==
+
+p. In the second test, we will check if we can search the database for a @CreditCard@ entity with a given credit card number. Therefore we use the @@UsingDataSet@ annotation to seed the database with data defined in the cc.yml file. Now we can use the injected EntityManager to call a named query to search for @CreditCard@ entity with the given number.
+
+bc(prettify)..     @Test
+    @UsingDataSet("data/cc.yml")
+    public void testRead() {
+        CreditCard cc = this.em
+                .createNamedQuery(CreditCard.BY_NUMBER, CreditCard.class)
+                .setParameter("number", "123456789").getSingleResult();
+        Assert.assertEquals("My Name", cc.getName());
+    }
+
+h3. Conclusion
+
+We used Arquillian and the Arquillian Persistence extension to test a JPA type converter. Therefore we injected the EntityManager and used the annotations @@ShouldMatchData@ and @@UsingDataSet@ to validate and seed the database with a yml file.
+If you want to try it yourself, you can find the sources on "github":https://github.com/thjanssen/JPA2.1/tree/master/CryptoConverter.
+You can run it by calling: git clone https://github.com/thjanssen/JPA2.1.git && cd JPA2.1/CryptoConverter && mvn test
+
+What are your experiences with testing your Java EE application with Arquillian? Please write a comment about it.
+
+Want to learn more about Arquillian, see the Arquillian Guides: http://arquillian.org/guides/
+
+h3. About the author
+
+Thorben Janssen is a senior developer with more than 10 years of experience in Java EE development and architecture. During these years he acted as developer, architect, project and technical lead to create high available, clustered mobile billing solutions and laboratory information management systems.
+Visit his blog: http://www.thoughts-on-java.org or follow him on "twitter":https://twitter.com/thjanssen123 and "google+":https://plus.google.com/104438663880735057595 to read more about Java EE7 and Arquillian.
