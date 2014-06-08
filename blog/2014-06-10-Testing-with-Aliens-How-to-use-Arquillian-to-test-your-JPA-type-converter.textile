@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Testing with Aliens: How to use Arquillian to test your JPA type converter
-author: thjanssen, aslakknutsen
+author: aslakknutsen, thjanssen
 tags: [ testing, persistence, extension ]
 ---
 This post was written together with "Aslak Knutsen":http://plus.google.com/118222277307713726144?rel=author ("@aslakknutsen":https://twitter.com/aslakknutsen).
@@ -25,7 +25,7 @@ h3. Object under test
 The following code snippet shows the object under test for this example. It is a type converter that encrypts and decrypts a String attribute. The converter gets called by the persistence provider before writing to and after reading from the database. If you want to read more about how this type converter works, check my "posting about it":http://www.thoughts-on-java.org/2014/06/how-to-use-jpa-type-converter-to.html.
 
 bc(prettify).. @Converter
-public class CryptoConverter implements AttributeConverter&lt;String, String&gt; {
+public class CryptoConverter implements AttributeConverter<String, String> {
 
     private static final String ALGORITHM = "AES/ECB/PKCS5Padding";
     private static final byte[] KEY = "MySuperSecretKey".getBytes();
@@ -57,7 +57,6 @@ public class CryptoConverter implements AttributeConverter&lt;String, String&gt;
     }
 }
 
-=:
 
 h3. Setting it up
 
@@ -65,60 +64,58 @@ Before we can start to write our tests, we need to define a few dependencies. I 
 
 As you can see in the following snippet, we will use junit 4.11, +Arquillian 1.1.3.Final, the Arquillian persistence extension in version 1.0.0.Alpha7 and the wildfly application server in version 8.1.0.Final.
 
-bc(prettify).. &lt;?xml version="1.0" encoding="UTF-8"?&gt;
-&lt;project
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<project
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-    xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
+    xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     
     ...
 
-    &lt;properties&gt;
-        &lt;version.junit&gt;4.11&lt;/version.junit&gt;
-        &lt;version.arquillian&gt;1.1.3.Final&lt;/version.arquillian&gt;
-        &lt;version.arquillian_persistence&gt;1.0.0.Alpha7&lt;/version.arquillian_persistence&gt;
-        &lt;version.wildfly&gt;8.1.0.Final&lt;/version.wildfly&gt;
-    &lt;/properties&gt;
+    <properties>
+        <version.junit>4.11</version.junit>
+        <version.arquillian>1.1.3.Final</version.arquillian>
+        <version.arquillian_persistence>1.0.0.Alpha7</version.arquillian_persistence>
+        <version.wildfly>8.1.0.Final</version.wildfly>
+    </properties>
 
-    &lt;dependencyManagement&gt;
-        &lt;dependencies&gt;
+    <dependencyManagement>
+        <dependencies>
             ...
-            &lt;dependency&gt;
-                &lt;groupId&gt;org.jboss.arquillian&lt;/groupId&gt;
-                &lt;artifactId&gt;arquillian-bom&lt;/artifactId&gt;
-                &lt;version&gt;${version.arquillian}&lt;/version&gt;
-                &lt;type&gt;pom&lt;/type&gt;
-                &lt;scope&gt;import&lt;/scope&gt;
-            &lt;/dependency&gt;
-        &lt;/dependencies&gt;
-    &lt;/dependencyManagement&gt;
+            <dependency>
+                <groupId>org.jboss.arquillian</groupId>
+                <artifactId>arquillian-bom</artifactId>
+                <version>${version.arquillian}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
-    &lt;dependencies&gt;
+    <dependencies>
         ...
-        &lt;dependency&gt;
-            &lt;groupId&gt;javax.enterprise&lt;/groupId&gt;
-            &lt;artifactId&gt;cdi-api&lt;/artifactId&gt;
-            &lt;scope&gt;provided&lt;/scope&gt;
-        &lt;/dependency&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;junit&lt;/groupId&gt;
-            &lt;artifactId&gt;junit&lt;/artifactId&gt;
-            &lt;version&gt;${version.junit}&lt;/version&gt;
-            &lt;scope&gt;test&lt;/scope&gt;
-        &lt;/dependency&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.jboss.arquillian.junit&lt;/groupId&gt;
-            &lt;artifactId&gt;arquillian-junit-container&lt;/artifactId&gt;
-            &lt;scope&gt;test&lt;/scope&gt;
-        &lt;/dependency&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.jboss.arquillian.extension&lt;/groupId&gt;
-            &lt;artifactId&gt;arquillian-persistence-dbunit&lt;/artifactId&gt;
-            &lt;version&gt;${version.arquillian_persistence}&lt;/version&gt;
-            &lt;scope&gt;test&lt;/scope&gt;
-        &lt;/dependency&gt;
-    &lt;/dependencies&gt;
-
-=:
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.junit}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.junit</groupId>
+            <artifactId>arquillian-junit-container</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.extension</groupId>
+            <artifactId>arquillian-persistence-dbunit</artifactId>
+            <version>${version.arquillian_persistence}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 h3. Writing the tests
 
@@ -143,11 +140,10 @@ public class TestCryptoConverter {
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 
-=:
 
-After this is done, we can start to write the test cases. At first, we will persist a CreditCard entity and check, if the credit card number gets encrypted by the CryptoConverter. Therefore we inject the EntityManager, create a CreditCard entity and pass it to the persist method of the EntityManager. The validation of the persisted data, is done by the Arquillian persistence extension. We just need to define the data we expect to be written to the database. The expected data is defined in the cc.yml file, which is referenced in the @ShouldMatchDataSet annotation. Because the id attribute is generated by the database, we want to exclude it from the validation. This can be done by referencing it in the excludeColumns attribute of the annotation.
+p. After this is done, we can start to write the test cases. At first, we will persist a CreditCard entity and check, if the credit card number gets encrypted by the CryptoConverter. Therefore we inject the EntityManager, create a CreditCard entity and pass it to the persist method of the EntityManager. The validation of the persisted data, is done by the Arquillian persistence extension. We just need to define the data we expect to be written to the database. The expected data is defined in the cc.yml file, which is referenced in the @ShouldMatchDataSet annotation. Because the id attribute is generated by the database, we want to exclude it from the validation. This can be done by referencing it in the excludeColumns attribute of the annotation.
 
-bc(prettify)..    @PersistenceContext
+bc(prettify)..     @PersistenceContext
     private EntityManager em;
 
     @Test
@@ -160,20 +156,16 @@ bc(prettify)..    @PersistenceContext
         this.em.persist(cc);
     }
 
-=:
-
-The cc.yml contains the following information.
+p. The cc.yml contains the following information.
 
 bc(prettify).. CreditCard:
   - id: 1
     name: My Name
     ccNumber: egFfkhd8cRh82tvsh3VVUg==
 
-=:
+p. In the second test, we will check if we can search the database for a CreditCard entity with a given credit card number. Therefore we use the @UsingDataSet annotation to seed the database with data defined in the cc.yml file. Now we can use the injected EntityManager to call a named query to search for CreditCard entity with the given number.
 
-In the second test, we will check if we can search the database for a CreditCard entity with a given credit card number. Therefore we use the @UsingDataSet annotation to seed the database with data defined in the cc.yml file. Now we can use the injected EntityManager to call a named query to search for CreditCard entity with the given number.
-
-bc(prettify)..    @Test
+bc(prettify)..     @Test
     @UsingDataSet("data/cc.yml")
     public void testRead() {
         CreditCard cc = this.em
@@ -181,8 +173,6 @@ bc(prettify)..    @Test
                 .setParameter("number", "123456789").getSingleResult();
         Assert.assertEquals("My Name", cc.getName());
     }
-
-=:
 
 h3. Conclusion
 
