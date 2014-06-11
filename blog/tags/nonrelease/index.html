@@ -55,6 +55,67 @@
           <article class="post">
             <header class="header">
               <h2 class="title">
+                <a href="/blog/2014/06/11/Testing-with-Aliens-How-to-use-Arquillian-to-test-your-JPA-type-converter/">Testing with Aliens; How to test a JPA type converter with Arquillian</a>
+              </h2>
+              <div class="byline">
+                <a href="/community/thjanssen">
+                  <img class="avatar" src="http://gravatar.com/avatar/e3132cc05624c4d7aabf64252d74951c?s=44" />
+                </a>
+                <span class="author">Posted by
+                <a href="/community/thjanssen">Thorben Janssen</a></span>
+                <span class="dateinline">on Jun 11, 2014</span>
+                <div class="date"><abbr>Jun</abbr> 11</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2014/06/11/Testing-with-Aliens-How-to-use-Arquillian-to-test-your-JPA-type-converter/#disqus_thread" data-disqus-identifier="28d71fb1f31560f5381624ab46844d725c517b6e">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>JPA type converters provide an easy way to define how an entity attribute gets persisted to the database. You can use them to implement lots of different features, e.g. to encrypt your data as I showed in a previous post: <a href="http://www.thoughts-on-java.org/2014/06/how-to-use-jpa-type-converter-to.html">How to use a JPA Type Converter to encrypt your data</a><br />
+              But writing the type converter is not enough. We also need to make sure, that it is working correctly.</p>
+              <p>In general, there are two ways to test a type converter. We could write a unit test to check, if the conversion works correctly. But a unit test performs a test of the isolated class without putting it into the real execution environment. That means that we will still not know, if the converter works in one of our applications. If everything is set up correctly, the persistence provider will call the converter before writing to and after reading from the database. So we also need to check if the type converter gets called by the persistence provider and if everything works fine under that condition. We need to test the converter inside of the container we want to use for our application.</p>
+              <p>We will have a look at how this can be done with <a href="http://www.arquillian.org/">Arquillian</a> and its persistence extension.</p>
+              <h3>Something about Arqillian</h3>
+              <p>If you are already familiar with Arquillian, you can skip this part. For all of you who have never worked with Arquillian so far, I just want to give some basic information. You can find a more detailed description at the Arquillian <a href="http://arquillian.org/guides/getting_started/">Getting Started guide</a>.</p>
+              <p>Arquillian is a test framework for in container testing. The idea is to do not mock the container you want to use but to test your code inside of it. This provides the advantage, that you can test if your code will also work in your execution environment and not only in your mocked up test scenario. Arquillian provides lots of functionality to manage the container, inject required resources like EJBs or an EntityManager and make your live much easier.</p>
+              <p>The Arquillian tests are executed by junit. This is great, because you can use them everywhere, where you can execute junit tests. And that means in your IDE, as part of your build process, on your CI server, simply everywhere.</p>
+              <h3>Object under test</h3>
+              <p>The following code snippet shows the object under test for this example. It is a type converter that encrypts and decrypts a String attribute. The converter gets called by the persistence provider before writing to and after reading from the database. If you want to read more about how this type converter works, check my <a href="http://www.thoughts-on-java.org/2014/06/how-to-use-jpa-type-converter-to.html">posting about it</a>.</p>
+              <pre class="prettify"><code class="prettify">@Converter&#x000A;public class CryptoConverter implements AttributeConverter&lt;String, String&gt; {</code>&#x000A;&#x000A;<code class="prettify">    private static final String ALGORITHM = "AES/ECB/PKCS5Padding";&#x000A;    private static final byte[] KEY = "MySuperSecretKey".getBytes();</code>&#x000A;&#x000A;<code class="prettify">    @Override&#x000A;    public String convertToDatabaseColumn(String ccNumber) {&#x000A;      // do some encryption&#x000A;      Key key = new SecretKeySpec(KEY, "AES");&#x000A;      try {&#x000A;         Cipher c = Cipher.getInstance(ALGORITHM);&#x000A;         c.init(Cipher.ENCRYPT_MODE, key);&#x000A;         return Base64.encodeBytes(c.doFinal(ccNumber.getBytes()));&#x000A;      } catch (Exception e) {&#x000A;         throw new RuntimeException(e);&#x000A;      }&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Override&#x000A;    public String convertToEntityAttribute(String dbData) {&#x000A;      // do some decryption&#x000A;      Key key = new SecretKeySpec(KEY, "AES");&#x000A;      try {&#x000A;        Cipher c = Cipher.getInstance(ALGORITHM);&#x000A;        c.init(Cipher.DECRYPT_MODE, key);&#x000A;        return new String(c.doFinal(Base64.decode(dbData)));&#x000A;      } catch (Exception e) {&#x000A;        throw new RuntimeException(e);&#x000A;      }&#x000A;    }&#x000A;}</code></pre>
+              <h3>Setting it up</h3>
+              <p>Before we can start to write our tests, we need to define a few dependencies. I will only show how to configure the dependencies we need for this example. If you have not already set up arquillian tests for your project, you will have to do a little bit more. Please check the <a href="http://arquillian.org/guides/getting_started/#add_the_arquillian_apis">Getting Started guide</a> to learn how to setup arquillian for your project. Don&#8217;t be afraid, there is not too much to do.</p>
+              <p>As you can see in the following snippet, we will use <em>JUnit 4.11</em>, <em>Arquillian 1.1.3.Final</em>, the <em>Arquillian Persistence Extension 1.0.0.Alpha7</em> and the <em>WildFly Application Server 8.1.0.Final</em>.</p>
+              <pre class="prettify"><code class="prettify">&lt;?xml version="1.0" encoding="UTF-8"?&gt;&#x000A;&lt;project&#x000A;    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"&#x000A;    xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;</code>&#x000A;    &#x000A;<code class="prettify">    ...</code>&#x000A;&#x000A;<code class="prettify">    &lt;properties&gt;&#x000A;        &lt;version.junit&gt;4.11&lt;/version.junit&gt;&#x000A;        &lt;version.arquillian&gt;1.1.3.Final&lt;/version.arquillian&gt;&#x000A;        &lt;version.arquillian_persistence&gt;1.0.0.Alpha7&lt;/version.arquillian_persistence&gt;&#x000A;        &lt;version.wildfly&gt;8.1.0.Final&lt;/version.wildfly&gt;&#x000A;    &lt;/properties&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;dependencyManagement&gt;&#x000A;        &lt;dependencies&gt;&#x000A;            ...&#x000A;            &lt;dependency&gt;&#x000A;                &lt;groupId&gt;org.jboss.arquillian&lt;/groupId&gt;&#x000A;                &lt;artifactId&gt;arquillian-bom&lt;/artifactId&gt;&#x000A;                &lt;version&gt;${version.arquillian}&lt;/version&gt;&#x000A;                &lt;type&gt;pom&lt;/type&gt;&#x000A;                &lt;scope&gt;import&lt;/scope&gt;&#x000A;            &lt;/dependency&gt;&#x000A;        &lt;/dependencies&gt;&#x000A;    &lt;/dependencyManagement&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;dependencies&gt;&#x000A;        ...&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;javax.enterprise&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;cdi-api&lt;/artifactId&gt;&#x000A;            &lt;scope&gt;provided&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;junit&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;junit&lt;/artifactId&gt;&#x000A;            &lt;version&gt;${version.junit}&lt;/version&gt;&#x000A;            &lt;scope&gt;test&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;org.jboss.arquillian.junit&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;arquillian-junit-container&lt;/artifactId&gt;&#x000A;            &lt;scope&gt;test&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;org.jboss.arquillian.extension&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;arquillian-persistence-dbunit&lt;/artifactId&gt;&#x000A;            &lt;version&gt;${version.arquillian_persistence}&lt;/version&gt;&#x000A;            &lt;scope&gt;test&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;    &lt;/dependencies&gt;</code></pre>
+              <h3>Writing the tests</h3>
+              <p>There are two things we need to do to setup our test environment. At first, we need to tell junit that this test shall be executed as a junit test. This is done by <code>@RunWith(Arquillian.class)</code>.</p>
+              <p>Additionally, we need to create the test deployment, that will be deployed to the container. Therefore we need to implement at least one method and annotate it with <code>@Deployment</code>. As you can see in the following code snippet, we use ShrinkWrap to create a jar archive deployment. The archive contains the <code>CreditCard</code> entity, the <code>CryptoConverter</code> type converter and the test class. There is no need to include any EJBs or other classes which implement business logic. We can inject the EntityManager into our test case and use it directly to persist and read entities. We will have a more detailed look at it later on.</p>
+              <p>Additionally, we need to add some manifest resources to create a  persistence unit, register the type converter and add an empty beans.xml to activate CDI. Please check the <a href="http://arquillian.org/guides/getting_started/#write_an_arquillian_test">getting started guide</a> to get more information on ShrinkWrap and creating deployments.</p>
+              <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;public class TestCryptoConverter {</code>&#x000A;&#x000A;<code class="prettify">    @Deployment&#x000A;    public static JavaArchive createDeployment() {&#x000A;        return ShrinkWrap&#x000A;                .create(JavaArchive.class)&#x000A;                .addClasses(CreditCard.class, CryptoConverter.class,&#x000A;                        TestCryptoConverter.class)&#x000A;                .addAsManifestResource("META-INF/persistence.xml",&#x000A;                        "persistence.xml")&#x000A;                .addAsManifestResource("META-INF/orm.xml", "orm.xml")&#x000A;                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");&#x000A;    }</code></pre>
+              <p>After this is done, we can start to write the test cases. At first, we will persist a <code>CreditCard</code> entity and check, if the credit card number gets encrypted by the <code>CryptoConverter</code>. Therefore we inject the EntityManager, create a <code>CreditCard</code> entity and pass it to the persist method of the EntityManager. The validation of the persisted data, is done by the Arquillian persistence extension. We just need to define the data we expect to be written to the database. The expected data is defined in the cc.yml file, which is referenced in the <code>@ShouldMatchDataSet</code> annotation. Because the id attribute is generated by the database, we want to exclude it from the validation. This can be done by referencing it in the excludeColumns attribute of the annotation.</p>
+              <pre class="prettify"><code class="prettify">    @PersistenceContext&#x000A;    private EntityManager em;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    @ShouldMatchDataSet(value = "data/cc.yml", excludeColumns = "id")&#x000A;    public void testEncryption() {&#x000A;        CreditCard cc = new CreditCard();&#x000A;        cc.setName("My Name");&#x000A;        cc.setCcNumber("123456789");</code>&#x000A;&#x000A;<code class="prettify">        this.em.persist(cc);&#x000A;    }</code></pre>
+              <p>The cc.yml contains the following information.</p>
+              <pre class="prettify"><code class="prettify">CreditCard:&#x000A;  - id: 1&#x000A;    name: My Name&#x000A;    ccNumber: egFfkhd8cRh82tvsh3VVUg==</code></pre>
+              <p>In the second test, we will check if we can search the database for a <code>CreditCard</code> entity with a given credit card number. Therefore we use the <code>@UsingDataSet</code> annotation to seed the database with data defined in the cc.yml file. Now we can use the injected EntityManager to call a named query to search for <code>CreditCard</code> entity with the given number.</p>
+              <pre class="prettify"><code class="prettify">    @Test&#x000A;    @UsingDataSet("data/cc.yml")&#x000A;    public void testRead() {&#x000A;        CreditCard cc = this.em&#x000A;                .createNamedQuery(CreditCard.BY_NUMBER, CreditCard.class)&#x000A;                .setParameter("number", "123456789").getSingleResult();&#x000A;        Assert.assertEquals("My Name", cc.getName());&#x000A;    }</code></pre>
+              <h3>Conclusion</h3>
+              <p>We used Arquillian and the Arquillian Persistence extension to test a JPA type converter. Therefore we injected the EntityManager and used the annotations <code>@ShouldMatchData</code> and <code>@UsingDataSet</code> to validate and seed the database with a yml file.<br />
+              If you want to try it yourself, you can find the sources on <a href="https://github.com/thjanssen/JPA2.1/tree/master/CryptoConverter">github</a>.<br />
+              You can run it by calling: git clone https://github.com/thjanssen/JPA2.1.git &amp;&amp; cd JPA2.1/CryptoConverter &amp;&amp; mvn test</p>
+              <p>What are your experiences with testing your Java EE application with Arquillian? Please write a comment about it.</p>
+              <p>Want to learn more about Arquillian, see the Arquillian Guides: http://arquillian.org/guides/</p>
+              <h3>About the author</h3>
+              <p>Thorben Janssen is a senior developer with more than 10 years of experience in Java EE development and architecture. During these years he acted as developer, architect, project and technical lead to create high available, clustered mobile billing solutions and laboratory information management systems.<br />
+              Visit his blog: http://www.thoughts-on-java.org or follow him on <a href="https://twitter.com/thjanssen123">twitter</a> and <a href="https://plus.google.com/104438663880735057595">google+</a> to read more about Java EE7 and Arquillian.</p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2014/06/11/Testing-with-Aliens-How-to-use-Arquillian-to-test-your-JPA-type-converter/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/testing/">testing</a> <a class="tag" href="/blog/tags/persistence/">persistence</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/howto/">howto</a> <a class="tag" href="/blog/tags/2014/">2014</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
+            </div>
+          </article>
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
                 <a href="/blog/2013/11/18/jakub-netflix-cloud-prize-aws-reinvent/">Jakub Narloch brings Arquillian to Netflix, recognized at AWS re:Invent</a>
               </h2>
               <div class="byline">
@@ -456,87 +517,6 @@
               tagged as
               <a class="tag" href="/blog/tags/event/">event</a> <a class="tag" href="/blog/tags/testing/">testing</a> <a class="tag" href="/blog/tags/community/">community</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
             </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/11/08/get_test_infected_at_devoxx_2012/">Get Test-Infected at Devoxx 2012</a>
-              </h2>
-              <div class="byline">
-                <a href="/community/graphitefriction">
-                  <img class="avatar" src="http://gravatar.com/avatar/6fa65146fda9e6c2aac9418970e56545?s=44" />
-                </a>
-                <span class="author">Posted by
-                <a href="/community/graphitefriction">Sarah White</a></span>
-                <span class="dateinline">on Nov 08, 2012</span>
-                <div class="date"><abbr>Nov</abbr> 08</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2012/11/08/get_test_infected_at_devoxx_2012/#disqus_thread" data-disqus-identifier="b0992f1672916cf70f98be7b9cd42bf3a46119f3">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>It&#8217;s no suprise we&#8217;re obsessed with testing here in the Arquillian Galaxy. We&#8217;re eternally interested in sharpening our testing weapons, learning about tools that advance the frontline against the bugs, and discovering all the deep, dark code caves where bugs try to hide from testers.</p>
-              <p>This year, <a href="http://www.devoxx.com/display/DV12/Home">Devoxx</a>, one of the premier Java developer conferences, is bringing together a large group of testing experts. Listed below are just some of the labs, workshops, and BOFs being presented at Devoxx that will enhance your bug hunting skills.</p>
-              <p><strong>Monday, November 12, 2012</strong></p>
-              <div class="abstracts">
-              <h3>NoSQLUnit. Testing Your NoSQL Databases.</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Alex+Soto">Alex Soto</a>, Tools in Action</p>
-              <p>Unit tests should follow the FIRST rules (Fast, Isolated, Repeatable, Self-Validated and Timely). When persistence layer is under test, fast and isolated rules are the most violated. For relational database management systems, embedded databases and DbUnit framework exist to help us to not break them, but there is no like DBUnit framework for heterogeneous NoSQL systems. <a href="http://www.devoxx.com/display/DV12/NoSQLUnit.+Testing+your+NoSQL+databases">More &raquo;</a></p>
-              <h3>Blast Your WebApp with Galting</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV11/Stephane+Landelle">Stephane Landelle</a> and <a href="http://www.devoxx.com/display/DV12/Romain+Sertelon">Romain Sertelon</a>, Tools in Action</p>
-              <p>Your application is going live tomorrow, the new marketing campaign is about to start, you enjoy a margarita, life is good. Yet something keeps bugging you, are you sure your webapp won&#8217;t crash down? &#8220;Damn, forgot about the stress tests!&#8221; Traffic grows, data grows, our applications have to withstand increasing loads, so stress tests are more and more of a critical issue. <a href="http://www.devoxx.com/display/DV12/Blast+your+webapp+with+Gatling">More &raquo;</a></p>
-              <h3>The Bugs Are Building Another Death Star</h3>
-              <p class="speakers"><a href="http://lanyrd.com/2012/devoxx/szpdf/">Multi-framework, battle hardened testers including members of Ike&#8217;s Crew</a>, BOF</p>
-              <p>The bugs are building another Death Star. What&#8217;s our invasion plan?</p>
-              <p>Bugs don&#8217;t rest when you go to sleep. In fact, you should worry most when they are left alone. They are tireless creatures, hard at work to destroy your home. In software, it&#8217;s no different. We are at constant war with bugs. News flash, the bugs are building another Death Star and we&#8217;re just standing by! Let&#8217;s plot an invasion plan during this moderated discussion on the topic of enterprise testing. <a href="http://www.devoxx.com/display/DV12/The+bugs+are+building+another+Death+Star">More &raquo;</a></p>
-              </div>
-              <p><strong>Tuesday, November 13, 2012</strong></p>
-              <div class="abstracts">
-              <h3>To ATDD and Beyond! Better Automated Acceptance Testing on the JVM</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/John+Smart">John Smart</a>, University</p>
-              <p>Test Driven Development is a game changer for developers, but Automated Acceptance Testing (ATDD) is a game changer for the whole team! More than just a testing technique, Automated Acceptance Testing is both a collaboration tool and a vital step on the road to Continuous Delivery. In this talk, you will see a real-world demo applying practical ATDD techniques to real-world projects using JBehave, Selenium 2 and Thucydides. <a href="http://www.devoxx.com/display/DV12/To+ATDD+and+beyond%21+Better+Automated+Acceptance+Testing+on+the+JVM">More &raquo;</a></p>
-              <h3>Testacular &#8211; Spectacular Test Runner for JavaScript</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Vojta+Jina">Vojta Jina</a>, Tools in Action</p>
-              <p>Introduction to Testacular &#8211; test runner that makes makes testing JavaScript applications in real browsers frictionless and enjoyable. <a href="http://www.devoxx.com/display/DV12/Testacular+-+Spectacular+Test+Runner+for+JavaScript">More &raquo;</a></p>
-              <h3>JUnit Rules</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Jens+Schauder">Jens Schauder</a>, Tools in Action</p>
-              <p>We all know JUnit rulez. But do you know JUnit Rules? Rules are a not so well known feature of JUnit. They allow us to encapsulate setup and teardown in a reusable package. You can manipulate the way tests get executed as well. <a href="http://www.devoxx.com/display/DV12/JUnit+Rules">More &raquo;</a></p>
-              </div>
-              <p><strong>Wednesday, November 14, 2012</strong></p>
-              <div class="abstracts">
-              <h3>Testing Java Persistence Layer Done Right with Arquillian</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Bartosz+Majsak">Bartosz Majsak</a>, Quickie</p>
-              <p>The Persistence Layer is one of the most crucial parts of enterprise applications, and we use many different frameworks and patterns to keep it clean. We write sophisticated queries and use optimization techniques to give our end users the greatest possible experience. So why is Persistence very often skipped in testing efforts? Is it really that complex and painful to setup? The Arquillian Persistence Extension removes that burden and boilerplate to make you a happy and productive programmer again. <a href="http://www.devoxx.com/display/DV12/Testing+Java+Persistence+Layer+Done+Right+with+Arquillian">More &raquo;</a></p>
-              <h3>Behaviour Driven Development on the JVM &#8211; A State of the Union</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/John+Smart">John Smart</a>, Conference</p>
-              <p>Behavior Driven Development (BDD) is an increasingly popular variation on Test Driven Development, which helps developers think more about what they are testing, in terms of &#8220;executable specifications&#8221; rather than conventional tests. But there are dozens of BDD tools for the JVM out there: how do you know what to use, and when? <a href="http://www.devoxx.com/display/DV12/Behaviour+Driven+Development+on+the+JVM+-+a+State+of+the+Union">More &raquo;</a></p>
-              </div>
-              <p><strong>Thursday, November 15, 2012</strong></p>
-              <div class="abstracts">
-              <h3>Unitils: Full Stack Testing Solution for Enterprise Applications</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Thomas+De+rycke">Thomas De Rycke</a> and <a href="http://www.devoxx.com/display/DV12/Jeroen+Horemans">Jeroen Horemans</a>, Conference</p>
-              <p>Automated testing is the key to developing high quality software and maintainable codebases. How can we automate testing when data and database schemes are constantly evolving? How can we test infrastructure related components like automated e-mails without actually sending them? <a href="http://www.devoxx.com/display/DV12/Unitils+++Full+stack+testing+solution+for+enterpise+applications">More &raquo;</a></p>
-              <h3>Do You REST Assured?</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Johan+Haleby">Johan Haleby</a>, Quickie</p>
-              <p>Today it&#8217;s easy to expose services as REST/HTTP with frameworks like Jersey and Spring but validating that the server actually behaves as expected can be cumbersome in Java. REST Assured is an open source Java DSL that allows you to avoid boiler-plate code to make requests and validate even complex responses in a simple manner. <a href="http://www.devoxx.com/display/DV12/Do+you+REST+Assured">More &raquo;</a></p>
-              <h3>JavaScript Unit Testing and Build Integration</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Wouter+Groeneveld">Wouter Groeneveld</a>, Conference</p>
-              <p>Unit testing has become very popular with the rise of test-first software development. Most enterprise applications contain only a small portion of javascript code, almost always completely untested. We have seen a steady increase of javascript code and frameworks lately, but for most people it&#8217;s still unclear how to (unit) test javascript, and most of all how to properly integrate these within your build environment next to other JUnit test cases. <a href="http://www.devoxx.com/pages/viewpage.action?pageId=6391754">More &raquo;</a></p>
-              <h3>Apache TomEE, Java EE 6 Web Profile on Tomcat</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/David+Blevins">David Blevins</a>, Conference</p>
-              <p>Apache TomEE is the Java EE 6 Web Profile certified version of Apache Tomcat and combines the simplicity of Tomcat with the power of Java EE. The first half of this session introduces TomEE and shows how Tomcat applications leveraging Java EE technologies can become simpler and lighter with a Java EE 6 certified solution built right on Tomcat. <a href="http://www.devoxx.com/display/DV12/Apache+TomEE%2C+Java+EE+6+Web+Profile+on+Tomcat">More &raquo;</a></p>
-              <h3>Spock: Boldly Go Where No Test Has Gone Before</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Andres+Almiray">Andres Almiray</a>, Quickie</p>
-              <p>Testing, testing, testing. We all know it has to be done but no one likes to do it. Enter Spock, a revolutionary way to writing (and thinking about) test code, that promises to wash away the pain and bring back the fun. <a href="http://www.devoxx.com/display/DV12/Spock++boldly+go+where+no+test+has+gone+before">More &raquo;</a></p>
-              </div>
-              <p>We look forword to hearing what testing tools, techniques and strategies you discover at Devoxx 2012.</p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/11/08/get_test_infected_at_devoxx_2012/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/event/">event</a> <a class="tag" href="/blog/tags/testing/">testing</a> <a class="tag" href="/blog/tags/community/">community</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
-            </div>
             
                         <script type="text/javascript">
                         var disqus_shortname = 'arquillian';
@@ -569,6 +549,22 @@
             <ul>
               <li>
                 <div class="title">
+                  <a href="/blog/2014/06/11/Testing-with-Aliens-How-to-use-Arquillian-to-test-your-JPA-type-converter/">Testing with Aliens; How to test a JPA type converter with Arquillian</a>
+                </div>
+                <div class="meta">
+                  Jun 11, 2014
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2014/06/11/arquillian-container-osgi-1-1-0-Final/">Arquillian OSGi 1.1.0.Final Released</a>
+                </div>
+                <div class="meta">
+                  Jun 11, 2014
+                </div>
+              </li>
+              <li>
+                <div class="title">
                   <a href="/blog/2014/06/06/arquillian-recorder-1-0-0-Alpha3/">Arquillian Recorder 1.0.0.Alpha3 Released</a>
                 </div>
                 <div class="meta">
@@ -589,22 +585,6 @@
                 </div>
                 <div class="meta">
                   May 28, 2014
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2014/05/23/arquillian-tck-1-0-0-Alpha1/">Arquillian TCK 1.0.0.Alpha1 Released</a>
-                </div>
-                <div class="meta">
-                  May 23, 2014
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2014/05/12/arquillian-extension-persistence-1-0-0-Alpha7/">Arquillian Persistence Extension 1.0.0.Alpha7 Released</a>
-                </div>
-                <div class="meta">
-                  May 12, 2014
                 </div>
               </li>
             </ul>
@@ -640,6 +620,9 @@
               </span>
               <span class="tag tag-1">
                 <a href="http://arquillian.org/blog/tags/2013/">2013</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/2014/">2014</a>
               </span>
               <span class="tag tag-0">
                 <a href="http://arquillian.org/blog/tags/TCK/">TCK</a>
@@ -736,6 +719,9 @@
               </span>
               <span class="tag tag-0">
                 <a href="http://arquillian.org/blog/tags/hackfest/">hackfest</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/howto/">howto</a>
               </span>
               <span class="tag tag-1">
                 <a href="http://arquillian.org/blog/tags/jacoco/">jacoco</a>
