@@ -1,0 +1,41 @@
+---
+author: aslakknutsen
+---
+
+1.1.4.Final had some nasty bugs in it, 1.1.5.Final should have cleared these up.
+
+h3. What's fixed in 1.1.5.Final?
+
+- <i class="icon-star"></i> Fixed false positives with JUnit from 1.1.4.Final :=
+Arquillian Core 1.1.4.Final had a nasty bug where it would ‘erase’ some special exception cases that could happen In Container, that gave the Client side the wrong result.
+
+This has now been fixed. Expected exceptions, Assumption and Injection errors should now be reported correctly(Both when using the @@Rule@ and the @@Test.expected@ variants).
+=:
+
+- <i class="icon-star"></i> JUnit @Rules support :=
+JUnit rules has historically been a bit tricky with Arquillian. They are executed outside of the Before/After lifecycle where Arquillian has been hooking in, leaving us with no control over when they are executed.
+
+This has in the past caused them to be executed both on the Client side and In Container. With 1.1.5.Final, we've moved how all this is executed and included @@Rules@ into the Before/After handling.
+
+This means, @@Rules@ will follow the same rules as @@Before@/@@After@, that again follow the execution of @@Test@. If the @@Test@ is executed In Container, so will the @@Rule@. If @@Test@ executes on Client, so will the @@Rule@.
+=:
+
+- <i class="icon-star"></i> Internal TestResult state correlates with actual result :=
+An old bug in Arquillian has been that the Internal state of the TestResult inside of Arquillian has not matched the TestResult reported by the Test Framework. This comes from how Arquillian work and integrate with the different Test Framework. 
+
+The normal case is when using @@Test.expected@ Exception setup, Arquillian internally will report it as failed since it caught an Exception. But the Test Framework might later choose that, no, this was Expected. This happens after Arquillian gave up control of the result and we never had a callback to get this result updated to the actual state.
+
+From the Users perspective, this is just an internal detail and has been nothing to worry about. We've been moving forward with the Arquillian Recorder Extension that create User reports for the test run based on the internal state. Because of this, these reports has come out a bit off. 
+
+This is now fixed for both the JUnit and TestNG integrations.
+
+For Extension developers who require the correct TestResult; @@Observe@ the @After@ event. 
+=:
+
+- <i class="icon-star"></i> Support exporting Deployments exploded :=
+Arquillian has always supported exporting to disk the Archive that is about to be deployed to the container, either via the _arquillian.deploymentExportPath_ System Property or via _arquillian/engine/property@name=deploymentExportPath_ in @arquillian.xml@.
+
+It dawned on us that if you're exporting the deployments to disk, you're probably interested in seeing the content. 
+
+With 1.1.5.Final you can add the _arquillian.deploymentExportExploded_ System Property or _arquillian/engine/property@name=deploymentExportExploded_ in @arquillian.xml@ to have the deployment automatically exploded on export.
+=:
