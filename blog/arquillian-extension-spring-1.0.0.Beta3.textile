@@ -1,0 +1,78 @@
+---
+author: aslakknutsen
+---
+
+It has _again_ been a while since that last Arquillian Spring extension release, but it's finally here. This release focus mainly on further integration and compatibility with the Arquillian Universe
+
+- <i class="icon-star"></i> Upgraded to Arquillian Core 1.1.x :=
+With Arquillian Core 1.1.0.Final came the new ShrinkWrap Resolver 2.0 APIs.
+
+The Arquillian Spring Deployers have been updated to support the new ShrinkWrap Resolver 2.0 APIs and should now work with the latest and greatest from the Arquillian Universe.
+=:
+
+- <i class="icon-star"></i> Arquillian Persistence Extension support :=
+In this release we've added a new module, @arquillian-persistence-spring@, which integrates Spring with the Arquillian Persistence Extension.
+
+More specifically, it's an implementation of the Persistence Extension @DataSourceProvider@ SPI.
+
+This integration allow you to configure the Persistence Extension to operate on a DataSource configured in your Spring @applicationContext@.
+
+Configure your @DataSource@ and @TransactionManager@ in the @applicationContext.xml@ file. For example;
+
+bc(prettify).. <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+   ...
+</bean>
+
+<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+  <property name="dataSource" ref="dataSource"/>
+</bean>
+
+p. Then setup your Test case using the Spring, Transaction and Persistence Extension annotations:
+
+bc(prettify).. @RunWith(Arquillian.class)
+@Transactional(manager = "txManager")
+@SpringConfiguration("applicationContext.xml")
+@DataSource("dataSource")
+public class JpaEmployeeRepositoryTestCase {
+
+...
+
+    @Test
+    @ShouldMatchDataSet(value = "employee.yml", excludeColumns = "id")
+    public void testSave() {
+
+        Employee employee = new Employee();
+        employee.setName("Test employee");
+
+        employeeRepository.save(employee);
+
+        employee = new Employee();
+        employee.setName("New employee");
+
+        employeeRepository.save(employee);
+    }
+
+    @UsingDataSet("employee.yml")
+    @Cleanup(strategy = CleanupStrategy.USED_TABLES_ONLY)
+    public void testGetEmployees() throws Exception {
+
+        List<Employee> result = employeeRepository.getEmployees();
+
+        assertNotNull("Method returned null list as result.", result);
+        assertEquals("Two employees were expected.", 2, result.size());
+    }
+}
+
+p. Optionally you can configure the transaction manager reference and data source reference globally for the whole test suite via @arquillian.xml@
+
+bc(prettify).. <arquillian>
+   <extension qualifier="transaction">
+      <property name="manager">txManager</property>
+   </extension>
+   <extension qualifier="persistence">
+      <property name="defaultDataSource">dataSource</property>
+   </extension>
+</arquillian>
+
+p. See the "Persistence Extension Reference Docs":https://docs.jboss.org/author/display/ARQ/Persistence for more ingo
+=:
