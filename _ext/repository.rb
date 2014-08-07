@@ -88,14 +88,14 @@ module Awestruct
           )
 
           @repositories << OpenStruct.new(
-            :path => 'wildfly',
+            :path => 'wildfly-arquillian',
             :desc => nil,
-            :relative_path => 'arquillian/',
+            :relative_path => '',
             :owner => 'wildfly',
             :host => 'github.com',
             :type => 'git',
-            :html_url => 'https://github.com/wildfly/wildfly',
-            :clone_url => 'git://github.com/wildfly/wildfly.git'
+            :html_url => 'https://github.com/wildfly/wildfly-arquillian',
+            :clone_url => 'git://github.com/wildfly/wildfly-arquillian.git'
           )
 
           @repositories << OpenStruct.new(

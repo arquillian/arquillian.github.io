@@ -795,7 +795,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def handles(repository)
       repository.path != 'arquillian-container-reloaded' and
-          (repository.path =~ /^arquillian\-container\-.+/ or ['jboss-as', 'wildfly', 'tomee'].include? repository.path)
+          (repository.path =~ /^arquillian\-container\-.+/ or ['jboss-as', 'wildfly-arquillian', 'tomee'].include? repository.path)
     end
 
     def visit(repository, site)
@@ -820,7 +820,7 @@ module Awestruct::Extensions::Repository::Visitors
     # component (repository) itself has not yet been released
     def resolve_container_adapters(repository, component)
       vendor = (repository.path == 'jboss-as' ? 'jbossas7' : repository.path.match(/([^-]+)$/)[1])
-      vendor = 'wildfly' if repository.path == 'wildfly'
+      vendor = 'wildfly' if repository.path == 'wildfly-arquillian'
       adapters = []
       rev = component.latest_tag
       rev = "HEAD" unless rev
@@ -877,8 +877,8 @@ module Awestruct::Extensions::Repository::Visitors
       container.name = pom.root.text('name').sub(/ Container$/, '\0 Adapter').sub(/^Arquillian Container (.*)/, 'Arquillian \1 Container Adapter')
       if repository.path == 'jboss-as'
         container.name = container.name.sub(/.*Arquillian /, 'Arquillian JBoss AS 7 ')
-      elsif repository.path == 'wildfly'
-        container.name = container.name.sub(/.*Arquillian /, 'Arquillian WildFly 8 ')
+      elsif repository.path == 'wildfly-arquillian'
+        container.name = container.name.sub(/.*Arquillian /, 'Arquillian WildFly ')
       elsif repository.path == 'tomee'
         container.name = container.name.sub(/.*:: /, 'Arquillian TomEE ')
         container.name = container.name.sub(/ Adaptor/, ' Container Adapter')

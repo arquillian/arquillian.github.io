@@ -36,7 +36,8 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
     path = $1 if @repository.clone_url =~/.*\/(.*)\.git/
     @site.components = {
       path => OpenStruct.new(
-        :modules => []
+        :modules => [],
+        :releases => []
       )
     }
     @repository.path = path
@@ -48,15 +49,15 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
     Cloner.new().visit(@repository, @site)
 
     @visitor.visit(@repository, @site)
-    @site.components.size.should equal(1)
+    expect(@site.components.size).to equal(1)
 
     @site.components.each_value do |comp|
-      comp.modules.size.should eql(3)
+      expect(comp.modules.size).to eql(3)
 
       names = comp.modules.map {|x| x.name}
-      names.should include('Arquillian Weld EE Embedded 1.1.x Container Adapter')
-      names.should include('Arquillian Weld SE Embedded 1.1.x Container Adapter')
-      names.should include('Arquillian Weld SE Embedded 1.x Container Adapter')
+      expect(names).to include('Arquillian Weld EE Embedded 1.1.x Container Adapter')
+      expect(names).to include('Arquillian Weld SE Embedded 1.1.x Container Adapter')
+      expect(names).to include('Arquillian Weld SE Embedded 1.x Container Adapter')
     end    
   end
 
@@ -66,33 +67,34 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
     Cloner.new().visit(@repository, @site)
 
     @visitor.visit(@repository, @site)
-    @site.components.size.should equal(1)
+    expect(@site.components.size).to equal(1)
 
     @site.components.each_value do |comp|
-      comp.modules.size.should eql(1)
+      expect(comp.modules.size).to eql(6)
 
       names = comp.modules.map {|x| x.name}
-      names.should include('Arquillian OSGi Container Embedded')
+      expect(names).to include('Arquillian OSGi :: Container :: JBoss :: Embedded')
     end
   end
 
   it "should discover containers in non arquillian org repository" do
-    @repository.clone_url = 'git://github.com/wildfly/wildfly.git'
-    @repository.relative_path = 'arquillian/'
+    @repository.clone_url = 'git://github.com/wildfly/wildfly-arquillian.git'
+    #@repository.relative_path = 'arquillian/'
     link_components_modules
     Cloner.new().visit(@repository, @site)
 
     @visitor.visit(@repository, @site)
-    @site.components.size.should equal(1)
+    expect(@site.components.size).to equal(1)
     @site.components.each_value do |comp|
-      comp.modules.size.should eql(5)
+      expect(comp.modules.size).to eql(4)
 
       names = comp.modules.map {|x| x.name}
-      names.should include('Arquillian WildFly 8 Embedded Container Adapter')
-      names.should include('Arquillian WildFly 8 Remote Container Adapter')
-      names.should include('Arquillian WildFly 8 Managed Container Adapter')
-      names.should include('Arquillian WildFly 8 Remote Domain Container Adapter')
-      names.should include('Arquillian WildFly 8 Managed Domain Container Adapter')
+      # Temp removed from build
+      #expect(names).to include('Arquillian WildFly Embedded Container Adapter')
+      expect(names).to include('Arquillian WildFly Remote Container Adapter')
+      expect(names).to include('Arquillian WildFly Managed Container Adapter')
+      expect(names).to include('Arquillian WildFly Remote Domain Container Adapter')
+      expect(names).to include('Arquillian WildFly Managed Domain Container Adapter')
     end
   end
 
@@ -102,15 +104,15 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
     Cloner.new().visit(@repository, @site)
 
     @visitor.visit(@repository, @site)
-    @site.components.size.should equal(1)
+    expect(@site.components.size).to equal(1)
 
     @site.components.each_value do |comp|
-      comp.modules.size.should eql(3)
+      expect(comp.modules.size).to eql(3)
 
       names = comp.modules.map {|x| x.name}
-      names.should include('Arquillian GlassFish Embedded 3.1 Container Adapter')
-      names.should include('Arquillian GlassFish Remote 3.1 Container Adapter')
-      names.should include('Arquillian GlassFish Managed 3.1 Container Adapter')
+      expect(names).to include('Arquillian GlassFish Embedded 3.1 Container Adapter')
+      expect(names).to include('Arquillian GlassFish Remote 3.1 Container Adapter')
+      expect(names).to include('Arquillian GlassFish Managed 3.1 Container Adapter')
     end
   end
 
@@ -120,13 +122,13 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
     Cloner.new().visit(@repository, @site)
 
     @visitor.visit(@repository, @site)
-    @site.components.size.should equal(1)
+    expect(@site.components.size).to equal(1)
 
     @site.components.each_value do |comp|
-      comp.modules.size.should eql(1)
+      expect(comp.modules.size).to eql(1)
 
       names = comp.modules.map {|x| x.name}
-      names.should include('Arquillian OpenShift Container Adapter')
+      expect(names).to include('Arquillian OpenShift Container Adapter')
     end
   end
 
@@ -136,13 +138,13 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
     Cloner.new().visit(@repository, @site)
 
     @visitor.visit(@repository, @site)
-    @site.components.size.should equal(1)
+    expect(@site.components.size).to equal(1)
 
     @site.components.each_value do |comp|
-      comp.modules.size.should eql(1)
+      expect(comp.modules.size).to eql(1)
 
       names = comp.modules.map {|x| x.name}
-      names.should include('Arquillian Cloudbees Container Adapter')
+      expect(names).to include('Arquillian Cloudbees Container Adapter')
     end
   end
 
@@ -153,13 +155,13 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
     Cloner.new().visit(@repository, @site)
 
     @visitor.visit(@repository, @site)
-    @site.components.size.should equal(1)
+    expect(@site.components.size).to equal(1)
 
     @site.components.each_value do |comp|
-      comp.modules.size.should eql(1)
+      expect(comp.modules.size).to eql(1)
 
       names = comp.modules.map {|x| x.name}
-      names.should include('Arquillian OpenShift Express Container Adapter')
+      expect(names).to include('Arquillian OpenShift Express Container Adapter')
     end
   end
 
@@ -171,15 +173,15 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
     Cloner.new().visit(@repository, @site)
 
     @visitor.visit(@repository, @site)
-    @site.components.size.should equal(1)
+    expect(@site.components.size).to equal(1)
 
     @site.components.each_value do |comp|
-      comp.modules.size.should eql(3)
+      expect(comp.modules.size).to eql(3)
 
       names = comp.modules.map {|x| x.name}
-      names.should include('Arquillian TomEE Embedded Container Adapter')
-      names.should include('Arquillian TomEE Remote Container Adapter')
-      names.should include('Arquillian OpenEJB Container Adapter')
+      expect(names).to include('Arquillian TomEE Embedded Container Adapter')
+      expect(names).to include('Arquillian TomEE Remote Container Adapter')
+      expect(names).to include('Arquillian OpenEJB Container Adapter')
     end
   end
 
@@ -189,16 +191,17 @@ describe Awestruct::Extensions::Repository::Visitors::ContainerComponent do
     Cloner.new().visit(@repository, @site)
 
     @visitor.visit(@repository, @site)
-    @site.components.size.should equal(1)
+    expect(@site.components.size).to equal(1)
 
     @site.components.each_value do |comp|
-      comp.modules.size.should eql(4)
+      expect(comp.modules.size).to eql(5)
 
       names = comp.modules.map {|x| x.name}
-      names.should include('Arquillian WebSphere AS Remote 7.x Container Adapter')
-      names.should include('Arquillian WebSphere AS Embedded 8.x Container Adapter')
-      names.should include('Arquillian WebSphere AS Remote 8.x Container Adapter')
-      names.should include('Arquillian WebSphere Liberty Profile Managed 8.5 Container Adapter')
+      expect(names).to include('Arquillian WebSphere AS Remote 7.x Container Adapter')
+      expect(names).to include('Arquillian WebSphere AS Embedded 8.x Container Adapter')
+      expect(names).to include('Arquillian WebSphere AS Remote 8.0 Container Adapter')
+      expect(names).to include('Arquillian WebSphere AS Remote 8.5 Container Adapter')
+      expect(names).to include('Arquillian WebSphere Liberty Profile Managed 8.5 Container Adapter')
     end
   end
 end
