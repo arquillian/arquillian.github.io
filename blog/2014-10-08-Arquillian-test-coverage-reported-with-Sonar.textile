@@ -1,0 +1,67 @@
+---
+layout: post
+title: Arquillian test coverage reported with Sonar
+author: joserodolfofreitas
+tags: [ coverage, sonar, jacoco]
+---
+
+p. Ever wanted to have full code coverage of your integration tests? Even ones running in remote containers on a different machine?
+
+p. As soon as you run Sonar for the first time, running some tests with arquillian, you'll get the following error:
+
+bc(prettify).. java.lang.NoClassDefFoundError: 
+net/sourceforge/cobertura/coveragedata/HasBeenInstrumented
+
+p. This tells you that cobertura dependencies are not on the classpath.
+
+p. It seems like an "easy to fix" thing, but the bad news is that adding the dependency won't resolve your problem, cause the classloader might find the classes, but it won't report code coverage correctly. Accessing code coverage data when executing tests in a container (especially remote) is really complicated if you use offline bytecode instrumentation.
+
+p. Managing hit lines on a server and reporting it to a client can be a nightmare with this approach, and besides that, as "Aslak Knutsen":/community/aslakknutsen/ stated in "ARQ-163":https://issues.jboss.org/browse/ARQ-163:
+
+bq.:https://issues.jboss.org/browse/ARQ-163 Both Emma and Cobertura has the same basic issue; they rely on Shutdown hooks initialized via static code blocks with out any extension model to override. These Shutdown hooks dump data to disk on the container side. Arquillian need to transfer the coverage data back to the client and does not need the   disk  IO. Arquillian also deploy Emma/Cobertura as part of the deployment, which means adding Shutdownhooks leaks Classloaders etc on undeploy.
+
+p. Considering  those problems, for us, Arquillian users, the best approach is to use an on-the-fly bytecode instrumentation, with a code coverage engine like "Jacoco":http://www.eclemma.org/jacoco/.
+
+p. But don't fear the dark, although integrating Arquillian and Sonar seems a task with epic proportions, you'll see that it really isn't. Some elfs have already prepared the magic for you. On one hand we have the "arquillian-jacoco-extension":/modules/jacoco-extension/, on the other we have the "sonar-jacoco plugin":http://docs.codehaus.org/display/SONAR/JaCoCo+Plugin. Mixing them, is as natural as possible, I'll show you what you have to do:
+
+h3. On your sonar server:
+
+* Download "sonar-jacoco plugin":http://docs.codehaus.org/display/SONAR/JaCoCo+Plugin
+* Activate jacoco as you wish (for selected project or all projects, follow the instructions on "sonar-jacoco plugin":http://docs.codehaus.org/display/SONAR/JaCoCo+Plugin site)
+
+
+h3. In your project
+
+p. Arquillian extensions have two different sides, one in client and one in server. Through a commandService, data (in our case, coverage-data produced by Jacoco engine) collected in container could be sent to the client. To make this work we'll need, besides the Jacoco extension, the arquillian-protocol-servlet.
+And for now (alpha1 version), we'll also need to explicit declare Jacoco dependency. Finally your pom will have the follow new dependencies (Assuming you have already setup Arquillian, see the "Getting Started":/guides/getting_started/ guide.)
+
+bc(prettify)..  <dependency>
+    <groupId>org.jboss.arquillian.extension</groupId>
+    <artifactId>arquillian-jacoco</artifactId>
+    <scope>test</scope>
+    <version>1.0.0.Alpha6</version>
+</dependency>
+<dependency>
+    <groupId>org.jacoco</groupId>
+    <artifactId>org.jacoco.core</artifactId>
+    <version>0.6.4.201312101107</version>
+</dependency>
+
+p. Now you have everything that you'll need to run Jacoco as your main test coverage engine.
+
+p. Arquillian Jacoco Extension will save a file in your target directory called jacoco.exec, which will be read and analysed by Sonar report tool. Simple as that.
+
+To see the "arquillian-jacoco-extension":/modules/jacoco-extension/ in action, there's a full (dummy) test case in github, you can clone, fork and play: "joserodolfofreitas/jacoco-integration-testcase":https://github.com/joserodolfofreitas/jacoco-integration-testcase
+
+h3. Reporting Integration Tests (IT) Coverage
+
+p. If you use Arquillian for integration tests, you'll need to run the integration project before and then ask Sonar to access the jacoco integration test coverage data with the maven variable @sonar.jacoco.itReportPath@:
+
+bc(prettify). mvn sonar:sonar
+
+p. In this case, Sonar will provide a different widget to measure your IT Coverage rate:
+
+!(graphic center)http://www.sonarsource.org/wp-content/uploads/2010/10/it-coverage-tab.png(it coverage widget, image from http://www.sonarsource.org/)!
+
+p. I hope you find the post useful and pleasant to read.
+
