@@ -575,6 +575,11 @@ module Awestruct::Extensions::Repository::Visitors
               :name => 'Lukáš Fryč',
               :jboss_username => 'lfryc'
             })
+          elsif repository.path.eql? 'arquillian-cube'
+            lead = OpenStruct.new({
+              :name => 'Alex Soto',
+              :jboss_username => 'lordofthejars'
+            })
           elsif repository.owner.eql? 'arquillian'
             lead = OpenStruct.new({
               :name => 'Aslak Knutsen',
