@@ -3,6 +3,7 @@ require_relative 'awestruct_ext'
 require_relative 'restclient_extensions_enabler'
 require_relative 'identities'
 require_relative 'jira'
+require_relative 'github'
 require_relative 'repository'
 require_relative 'arquillian'
 require_relative 'releases'
@@ -53,6 +54,7 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Jira::ReleaseNotes.new('SHRINKWRAP:12310884', 'shrinkwrap')
   extension Awestruct::Extensions::Jira::ReleaseNotes.new('SHRINKRES:12312120', 'resolver')
   extension Awestruct::Extensions::Jira::ReleaseNotes.new('SHRINKDESC:12311080', 'descriptors')
+  extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-cube', 'cube')
   extension Awestruct::Extensions::Repository::Collector.new(480465, 'sGiJRdK2Cq8Nz0TkTNAKyw', :observers => [github_collector])
   extension Awestruct::Extensions::Identities::Collect.new(github_collector)
   extension Awestruct::Extensions::Identities::Crawl.new(
