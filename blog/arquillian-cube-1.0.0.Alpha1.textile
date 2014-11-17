@@ -1,0 +1,143 @@
+---
+date: 2014-11-17
+author: aslakknutsen
+---
+
+Have a little control freak inside? Need to control it all?
+
+bc. Resistance is futile, all bugs will be assimilated!
+
+h3. What is Arquillian Cube?
+
+With Arquillian Cube you can control the lifecycle of Docker images as part of the test lifecyle, either automatically or manually.
+
+This gives you the chance to scale up from a integration/functional test level all the way up to the system test level.
+
+It's was named Cube simply because:
+
+* Docker is like a cube
+* "The Borg":http://en.memory-alpha.org/wiki/Borg_cube starship is named a cube and because we are moving tests close to production we can say that "resistance is futile, all bugs will be assimilated".
+
+h3. How does it work?
+
+Arquillian Cube communicates with the Docker server via its remote REST API. You can build/create/start/stop/remove Docker instances with all the normal Docker features you're used to.
+
+p(warning). %Arquillian Cube Docker currently require the Docker server to run with TCP communication enabled. Read the "preliminaries":https://github.com/arquillian/arquillian-cube#preliminaries for detail information on how to set it up. Unix Socket support will be added in a later version.%
+
+h3(highlights). What's included in the Alpha1 release?
+
+- <i class="icon-star"></i> "Pulling images":#pull_repository from custom repository := 
+
+=:
+
+- <i class="icon-star"></i> "Extendable configuration":#configuration :=
+
+=:
+
+- <i class="icon-star"></i> "Building images":#build as part of test lifecycle :=
+
+=:
+
+- <i class="icon-star"></i> Integration with "Arquillian Container":#arquillian_container :=
+
+=:
+
+
+h3. Details
+
+h4(#pull_repository). Pulling images
+
+By default, when you refer to a Docker image by it's id, Cube will use the official "registry.hub.docker.com":http://registry.hub.docker.com registry to look for images.
+
+If you're running your own Docker registry, either locally or remote, you can reconfigure Cube to use that one instead via the @dockerRegistry@ configuration option.
+
+bc(prettify).. <extension qualifier="docker">
+    <property name="dockerRegistry">http://my-internal-registry.company.com</property>
+</extension>
+
+
+h4(#configuration). Cube Configuration
+
+You can configure the individual Cubes in two different ways.
+
+Either you can include a yaml snippet in the @arquillian.xml@ configuration element @dockerContainers@;
+
+bc(prettify).. <extension qualifier="docker">
+    <property name="dockerContainers">
+       tomcat:
+         image: tutum/tomcat:7.0
+         exposedPorts: [8089/tcp]
+       portBindings:
+         - exposedPort: 8089/tcp
+           port: 8089
+    </property>
+</extension>
+
+p. Or you can refer to an external file via @dockerContainersFile@.
+
+bc(prettify).. <extension qualifier="docker">
+    <property name="dockerContainersFile">src/test/resources/cubes.yaml</property>
+</extension>
+
+bc(prettify).. tomcat:
+   image: tutum/tomcat:7.0
+   exposedPorts: [8089/tcp]
+portBindings:
+   - exposedPort: 8089/tcp
+     port: 8089
+
+
+p. For a more complete overview of the configuration options please refer to the "documentation":https://github.com/arquillian/arquillian-cube#configuration.
+
+
+h4(#build). Building images 
+
+If you would like to build an Docker image as part of the test as oppose to just consume a preexisting one you can refer to a directory with a DockerFile directly in the Cube configuration.
+
+bc(prettify).. tomcat:
+   buildImage:
+     dockerfileLocation: src/test/resources/tomcat
+     noCache: true
+     remove: true
+   exposedPorts: [8089/tcp]
+portBindings:
+   - exposedPort: 8089/tcp
+     port: 8089
+
+p. For more information on building please refer to the "documentation":https://github.com/arquillian/arquillian-cube#building-containers.
+
+h4(#arquillian_container). Arquillian Container
+
+Not only can you control the Docker images, Cube also integrates nicely with the normal Arquillian Remote Containers.
+
+When a Arquillian Container has the same qualifier as a Docker image, Cube will assume that the Docker image contains the Container and control the Image in the same lifecycle as the Container it self. Starting it before @BeforeStart@ and stopping it after @AfterStop@.
+
+There are two potential problem areas when using Arquillian Remote Containers with Docker images;
+
+Docker by default boot up images on 'random' IP addresses and the Container it self might be bound to 127.0.0.1 inside the Docker container and skew any management API responses that will effect it's ability to do deployments, in-container testing and URL injection.
+
+Arquillian Cube address these issues by automatically remapping and updating the Container configuration and the metadata returned by the Container. In the end, all you need to do is define the Docker image and the Arquillian Container with the same name and place the Remote adapter on classpath.
+
+bc(prettify).. <extension qualifier="docker">
+    <property name="dockerContainers">
+       tomcat:
+         image: tutum/tomcat:7.0
+         exposedPorts: [8089/tcp]
+       portBindings:
+         - exposedPort: 8089/tcp
+           port: 8089
+    </property>
+</extension>
+
+<container qualifier="tomcat">
+</container>
+
+h3. Documentation
+
+For more information on how this all work, what you can configure etc please see the complete "documentation":https://github.com/arquillian/arquillian-cube#arquillian-cube
+
+h3. What's coming next?
+
+Next up for Cube is OpenShift 3/Kubernetes support. This should allow you to control images deployed on OpenShift Origin and not just via the normal Docker Server. Using the same implementation we hope to support Google Cloud Engine as well.
+
+If you have any questions, problems or request: please drop us a not on the "community forums":#{site.project_space}.
