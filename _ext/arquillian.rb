@@ -951,6 +951,12 @@ module Awestruct::Extensions::Repository::Visitors
         primarypom = pom
       elsif !primary.nil?
         primarypom = REXML::Document.new(rc.cat_file(rc.revparse("#{rev}:#{repository.relative_path}#{primary}/pom.xml")))
+      elsif !count.zero? and primary.nil?
+        pom.each_element('/project/modules/module') do |m|
+          unless m.text.eql? 'impl' or m.text.end_with? '-impl' or m.text.end_with? 'api' or m.text.end_with? 'spi' or m.text.include? 'ftest'
+            primarypom = REXML::Document.new(rc.cat_file(rc.revparse("#{rev}:#{repository.relative_path}#{m.text}/pom.xml")))
+          end
+        end
       end
       if !primarypom.nil?
         artifactId = primarypom.root.text('artifactId')
