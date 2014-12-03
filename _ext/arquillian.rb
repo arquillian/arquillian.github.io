@@ -43,6 +43,12 @@ class Artifact
           @artifactId + '-' + @version + '.' + @packaging.to_s] * '/'
     end
 
+    #https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/core/arquillian-core-api/1.1.5.Final/arquillian-core-api-1.1.5.Final-javadoc.jar-unzip/index.html
+    def to_javadoc_url(base_url = 'https://repository.jboss.org/nexus/content/repositories/unzip')
+      [base_url, @groupId.gsub('.', '/'), @artifactId, @version,
+        @artifactId + '-' + @version + '-javadoc' + '.' + @packaging.to_s + '-unzip/index.html'] * '/'
+      end
+
     def to_pom_url(base_url = 'http://repo1.maven.org/maven2')
       [base_url, @groupId.gsub('.', '/'), @artifactId, @version,
           @artifactId + '-' + @version + '.' + @packaging.to_s].join('/').gsub(/\.jar$/, '.pom')
