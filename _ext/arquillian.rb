@@ -76,7 +76,7 @@ module Awestruct::Extensions::Repository::Visitors
         repos_dir = File.join(site.tmp_dir, 'repos')
       end
       if !File.directory? repos_dir
-        FileUtils.mkdir_p(repos_dir)      
+        FileUtils.mkdir_p(repos_dir)
       end
       clone_dir = File.join(repos_dir, repository.path)
       rc = nil
@@ -127,7 +127,7 @@ module Awestruct::Extensions::Repository::Visitors
         end
         range_author_index[e.email].commits += 1
       }
-      
+
       range_author_index.values.each {|e|
         # this loop registers author in global index if not present
         if repository.host.eql? 'github.com'
@@ -656,7 +656,7 @@ module Awestruct::Extensions::Repository::Visitors
 
 
         next unless artifactId =~ /.*bom|.*depchain.*|graphene/ or packaging == :jar
-        next if artifactId =~/.*(tests?|ftest.*|inttest|example.*|build|build-config|build-resources)/
+        next if artifactId =~/.*(ftest.*|inttest|example.*|build|build-config|build-resources)/
         next unless packaging == :pom || :jar
 
         version = pom.root.text('version') || pom.root.elements['parent'].text('version')
@@ -916,7 +916,7 @@ module Awestruct::Extensions::Repository::Visitors
     include Base
 
     def handles(repository)
-      repository.path =~ /^(arquillian-extension-.+|jsfunit|arquillian-graphene|arquillian-droidium|arquillian-spacelift|arquillian-recorder|arquillian-cube)$/ 
+      repository.path =~ /^(arquillian-extension-.+|jsfunit|arquillian-graphene|arquillian-droidium|arquillian-spacelift|arquillian-recorder|arquillian-cube)$/
     end
 
     def visit(repository, site)
@@ -949,7 +949,7 @@ module Awestruct::Extensions::Repository::Visitors
       pom.each_element('/project/modules/module') do |m|
         count += 1
         if (m.text.eql? 'impl' or m.text.end_with? '-impl')
-          primary = m.text 
+          primary = m.text
         end
       end
       primarypom = nil
@@ -981,7 +981,7 @@ module Awestruct::Extensions::Repository::Visitors
     include Base
 
     def handles(repository)
-      repository.path =~ /^(arquillian-maven|plugin-arquillian|arquillian-gradle-plugin)$/ 
+      repository.path =~ /^(arquillian-maven|plugin-arquillian|arquillian-gradle-plugin)$/
     end
 
     def visit(repository, site)
