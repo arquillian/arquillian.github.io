@@ -1,0 +1,77 @@
+---
+author: aslakknutsen
+date: 2015-01-26
+---
+
+h3. Highlights in this release
+
+- <i class="icon-star"></i> Support for JUnit 4.12+ := 
+
+JUnit had some internal changes that effected the Arquillian integration in 4.12. These changes should now be taken into account and JUnit 4.12+ should be working again.
+
+=:
+
+- <i class="icon-star"></i> Exposure of some hidden exceptions := 
+
+1.1.5.Final had a few exception cases where the original exception would be masked.
+
+* Any exception in After would hide exception caused in Before.
+* Any InvocationTargetException thrown in container would loose it's original cause
+
+These issues should now be addressed.
+
+=:
+
+- <i class="icon-star"></i> Support for running Arquillian in a Security manager :=
+
+A few fixes should allow you to run Arquillian in container when the container is under a securitry manager. 
+
+=:
+
+- <i class="icon-star"></i> Upgraded to latest ShrinkWrap Resolver|Descriptors := 
+
+We did a minor component upgrade to the latest "ShrinkWrap Resolver":/modules/resolver-shrinkwrap/ version "2.1.1":/blog/2014/05/28/resolver-2-1-1/ and "ShrinkWrap Descriptors":/modules/descriptors-shrinkwrap/ version "2.0.0-alpha-6":/blog/2014/04/05/descriptors-2-0-0-alpha-6/
+
+The new ShrinkWrap Descriptors release come with support for the JavaEE 7 Descriptors.
+
+=:
+
+- <i class="icon-star"></i> SPI for skipping execution of single tests := 
+
+A new SPI has arrived! With this SPI you can choose to programatically mark a Test method as skipped.
+
+You simply registrer a implementation of @TestExecutionDecider@ and return a @ExecutionDecision@ per Test method. You can choose to return a @ExecutionDecision@ with a @Decision.DONT_EXECUTE@ and a reason for not executing it and the Test method will be reported as 'skipped' with the given reason in the test report.
+
+bc(prettify).. public class MyTestExecutionDecider implements TestExecutionDecider {
+   @Override
+   public ExecutionDecision decide(Method testMethod) {
+      if (magical(testMethod)) {
+         return ExecutionDecision
+               .dontExecute("TestMethod skipped due to ...");
+      }
+      return ExecutionDecision.execute();
+   }
+
+   private boolean magical(Method testMethod) {
+      // magic code goes here
+      return false;
+   }
+
+   @Override
+   public int precedence() {
+      return 0;
+   }
+}
+
+p. Registration of the service is done the same as all other services:
+
+bc(prettify).. public class MyLoadableExtension implements LoadableExtension {
+   @Override
+   public void register(ExtensionBuilder builder) {
+      builder.service(TestExecutionDecider.class, MyTestExecutionDecider.class);
+   }
+}
+
+p. The SPI can be executed on the client side or in container. Where you would want to execute it is all up to you and where you have the information to skip the test available. 
+
+=:
