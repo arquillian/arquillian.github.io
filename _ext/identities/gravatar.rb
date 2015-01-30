@@ -15,6 +15,10 @@ module Identities
         if hash.nil?
           hash = Digest::MD5.new().update(identity.email.downcase).hexdigest 
         end
+        if hash.empty? or hash.nil?
+          puts "No gravatar hash could be found for #{identity.github_id}"
+          return
+        end
         url = API_URL_TEMPLATE % hash
         response = RestClient.get(url, :user_agent => "rest-client") do |rsp, req, res, &blk|
           if rsp.code.eql? 404
