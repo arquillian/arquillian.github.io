@@ -596,6 +596,16 @@ module Awestruct::Extensions::Repository::Visitors
               :name => 'Karel Piwko',
               :jboss_username => 'kpiwko'
             })
+          elsif repository.path.eql? 'descriptors-docker'
+            lead = OpenStruct.new({
+              :name => 'George Gastaldi',
+              :jboss_username => 'gastaldi'
+            })
+          elsif repository.path.eql? 'shrinkwrap-osgi'
+            lead = OpenStruct.new({
+              :name => 'Carlos Sierra Andrés',
+              :jboss_username => 'csierra'
+            })
           elsif repository.owner.eql? 'shrinkwrap'
             lead = OpenStruct.new({
               :name => 'Andrew Lee Rubinger',

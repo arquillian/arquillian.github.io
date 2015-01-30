@@ -86,6 +86,28 @@ module Awestruct
             :html_url => 'https://github.com/shrinkwrap/descriptors',
             :clone_url => 'git://github.com/shrinkwrap/descriptors.git'
           )
+          @repositories << OpenStruct.new(
+            :path => 'descriptors-docker',
+            :desc => nil,
+            :relative_path => '',
+            :owner => 'shrinkwrap',
+            :host => 'github.com',
+            :type => 'git',
+            :commits_url => 'https://api.github.com/repos/shrinkwrap/descriptors-docker/commits{/sha}',
+            :html_url => 'https://github.com/shrinkwrap/descriptors-docker',
+            :clone_url => 'git://github.com/shrinkwrap/descriptors-docker.git'
+          )
+          @repositories << OpenStruct.new(
+            :path => 'shrinkwrap-osgi',
+            :desc => nil,
+            :relative_path => '',
+            :owner => 'shrinkwrap',
+            :host => 'github.com',
+            :type => 'git',
+            :commits_url => 'https://api.github.com/repos/shrinkwrap/shrinkwrap-osgi/commits{/sha}',
+            :html_url => 'https://github.com/shrinkwrap/shrinkwrap-osgi',
+            :clone_url => 'git://github.com/shrinkwrap/shrinkwrap-osgi.git'
+          )
 
           @repositories << OpenStruct.new(
             :path => 'wildfly-arquillian',
