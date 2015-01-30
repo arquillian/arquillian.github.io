@@ -122,7 +122,6 @@ module Awestruct
 
           @repositories << OpenStruct.new(
             :path => 'tomee',
-            :master_branch => 'trunk',
             :desc => nil,
             :relative_path => 'arquillian/',
             :owner => 'apache',
