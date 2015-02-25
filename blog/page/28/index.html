@@ -55,6 +55,546 @@
           <article class="post">
             <header class="header">
               <h2 class="title">
+                <a href="/blog/2013/06/19/arquillian-extension-guice-1-0-0-Alpha1/">Arquillian Google Guice Extension 1.0.0.Alpha1 Released</a>
+              </h2>
+              <div class="byline">
+                <a href="/community/jmnarloch">
+                  <img class="avatar" src="http://gravatar.com/avatar/6dc4a43fdaf5dfe0c69e3ed54ade665f?s=44" />
+                </a>
+                <span class="author">Posted by
+                <a href="/community/jmnarloch">Jakub Narloch</a></span>
+                <span class="dateinline">on Jun 19, 2013</span>
+                <div class="date"><abbr>Jun</abbr> 19</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2013/06/19/arquillian-extension-guice-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="5e71fbafb2f7646e782929951585f0964d5c723f">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha1</em> release of the <em>Arquillian Google Guice Extension</em> component!</p>
+              <p>This is the first release of the Arquillian Guice extension. We&#8217;re bringing the next IOC container into the Arquillian universe.</p>
+              <h3 class="highlights">Some of the highlights in this release</h3>
+              <dl>
+              	<dt><i class="icon-star"></i> Dependency injection</dt>
+              	<dd><p>Using this extension setting up a Guice test becomes pretty simple, allowing you to inject all Guice managed dependencies directly into the test case.</p></dd>
+              </dl>
+              <dl>
+              	<dt><i class="icon-star"></i> Built in Guice deployer</dt>
+              	<dd><p>With the help of this extension you don&#8217;t need to add Guice to your deployments manually, the extension will take care of that for you.</p></dd>
+              </dl>
+              <p>There are two ways of enabling Guice injection in an Arquillian test case:<br />
+              The first way is to annotate an Arquillian test case with <code>@GuiceConfiguration</code>. The annotation values allow you to specify the modules that will be passed to the injector instance on creation.</p>
+              <p>Example test:</p>
+              <div class="filename">AppointmentServiceImplTestCase.java</div>
+              <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;@GuiceConfiguration(AppointmentModule.class)&#x000A;public class AppointmentServiceImplTestCase {</code>&#x000A;&#x000A;<code class="prettify">   @Deployment&#x000A;   public static JavaArchive createTestArchive() {&#x000A;       return ShrinkWrap.create(JavaArchive.class, "guice-test.jar")&#x000A;               .addClasses(Appointment.class,&#x000A;                       AppointmentRepository.class, AppointmentRepositoryImpl.class,&#x000A;                       AppointmentService.class, AppointmentServiceImpl.class,&#x000A;                       AppointmentModule.class);&#x000A;   }</code>&#x000A;&#x000A;<code class="prettify">   @Inject&#x000A;   @Named("appointmentService")&#x000A;   private AppointmentService appointmentService;</code>&#x000A;&#x000A;<code class="prettify">   @Test&#x000A;   public void testGetAll() {</code>&#x000A;&#x000A;<code class="prettify">       Appointment appointment1 = createAppointment("Important", "Work", new Date());&#x000A;       Appointment appointment2 = createAppointment("Do not forget", "Work", new Date());</code>&#x000A;&#x000A;<code class="prettify">       appointmentService.add(appointment1);&#x000A;       appointmentService.add(appointment2);</code>&#x000A;&#x000A;<code class="prettify">       List&lt;Appointment&gt; result = appointmentService.getAll();&#x000A;       assertNotNull("Method returned null.", result);&#x000A;       assertEquals("Invalid element count, 2 appointments were expected.", 2, result.size());&#x000A;   }&#x000A;}</code></pre>
+              <p>Where <code>AppointmentModule</code> is defined as fallows:</p>
+              <div class="filename">AppointmentModule.java</div>
+              <pre class="prettify"><code class="prettify">public class AppointmentModule implements Module {</code>&#x000A;&#x000A;<code class="prettify">    public void configure(Binder binder) {</code>&#x000A;&#x000A;<code class="prettify">        binder.bind(AppointmentRepository.class)&#x000A;                .annotatedWith(Names.named("appointmentRepository"))&#x000A;                .to(AppointmentRepositoryImpl.class);&#x000A;        binder.bind(AppointmentService.class)&#x000A;                .annotatedWith(Names.named("appointmentService"))&#x000A;                .to(AppointmentServiceImpl.class);&#x000A;    }&#x000A;}</code></pre>
+              <p>Guice configuration uses module instances instead of static classes known at compile time, which means that modules can have different state at runtime. Taking that into consideration, static annotation could in some cases be limiting. This is way we added a second possibility for enabling Guice. A static factory method could be added in the test case and annotated with <code>@GuiceInjector</code> that instantiates the Injector directly. The extension will invoke the method prior to test execution and based on the returned injector the dependencies will be available for injection. Is the previous test we would only need to add:</p>
+              <pre class="prettify"><code class="prettify">@GuiceInjector&#x000A;public static Injector createInjector() {</code>&#x000A;&#x000A;<code class="prettify">    return Guice.createInjector(new AppointmentModule());&#x000A;}</code></pre>
+              <p>The extension defines some pretty simple settings to control how the packaging occur;  specify the version of guice to package and if the auto packaging should happen at all.</p>
+              <div class="filename">arquillian.xml</div>
+              <pre class="prettify"><code class="prettify">&lt;extension qualifier="guice"&gt;&#x000A;     &lt;property name="autoPackage"&gt;false&lt;/property&gt;&#x000A;     &lt;property name="guiceVersion"&gt;3.0&lt;/property&gt;&#x000A;&lt;/extension&gt;</code></pre>
+              <p>We look forward to hearing your feedback about this release in the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
+              <h3>What is Arquillian?</h3>
+              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+              <h3>Release details</h3>
+              <table class="table table-bordered table-striped">
+                <tbody>
+                  <tr>
+                    <th>Component</th>
+                    <td>
+                      <a href="/modules/guice-extension/">Arquillian Google Guice Extension</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Version</th>
+                    <td>
+                      1.0.0.Alpha1
+                      <span class="label tag">
+                        <a href="https://github.com/arquillian/arquillian-extension-guice/commit/ddb601f5a61a96f8bb6a72ed8a6ab405d7e03496.html">view tag</a>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Release date</th>
+                    <td>2013-06-19</td>
+                  </tr>
+                  <tr>
+                    <th>Released by</th>
+                    <td>Aslak Knutsen</td>
+                  </tr>
+                  <tr>
+                    <th>Compiled against</th>
+                    <td>
+                      <ul class="unstyled">
+                        <li>
+                          <a href="/modules/core-platform/">Arquillian Core</a>
+                          &#8211;
+                          <a href="/blog/2012/10/19/arquillian-core-1-0-3-Final/">1.0.3.Final</a>
+                        </li>
+                        <li>
+                          <a href="/modules/resolver-shrinkwrap/">ShrinkWrap Resolver</a>
+                          &#8211;
+                          <a href="/blog/2012/03/05/resolver-2-0-0-alpha-1/">2.0.0-alpha-1</a>
+                        </li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>
+                Published artifacts
+                <small>org.jboss.arquillian.extension</small>
+              </h3>
+              <ul>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-guice-api
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-api/1.0.0.Alpha1/arquillian-guice-api-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-guice-api/1.0.0.Alpha1/arquillian-guice-api-1.0.0.Alpha1-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-api/1.0.0.Alpha1/arquillian-guice-api-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-guice-impl
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-impl/1.0.0.Alpha1/arquillian-guice-impl-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-guice-impl/1.0.0.Alpha1/arquillian-guice-impl-1.0.0.Alpha1-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-impl/1.0.0.Alpha1/arquillian-guice-impl-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-guice-bom
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-bom/1.0.0.Alpha1/arquillian-guice-bom-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-guice-int-tests
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-int-tests/1.0.0.Alpha1/arquillian-guice-int-tests-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-guice-int-tests/1.0.0.Alpha1/arquillian-guice-int-tests-1.0.0.Alpha1-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-guice-int-tests/1.0.0.Alpha1/arquillian-guice-int-tests-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+              </ul>
+              <h3>
+                Release notes and resolved issues
+                <small>1</small>
+              </h3>
+              <p>Initial release of Arquillian Google Guice Extension</p>
+              <p>
+                Thanks to the following list of contributors:
+                <a href="/community/jmnarloch">Jakub Narloch</a>, <a href="/community/aslakknutsen">Aslak Knutsen</a>
+              </p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2013/06/19/arquillian-extension-guice-1-0-0-Alpha1/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/guice/">guice</a>
+            </div>
+          </article>
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2013/06/19/resolver-2-0-0/">ShrinkWrap Resolver 2.0.0 Released</a>
+              </h2>
+              <div class="byline">
+                <a href="/community/kpiwko">
+                  <img class="avatar" src="http://gravatar.com/avatar/88ab3950e925b4ad37c5d7302d854e87?s=44" />
+                </a>
+                <span class="author">Posted by
+                <a href="/community/kpiwko">Karel Piwko</a></span>
+                <span class="dateinline">on Jun 19, 2013</span>
+                <div class="date"><abbr>Jun</abbr> 19</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2013/06/19/resolver-2-0-0/#disqus_thread" data-disqus-identifier="bbdb6acc45a4d5f3976107a3dd0e5337ca4a666c">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>The Arquillian team is proud to announce the <em>2.0.0</em> release of the <em>ShrinkWrap Resolver</em> component!</p>
+              
+              <h3>What is ShrinkWrap Resolver?</h3>
+              <p>The ShrinkWrap Resolvers project provides a Java API to obtain artifacts from a repository system. This is handy to include third party libraries available in any Maven repository in your test archive. ShrinkWrap Resolvers additionally allows you to reuse all the configuration you've already specified in Maven build file, making packaging of an application archive much easier job.</p>
+              <h3>Release details</h3>
+              <table class="table table-bordered table-striped">
+                <tbody>
+                  <tr>
+                    <th>Component</th>
+                    <td>
+                      <a href="/modules/resolver-shrinkwrap/">ShrinkWrap Resolver</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Version</th>
+                    <td>
+                      2.0.0
+                      <span class="label tag">
+                        <a href="https://github.com/shrinkwrap/resolver/commit/1eb2e8e00b70a1938ed28a68436e44900d6833c0.html">view tag</a>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Release date</th>
+                    <td>2013-06-19</td>
+                  </tr>
+                  <tr>
+                    <th>Released by</th>
+                    <td>Karel Piwko</td>
+                  </tr>
+                  <tr>
+                    <th>Compiled against</th>
+                    <td>
+                      <ul class="unstyled">
+                        <li>JUnit &#8211; 4.8.2</li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>
+                Published artifacts
+                <small>org.jboss.shrinkwrap.resolver</small>
+              </h3>
+              <ul>
+                <li>
+                  org.jboss.shrinkwrap.resolver
+                  &raquo;
+                  shrinkwrap-resolver-bom
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-bom/2.0.0/shrinkwrap-resolver-bom-2.0.0.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.shrinkwrap.resolver
+                  &raquo;
+                  shrinkwrap-resolver-api
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api/2.0.0/shrinkwrap-resolver-api-2.0.0.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api/2.0.0/shrinkwrap-resolver-api-2.0.0-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api/2.0.0/shrinkwrap-resolver-api-2.0.0.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.shrinkwrap.resolver
+                  &raquo;
+                  shrinkwrap-resolver-api-maven
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven/2.0.0/shrinkwrap-resolver-api-maven-2.0.0.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven/2.0.0/shrinkwrap-resolver-api-maven-2.0.0-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven/2.0.0/shrinkwrap-resolver-api-maven-2.0.0.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.shrinkwrap.resolver
+                  &raquo;
+                  shrinkwrap-resolver-depchain
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-depchain/2.0.0/shrinkwrap-resolver-depchain-2.0.0.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.shrinkwrap.resolver
+                  &raquo;
+                  shrinkwrap-resolver-impl-maven
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven/2.0.0/shrinkwrap-resolver-impl-maven-2.0.0.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven/2.0.0/shrinkwrap-resolver-impl-maven-2.0.0-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven/2.0.0/shrinkwrap-resolver-impl-maven-2.0.0.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.shrinkwrap.resolver
+                  &raquo;
+                  shrinkwrap-resolver-api-maven-archive
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven-archive/2.0.0/shrinkwrap-resolver-api-maven-archive-2.0.0.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven-archive/2.0.0/shrinkwrap-resolver-api-maven-archive-2.0.0-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven-archive/2.0.0/shrinkwrap-resolver-api-maven-archive-2.0.0.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.shrinkwrap.resolver
+                  &raquo;
+                  shrinkwrap-resolver-spi-maven
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven/2.0.0/shrinkwrap-resolver-spi-maven-2.0.0.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven/2.0.0/shrinkwrap-resolver-spi-maven-2.0.0-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven/2.0.0/shrinkwrap-resolver-spi-maven-2.0.0.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.shrinkwrap.resolver
+                  &raquo;
+                  shrinkwrap-resolver-spi-maven-archive
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven-archive/2.0.0/shrinkwrap-resolver-spi-maven-archive-2.0.0.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven-archive/2.0.0/shrinkwrap-resolver-spi-maven-archive-2.0.0-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven-archive/2.0.0/shrinkwrap-resolver-spi-maven-archive-2.0.0.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.shrinkwrap.resolver
+                  &raquo;
+                  shrinkwrap-resolver-impl-maven-archive
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven-archive/2.0.0/shrinkwrap-resolver-impl-maven-archive-2.0.0.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven-archive/2.0.0/shrinkwrap-resolver-impl-maven-archive-2.0.0-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven-archive/2.0.0/shrinkwrap-resolver-impl-maven-archive-2.0.0.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.shrinkwrap.resolver
+                  &raquo;
+                  shrinkwrap-resolver-spi
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi/2.0.0/shrinkwrap-resolver-spi-2.0.0.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi/2.0.0/shrinkwrap-resolver-spi-2.0.0-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi/2.0.0/shrinkwrap-resolver-spi-2.0.0.pom" target="_blank">pom</a>
+                </li>
+              </ul>
+              <h3>
+                Release notes and resolved issues
+                <small>0</small>
+              </h3>
+              <p></p>
+              <p>
+                Thanks to the following list of contributors:
+                <a href="/community/kpiwko">Karel Piwko</a>
+              </p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2013/06/19/resolver-2-0-0/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/shrinkwrap/">shrinkwrap</a> <a class="tag" href="/blog/tags/resolver/">resolver</a>
+            </div>
+          </article>
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2013/06/18/arquillian-extension-spring-1-0-0-Beta2/">Arquillian Spring Framework Extension 1.0.0.Beta2 Released</a>
+              </h2>
+              <div class="byline">
+                <a href="/community/jmnarloch">
+                  <img class="avatar" src="http://gravatar.com/avatar/6dc4a43fdaf5dfe0c69e3ed54ade665f?s=44" />
+                </a>
+                <span class="author">Posted by
+                <a href="/community/jmnarloch">Jakub Narloch</a></span>
+                <span class="dateinline">on Jun 18, 2013</span>
+                <div class="date"><abbr>Jun</abbr> 18</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2013/06/18/arquillian-extension-spring-1-0-0-Beta2/#disqus_thread" data-disqus-identifier="431a4687fa11529383278b3d26dde883186a162d">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>The Arquillian team is proud to announce the <em>1.0.0.Beta2</em> release of the <em>Arquillian Spring Framework Extension</em> component!</p>
+              <p>It has been a while since that last Arquillian Spring extension release, but it&#8217;s finally here. This release focus more on improving existing features rather then introducing completely new ones.</p>
+              <p>I would like to thank Jakub Kurlenda and John Ament for helping with this release.</p>
+              <h3 class="highlights">Some of the highlights in this release</h3>
+              <p><i class="icon-star"></i> Managing the Spring&#8217;s ApplicationContext lifecycle</p>
+              <p><i class="icon-star"></i> New ways of configuring Spring&#8217;s context</p>
+              <p><i class="icon-star"></i> Warp Spring extension</p>
+              <p><i class="icon-star"></i> Deployer new functionality</p>
+              <h3>Managing the Spring&#8217;s ApplicationContext lifecycle</h3>
+              <p>Previous versions had one common drawback, each test were running using a separate instance of  Spring&#8217;s <code>ApplicationContext</code>. Although the <code>ApplicationContext</code> were destroyed and all of its resources were freed after the test execution, this brought additional overhead for each test. From now on the developer has the control whether he want to create only a single context per test case or to have each test run with a new &#8220;clean&#8221; context, which in some situation might be handy. By default the context will be created only once, but it can easly be  changed by adding the <code>@ContextLifeCycle</code> annotation to the test case.</p>
+              <h3>New ways of configuring Spring&#8217;s context</h3>
+              <p>This release also bring a couple of new features to ease the test configuration. First are smart defaults used for configuration. Each <code>@SpringConfiguration</code> annotated test do not need to explicitly define the location of the XML file anymore. If no file has been defined, by default the extension will look for file in classpath with exactly the same name as the class located in the class package. The same goes for <code>@SpringAnnotationConfiguration</code>, which now allow to add a static non final internal class which needs to be marked with <code>@Configuration</code>. The extension will use that class by default when configuring Spring.</p>
+              <p>Example:</p>
+              <pre class="prettify"><code class="prettify">@SpringClientAnnotationConfiguration&#x000A;public class TestCase {</code>&#x000A;&#x000A;<code class="prettify">    @Configuration&#x000A;    public static class ContextConfiguration {</code>&#x000A;&#x000A;<code class="prettify">        @Bean&#x000A;        public EmployeeService employeeService() {&#x000A;            return new EmployeeServiceImpl();&#x000A;        }&#x000A;    }&#x000A;}</code></pre>
+              <p>The last new feature is programmatic creation of the ApplicationContext from within a test. From now on it is possible to create the instance of the Spring <code>ApplicationContext</code> for each test via code. This is done by adding a static factory method to the test which needs to be annotated with <code>@SpringContextConfiguration</code>. The extension will invoke this method prior to test execution (all context lifecycle rules mentioned above also apply here) and use it&#8217;s result afterwards.</p>
+              <p>Example:</p>
+              <pre class="prettify"><code class="prettify">@SpringContextConfiguration&#x000A;public static ApplicationContext contextConfiguration() {</code>&#x000A;&#x000A;<code class="prettify">   return new ClassPathXmlApplicationContext(&#x000A;       new String[]{"classpath:service.xml", "classpath:repository.xml"});&#x000A;}</code></pre>
+              <p>Why would this be needed? In some cases you needs to have greater control over the context; for instance at the moment this is the only way to pragmatically set the Spring profiles to use for the test. The other possibility could be integration with other frameworks in which the context should not be managed by the test itself.</p>
+              <h3>Warp Spring extension</h3>
+              <p>The Warp Spring extension has been updated to the latest Alpha 2 release. For consistency with other Warp extensions the <code>SpringMvcResult</code> can be now injected using <code>@ArquillianResource</code> annotation. The custom <code>@SpringResource</code> has been deprecated and might be remove in next releases.</p>
+              <h3>Deployer new functionality</h3>
+              <p>The Spring deployer, which is used for automatic packaging the Spring artifacts and enriching the test deployment, has received some updates. It now allows for importing the dependencies directly from the Maven POM file, and could aid with setting up the deployment. The deployer can be configured in the arquillian.xml file through the <code>spring-deployer</code> section. Additional properties like <code>pomFile</code> allow you to specify the location of the pom file to load; <code>useMavenOffline</code> controls the offline mode of the maven resolver in use, and <code>enableCache</code> controls whether the deployer should cache the artifacts in memory. Finally the <code>excludedArtifacts</code> allow you to exclude artifacts that are unwanted from the deployment</p>
+              <pre class="prettify"><code class="prettify">&lt;extension qualifier="spring-deployer"&gt;</code>&#x000A;&#x000A;<code class="prettify">        &lt;property name="importPomDependencies"&gt;true&lt;/property&gt;</code>&#x000A;&#x000A;<code class="prettify">        &lt;property name="pomFile"&gt;src/main/resources/test_pom.xml&lt;/property&gt;</code>&#x000A;&#x000A;<code class="prettify">        &lt;property name="useMavenOffline"&gt;false&lt;/property&gt;</code>&#x000A;&#x000A;<code class="prettify">        &lt;property name="excludedArtifacts"&gt;org.jboss.arquillian:*&lt;/property&gt;</code>&#x000A;&#x000A;<code class="prettify">        &lt;property name="enableCache"&gt;true&lt;/property&gt;&#x000A;&lt;/extension&gt;</code></pre>
+              <p>We look forward to your feedback on this new release on the <a href="http://community.jboss.org/en/arquillian">community forums</a>!</p>
+              <h3>What is Arquillian?</h3>
+              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+              <h3>Release details</h3>
+              <table class="table table-bordered table-striped">
+                <tbody>
+                  <tr>
+                    <th>Component</th>
+                    <td>
+                      <a href="/modules/spring-extension/">Arquillian Spring Framework Extension</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Version</th>
+                    <td>
+                      1.0.0.Beta2
+                      <span class="label tag">
+                        <a href="https://github.com/arquillian/arquillian-extension-spring/commit/e61bbd6d447f6d397166149b6311713cb6677bcc.html">view tag</a>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Release date</th>
+                    <td>2013-06-19</td>
+                  </tr>
+                  <tr>
+                    <th>Released by</th>
+                    <td>Aslak Knutsen</td>
+                  </tr>
+                  <tr>
+                    <th>Compiled against</th>
+                    <td>
+                      <ul class="unstyled">
+                        <li>
+                          <a href="/modules/core-platform/">Arquillian Core</a>
+                          &#8211;
+                          <a href="/blog/2013/06/04/arquillian-core-1-0-4-Final/">1.0.4.Final</a>
+                        </li>
+                        <li>
+                          <a href="/modules/drone-extension/">Arquillian Drone Extension</a>
+                          &#8211;
+                          <a href="/blog/2012/04/10/arquillian-extension-drone-1-0-0-Final/">1.0.0.Final</a>
+                        </li>
+                        <li>
+                          <a href="/modules/warp-extension/">Arquillian Warp</a>
+                          &#8211;
+                          <a href="/blog/2013/01/15/arquillian-extension-warp-1-0-0-Alpha2/">1.0.0.Alpha2</a>
+                        </li>
+                        <li>
+                          <a href="/modules/transaction-extension/">Arquillian Transaction Extension</a>
+                          &#8211;
+                          <a href="/blog/2012/11/16/arquillian-extension-transaction-1-0-0-Alpha3/">1.0.0.Alpha3</a>
+                        </li>
+                        <li>JUnit &#8211; 4.8.1</li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>
+                Published artifacts
+                <small>org.jboss.arquillian.extension</small>
+              </h3>
+              <ul>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-service-deployer-spring-common
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Beta2/arquillian-service-deployer-spring-common-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Beta2/arquillian-service-deployer-spring-common-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-common/1.0.0.Beta2/arquillian-service-deployer-spring-common-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-service-deployer-spring-2.5
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Beta2/arquillian-service-deployer-spring-2.5-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Beta2/arquillian-service-deployer-spring-2.5-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-2.5/1.0.0.Beta2/arquillian-service-deployer-spring-2.5-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-service-deployer-spring-3
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Beta2/arquillian-service-deployer-spring-3-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Beta2/arquillian-service-deployer-spring-3-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-deployer-spring-3/1.0.0.Beta2/arquillian-service-deployer-spring-3-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-service-integration-spring
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Beta2/arquillian-service-integration-spring-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Beta2/arquillian-service-integration-spring-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring/1.0.0.Beta2/arquillian-service-integration-spring-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-service-container-spring
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-container-spring/1.0.0.Beta2/arquillian-service-container-spring-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-service-container-spring/1.0.0.Beta2/arquillian-service-container-spring-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-container-spring/1.0.0.Beta2/arquillian-service-container-spring-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-service-integration-spring-inject
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Beta2/arquillian-service-integration-spring-inject-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Beta2/arquillian-service-integration-spring-inject-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-inject/1.0.0.Beta2/arquillian-service-integration-spring-inject-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-service-integration-spring-javaconfig
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Beta2/arquillian-service-integration-spring-javaconfig-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Beta2/arquillian-service-integration-spring-javaconfig-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-javaconfig/1.0.0.Beta2/arquillian-service-integration-spring-javaconfig-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-transaction-spring
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spring/1.0.0.Beta2/arquillian-transaction-spring-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-transaction-spring/1.0.0.Beta2/arquillian-transaction-spring-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-transaction-spring/1.0.0.Beta2/arquillian-transaction-spring-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-service-integration-spring-2.5-int-tests
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-2.5-int-tests/1.0.0.Beta2/arquillian-service-integration-spring-2.5-int-tests-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-service-integration-spring-2.5-int-tests/1.0.0.Beta2/arquillian-service-integration-spring-2.5-int-tests-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-2.5-int-tests/1.0.0.Beta2/arquillian-service-integration-spring-2.5-int-tests-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-service-integration-spring-3-int-tests
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-3-int-tests/1.0.0.Beta2/arquillian-service-integration-spring-3-int-tests-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-service-integration-spring-3-int-tests/1.0.0.Beta2/arquillian-service-integration-spring-3-int-tests-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-service-integration-spring-3-int-tests/1.0.0.Beta2/arquillian-service-integration-spring-3-int-tests-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.jboss.arquillian.extension
+                  &raquo;
+                  arquillian-warp-spring
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Beta2/arquillian-warp-spring-1.0.0.Beta2.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Beta2/arquillian-warp-spring-1.0.0.Beta2-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/extension/arquillian-warp-spring/1.0.0.Beta2/arquillian-warp-spring-1.0.0.Beta2.pom" target="_blank">pom</a>
+                </li>
+              </ul>
+              <h3>
+                Release notes and resolved issues
+                <small>16</small>
+              </h3>
+              <p>Improvements</p>
+              <dl>
+                <dt>Bug</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1079">ARQ-1079</a> -         SpringEmbeddedApplicationContextProducer testApplicationContext is missing the scope definition.</li>
+                  </ul>
+                </dd>
+              </dl>
+              <dl>
+                <dt>Feature Request</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://issues.jboss.org/browse/ARQ-960">ARQ-960</a> -         Provide the way to specify the strategy on instantiting AppllicationContext e.g. each test method  or each test case</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1104">ARQ-1104</a> -         Spring deployer should include all spring artifacts</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1105">ARQ-1105</a> -         Spring deployer - add maven offline property</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1106">ARQ-1106</a> -         Spring deployer - allow caching the resolved libraries between deployments</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1108">ARQ-1108</a> -         Register the spring transaction provider on the client side.</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1134">ARQ-1134</a> -         Spring deployer - change the implementation of MavenDependencyBuilder.</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1269">ARQ-1269</a> -         Upgrade Spring MVC integration to use Warp 1.0.0.Alpha2.</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1270">ARQ-1270</a> -         Upgrade Spring extension to Arquillian Core 1.0.3</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1277">ARQ-1277</a> -         Allow the SpringMvcResult to be injected through @ArquillianResource.</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1304">ARQ-1304</a> -         Create test ApplicationContext through factory method.</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1305">ARQ-1305</a> -         Defaults values for @SpringConfiguration and @SpringAnnotationConfiguration</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1317">ARQ-1317</a> -         Warp Spring MVC - capture the execution state through HandlerInterceptor</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1358">ARQ-1358</a> -         Define ApplicationContext life cycle events.</li>
+                    <li><a href="https://issues.jboss.org/browse/ARQ-1408">ARQ-1408</a> -         Upgrade Spring extension to Arquillian 1.0.4.Final.</li>
+                  </ul>
+                </dd>
+              </dl>
+              <p>
+                Thanks to the following list of contributors:
+                <a href="/community/jmnarloch">Jakub Narloch</a>, <a href="/community/aslakknutsen">Aslak Knutsen</a>, <a href="/community/kurlenda">Jakub Kurlenda</a>, <a href="/community/johnament">John D. Ament</a>
+              </p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2013/06/18/arquillian-extension-spring-1-0-0-Beta2/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/spring/">spring</a>
+            </div>
+          </article>
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
                 <a href="/blog/2013/06/17/resolver-2-0-0-cr-1/">ShrinkWrap Resolver 2.0.0-cr-1 Released</a>
               </h2>
               <div class="byline">
@@ -364,710 +904,6 @@
               tagged as
               <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/osgi/">osgi</a>
             </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2013/06/04/resolver-2-0-0-beta-5/">ShrinkWrap Resolver 2.0.0-beta-5 Released</a>
-              </h2>
-              <div class="byline">
-                <a href="/community/alrubinger">
-                  <img class="avatar" src="http://gravatar.com/avatar/4369758fcee235bebd875f0de34aa42e?s=44" />
-                </a>
-                <span class="author">Posted by
-                <a href="/community/alrubinger">Andrew Lee Rubinger</a></span>
-                <span class="dateinline">on Jun 04, 2013</span>
-                <div class="date"><abbr>Jun</abbr> 04</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2013/06/04/resolver-2-0-0-beta-5/#disqus_thread" data-disqus-identifier="6427f03ba3de8a335135730a068605ba245b4122">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>2.0.0-beta-5</em> release of the <em>ShrinkWrap Resolver</em> component!</p>
-              
-              <h3>What is ShrinkWrap Resolver?</h3>
-              <p>The ShrinkWrap Resolvers project provides a Java API to obtain artifacts from a repository system. This is handy to include third party libraries available in any Maven repository in your test archive. ShrinkWrap Resolvers additionally allows you to reuse all the configuration you've already specified in Maven build file, making packaging of an application archive much easier job.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/resolver-shrinkwrap/">ShrinkWrap Resolver</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      2.0.0-beta-5
-                      <span class="label tag">
-                        <a href="https://github.com/shrinkwrap/resolver/commit/825d86e1331b184bb24f49d6ffee53e440d65ee4.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2013-06-04</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Andrew Lee Rubinger</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>JUnit &#8211; 4.8.2</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.shrinkwrap.resolver</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-bom
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-bom/2.0.0-beta-5/shrinkwrap-resolver-bom-2.0.0-beta-5.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api/2.0.0-beta-5/shrinkwrap-resolver-api-2.0.0-beta-5.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api/2.0.0-beta-5/shrinkwrap-resolver-api-2.0.0-beta-5-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api/2.0.0-beta-5/shrinkwrap-resolver-api-2.0.0-beta-5.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-api-maven
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven/2.0.0-beta-5/shrinkwrap-resolver-api-maven-2.0.0-beta-5.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven/2.0.0-beta-5/shrinkwrap-resolver-api-maven-2.0.0-beta-5-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven/2.0.0-beta-5/shrinkwrap-resolver-api-maven-2.0.0-beta-5.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-depchain
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-depchain/2.0.0-beta-5/shrinkwrap-resolver-depchain-2.0.0-beta-5.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-impl-maven
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven/2.0.0-beta-5/shrinkwrap-resolver-impl-maven-2.0.0-beta-5.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven/2.0.0-beta-5/shrinkwrap-resolver-impl-maven-2.0.0-beta-5-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven/2.0.0-beta-5/shrinkwrap-resolver-impl-maven-2.0.0-beta-5.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-api-maven-archive
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven-archive/2.0.0-beta-5/shrinkwrap-resolver-api-maven-archive-2.0.0-beta-5.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven-archive/2.0.0-beta-5/shrinkwrap-resolver-api-maven-archive-2.0.0-beta-5-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven-archive/2.0.0-beta-5/shrinkwrap-resolver-api-maven-archive-2.0.0-beta-5.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-spi-maven
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven/2.0.0-beta-5/shrinkwrap-resolver-spi-maven-2.0.0-beta-5.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven/2.0.0-beta-5/shrinkwrap-resolver-spi-maven-2.0.0-beta-5-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven/2.0.0-beta-5/shrinkwrap-resolver-spi-maven-2.0.0-beta-5.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-spi-maven-archive
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven-archive/2.0.0-beta-5/shrinkwrap-resolver-spi-maven-archive-2.0.0-beta-5.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven-archive/2.0.0-beta-5/shrinkwrap-resolver-spi-maven-archive-2.0.0-beta-5-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven-archive/2.0.0-beta-5/shrinkwrap-resolver-spi-maven-archive-2.0.0-beta-5.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-impl-maven-archive
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven-archive/2.0.0-beta-5/shrinkwrap-resolver-impl-maven-archive-2.0.0-beta-5.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven-archive/2.0.0-beta-5/shrinkwrap-resolver-impl-maven-archive-2.0.0-beta-5-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven-archive/2.0.0-beta-5/shrinkwrap-resolver-impl-maven-archive-2.0.0-beta-5.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi/2.0.0-beta-5/shrinkwrap-resolver-spi-2.0.0-beta-5.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi/2.0.0-beta-5/shrinkwrap-resolver-spi-2.0.0-beta-5-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi/2.0.0-beta-5/shrinkwrap-resolver-spi-2.0.0-beta-5.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <h3>
-                Release notes and resolved issues
-                <small>1</small>
-              </h3>
-              <p></p>
-              <dl>
-                <dt>Bug</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-138">SHRINKRES-138</a> -         MavenSettingsBuilder throws "StringIndexOutOfBoundsException: String index out of range: 1" in static initializers due to regexp in String.replaceAll()</li>
-                  </ul>
-                </dd>
-              </dl>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="/community/alrubinger">Andrew Lee Rubinger</a>, <a href="/community/kpiwko">Karel Piwko</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2013/06/04/resolver-2-0-0-beta-5/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/shrinkwrap/">shrinkwrap</a> <a class="tag" href="/blog/tags/resolver/">resolver</a>
-            </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2013/06/04/arquillian-core-1-0-4-Final/">Arquillian Core 1.0.4.Final Released</a>
-              </h2>
-              <div class="byline">
-                <a href="/community/aslakknutsen">
-                  <img class="avatar" src="http://gravatar.com/avatar/3f27861ec08730fd02c91fe4129d2668?s=44" />
-                </a>
-                <span class="author">Posted by
-                <a href="/community/aslakknutsen">Aslak Knutsen</a></span>
-                <span class="dateinline">on Jun 04, 2013</span>
-                <div class="date"><abbr>Jun</abbr> 04</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2013/06/04/arquillian-core-1-0-4-Final/#disqus_thread" data-disqus-identifier="8e1b2e3c64964e0c3b49a6bb59f51284fba8f6b4">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.0.4.Final</em> release of the <em>Arquillian Core</em> component!</p>
-              
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/core-platform/">Arquillian Core</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.0.4.Final
-                      <span class="label tag">
-                        <a href="https://github.com/arquillian/arquillian-core/commit/cb6f79caf03ed37fc2f43f27332a9ba87ffd69b5.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2013-06-04</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Aslak Knutsen</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>
-                          <a href="/modules/shrinkwrap-shrinkwrap/">ShrinkWrap</a>
-                          &#8211;
-                          <a href="/blog/2012/05/31/shrinkwrap-1-0-1/">1.0.1</a>
-                        </li>
-                        <li>
-                          <a href="/modules/descriptors-shrinkwrap/">ShrinkWrap Descriptors</a>
-                          &#8211;
-                          <a href="/blog/2012/05/10/descriptors-2-0-0-alpha-3/">2.0.0-alpha-3</a>
-                        </li>
-                        <li>JUnit &#8211; 4.8.1</li>
-                        <li>TestNG &#8211; 5.14.6</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.arquillian.core</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.arquillian.core
-                  &raquo;
-                  arquillian-core-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-api/1.0.4.Final/arquillian-core-api-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/core/arquillian-core-api/1.0.4.Final/arquillian-core-api-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-api/1.0.4.Final/arquillian-core-api-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.core
-                  &raquo;
-                  arquillian-core-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-spi/1.0.4.Final/arquillian-core-spi-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/core/arquillian-core-spi/1.0.4.Final/arquillian-core-spi-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-spi/1.0.4.Final/arquillian-core-spi-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.core
-                  &raquo;
-                  arquillian-core-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-impl-base/1.0.4.Final/arquillian-core-impl-base-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/core/arquillian-core-impl-base/1.0.4.Final/arquillian-core-impl-base-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/core/arquillian-core-impl-base/1.0.4.Final/arquillian-core-impl-base-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.config
-                  &raquo;
-                  arquillian-config-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-api/1.0.4.Final/arquillian-config-api-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/config/arquillian-config-api/1.0.4.Final/arquillian-config-api-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-api/1.0.4.Final/arquillian-config-api-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.config
-                  &raquo;
-                  arquillian-config-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-spi/1.0.4.Final/arquillian-config-spi-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/config/arquillian-config-spi/1.0.4.Final/arquillian-config-spi-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-spi/1.0.4.Final/arquillian-config-spi-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.config
-                  &raquo;
-                  arquillian-config-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-impl-base/1.0.4.Final/arquillian-config-impl-base-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/config/arquillian-config-impl-base/1.0.4.Final/arquillian-config-impl-base-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/config/arquillian-config-impl-base/1.0.4.Final/arquillian-config-impl-base-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.test
-                  &raquo;
-                  arquillian-test-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-api/1.0.4.Final/arquillian-test-api-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/test/arquillian-test-api/1.0.4.Final/arquillian-test-api-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-api/1.0.4.Final/arquillian-test-api-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.test
-                  &raquo;
-                  arquillian-test-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-spi/1.0.4.Final/arquillian-test-spi-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/test/arquillian-test-spi/1.0.4.Final/arquillian-test-spi-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-spi/1.0.4.Final/arquillian-test-spi-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.test
-                  &raquo;
-                  arquillian-test-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-impl-base/1.0.4.Final/arquillian-test-impl-base-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/test/arquillian-test-impl-base/1.0.4.Final/arquillian-test-impl-base-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/test/arquillian-test-impl-base/1.0.4.Final/arquillian-test-impl-base-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-spi/1.0.4.Final/arquillian-container-spi-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/container/arquillian-container-spi/1.0.4.Final/arquillian-container-spi-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-spi/1.0.4.Final/arquillian-container-spi-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-impl-base/1.0.4.Final/arquillian-container-impl-base-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/container/arquillian-container-impl-base/1.0.4.Final/arquillian-container-impl-base-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-impl-base/1.0.4.Final/arquillian-container-impl-base-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-test-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-api/1.0.4.Final/arquillian-container-test-api-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/container/arquillian-container-test-api/1.0.4.Final/arquillian-container-test-api-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-api/1.0.4.Final/arquillian-container-test-api-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-test-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-spi/1.0.4.Final/arquillian-container-test-spi-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/container/arquillian-container-test-spi/1.0.4.Final/arquillian-container-test-spi-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-spi/1.0.4.Final/arquillian-container-test-spi-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.container
-                  &raquo;
-                  arquillian-container-test-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-impl-base/1.0.4.Final/arquillian-container-test-impl-base-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/container/arquillian-container-test-impl-base/1.0.4.Final/arquillian-container-test-impl-base-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/container/arquillian-container-test-impl-base/1.0.4.Final/arquillian-container-test-impl-base-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.junit
-                  &raquo;
-                  arquillian-junit-core
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-core/1.0.4.Final/arquillian-junit-core-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/junit/arquillian-junit-core/1.0.4.Final/arquillian-junit-core-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-core/1.0.4.Final/arquillian-junit-core-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.junit
-                  &raquo;
-                  arquillian-junit-standalone
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-standalone/1.0.4.Final/arquillian-junit-standalone-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/junit/arquillian-junit-standalone/1.0.4.Final/arquillian-junit-standalone-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-standalone/1.0.4.Final/arquillian-junit-standalone-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.junit
-                  &raquo;
-                  arquillian-junit-container
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-container/1.0.4.Final/arquillian-junit-container-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/junit/arquillian-junit-container/1.0.4.Final/arquillian-junit-container-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/junit/arquillian-junit-container/1.0.4.Final/arquillian-junit-container-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testng
-                  &raquo;
-                  arquillian-testng-core
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-core/1.0.4.Final/arquillian-testng-core-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/testng/arquillian-testng-core/1.0.4.Final/arquillian-testng-core-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-core/1.0.4.Final/arquillian-testng-core-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testng
-                  &raquo;
-                  arquillian-testng-standalone
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-standalone/1.0.4.Final/arquillian-testng-standalone-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/testng/arquillian-testng-standalone/1.0.4.Final/arquillian-testng-standalone-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-standalone/1.0.4.Final/arquillian-testng-standalone-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testng
-                  &raquo;
-                  arquillian-testng-container
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-container/1.0.4.Final/arquillian-testng-container-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/testng/arquillian-testng-container/1.0.4.Final/arquillian-testng-container-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testng/arquillian-testng-container/1.0.4.Final/arquillian-testng-container-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testenricher
-                  &raquo;
-                  arquillian-testenricher-cdi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-cdi/1.0.4.Final/arquillian-testenricher-cdi-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/testenricher/arquillian-testenricher-cdi/1.0.4.Final/arquillian-testenricher-cdi-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-cdi/1.0.4.Final/arquillian-testenricher-cdi-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testenricher
-                  &raquo;
-                  arquillian-testenricher-ejb
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-ejb/1.0.4.Final/arquillian-testenricher-ejb-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/testenricher/arquillian-testenricher-ejb/1.0.4.Final/arquillian-testenricher-ejb-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-ejb/1.0.4.Final/arquillian-testenricher-ejb-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testenricher
-                  &raquo;
-                  arquillian-testenricher-resource
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-resource/1.0.4.Final/arquillian-testenricher-resource-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/testenricher/arquillian-testenricher-resource/1.0.4.Final/arquillian-testenricher-resource-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-resource/1.0.4.Final/arquillian-testenricher-resource-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.testenricher
-                  &raquo;
-                  arquillian-testenricher-initialcontext
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-initialcontext/1.0.4.Final/arquillian-testenricher-initialcontext-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/testenricher/arquillian-testenricher-initialcontext/1.0.4.Final/arquillian-testenricher-initialcontext-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/testenricher/arquillian-testenricher-initialcontext/1.0.4.Final/arquillian-testenricher-initialcontext-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.protocol
-                  &raquo;
-                  arquillian-protocol-servlet
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-servlet/1.0.4.Final/arquillian-protocol-servlet-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/protocol/arquillian-protocol-servlet/1.0.4.Final/arquillian-protocol-servlet-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-servlet/1.0.4.Final/arquillian-protocol-servlet-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian.protocol
-                  &raquo;
-                  arquillian-protocol-jmx
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-jmx/1.0.4.Final/arquillian-protocol-jmx-1.0.4.Final.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/protocol/arquillian-protocol-jmx/1.0.4.Final/arquillian-protocol-jmx-1.0.4.Final-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/protocol/arquillian-protocol-jmx/1.0.4.Final/arquillian-protocol-jmx-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.arquillian
-                  &raquo;
-                  arquillian-bom
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/arquillian/arquillian-bom/1.0.4.Final/arquillian-bom-1.0.4.Final.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <h3>
-                Release notes and resolved issues
-                <small>14</small>
-              </h3>
-              <p></p>
-              <dl>
-                <dt>Bug</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-700">ARQ-700</a> -         Properties in arquillian.xml should handle new lines (by trimming them)</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-863">ARQ-863</a> -         Poor error message when WebArchive deployed with ".jar" name</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1154">ARQ-1154</a> -         parameter "servletName" not used</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1287">ARQ-1287</a> -         arquillian-testng-standalone does not declare dependency on core impl in compile scope.</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1345">ARQ-1345</a> -         maxTestClassesBeforeRestart causes more restarts than it should</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1356">ARQ-1356</a> -         TestResult isn't updated correctly when TestNG is used</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Enhancement</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-941">ARQ-941</a> -         Make Exception.class default for value attribute on @ShouldThrowException</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Feature Request</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/ARQ-891">ARQ-891</a> -         Deployment Manipulators should rely on the Archive name to determine type and not the current ShrinkWrap view</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1249">ARQ-1249</a> -         Deployment to GF fails if .war extension is missing</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1274">ARQ-1274</a> -         @EJB#lookup() support in EJBInjectionEnricher</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1283">ARQ-1283</a> -         Open up EJBInjectionEnricher to easier support custom JNDI names</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1284">ARQ-1284</a> -         Open up ServletMethodExecutor for easier extension</li>
-                    <li><a href="https://issues.jboss.org/browse/ARQ-1392">ARQ-1392</a> -         Test pinging / pull configuration</li>
-                  </ul>
-                </dd>
-              </dl>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="/community/aslakknutsen">Aslak Knutsen</a>, <a href="/community/tommysdk">Tommy Tynjä</a>, <a href="/community/bartoszmajsak">Bartosz Majsak</a>, <a href="/community/mojavelinux">Dan Allen</a>, <a href="/community/papousek">Jan Papoušek</a>, <a href="/community/mkouba">Martin Kouba</a>, <a href="/community/gastaldi">George Gastaldi</a>, <a href="/community/matejonnet">Matej Lazar</a>, <a href="/community/mmatloka">Michal Matloka</a>, <a href="/community/michalvanco">Michal Vanco</a>, <a href="/community/hasalex">Alexis Hassler</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2013/06/04/arquillian-core-1-0-4-Final/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/platform/">platform</a> <a class="tag" href="/blog/tags/core/">core</a> <a class="tag" href="/blog/tags/jbosscentral/">jbosscentral</a>
-            </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2013/05/31/resolver-2-0-0-beta-4/">ShrinkWrap Resolver 2.0.0-beta-4 Released</a>
-              </h2>
-              <div class="byline">
-                <a href="/community/alrubinger">
-                  <img class="avatar" src="http://gravatar.com/avatar/4369758fcee235bebd875f0de34aa42e?s=44" />
-                </a>
-                <span class="author">Posted by
-                <a href="/community/alrubinger">Andrew Lee Rubinger</a></span>
-                <span class="dateinline">on May 31, 2013</span>
-                <div class="date"><abbr>May</abbr> 31</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2013/05/31/resolver-2-0-0-beta-4/#disqus_thread" data-disqus-identifier="4a2b33c284446dadfd4273dc478baa988749d0ce">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>2.0.0-beta-4</em> release of the <em>ShrinkWrap Resolver</em> component!</p>
-              
-              <h3>What is ShrinkWrap Resolver?</h3>
-              <p>The ShrinkWrap Resolvers project provides a Java API to obtain artifacts from a repository system. This is handy to include third party libraries available in any Maven repository in your test archive. ShrinkWrap Resolvers additionally allows you to reuse all the configuration you've already specified in Maven build file, making packaging of an application archive much easier job.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/resolver-shrinkwrap/">ShrinkWrap Resolver</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      2.0.0-beta-4
-                      <span class="label tag">
-                        <a href="https://github.com/shrinkwrap/resolver/commit/cfab6ab6cbff91304e03e6e071e368aef74f956d.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2013-05-31</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Andrew Lee Rubinger</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>JUnit &#8211; 4.8.2</li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.jboss.shrinkwrap.resolver</small>
-              </h3>
-              <ul>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-bom
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-bom/2.0.0-beta-4/shrinkwrap-resolver-bom-2.0.0-beta-4.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api/2.0.0-beta-4/shrinkwrap-resolver-api-2.0.0-beta-4.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api/2.0.0-beta-4/shrinkwrap-resolver-api-2.0.0-beta-4-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api/2.0.0-beta-4/shrinkwrap-resolver-api-2.0.0-beta-4.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-api-maven
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven/2.0.0-beta-4/shrinkwrap-resolver-api-maven-2.0.0-beta-4.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven/2.0.0-beta-4/shrinkwrap-resolver-api-maven-2.0.0-beta-4-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven/2.0.0-beta-4/shrinkwrap-resolver-api-maven-2.0.0-beta-4.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-depchain
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-depchain/2.0.0-beta-4/shrinkwrap-resolver-depchain-2.0.0-beta-4.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-impl-maven
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven/2.0.0-beta-4/shrinkwrap-resolver-impl-maven-2.0.0-beta-4.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven/2.0.0-beta-4/shrinkwrap-resolver-impl-maven-2.0.0-beta-4-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven/2.0.0-beta-4/shrinkwrap-resolver-impl-maven-2.0.0-beta-4.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-api-maven-archive
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven-archive/2.0.0-beta-4/shrinkwrap-resolver-api-maven-archive-2.0.0-beta-4.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven-archive/2.0.0-beta-4/shrinkwrap-resolver-api-maven-archive-2.0.0-beta-4-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-api-maven-archive/2.0.0-beta-4/shrinkwrap-resolver-api-maven-archive-2.0.0-beta-4.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-spi-maven
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven/2.0.0-beta-4/shrinkwrap-resolver-spi-maven-2.0.0-beta-4.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven/2.0.0-beta-4/shrinkwrap-resolver-spi-maven-2.0.0-beta-4-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven/2.0.0-beta-4/shrinkwrap-resolver-spi-maven-2.0.0-beta-4.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-spi-maven-archive
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven-archive/2.0.0-beta-4/shrinkwrap-resolver-spi-maven-archive-2.0.0-beta-4.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven-archive/2.0.0-beta-4/shrinkwrap-resolver-spi-maven-archive-2.0.0-beta-4-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi-maven-archive/2.0.0-beta-4/shrinkwrap-resolver-spi-maven-archive-2.0.0-beta-4.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-impl-maven-archive
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven-archive/2.0.0-beta-4/shrinkwrap-resolver-impl-maven-archive-2.0.0-beta-4.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven-archive/2.0.0-beta-4/shrinkwrap-resolver-impl-maven-archive-2.0.0-beta-4-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-impl-maven-archive/2.0.0-beta-4/shrinkwrap-resolver-impl-maven-archive-2.0.0-beta-4.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.jboss.shrinkwrap.resolver
-                  &raquo;
-                  shrinkwrap-resolver-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi/2.0.0-beta-4/shrinkwrap-resolver-spi-2.0.0-beta-4.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi/2.0.0-beta-4/shrinkwrap-resolver-spi-2.0.0-beta-4-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/jboss/shrinkwrap/resolver/shrinkwrap-resolver-spi/2.0.0-beta-4/shrinkwrap-resolver-spi-2.0.0-beta-4.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <h3>
-                Release notes and resolved issues
-                <small>14</small>
-              </h3>
-              <p></p>
-              <dl>
-                <dt>Bug</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-1">SHRINKRES-1</a> -         MavenImporter does not import MANIFEST.MF file</li>
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-129">SHRINKRES-129</a> -         Unstable test with classpath resources do to file:// protocol</li>
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-130">SHRINKRES-130</a> -         Incorrect pom.xml resolution from classpath for similar artifactIds</li>
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-134">SHRINKRES-134</a> -         ParsedPomFile does not expose properties defined in POM</li>
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-135">SHRINKRES-135</a> -         Ignore maven.repo.local for MavenImporter tests</li>
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-136">SHRINKRES-136</a> -         System scoped dependencies shouldn't be added to WAR</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Enhancement</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-127">SHRINKRES-127</a> -         Use global maven configuration from M2_HOME/conf</li>
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-133">SHRINKRES-133</a> -         RejectDependenciesFilter and strategy should be able to work in both recursive and nonrecursive way</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Feature Request</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-38">SHRINKRES-38</a> -         Support encrypted passwords for password protected repositories</li>
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-77">SHRINKRES-77</a> -         Align functionality from MavenResolutionFilter with Aether DependencyFilter</li>
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-97">SHRINKRES-97</a> -         Allow MavenImporter to be configured</li>
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-107">SHRINKRES-107</a> -         Allow maven plugin to output dependency tree</li>
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-112">SHRINKRES-112</a> -         MavenImporter ignores AcceptScopesStrategy for dependency inclusion</li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Task</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://issues.jboss.org/browse/SHRINKRES-137">SHRINKRES-137</a> -         Remove extra debug output from FileUitil</li>
-                  </ul>
-                </dd>
-              </dl>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="/community/kpiwko">Karel Piwko</a>, <a href="/community/alrubinger">Andrew Lee Rubinger</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2013/05/31/resolver-2-0-0-beta-4/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/shrinkwrap/">shrinkwrap</a> <a class="tag" href="/blog/tags/resolver/">resolver</a>
-            </div>
             
                         <script type="text/javascript">
                         var disqus_shortname = 'arquillian';
@@ -1082,7 +918,7 @@
             <li class="previous">
               <a href="/blog/page/29/">&laquo; Older</a>
             </li>
-            <li class="pages">Page 28 of 67</li>
+            <li class="pages">Page 28 of 68</li>
             <li class="next">
               <a href="/blog/page/27/">Newer &raquo;</a>
             </li>
@@ -1098,6 +934,22 @@
           <nav class="latest">
             <h2>Latest Posts</h2>
             <ul>
+              <li>
+                <div class="title">
+                  <a href="/blog/2015/02/25/arquillian-cube-1-0-0-Alpha4/">Arquillian Cube Extension 1.0.0.Alpha4 Released</a>
+                </div>
+                <div class="meta">
+                  Feb 25, 2015
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2015/02/18/arquillian-spacelift-1-0-0-Alpha6/">Arquillian Spacelift 1.0.0.Alpha6 Released</a>
+                </div>
+                <div class="meta">
+                  Feb 18, 2015
+                </div>
+              </li>
               <li>
                 <div class="title">
                   <a href="/blog/2015/02/11/descriptors-2-0-0-alpha-7/">ShrinkWrap Descriptors 2.0.0-alpha-7 Released</a>
@@ -1120,22 +972,6 @@
                 </div>
                 <div class="meta">
                   Feb 05, 2015
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2015/02/03/shrinkwrap-osgi-1-0-0-alpha-1/">ShrinkWrap OSGi 1.0.0-alpha-1 Released</a>
-                </div>
-                <div class="meta">
-                  Feb 03, 2015
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2015/02/03/descriptors-docker-1-0-0-alpha-1/">ShrinkWrap Descriptors Docker 1.0.0-alpha-1 Released</a>
-                </div>
-                <div class="meta">
-                  Feb 03, 2015
                 </div>
               </li>
             </ul>
