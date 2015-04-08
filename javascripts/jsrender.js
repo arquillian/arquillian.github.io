@@ -1,3 +1,4 @@
+/*! JsRender v1.0pre: http://github.com/BorisMoore/jsrender */
 /*
  * Optimized version of jQuery Templates, for rendering to string.
  * Does not require jQuery, or HTML DOM
