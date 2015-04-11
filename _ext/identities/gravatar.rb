@@ -12,7 +12,7 @@ module Identities
 
       def crawl(identity)
         hash = identity.gravatar_id
-        if hash.nil?
+        if hash.nil? or hash.empty?
           hash = Digest::MD5.new().update(identity.email.downcase).hexdigest 
         end
         if hash.empty? or hash.nil?
