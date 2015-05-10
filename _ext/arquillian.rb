@@ -878,6 +878,15 @@ module Awestruct::Extensions::Repository::Visitors
             :vendor => vendor,
             :management => 'remote'
           })
+        elsif mod.eql? 'arquillian-container-chameleon'
+          # FIXME this should be openshift-remote
+          module_cnt += 1
+          adapters << OpenStruct.new({
+            :relative_path => MavenHelpers.to_relative_sub_path(pathrev, repository.relative_path),
+            :basepath => mod,
+            :vendor => vendor,
+            :management => 'any'
+          })
         end
       end
       adapters
