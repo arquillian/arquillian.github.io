@@ -1,0 +1,73 @@
+---
+author: aslakknutsen
+date: 2015-09-02
+---
+
+h3. Highlights in this release
+
+- <i class="icon-star"></i> @@ArquillianResource@ URL for in-container tests := 
+
+You can now inject the base URL for any deployment by using the @@ArquillianResource@ injection point even in in-container tests.
+
+bc(prettify).. @Deployment
+public static WebArchive test() {
+   return ShrinkWrap.create(WebArchive.class);
+}
+
+@Deployment(name = "X")
+public static WebArchive test2() {
+   return ShrinkWrap.create(WebArchive.class);
+}
+
+@ArquillianResource
+private URL url;
+
+@Test
+public void should() {
+   // ... inject the url to the default deployment
+}
+
+@Test
+public void shouldX(@ArquillianResource @OperatesOnDeployment("X") URL url) {
+   // .. inject the url from the other deployment
+}
+
+p. When in-container URL injection happen a callback to the client is done to lookup the URL. A clalback has a little performance hit so it's only recommended to do this if really needed.
+=:
+
+- <i class="icon-star"></i> @ArquillianResource ServletContext for in-container tests := 
+
+The Servlet Protocol now expose the current @ServletContext@ for a in-container test execution via the @@ArquillianResource@ injection point.  
+
+bc(prettify).. @ArquillianResource
+private ServletContext context;
+
+p. When running Arquillian with the Tomcat or Jetty embedded container adapters, then @ServletContext@ injection is supported on the client side as well in the next release.
+=:
+
+- <i class="icon-star"></i> Support ENV variables to configure Arquillian := 
+
+We've opened up to allow to configure Arquillian via ENV variables following the same schema as for System Properties. The new configuration override order is as following:
+
+# arquillian.xml
+# arquillian.properties
+# System properties
+# ENV
+
+Higher the number, higher the power.
+=:
+
+- <i class="icon-star"></i> Use secure communication when invoking in-container tests := 
+
+Have you ever seen invoking Arquillian tests over a public network as a risk? Then this is your lucky day! The ServletProtocolConfiguration has been changed to allow for @https@ based communication with the target container. 
+
+bc(prettify).. <container>
+   <protocol qualifier="Servlet 3.0">
+      <property name="scheme">https</property>
+      <property name="port">8443</property>
+   </protocol>
+</container>
+
+p. Currently no container adapter support automatic lookup of @https@ context metadata so you need to manually configure the https port. The host should be auto resolved tho.  
+=:
+
