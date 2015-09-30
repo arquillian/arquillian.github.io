@@ -1,0 +1,82 @@
+---
+---
+
+Arquillian Governor Extension gives you the possibility to programmatically choose what test methods of your Arquillian tests are going to be executed and what are going to be skipped by putting your custom annotations on the test methods. The resolution of the test method execution is done during the test class execution in BeforeClass phase.
+
+Currenly, there are three implementations which use API of the Arquillian Governor extension - Arquillian JIRA Governor extension, Arquillian GitHub Governor extension and Arquillian Skipper extension.
+
+h3. Arquillian Governor JIRA
+
+JIRA extension enables you to skip some test mehods which are in @Unresolved@ or @Open@ state in your JIRA instance, because you assume that if you run that test it would fail. Once that JIRA is resolved as @Done@, that test method will not be skipped.
+
+You can even close your JIRAs directly from test methods when you force the execution despite the fact it should be skipped. If this test method passes successfully, you can close related JIRA issue from test. Let's see it in action:
+
+bc(prettify).. @RunWith(Arquillian.class)
+public class TestCase
+{
+    @Test
+    @Jira("ARQ-1907")
+    public void test()
+    {
+        // this test will be run because ARQ-1907 is 'Done'
+        // so we assume that this test has to pass as well
+    }
+
+    @Test
+    @Jira("ARQ-5000")
+    public void test2()
+    {
+        // if this JIRA exists and its status is 'Unresolved' or 'Open'
+        // this test method will be skipped because you assume that
+        // if you run it, it would fail
+    }
+    
+    @Test
+    @Jira("ARQ-5000", force = true)
+    public void automaticClosingTest()
+    {
+        // when this JIRA exists and its status is 'Unresolved' / 'Open'
+        // and you have forced its execution and you set 'closePassed'
+        // property in arquillian.xml to 'true', if this test method succeeds,
+        // it automatically resolves respective JIRA issue as 'Done'
+    }
+
+}
+
+h3. Arquillian Governor GitHub
+
+The GitHub integration work largely the same as the JIRA integration, except it of course integrate with GitHub Issues.
+
+bc(prettify).. @RunWith(Arquillian.class)
+public class AutomaticClosingTestCase
+{
+    @Test
+    @GitHub(value = "2", force = true)
+    public void automaticClosingTest)
+    {
+        // ...
+    }
+}
+
+h3. Arquillian Governor Skipper
+
+On the other hand, Arquillian Governor Skipper extension adds one annotation - @TestSpec@ - which describes your test method in more details. This information is reported to Arquillian Reporter and it is seamlessly integrated to Arquillian testing reports hence you have betteroverview about the state of your test suite.
+
+If @status@ is set to @Status.AUTOMATED@, test method will be run, if it is @Status.MANUAL@, it will be skipped.
+
+bc(prettify).. @Test
+@TestSpec(
+    author = "Stefan Miklosovic",
+    assertion = "this test should pass",
+    feature = "tests if true returns true",
+    issue = "ARQ-1",
+    prerequisites = "have java",
+    status = Status.AUTOMATED,
+    steps = "some steps in order to execute this test",
+    test = "what does this test do"
+    )
+public void someTest() {
+    Assert.assertTrue(true);
+}
+
+p. How to use these extensions in depth is described in the exhaustive "readme":https://github.com/arquillian/arquillian-governor/blob/master/README.adoc.
