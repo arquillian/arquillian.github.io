@@ -54,6 +54,17 @@ module Awestruct
           end
 
           @repositories << OpenStruct.new(
+            :path => 'arquillian-universe-bom',
+            :desc => nil,
+            :relative_path => '',
+            :owner => 'arquillian',
+            :host => 'github.com',
+            :type => 'git',
+            :commits_url => 'https://api.github.com/repos/arquillian/arquillian-universe-bom/commits{/sha}',
+            :html_url => 'https://github.com/arquillian/arquillian-universe-bom',
+            :clone_url => 'git://github.com/arquillian/arquillian-universe-bom.git'
+          )
+          @repositories << OpenStruct.new(
             :path => 'shrinkwrap',
             :desc => nil,
             :relative_path => '',
