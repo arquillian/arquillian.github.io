@@ -672,17 +672,18 @@ module Awestruct::Extensions::Repository::Visitors
       end
 
       MavenHelpers.traverse_modules(parent_path, repository) do |pathrev, pom|
+        groupId = pom.root.text('groupId') || pom.root.elements['parent'].text('groupId')
         artifactId = pom.root.text('artifactId')
         #puts "#{artifactId} -> #{version}"
         packaging = (pom.root.text('packaging') || "jar").to_sym
 
-
-        next unless artifactId =~ /.*bom|.*depchain.*|graphene/ or packaging == :jar
-        next if artifactId =~/.*(ftest.*|inttest|example.*|build|build-config|build-resources)/
-        next unless packaging == :pom || :jar
+        unless (groupId.eql? 'org.arquillian.universe' and !(artifactId.eql? 'arquillian-universe-parent')) or artifactId.eql? 'arquillian-universe'
+          next unless artifactId =~ /.*bom|.*depchain.*|graphene/ or packaging == :jar
+          next if artifactId =~/.*(ftest.*|inttest|example.*|build|build-config|build-resources)/
+          next unless packaging == :pom || :jar
+        end
 
         version = pom.root.text('version') || pom.root.elements['parent'].text('version')
-        groupId = pom.root.text('groupId') || pom.root.elements['parent'].text('groupId')
         release.published_artifacts ||= []
         release.published_artifacts << Artifact::Coordinates.new(groupId, artifactId, packaging, version)
       end

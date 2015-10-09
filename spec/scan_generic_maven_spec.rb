@@ -160,4 +160,15 @@ describe Awestruct::Extensions::Repository::Visitors::GenericMavenComponent do
       puts a.to_s
     }
   end
+
+  it "should extract published artifacts for Universe POMs" do
+    @repository.clone_url = 'git://github.com/arquillian/arquillian-universe-bom.git'
+
+    link_components_modules
+    @site.resolve_published_artifacts = true
+    Cloner.new().visit(@repository, @site)
+
+    @visitor.visit(@repository, @site)
+    @site.components['arquillian-universe-bom'].releases.last.published_artifacts.size.should equal(44)
+  end
 end
