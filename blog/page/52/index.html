@@ -55,6 +55,54 @@
           <article class="post">
             <header class="header">
               <h2 class="title">
+                <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">The Danger of Embedded Containers</a>
+              </h2>
+              <div class="byline">
+                <a href="/community/mojavelinux">
+                  <img class="avatar" src="http://gravatar.com/avatar/dcccd96c499963133f7f95e7ffa20c4e?s=44" />
+                </a>
+                <span class="author">Posted by
+                <a href="/community/mojavelinux">Dan Allen</a></span>
+                <span class="dateinline">on Apr 13, 2012</span>
+                <div class="date"><abbr>Apr</abbr> 13</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2012/04/13/the-danger-of-embedded-containers/#disqus_thread" data-disqus-identifier="fd953a5cdc598baacef2611c6d2a964b183575d0">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>In the Arquillian project, we&#8217;re all about <em>real</em> tests. There&#8217;s a good reason for this philosophy. If you use mocks or a substitute container when testing code that uses a programming model (i.e., CDI), all you can be sure of is that you&#8217;ve faked out enough functionality to get the test to work. You can&#8217;t be certain that your code works&#8212;really, truly works.</p>
+              <p>Obviously, we provide adapters for embedded containers (i.e., substitute containers). The reason is, they often do a decent enough job of simultating the real environment that we are willing to make the trade-off for its variations when we are working in development. I would expect, though, that you are also running the same tests in CI using a real container&#8230;just to get that peace of mind.</p>
+              <h3>How do you know when <em>not</em> to use an embedded container?</h3>
+              <p>If you write a test that you are positive should work, but instead throws some wacky exception, <em>immediately stop and try the same test in a real container</em>. For example, if you are using Embedded GlassFish, I would advise running the test in managed or remote GlassFish. The latter two adapters both use an authentic GlassFish instance. If the test passes, then you have answered the question of this section.</p>
+              <p><strong>When the embedded container begins to act inconsistently, drop it.</strong></p>
+              <p>As with all things, there are exceptions to the rule. If the code really <em>should</em> work on the embedded container, then it may be worth exploring why it isn&#8217;t. That may lead you to the discovery of a bug in the library you&#8217;re using. If debugging the library is your main concern, chase it down. If you are just trying to get a test written for your application, stop using the embedded container (or save debugging it for a rainy day).</p>
+              <h3>Examples</h3>
+              <p>See <a href="https://community.jboss.org/message/729776">this thread</a> in the Seam 3 forums for an example where the Embedded GlassFish container was acting more of a hindrence than a help. The thread includes the steps I took to get a <strong class="greenbar">green bar</strong> using a different GlassFish container adapter.</p>
+              <p><a href="https://community.jboss.org/people/myfear">Markus Eisele</a> identifies another hazard. He points out in a <a href="http://blog.eisele.net/2012/01/arquillian-with-netbeans-glassfish_18.html">recent blog post</a> that testing JPA using Embedded GlassFish is problematic because JPA weaving (in EclipseLink) does not occur:</p>
+              <blockquote>
+              <p>[Weaving] only works when the entity classes to be weaved only exist in the application classloader. The combination of Embedded GlassFish, Arquillian and the Maven Surefire Plugin mix this up a bit and the end of the story is, that exactly none of your entities are enhanced at all.</p>
+              </blockquote>
+              <p>Again, testing on Embedded GlassFish is not serving us well in this scenario. Graduate.</p>
+              <h3>Closing thoughts</h3>
+              <p>Code that uses Solder works fine on GlassFish 3.1.2, but it does not play very nicely with Embedded GlassFish&#8212;it&#8217;s just a hostile environment for CDI because of the visibility issues that come with starting an embedded container inside an existing Java process. The same goes for JPA. You end up in a minefield of class visibility and access problems, and far from making any progress writing tests (your ultimate goal).</p>
+              <p>If you want the container to start automatically like with embedded, then switch to a managed container. It works almost exactly the same as the remote container, except that Arquillian will start the standalone process at the beginning of the test execution and stop it at the end. In other words:</p>
+              <p>managed &gt;&gt;&gt;&gt; embedded</p>
+              <p>It&#8217;s clean. It&#8217;s true.</p>
+              <p>For speed of development:</p>
+              <p>remote &gt; managed</p>
+              <p>With remote, you don&#8217;t have to wait for the container to start&#8230;and you can start it in debug mode very easily and keep it there. That&#8217;s why I say that the best container adapters for development are the remote adapters and the best adapters for CI are the managed adapters. I personally don&#8217;t like the embedded container adapters much (with the exception of embedded CDI since that&#8217;s mostly a pure standalone CDI environment).</p>
+              <p>Keep that advice in mind.</p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2012/04/13/the-danger-of-embedded-containers/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/best-practice/">best-practice</a> <a class="tag" href="/blog/tags/container-adapter/">container-adapter</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
+            </div>
+          </article>
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
                 <a href="/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/">Arquillian Persistence Extension 1.0.0.Alpha4 Released</a>
               </h2>
               <div class="byline">
@@ -440,86 +488,6 @@
               tagged as
               <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/platform/">platform</a> <a class="tag" href="/blog/tags/core/">core</a> <a class="tag" href="/blog/tags/jbosscentral/">jbosscentral</a>
             </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/04/10/arquillian-first-stable-release/">Death to all bugs! Arquillian testing platform reaches first stable release</a>
-              </h2>
-              <div class="byline">
-                <a href="/community/mojavelinux">
-                  <img class="avatar" src="http://gravatar.com/avatar/dcccd96c499963133f7f95e7ffa20c4e?s=44" />
-                </a>
-                <span class="author">Posted by
-                <a href="/community/mojavelinux">Dan Allen</a></span>
-                <span class="dateinline">on Apr 10, 2012</span>
-                <div class="date"><abbr>Apr</abbr> 10</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2012/04/10/arquillian-first-stable-release/#disqus_thread" data-disqus-identifier="67827fd53c5063b53adf72f89b43673ba10c7970">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p><img src="/images/blog/celebration-ike.jpg" class="pull-right" alt="" /> Red Hat, Inc. and the JBoss Community today announced the 1.0.0.Final release of <a href="http://arquillian.org">Arquillian</a>, its award-winning testing platform built to run on the Java Virtual Machine (JVM). Arquillian substantially reduces the effort required to write and execute Java middleware integration and functional tests. It even enables test engineers to address scenarios previously considered untestable or too expensive to test.</p>
-              <p>The Arquillian project is led by <a href="https://community.jboss.org/people/aslak">Aslak Knutsen</a> and has received contributions from over 100 <a href="/community/contributors">contributors and community members</a> (between Arquillian and ShrinkWrap combined). At the JavaOne 2011 conference, Arquillian <a href="/blog/2011/10/02/arquillian-wins-a-duke-choice-award">received the Duke&#8217;s Choice Award</a> for innovation in integration testing.</p>
-              <p>The 1.0.0.Final release of <a href="/modules/drone-extension">Arquillian Drone</a>, a key add-on to the platform, is included in this release. Final versions of select container adapters will be released later in the week. <a href="http://jboss.org/shrinkwrap">ShrinkWrap</a>, a central component of Arquillian, announced its 1.0.0.Final release last week.</p>
-              <h3>Mission and History</h3>
-              <p>Arquillian adheres to three core principles:</p>
-              <ul>
-              	<li>Tests should be portable to any supported container</li>
-              	<li>Tests should be executable from the IDE to eliminate the need for an explicit build step and to simplify debugging</li>
-              	<li>The platform should unify the Java testing ecosystem by extending or integrating with existing test frameworks</li>
-              </ul>
-              <p>By focusing on these principles, Arquillian makes integration and functional tests as simple to write and execute as unit tests.</p>
-              <p>Arquillian originated from the test harness developed for the CDI 1.0 (JSR-299) specification in 2009. It spun off as an independent project and has evolved into an extensible testing platform. Coming full circle, the test suite in CDI 1.1 (JSR-346), the next iteration of the CDI specification, has migrated to Arquillian. Other specifications are expected to follow. Arquillian is also used by numerous open source projects, including Hibernate, JBoss AS 7, Drools, RHQ, JClouds and Apache DeltaSpike.</p>
-              <h3>Functionality</h3>
-              <p>Arquillian brings test execution to the target runtime, alleviating the burden on the developer of managing the runtime from within the test or project build. To invert this control, Arquillian wraps a lifecycle around test execution that does the following:</p>
-              <ul>
-              	<li>Manages the lifecycle of one or more containers</li>
-              	<li>Bundles the test case, dependent classes and resources as ShrinkWrap archives</li>
-              	<li>Deploys the archives to the containers</li>
-              	<li>Enriches the test case with dependency injection and other declarative services</li>
-              	<li>Executes the tests inside (or against) the containers</li>
-              	<li>Returns the results to the test runner for reporting</li>
-              </ul>
-              <p>Arquillian runs with Java 1.5 and above, integrates seamlessly with familiar testing frameworks such as JUnit and TestNG and allows tests to be launched using existing IDE, Ant and Maven test plugins.</p>
-              <h3>Loving quotes about Arquillian</h3>
-              <blockquote>
-              <p>&#8230;using Arquillian, we were able to cut the setup needed to run a plugin in-container by 90% and we were able to introduce a number of convenience annotations from which you can get a variety of data injected into your tests.”</p>
-              </blockquote>
-              <p style="text-align:right;">&#8212; Lukáš Krejčí, RHQ core developer</p>
-              <blockquote>
-              <p>Arquillian is a really great integration testing tool full of potential. It&#8217;s just great that the JBoss guys are aiming to provide support for almost all widely used application servers and web containers. If you are writing an application for the Java EE 6 stack, not using Arquillian is a serious mistake!”</p>
-              </blockquote>
-              <p style="text-align:right;">&#8212; Bartosz Majsak, Cambridge Technology Partners</p>
-              <blockquote>
-              <p>[Arquillian] reminds me of the old Cactus project back in the day, but done much, much better.”</p>
-              </blockquote>
-              <p style="text-align:right;">&#8212; Laird Nelson</p>
-              <h3>Newest features</h3>
-              <p>Arquillian can manage more than a dozen container vendors, including JBoss AS, GlassFish and Tomcat, and supports running tests in cloud services. The container support allows developers to target a variety of technology platforms, including Java EE 5 and 6, Servlet environments, OSGi, Embedded EJB and standalone CDI.</p>
-              <p>Additional new features include:</p>
-              <ul>
-              	<li>Orchestration of multiple deployments across multiple containers in a single test</li>
-              	<li>Support for multiple protocol contexts within a single deployment</li>
-              	<li>Descriptor deployment</li>
-              	<li>Assertions for deployment exceptions</li>
-              	<li>A new configuration schema that supports multiple configurations per container</li>
-              	<li>EL-like evaluation in properties and configuration overrides via Java properties</li>
-              	<li>Explicit ordering of test methods</li>
-              	<li>Control over when the container is started and stopped</li>
-              </ul>
-              <p>Arquillian’s extensibility is reflected in its growing ecosystem of extensions. The most mature extension, Arquillian Drone, is included in today’s release. Drone is an abstraction over browser controllers such as Selenium and WebDriver that enables the developer to write browser-based tests without having to fuss with the typical setup and plumbing. Other extensions under active development include an Android test controller, DBUnit integration, a SeamTest replacement for testing Seam 2, BDD runners (Spock and JBehave), performance metrics, code coverage (Jacoco) and Arquillian Graphene (a type-safe Selenium API). Expect more extensions to emerge now that the platform has reached a stable release.</p>
-              <h3>Availability</h3>
-              <p>The Arquillian platform and extensions are available in the <a href="http://search.maven.org">Maven Central</a> and <a href="https://repository.jboss.org/nexus">JBoss Community</a> artifact repositories. The Arquillian libraries are typically added to the test suite of a project using a dependency management tool such as Apache Maven or Apache Ivy. Instructions for setting up Arquillian in your project and writing Arquillian tests are covered in the newly-minted <a href="/guides">Arquillian Guides</a>.</p>
-              <p>Arquillian is released under the Apache License, v2.0, an OSI-approved open source software license.</p>
-              <p>For more information and updates about the Arquilian project, follow the <a href="/blog">Arquillian project blog</a> and circle the <a href="https://plus.google.com/b/100660127586085393031">Arquillian project on Google+</a>.</p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/04/10/arquillian-first-stable-release/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/announcement/">announcement</a> <a class="tag" href="/blog/tags/mission/">mission</a> <a class="tag" href="/blog/tags/roadmap/">roadmap</a> <a class="tag" href="/blog/tags/testing/">testing</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
-            </div>
             
                         <script type="text/javascript">
                         var disqus_shortname = 'arquillian';
@@ -552,6 +520,14 @@
             <ul>
               <li>
                 <div class="title">
+                  <a href="/blog/2015/11/17/arquillian-container-chameleon-1-0-0-Alpha6/">Arquillian Container Chameleon 1.0.0.Alpha6 Released</a>
+                </div>
+                <div class="meta">
+                  Nov 17, 2015
+                </div>
+              </li>
+              <li>
+                <div class="title">
                   <a href="/blog/2015/11/05/arquillian-extension-rest-1-0-0-Alpha4/">Arquillian REST Extension 1.0.0.Alpha4 Released</a>
                 </div>
                 <div class="meta">
@@ -580,14 +556,6 @@
                 </div>
                 <div class="meta">
                   Oct 19, 2015
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2015/10/16/arquillian-recorder-1-1-0-Alpha4/">Arquillian Recorder 1.1.0.Alpha4 Released</a>
-                </div>
-                <div class="meta">
-                  Oct 16, 2015
                 </div>
               </li>
             </ul>
