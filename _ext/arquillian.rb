@@ -476,6 +476,7 @@ module Awestruct::Extensions::Repository::Visitors
           'arquillian_byteman' => 'Arquillian Extension Byteman',
           'arquillian_jacoco' => 'Arquillian Extension Jacoco',
           'arquillian_recorder' => 'Arquillian Recorder',
+          'recorder' => 'Arquillian Recorder',
           'arquillian_governor' => 'Arquillian Governor',
           'arquillian_rest' => 'Arquillian REST Extension',
           'arquillian_spacelift' => 'Arquillian Spacelift',
@@ -491,7 +492,8 @@ module Awestruct::Extensions::Repository::Visitors
           'selenium' => 'Selenium',
           'junit_junit' => 'JUnit',
           'testng_testng' => 'TestNG',
-          'spock' => 'Spock'
+          'spock' => 'Spock',
+          'selendroid' => 'Selendroid'
         }.each do |key, name|
           if depversions.has_key? key
             depversion = depversions[key]
