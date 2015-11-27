@@ -171,4 +171,17 @@ describe Awestruct::Extensions::Repository::Visitors::GenericMavenComponent do
     @visitor.visit(@repository, @site)
     @site.components['arquillian-universe-bom'].releases.last.published_artifacts.size.should equal(44)
   end
+
+  it "should resolve recursive known versions" do
+    @repository.clone_url = 'git://github.com/arquillian/arquillian-droidium.git'
+
+    link_components_modules
+    @site.resolve_published_artifacts = true
+    Cloner.new().visit(@repository, @site)
+
+    @visitor.visit(@repository, @site)
+    @site.components['arquillian-droidium'].releases.last.compiledeps.each do |dep|
+      dep.version.should_not include('${')
+    end
+  end
 end

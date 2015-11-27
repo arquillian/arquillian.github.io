@@ -494,7 +494,13 @@ module Awestruct::Extensions::Repository::Visitors
           'spock' => 'Spock'
         }.each do |key, name|
           if depversions.has_key? key
-            release.compiledeps << OpenStruct.new({:name => name, :key => key, :version => depversions[key]})
+            depversion = depversions[key]
+            if(depversion.include?("${"))
+              if depversion =~ /\$\{version\.(.*)\}/
+                depversion = depversions[$1]
+              end
+            end
+            release.compiledeps << OpenStruct.new({:name => name, :key => key, :version => depversion})
           end
         end
         c.releases << release
