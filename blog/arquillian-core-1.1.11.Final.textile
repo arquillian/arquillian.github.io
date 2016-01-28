@@ -1,0 +1,63 @@
+---
+date: 2016-01-28
+---
+
+h3. Highlights in this release
+
+- <i class="icon-star"></i> Support for injection in @JUnit @Rules@ := 
+
+Arquillian will now enrich @JUnit Rules@ as well as @JUnit Test@ classes. This allow you to inject any Arquillian controlled resource into a reusable rule, e.g:
+
+bc(prettify).. public class MyTestCase {
+
+    @Rule
+    TestRule login = new TestRule() {
+       @ArquillianResource
+       private URL baseURL;
+
+       public Statement apply(final Statement base, Description description) {
+          return new Statement() {
+
+             @Drone
+             private WebDriver driver;
+
+             public void evaluate() throws Throwable {
+                driver.get(new URL(baseURL, "login"));
+                ...
+
+                base.evaluate();
+             }
+          }
+       }
+    }
+
+
+    @Drone
+    private WebDriver driver;
+   
+    @ArquillianResource
+    private URL baseURL;
+
+    @Test
+    public void shouldInvokeSecuredURL() throws Exception {
+       driver.get(new URL(baseURL, "secured"));
+       ...
+    }    
+}
+
+p. In the example above we've extracted the login to a web page into a @Junit Rule@ which we can apply before the @@Test@ run.
+=:
+
+- <i class="icon-star"></i> Report the first caught exception from incontainer execution := 
+
+p. In previous versions we've caught and reported the last caught exception. This has had the side effect of potentially hiding the root cause of an excpetion in cases where 'other things have failed due to the original exception'. The only thing you could see then was the 'other failed thing'. 
+
+p. Now we've changed that around and you will be able to see the first Exception that happened. This makes it easier to debug some of the more complex in container exception cases. 
+
+=:
+
+- <i class="icon-star"></i> SPI @Before|AfterEnrichment@ events now contain more information := 
+
+p. On the SPI level, @BeforeEnrichment@ and @AfterEnrichment@ events now contain the Object instance and Method that the event is being triggered for. Keep in mind that not all Enrichment events are related to a Method, so a null Method value is allowed.
+
+=:
