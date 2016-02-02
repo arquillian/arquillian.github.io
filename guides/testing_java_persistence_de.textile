@@ -1,0 +1,803 @@
+---
+layout: guide
+title: Testing Java Persistence
+authors: [mojavelinux, bartoszmajsak, hasalex]
+translators: [bennetelli]
+tags: [jpa, database, persistence, transactions]
+description: Teste deine Daten! Lerne wie du in einem Arquillian Test Java Persistence (JPA) Queries mit verschiedenen Providern testest.
+guide_group: 2
+guide_order: 1
+TODO: ["use utility EJB to handle transaction boundaries?"]
+---
+Dieser Guide zeigt dir, wie du Arquillian zum Testen deines Java Persistence (JPA) Layers verwendest. Nach dem Lesen dieses Guides bist du in der Lage:
+
+* Ein Testarchiv anzulegen, welches den JPA descriptor (persistence.xml) enthält
+* Einen EntityManager und eine UserTransaction in deinen Test zu injizieren
+* Entitäten zu persistieren und sie mit JPSQL und der JPA 2 Criteria API wieder aus der Datenbank zu holen
+* Tests mit verschiedenen JPA Providern auszuführen
+
+Du wirst sehr schnell herausfinden, dass Arquillian dir einfache Möglichkeiten zum Testen von JPA oder zum einfachen experimentieren an die Hand gibt.
+Der Guide wurde mit dem Ziel erstellt, einfach nachzuvollziehen zu sein und es dir leicht zu machen, zu einem späteren Zeitpunkt auf ihn zurückgreifen zu können.
+
+h3. Annahmen
+
+Dieser Guide setzt voraus, dass du entweder den "Getting Started":/guides/getting_started Guide oder den "Get Started Faster with Forge":/guides/get_started_faster_with_forge Guide gelesen und bereits eine Arquillian Test Suite in einem Maven Projekt angelegt hast. Natürlich kannst du auch bestehende Java Klassen aus den vorherigen Guides löschen, um Platz für diese Lektion zu machen. Wir werden eine JPA Entity zum Projekt hinzufügen, um einen einfachen Java Persistence (JPA) Test zu schreiben. Von da aus kannst du selbstständig weitermachen und weitere Entitäten testen.
+
+Die Schritte in diesem Guide basieren auf einem Maven Projekt. Dennoch ist Arquillian nicht an Maven gebunden und kann mit jedem anderen Build Tool verwendet werden. Wir werden die Tests in einem Embedded Glassfish und einer lokalen JBoss AS 7 Instanz laufen lassen. Du kannst aber auch einen anderen Container verwenden. Vorausgesetzt er stellt JPA bereit und wird von Arquillian unterstützt.
+
+p(warning). %Das arquillian-weld-ee-embedded Profil kann in diesem Tutorial nicht verwendet werden, da Weld den JPA Service nicht unterstützt (Weld unterstützt lediglich CDI).%
+
+h3. Ziel
+
+Wir werden eine Anwendung mit einer (Video) @Game@ Entity und folgenden zwei Feldern anlegen:
+
+* @id@ - dem Primärschlüssel
+* @title@ - dem Titel des Spiels
+
+Dazu werden wir einen Test schreiben, der die Beispiel Entity in die Datenbank schreibt und sie anschließend mit Hilfe der JPQL und der JPA 2 Criteria API wieder aus der Datenbank ausliest. Anschließend werden wir folgende drei Schritte durchführen:
+
+* Beispiel-Entitäten in die Datenbank mit Hilfe de JPA @EntityManager@ persistieren
+* Die Datenbank mit JPQL abfragen
+* Die Datenbank mit der JPA 2 Criteria API abfragen
+
+Der Quellcode für dieses Tutorial findet sich im"Arquillian examples project":http://github.com/arquillian/arquillian-examples/tree/master/arquillian-persistence-tutorial auf github. Um es in Aktion zu sehen, musst du nur das folgende Kommando ausführen (und etwas Geduld aufbringen und auf den Download der Maven Abhängigkeiten warten).
+
+bc(command). mvn test
+
+Lass uns direkt eintauchen und sehen wie es funktioniert.
+
+h3. Projektstruktur
+
+Kein Grund zur Panik! Hier die Struktur des Projektes:
+
+(filetree)* src/
+** main/
+*** java/
+**** org/
+***** arquillian/
+****** example/
+******* Game.java
+*** resources/
+**** META-INF/
+***** persistence.xml
+** test/
+*** java/
+**** org/
+***** arquillian/
+****** example/
+******* GamePersistenceTest.java
+*** resources/
+**** arquillian.xml
+*** resources-glassfish-embedded/
+**** glassfish-resources.xml
+**** logging.properties
+**** test-persistence.xml
+*** resources-jbossas-managed/
+**** test-persistence.xml
+* pom.xml
+
+@Game@ ist die JPA Entität und test-persistence.xml ist eine modifizierte Version der persistence.xml, welche die Persistence Unit unserer Testumgebung angibt. Beachte, dass es zwei Test Ordner mit einer persistence.xml Datei gibt. Eine für jeden Container den wir benutzen werden. Wie du sie auswählst werden wir die später erklären.
+
+Als einen Best Practice empfehlen wir es, einen dedizierten JPA Deskriptor zu verwenden. Dadurch wird es möglich, verschiedene DataSources für die Produktions- und die Testumgebung zu konfigurieren. Beispielsweise möchten wir in der Testumgebung eine "drop-and-create-tables" Strategie verwenden um unser Datenbank Schema zu managen. Wir könnten dadurch auch Datenbank Abfragen in Log Dateien loggen. Diese Einstellungen können in der test-persistence.xml aktiviert werden, ohne die Hauptapplikation anzupassen. Das wirst du gleich im folgenden Code sehen. Die persistence.xml (ohne test- prefix) werden wir unangetastet lassen, da wir sie für die Produktionsumgebung und nicht für die Testumgebung verwenden werden.
+
+Die @Game@ Entität versehen mit der @@Entity@ Annotation sieht so aus:
+
+div(filename). src/main/resources/org/arquillian/example/Game.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.io.Serializable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+@Entity
+public class Game implements Serializable {
+    private Long id;
+    private String title;
+
+    public Game() {}
+
+    public Game(String title) {
+        this.title = title;
+    }
+
+    @Id @GeneratedValue
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    @NotNull
+    @Size(min = 3, max = 50)
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    @Override
+    public String toString() {
+        return "Game@" + hashCode() + "[id = " + id + "; title = " + title + "]";
+    }
+}
+
+p. Der Primärschlüssel wird durch die @@Id@ Annotation an dem Feld angegeben. Die zusätzlichen Spalten werden automatisch anhand der Bean Properties (durch die getter/setter Methoden Konvention) aus den Feldern erzeugt. Um einen explizit Spaltennamen anzugeben, kannst du die @@Column@ Annotation verwenden. Andernfalls wird der Spaltenname aus dem Namen der Getter Methode erzeugt. Dazu wird das "get" Prefixes der Methode entfernt und die übrig gebliebenen Zeichen des Methodennamens in Kleinbuchstaben als Spaltenname verwendet (Bsp: aus getTitle() wird der Spaltenname: title).
+
+Wir verwenden zusätzlich auch noch Standard Bean Validation Annotationen, um Bedingungen an Felder festzulegen und zu garantieren. Im obigen Beispiel muss das Feld title gesetzt und zwischen 3 und 50 Zeichen lang sein. (Hinweis: That würde einen weiteren guten Test ergeben).
+
+h3. Einen Test schreiben
+
+Die ganze zeit Rede wir von Tests. Lasst uns endlich einen neuen JUnit 4 Arquillian Test Case und einen @GamePersistenceTest@ anlegen und uns vorbereiten, JPA Operationen zu testen. Wir verwenden "CDI (JSR-299)":http://docs.jboss.org/cdi/spec/1.0/html um an die benötigten Ressourcen via Dependency Injection zu gelangen. (Alternativ kannst du eine EJB verwenden, um die Transaktion durchzuführen. Dazu kommen wir in einem späteren Guide.)
+
+div(filename). src/test/java/org/arquillian/example/GamePersistenceTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.util.List;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.transaction.UserTransaction;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.runner.RunWith;
+
+@RunWith(Arquillian.class)
+public class GamePersistenceTest {
+    @Deployment
+    public static Archive<?> createDeployment() {
+        return ShrinkWrap.create(WebArchive.class, "test.war")
+            .addPackage(Game.class.getPackage())
+            .addAsResource("test-persistence.xml", "META-INF/persistence.xml")
+            .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    private static final String[] GAME_TITLES = {
+        "Super Mario Brothers",
+        "Mario Kart",
+        "F-Zero"
+    };
+
+    @PersistenceContext
+    EntityManager em;
+
+    @Inject
+    UserTransaction utx;
+
+    // tests go here
+}
+
+p. Bevor wir zu den Tests kommen, lasst uns von oben nach unten durch den gezeigten Code gehen, um zu verstehen was dort vor sich geht.
+
+- @RunWith(Arquillian.class) := Bringt JUnit dazu, den Test durch den Arquillian Runner ausführen zu lassen. Dadurch kann Arquiillian ein Komponentenmodell für unsere Tests bereitstellen, welches Container Lifecycle Management, Dependency Injection und andere Verbesserungen mit sich bringt. Beachte: Es ist nicht notwendig eine Baissklasse zu erweitern. Dadurch halten wir uns die Tür für mögliche weitere Anwendungszwecke offen.
+- @Deployment Methode := Baut ein "micro deployment" Archiv durch Verwendung von "ShrinkWrap":http://jboss.org/shrinkwrap. Arquillian deployt dieses Archiv in dem Container, welches auch den Test Case und zusätzliche Infrastruktur enthält. Danach wird der Test als eine Komponente innerhalb dieser Micro Applikation ausgeführt. Der Inhalb dieses Archives erstellt eine isolierte Umgebung für diesen einen Test.
+- GAME_TITLES Konstante := Die Beispiel Test Daten
+- @PersistenceContext EntityManager := Injiziert den Persistence Context (bzw. den @EntityManager@) direkt in den Test. just as though the test were a "managed bean":http://download.oracle.com/javaee/6/api/javax/annotation/ManagedBean.html.
+- @Inject UserTransaction := Injiziert eine JTA Transaktion direkt in unseren Test. Bereitgestellt wird uns das durch die CDI Managed Bean aus dem JSR-299.
+
+Um eine Überlagerung der Test Logik mit zugehörigem Setup zu vermeiden, werden Interzeptor Methoden eingeführt, die vor und nach der Testausführung ausgeführt werden. Lasst uns einen Blick auf diesen Code werfen.
+
+Die @@Before@ Methode, welche vor jedem Test aufgerufen wird führt folgende Aufgaben durch:
+
+# Setzt den Datenbank Zustand zurück, um nicht auf Daten vorheriger Testdurchläufe zurückzugreifen
+# Fügt Beispiel Daten in die Datenbank ein, welche für die Tests benötigt werden
+# beginnt eine Transaktion
+
+Hier sind die Methoden und das eine Import statement, welche du zum Test Case hinzufügst:
+
+bc(prettify).. <!-- clip -->
+import org.junit.Before;
+<!-- clip -->
+
+@Before
+public void preparePersistenceTest() throws Exception {
+    clearData();
+    insertData();
+    startTransaction();
+}
+
+private void clearData() throws Exception {
+    utx.begin();
+    em.joinTransaction();
+    System.out.println("Dumping old records...");
+    em.createQuery("delete from Game").executeUpdate();
+    utx.commit();
+}
+
+private void insertData() throws Exception {
+    utx.begin();
+    em.joinTransaction();
+    System.out.println("Inserting records...");
+    for (String title : GAME_TITLES) {
+        Game game = new Game(title);
+        em.persist(game);
+    }
+    utx.commit();
+    // clear the persistence context (first-level cache)
+    em.clear();
+}
+
+private void startTransaction() throws Exception {
+    utx.begin();
+    em.joinTransaction();
+}
+
+p. Wir benötigen auch noch eine Methode, um die Transaktion nach jeder Test Methode abzuschließen. Das bedarf natürlich auch eines weiteren imports:
+
+bc(prettify).. <!-- clip -->
+import org.junit.After;
+<!-- clip -->
+
+@After
+public void commitTransaction() throws Exception {
+    utx.commit();
+}
+
+p. Arquillian führt die @@Before@ and @@After@ Methoden vor bzw. nach dem Aufruf einer jeden Testmethode innerhalb des Containers aus. Die @@Before@ Methode wird aufgerufen, nachdem die Injizierungen durchgeführt wurden.
+
+Beachte: Wir haben den @EntityManager@ explizit innerhalb der JTA Transaktion verwendet. Dieser Schritt ist notwendig, da wir zwei Ressourcen unabhängig voneinander verwenden. Falls du JPA innerhalb einer EJB verwendest, könnte das  für dich etwas ungewöhnlich aussehen, da es dort schon automatisch geschieht.
+
+h4. Eine Abfrage mit JPQL
+
+Hier ist der Test, der sicherstellt, dass wir Beispieldaten mit der JPQL abfragen können. Wir werden ein paar Statements loggen, um zu sehen was geschieht.
+
+bc(prettify).. <!-- clip -->
+import java.util.List;
+import org.junit.Test;
+<!-- clip -->
+
+@Test
+public void shouldFindAllGamesUsingJpqlQuery() throws Exception {
+    // given
+    String fetchingAllGamesInJpql = "select g from Game g order by g.id";
+
+    // when
+    System.out.println("Selecting (using JPQL)...");
+    List<Game> games = em.createQuery(fetchingAllGamesInJpql, Game.class).getResultList();
+
+    // then
+    System.out.println("Found " + games.size() + " games (using JPQL):");
+    assertContainsAllGames(games);
+}
+
+p. Wir schließen diesen Test mit einem Aufruf der @assertContainsAllGames@ Methode ab. Dabei handelt es sich um eine eigene Assertion, die sicherstellt, dass die zurückgegebene Collection auch alle in der Datenbank gespeicherten Titel enthält.
+
+bc(prettify).. <!-- clip -->
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import org.junit.Assert;
+<!-- clip -->
+
+private static void assertContainsAllGames(Collection<Game> retrievedGames) {
+    Assert.assertEquals(GAME_TITLES.length, retrievedGames.size());
+    final Set<String> retrievedGameTitles = new HashSet<String>();
+    for (Game game : retrievedGames) {
+        System.out.println("* " + game);
+        retrievedGameTitles.add(game.getTitle());
+    }
+    Assert.assertTrue(retrievedGameTitles.containsAll(Arrays.asList(GAME_TITLES)));
+}
+
+p. Eine separate Methode für Assertions zu verwenden bietet die folgenden beiden Vorteile:
+
+* Es erklärt klar, was wir erwartenIt clearly explains what we are expecting
+* Es kann in anderen Tests wiederverwendet werden
+
+Kommen wir zu einem neuen Feature in JPA 2, der Criteria API!
+
+h4. Das JPA 2 Metamodel generieren
+
+Um bei der Verwendung der Criteria API alles typsicher zu halten, solltest du idealerweise die JPA 2 Metamodel Klassen referenzieren. Um diese Klassen durch Maven generen zu lassen, müssen wir Maven zuerst mitteilen, dass es in Ordnung ist, das JDK 6 zu verwenden. (Maven ist da etwas stur)
+
+div(filename). pom.xml
+
+bc(prettify). <!-- clip -->
+<build>
+    <plugins>
+        <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>2.3.2</version>
+            <configuration>
+                <source>1.6</source>
+                <target>1.6</target>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+<!-- clip -->
+
+Außerdem müssen wir Maven so konfigurieren, dass es den JPA 2 Annotation Processor startet. Das geschieht durch Hinzufügen des JPA metamodel Generators als provided dependency innerhalb der pom.xml Datei:
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependency>
+    <groupId>org.hibernate</groupId>
+    <artifactId>hibernate-jpamodelgen</artifactId>
+    <version>1.2.0.Final</version>
+    <scope>provided</scope>
+</dependency>
+<!-- clip -->
+
+p(info). %Der metamodel Generator wird automatisch starten wenn du einen JDK 6 Compiler verwendest und das Annotation Processor jar zum Classpath hinzugefügt wurde..%
+
+Das JPA 2 Metamodel aus Eclipse heraus zu generieren ist etwas schwieriger. Starte, indem du eine Datei namens .factorypath unterhalb des Projektordners anlegst und füge dort folgende Konfiguration hinzu:
+
+div(filename). .factorypath
+
+bc(prettify).. <factorypath>
+    <factorypathentry kind="VARJAR" enabled="true" runInBatchMode="false"
+        id="M2_REPO/org/hibernate/hibernate-jpamodelgen/1.2.0.Final/hibernate-jpamodelgen-1.2.0.Final.jar"/>
+    <factorypathentry kind="VARJAR" enabled="true" runInBatchMode="false"
+        id="M2_REPO/org/hibernate/javax/persistence/hibernate-jpa-2.0-api/1.0.0.Final/hibernate-jpa-2.0-api-1.0.0.Final.jar"/>
+</factorypath>
+
+p. Jetzt mache einen Rechts-Klick auf das Projekt und wähle Properties aus. Klappe den Java Compiler Knoten im Settings Tree auf und wähle Annotation Processing aus. Dort änderst du folgende Werte:
+
+* Wähle "Enable project specific settings" aus
+* Wähle "Enable annotation processing" aus
+* Setze "Generated source directory" auf "target/generated-sources/annotations" (ohne Anführungsstriche)
+* Klicke auf den Apply Button and Akzeptiere den Full Build
+* Entferne den Haken bei "Enable annotation processing"
+* Klicke auf dne Apply button und überspringe den Full Build
+* Wähle "Enable annotation processing" aus
+* Wähle den Apply Button aus und führe einen Full Build durch
+
+Jetzt solltest du die Datei @Game_.java@ im Ordner mit dem Pfad target/generated-sources/annotations finden.
+
+p(info). %Ja, du musst damit etwas herumhantieren und es gerade biegen. Genauso wie ein Snack Automat, der vorher einmal leicht getreten werden muss bis er Snacks ausspuckt ~:) Falls es dir zu viele Schwierigkeiten bereitet, kannst du die Metamodel Generierung überspringen und die Spaltennamen mit Strings angeben.%
+
+Jetzt bist du auf jeden Fall in der Lage, eine Criteria Query zu schreiben!
+
+h4. Abfragen mit der Critiera API
+
+Hier ist eine Kopie des vorherigen Tests, der um die Verwendung der Criteria API angepasst wurde. Beachte, dass dieser Test vom JPA 2 annotation processor abhängt, der die @Game_@ metamodel Klasse während des build compilation Schrittes erzeugt.
+
+bc(prettify).. <!-- clip -->
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+<!-- clip -->
+
+@Test
+public void shouldFindAllGamesUsingCriteriaApi() throws Exception {
+    // given
+    CriteriaBuilder builder = em.getCriteriaBuilder();
+    CriteriaQuery<Game> criteria = builder.createQuery(Game.class);
+
+    Root<Game> game = criteria.from(Game.class);
+    criteria.select(game);
+    // TIP: If you don't want to use the JPA 2 Metamodel,
+    // you can change the get() method call to get("id")
+    criteria.orderBy(builder.asc(game.get(Game_.id)));
+    // No WHERE clause, which implies select all
+
+    // when
+    System.out.println("Selecting (using Criteria)...");
+    List<Game> games = em.createQuery(criteria).getResultList();
+
+    // then
+    System.out.println("Found " + games.size() + " games (using Criteria):");
+    assertContainsAllGames(games);
+}
+
+p. Um JPA zum Laufen zu bekommen benötigen wir zusätzlich noch eine Persistence Unit.
+
+Eine Persistence Unit wird in einer test-persistence.xml Datei angelegt, welche zum zugehörigen Ziel-Container gehört. ShrinkWrap bezieht diese Datei aus dem Classpath und fügt sie zur Standard Location innerhalb des Arhiv hinzu.
+
+bc(prettify). .addAsResource("test-persistence.xml", "META-INF/persistence.xml")
+
+Hier ist die Stuktur des Archives, welches ShwinkWrap uns für diesen Test Case zusammenstellen wird (ohne die Arquillian Infrastruktur):
+
+(filetree)* WEB-INF/
+** beans.xml
+** classes/
+*** META-INF/
+**** persistence.xml
+*** org/
+**** arquillian/
+***** example/
+****** Game.class
+****** GamePersistenceTestCase.class
+****** Game_.class
+** lib/
+*** *.jar
+
+Lasst uns den Persistence Unit Deskriptor ansehen, den wir in dem Test verwenden. Wir beginnen mit dem Embedded GlassFish.
+
+h3. Setup Persistence for GlassFish
+
+Hier ist der Persistence Unit Deskriptor, den wir für den Embedded GlassFish verwenden:
+
+div(filename). src/test/resources-glassfish-embedded/test-persistence.xml
+
+bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://java.sun.com/xml/ns/persistence
+        http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+    <persistence-unit name="test">
+        <jta-data-source>jdbc/arquillian</jta-data-source>
+        <properties>
+            <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
+            <property name="eclipselink.logging.level.sql" value="FINE"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+
+Wir setzen die zwei folgenden EclipseLink spezifischen Properties:
+
+- eclipselink.ddl-generation := Konfiguriert das Datenbank Schema Kommando. Der Wert drop-and-create-tables sagt EclipseLink, dass es die Datenbank anhand der annotierten JPA Entitäten erzeugt.
+- eclipselink.logging.level.sql := Konfiguriert das Logging von Queries. Der Wert FINE aktiviert das Logging von SQL Statements, um die Datenbank Aktivitäten zu kontrollieren.
+
+EclipseLink Logging muss noch weiter konfiguriert werden, indem du das Logging Level in der Java Konfigurations Datei auf FINE setzt.
+
+div(filename). src/test/resources-glassfish-embedded/logging.properties
+
+bc(prettify).. handlers=java.util.logging.ConsoleHandler
+java.util.logging.ConsoleHandler.formatter=java.util.logging.SimpleFormatter
+java.util.logging.SimpleFormatter.format=%4$s: %5$s%n
+java.util.logging.ConsoleHandler.level=FINEST
+
+p. Die Persistence Unit ist test-persistence.xml und zeigt auf eine DataSource mit dem Namenjdbc/arquillian. Wo ist das angelegt? Das ist etwas, was der Arquillian Container Adapter angeben muss.
+
+Wir möchten mit Hilfe der GlassFish APIs einen JDBC Connection Pool und zugehörige Rssourcen anlegen. Allerdings möchten wir damit keinen Code schreiben. Wir möchten es lediglich anlegen. An dieser Stelle kommt Aequillian ins Spiel.
+
+Als erstes erstellen wir eine glassfish-resources.xml Datei, die die Resource Definitionen enthält.
+
+div(filename). src/test/resources-glassfish-embedded/glassfish-resources.xml
+
+bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE resources PUBLIC
+    "-//GlassFish.org//DTD GlassFish Application Server 3.1 Resource Definitions//EN"
+    "http://glassfish.org/dtds/glassfish-resources_1_5.dtd">
+<resources>
+    <jdbc-resource pool-name="ArquillianEmbeddedDerbyPool"
+        jndi-name="jdbc/arquillian"/>
+    <jdbc-connection-pool name="ArquillianEmbeddedDerbyPool"
+        res-type="javax.sql.DataSource"
+        datasource-classname="org.apache.derby.jdbc.EmbeddedDataSource"
+        is-isolation-level-guaranteed="false">
+        <property name="databaseName" value="target/databases/derby"/>
+        <property name="createDatabase" value="create"/>
+    </jdbc-connection-pool>
+</resources>
+
+Nun haben wir die DataSource Definition vom Test getrennt. So wie wir es auch in unserer produktiven Applikation machen. Ein Vorteil davon ist, dass wir alle für den Test benötigten Ressourcen so anlegen können. Stell dir die Möglichkeiten vor.
+
+Jetzt müssen wir Arquillian noch sagen, dass er dieses Datei verwenden soll. Wir öffnen die Arquillian Konfiguration und konfigurieren den Embedded GlassFish Container Adapter so, dass er diese Datei verwendet und das @add-resources@ Kommando der GlassFish administration API bedient.
+
+div(filename). src/test/resources/arquillian.xml
+
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<arquillian xmlns="http://jboss.org/schema/arquillian"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+    <container qualifier="glassfish-embedded" default="true">
+        <configuration>
+            <property name="resourcesXml">
+                src/test/resources-glassfish-embedded/glassfish-resources.xml
+            </property>
+        </configuration>
+    </container>
+</arquillian>
+
+p. Alternativ kannst du die DataSource Konfiguration auch einfach überspringen und folgende Werte in die test-persistence.xml Datei eintragen:
+
+bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://java.sun.com/xml/ns/persistence
+        http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+    <persistence-unit name="test">
+        <properties>
+            <property name="javax.persistence.jdbc.driver"
+                value="org.apache.derby.jdbc.EmbeddedDriver"/>
+            <property name="javax.persistence.jdbc.url"
+                value="jdbc:derby:target/databases/derby;create=true"/>
+            <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
+            <property name="eclipselink.logging.level.sql" value="FINE"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+
+p. Beachte, dass ein Wechsel von einer JNDI DataSource zu einer expliziten Datenbankverbindung die Architektur zwischen der produktions- und der Testumgebung massiv verändert. Das führt dazu, dass du weniger Sicherheit hast, dass dein Test alle möglichen Fehler aufdeckt.
+
+Was jetzt nur noch fehlt, ist das Setup des Container Adapters und die Ausführung der Tests.
+
+h3. Bereite den Test für den GlassFish vor
+
+p. Wir werden den Ziel Container mit Maven profiles voneinander trennen. Alle Maven profile verwenden die selben gemeinsamen Abhängigkeiten (wie im "Getting Started":/guides/getting_started/ guide):
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.arquillian</groupId>
+            <artifactId>arquillian-bom</artifactId>
+            <version>1.0.0.Final</version>
+            <scope>import</scope>
+            <type>pom</type>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+<dependencies>
+    <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.8.1</version>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.arquillian.junit</groupId>
+        <artifactId>arquillian-junit-container</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+<!-- clip -->
+
+p(warning). %Falls du eine Datenbank (z.B. MySQL) verwenden möchtest, die nicht schon mit dem Application Server mitgeliefert wird, musst du die Client Bibliotheken ebenfalls zum Classpath hinzufügen.
+Wirf einen Blick auf das "sample project":http://github.com/arquillian/arquillian-examples/tree/master/arquillian-persistence-tutorial um ein Beispiel für die Verwendung der H2 Datenbank anstelle der mitgelieferten Derby Datenbank zu bekommen.%
+
+p. Jetzt füge (oder ändere) das Profil für den Embedded Glassfish:
+
+div(filename). pom.xml
+
+bc(prettify). <!-- clip -->
+<profile>
+    <id>arquillian-glassfish-embedded</id>
+    <activation>
+        <activeByDefault>true</activeByDefault>
+    </activation>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-glassfish-embedded-3.1</artifactId>
+            <version>1.0.0.CR3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.main.extras</groupId>
+            <artifactId>glassfish-embedded-web</artifactId>
+            <version>3.1.2</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>src/test/resources-glassfish-embedded</directory>
+            </testResource>
+        </testResources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.12</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>
+                            ${project.build.testOutputDirectory}/logging.properties
+                        </java.util.logging.config.file>
+                        <derby.stream.error.file>
+                            ${project.build.directory}/derby.log
+                        </derby.stream.error.file>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</profile>
+<!-- clip -->
+
+Wir fügen den src/test/resources-glassfish-embedded Ordner explizit als resource hinzu, so dass die test-persistence.xml zum Classpath hinzugefügt wird.
+Wir haben außerdem noch das Surefire Plugin konfiguriert, damit es die Java Logging Konfiguration in den geforkten Java Prozess legt, um das SQL Logging zum Laufen zu bekommen. Nun endlich bekommen wir die Derby Log Datei in das build output directory so dass es bei einem clean des Projektes auch wieder verschwindet.
+
+p(info). %Falls du nicht mit verschiedenen Container testen möchtest, brauchst du die obige Konfiguration nicht in einem umliegenden profile verpacken.%
+
+h3. Den Test auf dem GlassFish ausführen
+
+Wenn alle Schritte durchgeführt sind, kannst du die Tests ausführen, in dem du Run As > JUnit Test in deiner IDE ausführst oder folgendes Maven Kommando aufrufst:
+
+bc(command). $ mvn clean test
+
+Das Maven Profil für den Embedded Glassfish ist standardmäßig aktiviert (as is the container adapter configuration in arquillian.xml). Ausschnitte des Tests sind unten zu sehen.
+
+bc(output). ...
+Running org.arquillian.example.GamePersistenceTest
+...
+INFO: GlassFish Server Open Source Edition 3.1.2 (java_re-private) ...
+...
+INFO: command add-resources result: PlainTextActionReporterSUCCESSDescription: add-resources AdminCommandnull
+    JDBC connection pool ArquillianEmbeddedDerbyPool created successfully.
+    JDBC resource jdbc/arquillian created successfully.
+...
+INFO: WEB0671: Loading application [test] at [/test]
+...
+Dumping old records...
+FINE: DELETE FROM GAME
+Inserting records...
+FINE: UPDATE SEQUENCE SET SEQ_COUNT = SEQ_COUNT + ? WHERE SEQ_NAME = ?
+   bind => [50, SEQ_GEN]
+FINE: SELECT SEQ_COUNT FROM SEQUENCE WHERE SEQ_NAME = ?
+   bind => [SEQ_GEN]
+FINE: INSERT INTO GAME (ID, TITLE) VALUES (?, ?)
+   bind => [3, F-Zero]
+FINE: INSERT INTO GAME (ID, TITLE) VALUES (?, ?)
+   bind => [1, Super Mario Brothers]
+FINE: INSERT INTO GAME (ID, TITLE) VALUES (?, ?)
+   bind => [2, Mario Kart]
+Selecting (using JPQL)...
+FINE: SELECT ID, TITLE FROM GAME ORDER BY ID ASC
+Found 3 games (using JPQL):
+* Game@599290122[id = 1; title = Super Mario Brothers]
+* Game@1550721071[id = 2; title = Mario Kart]
+* Game@1107500305[id = 3; title = F-Zero]
+FINE: DELETE FROM GAME
+Inserting records...
+FINE: INSERT INTO GAME (ID, TITLE) VALUES (?, ?)
+   bind => [5, Mario Kart]
+FINE: INSERT INTO GAME (ID, TITLE) VALUES (?, ?)
+   bind => [6, F-Zero]
+FINE: INSERT INTO GAME (ID, TITLE) VALUES (?, ?)
+   bind => [4, Super Mario Brothers]
+Selecting (using Criteria)...
+FINE: SELECT ID, TITLE FROM GAME ORDER BY ID ASC
+Found 3 games (using Criteria):
+* Game@1020493092[id = 4; title = Super Mario Brothers]
+* Game@1622992302[id = 5; title = Mario Kart]
+* Game@294335520[id = 6; title = F-Zero]
+...
+
+p. *Glückwunsch!* *(greenbar)Green bar*! _Jetzt ist es ein richtiger Integrationstest!_
+
+p(important). %Sobald du fortgeschrittene JPA Mappings wie zum Beispiel lazy loading und fetch groups einfügst, könntest du in Fehler oder Warnungen laufen, die durch . As you introduce advanced JPA mappings, such as lazy loading and fetch groups, you may run into errors or warnings caused by Embedded GlassFish interfering with the necessary weaving step in EclipseLink. Additional build configuration is required to workaround this problem. Refer to "Markus Eisele's blog":http://blog.eisele.net/2012/01/arquillian-with-netbeans-glassfish_18.html for instructions. You won't have this problem when using a managed or remote container adapter.%
+
+h3. Dem Test auf dem JBoss AS 7 ausführen
+
+Den vorherigen Test können wir auch mit ein paar einfachen Classpath Änderungen auf dem JBoss ausführen.
+
+We'll first need a different Persistence Unit definition that specifies a DataSource that's available on JBoss AS (and optionally sets some Hibernate configuration settings).
+
+If you were using JBoss AS 7.0, you'd need to "setup a DataSource manually in the JBoss AS configuration":https://docs.jboss.org/author/display/AS7/Admin+Guide#AdminGuide-Datasources or leverage the built-in DataSource, java:jboss/datasources/ExampleDS. Here's the Persistence Unit descriptor for JBoss AS 7.0 that uses the built-in DataSource.
+
+div(filename). src/test/resources-jbossas-managed/test-persistence.xml
+
+bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://java.sun.com/xml/ns/persistence
+        http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+    <persistence-unit name="test">
+        <jta-data-source>java:jboss/datasources/ExampleDS</jta-data-source>
+        <properties>
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+            <property name="hibernate.show_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+
+Die Hibernate spezifischen Properties hibernate.hbm2ddl.auto und hibernate.show_sql führen genau die gleichen Funktionen aus wie die zuvor beschriebenen EclipseLink Properties.
+
+Falls du JBoss AS 7.1 verwendest (was wir empfehlen), dann kannst du neue DataSources dynamisch hinzufügen, in dem du einen DataSource Deskriptor (eine Datei mit der Endung -ds.xml) mit einer oder mehreren DataSource Definitionen zum META-INF Ordner des Java Archives oder des WEB-INF Ordners des Web Archives hinzufügst.
+
+Hier der Deskriptor, der eine H2 Datenbank mit dem JNDI Namen jdbc/arquillian anlegt (gleicher JNDI Name wie zuvor beim Glassfish):
+
+div(filename). src/test/resources/jbossas-ds.xml
+
+bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
+<datasources xmlns="http://www.jboss.org/ironjacamar/schema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.jboss.org/ironjacamar/schema
+        http://docs.jboss.org/ironjacamar/schema/datasources_1_0.xsd">
+    <datasource enabled="true"
+        jndi-name="jdbc/arquillian"
+        pool-name="ArquillianEmbeddedH2Pool">
+        <connection-url>jdbc:h2:mem:arquillian;DB_CLOSE_DELAY=-1</connection-url>
+        <driver>h2</driver>
+    </datasource>
+</datasources>
+
+p(info). %JBoss AS 7.1 bringt von Haus aus die H2 Datenbank mit. Um eine andere Datenbank zu verwenden, musst du den jeweiligen Treiber zur Installation hinzufügen (wie im "DataSources Kapitel des JBoss AS 7.1 Reference Guides beschrieben":https://docs.jboss.org/author/display/AS71/Admin+Guide#AdminGuide-Datasources.%
+
+Wir müssen unsere Persistence Unit anpassen, um die neue DataSource zu verwenden:
+
+div(filename). src/test/resources-jbossas-managed/test-persistence.xml
+
+bc(prettify). <?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://java.sun.com/xml/ns/persistence
+        http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+    <persistence-unit name="test">
+        <jta-data-source>jdbc/arquillian</jta-data-source>
+        <properties>
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+            <property name="hibernate.show_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+
+Zusätzlich müssen wir den Deskriptor zum WEB-INF Ordner des Testarchivs hinzufügen. Dazu füge einfach die folgende Methode zum ShrinkWrap Builder in der @@Deployment@ Methode des Testfalls hinzu:
+
+bc(prettify). .addAsWebInfResource("jbossas-ds.xml")
+
+Das Hinzufügen dieser Datei hat keinerlei Einfluss auf das Ausführen der Tests auf einem Embedded Glassfish. Die Datasource und die Persistence Unit sind schon bereits einsatzbereit.
+
+Als nächstes werden wir ein Maven Profil anlegen, welches den JBoss AS Container Adapter und den JBoss AS Ressourcen Ordner zum Classpath hinzufügt:
+
+div(filename). pom.xml
+
+bc(prettify). <!-- clip -->
+<profile>
+    <id>arquillian-jbossas-managed</id>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-arquillian-container-managed</artifactId>
+            <version>7.1.1.Final</version>
+            <scope>test</scope>
+        </dependency>
+         <dependency>
+             <groupId>org.jboss.spec</groupId>
+             <artifactId>jboss-javaee-web-6.0</artifactId>
+             <version>3.0.0.Final</version>
+             <type>pom</type>
+             <scope>provided</scope>
+             <exclusions>
+                 <exclusion>
+                     <groupId>xalan</groupId>
+                     <artifactId>xalan</artifactId>
+                 </exclusion>
+             </exclusions>
+         </dependency>
+    </dependencies>
+    <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>src/test/resources-jbossas-managed</directory>
+            </testResource>
+        </testResources>
+    </build>
+</profile>
+<!-- clip -->
+
+Jetzt können wir den Test ein weiteres mal mit Maven starten. Dieses mal aktivieren wir allerdings das JBoss AS managed profile durch:
+
+bc(command). $ mvn clean test -Parquillian-jbossas-managed
+
+p(warning). %Stell sicher, dass deine JBOSS_HOME Umgebungsvariable auf eine JBoss AS 7.1.1.Final Installation verweist. Alternativ kannst du den Pfad auch mit der jbossHome Property in der arquillian.xml setzen.%
+
+Und das Beste daran ist: Du kannst diesen Test natürlich auch in deiner IDE ausführen! Importiere dazu einfach das Projekt, aktiviere das arquillian-jbossas-managed Maven Profil (und deaktiviere das arquillian-glassfish-embedded Profil), öffne den Testfall und wähle "Run As > JUnit Test" aus. Voila! Es läuft! Genau so wie jeder andere normale JUnit Test auch. *(greenbar)Green bar*!
+
+*Genieße diesen klasse Weg zum Testen von JPA!*
+
+p(info). %WEs befand sich sehr viel Installation in diesem Guide. Beachte allerdings, dass wir auch keinen Stein unangetastet gelassen haben. hile there was a lot of setup in this guide, recognize it's because that we left no stone unturned. To remind you of the benefits of Arquillian, just look back at how simple the test case is. Erinnere dich daran, dass wir an keinen Java EE 6 Container und keine JPA 2 Implementierung gebunden sind.%
