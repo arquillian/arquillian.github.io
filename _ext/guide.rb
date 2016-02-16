@@ -6,7 +6,7 @@ module Awestruct
       class Index
         include Guide
         @@transformers_registered = false
-        
+
         def initialize(path_prefix, num_changes = nil)
           @path_prefix = path_prefix
           @num_changes = num_changes
@@ -23,10 +23,10 @@ module Awestruct
 
         def execute(site)
           guides = []
-          
+
           site.pages.each do |page|
-            if ( page.relative_source_path =~ /^#{@path_prefix}\/(?!index)/ )
-              
+            if ( page.relative_source_path =~ /^#{@path_prefix}\/(?!(index|generator))/ )
+
               guide = OpenStruct.new
               page.guide = guide
               site.engine.set_urls([page])
@@ -36,7 +36,7 @@ module Awestruct
                 page.description = page.guide_summary
               end
               guide.summary = page.description
-              
+
               # FIXME contributors should be listed somewhere on the page, but not automatically authors
               # perhaps as little pictures like on github
 
@@ -48,7 +48,7 @@ module Awestruct
               #guide.authors = page.authors
 
               guide.changes = page_changes(page, @num_changes)
-              
+
               # NOTE page.content forces the source path to be rendered
               page_content = Hpricot(page.content)
               chapters = []
@@ -84,7 +84,7 @@ module Awestruct
               end
             end
           end
-          
+
           site.guides = guides
         end
 
@@ -119,7 +119,7 @@ module Awestruct
       end
 
       class WrapHeaderAndAssignHeadingIds
-      
+
         def transform(site, page, rendered)
           if page.guide
             page_content = Hpricot(rendered)
@@ -164,7 +164,7 @@ module Awestruct
           end
           return rendered
         end
-        
+
         def get_depth(node)
           depth = 0
           p = node
@@ -178,17 +178,17 @@ module Awestruct
         def get_indent(depth, ts = '  ')
           "#{ts * depth}"
         end
-        
+
       end
 
       ##
-      # Returns a Array of unique author.name's based on the Git commit history located 
-      # at page.site.dir for the given page. 
+      # Returns a Array of unique author.name's based on the Git commit history located
+      # at page.site.dir for the given page.
       # The Array is ordered by number of commits done by the authors.
       #
       def page_contributors(page, size)
         authors = Hash.new
-        
+
         g = Git.open(page.site.dir)
         g.log(size).path(page.relative_source_path[1..-1]).each do |c|
           if authors[c.author.name]

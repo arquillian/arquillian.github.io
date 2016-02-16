@@ -1,0 +1,172 @@
+---
+layout: base
+title: Getting Started Generator
+---
+- page.body_class = 'guide'
+#main(role='main')
+  #content-header
+    .container
+      .headline
+        %h1
+          %a{:href=>'/guides/generator/'} Arquillian Universe Generator Beta
+          %small Designed exclusively to get you started writing real tests as fast as possible.
+        .directory
+          %a#guides_menu.guides_menu{:onclick=>"$('#form').submit()"}
+            Generate
+            %i.icon-menu-closed
+          #guides{:style=>'display: none'}
+            %a.guides_menu{}
+              Generate
+              %i.icon-menu-open
+  .container
+    %form{:id=>'form', :class=>'form-inline', :onsubmit=>'return generate(this)'}
+
+- universe = site.components['arquillian-universe-bom']
+- model = universe.extensions.map{|a| a.marshal_dump}.group_by do |e|
+  - if e[:artifactId]=~ /junit|testng|cukes/
+    - "Test Framework"
+  - elsif e[:artifactId] =~ /core/
+    - "CORE"
+  - elsif e[:artifactId] =~ /spring/
+    - "Spring"
+  - elsif e[:artifactId] =~ /reporter|recorder/
+    - "Reporting"
+  - elsif e[:artifactId] =~ /drone|warp|graphene|rest/
+    - "Front-end"
+  - elsif e[:artifactId] =~ /persistence|transaction|byteman/
+    - "Back-end"
+  - elsif e[:artifactId] =~ /chameleon|containerless/
+    - "Containers"
+  - elsif e[:artifactId] =~ /cube/
+    - "System"
+  - elsif e[:artifactId] =~ /governor/
+    - "Issue Tracking"
+  - elsif e[:artifactId] =~ /jacoco/
+    - "Quality Tools"
+  - else
+    - "Other"
+- model.delete("CORE")
+- modules = site.modules.values.flatten
+- model.values.flatten.each do |e|
+  - mod = modules.select{|a| a.component.repository.path.gsub(/extension\-|container\-/, "").eql?(e[:artifactId])}[0]
+  - e[:url] = "/#{mod.page.output_path}" unless mod.nil?
+- model_json = JSON.generate model
+:javascript
+  var model =  JSON.parse('#{model_json}')
+
+  $(function() {
+    create_form(model, $('form'))
+  })
+  create_form = function(model, form) {
+    var table = '<div class="row">'
+
+    for(var category_name in model) {
+      table += '<div class="span4">'
+      table += '<fieldset><legend>' + category_name + '</legend>'
+      var category = model[category_name]
+      category.forEach(function(module) {
+          table += '  <div class="control-group">\
+          <div class="controls">\
+            <label class="checkbox" style="text-transform:capitalize">'
+          if(module.url) {
+            table += '<input type="checkbox" id="' + module.artifactId + '"> <a href="' + module.url + '">' + module.name + '</a>'
+          } else {
+            table += '<input type="checkbox" id="' + module.artifactId + '"> ' + module.name
+          }
+          table += '</label>\
+          </div></div>'
+      })
+      table += "</fieldset></div>"
+    }
+    table += "</div>"
+    form.html(table)
+  }
+
+  generate = function(form) {
+     var pom = create_pom(form)
+     //saveAs(create_zip(pom), "arquillian-example.zip");
+     write_code_block(pom)
+     return false
+  }
+
+  write_code_block = function(pom) {
+    $('#form').html("<pre class='prettify'><code class='prettify'>" + escapeXml(pom) + "</code></pre>");
+    prettify();
+  }
+
+  escapeXml = function (unsafe) {
+      return unsafe.replace(/[<>&'"]/g, function (c) {
+          switch (c) {
+              case '<': return '&lt;';
+              case '>': return '&gt;';
+              case '&': return '&amp;';
+              case '\'': return '&apos;';
+              case '"': return '&quot;';
+          }
+      });
+  }
+
+  create_zip = function(pom) {
+    var zip = new JSZip();
+    zip.file("pom.xml", pom);
+    zip.folder("src").folder("main").folder("java");
+    zip.folder("src").folder("test").folder("java");
+
+    return zip.generate({type:"blob"});
+  }
+
+  view_pom = function(form) {
+    var pom = create_pom($('#form'))
+    alert(pom)
+  };
+
+  create_pom = function(form) {
+    var pom = ''
+    pom += '<?xml version="1.0" encoding="UTF-8"?>\n'
+    pom += '<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n'
+    pom += '    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">\n'
+    pom += '\n'
+    pom += '  <modelVersion>4.0.0</modelVersion>\n'
+    pom += '  <groupId>org.test</groupId>\n'
+    pom += '  <artifactId>arquillian-universe-test</artifactId>\n'
+    pom += '  <name>Arquillian Example</name>\n'
+    pom += '  <version>1.0.0.Final-SNAPSHOT</version>\n'
+    pom += '  <packaging>jar</packaging>\n'
+    pom += '\n'
+    pom += '  <properties>\n'
+    pom += '    <version.arquillian_universe>#{universe.latest_version}</version.arquillian_universe>\n'
+    pom += '  </properties>\n'
+    pom += '\n'
+    pom += '  <dependencyManagement>\n'
+    pom += '    <dependencies>\n'
+    pom += '      <dependency>\n'
+    pom += '        <groupId>org.arquillian</groupId>\n'
+    pom += '        <artifactId>arquillian-universe</artifactId>\n'
+    pom += '        <version>${version.arquillian_universe}</version>\n'
+    pom += '        <scope>import</scope>\n'
+    pom += '        <type>pom</type>\n'
+    pom += '      </dependency>\n'
+    pom += '    </dependencies>\n'
+    pom += '  </dependencyManagement>\n'
+    pom += '\n'
+    pom += '  <dependencies>\n'
+
+    for(var i = 0; i < form.length; i++) {
+       var input = form[i];
+       if(input.type !== 'checkbox' || !input.checked) {
+          continue
+       }
+
+       pom += '    <dependency>\n'
+       pom += '      <groupId>org.arquillian.universe</groupId>\n'
+       pom += '      <artifactId>' + input.id + '</artifactId>\n'
+       pom += '      <scope>test</scope>\n'
+       pom += '      <type>pom</type>\n'
+       pom += '    </dependency>\n'
+    }
+
+    pom += '  </dependencies>\n'
+    pom += '</project>\n'
+
+    return pom
+  }

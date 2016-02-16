@@ -1108,6 +1108,7 @@ module Awestruct::Extensions::Repository::Visitors
       if site.modules[c.type].nil?
         site.modules[c.type] = []
       end
+      c.extensions = populate_modules(repository, 'master')
       m = OpenStruct.new({
         :basepath => c.repository.path,
         :name => c.name,
@@ -1116,6 +1117,28 @@ module Awestruct::Extensions::Repository::Visitors
       })
       c.modules << m
       site.modules[c.type] << m
+    end
+
+    def populate_modules(repository, rev)
+      modules = []
+      rc = repository.client
+      pomrev = repository.client.revparse("#{rev}:#{repository.relative_path}arquillian-universe/pom.xml")
+      pom = REXML::Document.new(rc.cat_file(pomrev))
+      pom.each_element('/project/dependencyManagement/dependencies/*') do |dep_mod|
+        group_id = dep_mod.text('groupId')
+        artifact_id = dep_mod.text('artifactId')
+
+        modrev = repository.client.revparse("#{rev}:#{repository.relative_path}#{artifact_id}/pom.xml")
+        modpom = REXML::Document.new(rc.cat_file(modrev))
+        name = modpom.text("/project/name")
+
+        modules.push OpenStruct.new({
+          :name => name,
+          :groupId => group_id,
+          :artifactId => artifact_id})
+      end
+
+      return modules
     end
   end
 end
