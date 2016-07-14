@@ -22,8 +22,10 @@ require_relative 'asset_fingerprinter'
 #require_relative 'page_debug'
 #require_relative 'fork_me_ribbon'
 
+require 'haml'
+require 'haml/filters/textile'
+require 'compass'
 require 'bootstrap-sass'
-
 Awestruct::Extensions::Pipeline.new do
   # can use engine to tune pipeline per environment by checking profile
   # the convenience methods development? and blogging? are provided

@@ -13,9 +13,11 @@ module Identities
       def crawl(identity)
         hash = identity.gravatar_id
         if hash.nil? or hash.empty?
-          hash = Digest::MD5.new().update(identity.email.downcase).hexdigest 
+          unless identity.email.nil?
+            hash = Digest::MD5.new().update(identity.email.downcase).hexdigest
+          end 
         end
-        if hash.empty? or hash.nil?
+        if hash.nil? || hash.empty?
           puts "No gravatar hash could be found for #{identity.github_id}"
           return
         end

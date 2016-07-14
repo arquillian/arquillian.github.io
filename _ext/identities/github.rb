@@ -14,7 +14,7 @@ module Identities
         if !self.gravatar_id.nil?
           AVATAR_URL_TEMPLATE % [self.gravatar_id, size]
         else
-          FALLBACK_URL_TEMPLATE % size
+          FALLBACK_AVATAR_URL_TEMPLATE % size
         end
       end
     end

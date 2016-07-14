@@ -55,7 +55,6 @@ module Awestruct::Extensions::Releases
             inner_release_page.relative_source_path = inner_release_page.output_path
           end
 
-
           inner_release_page.layout    = 'release'
           inner_release_page.release   = release
           inner_release_page.date      = release.date

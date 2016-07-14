@@ -128,6 +128,7 @@ module Awestruct
 
             # Wrap <div class="header"> around the h2 section
             # If you can do this more efficiently, feel free to improve it
+            puts page_content
             guide_content = guide_root.search('.titlebar').first.parent
             indent = get_indent(get_depth(guide_content) + 2)
             in_header = true
