@@ -160,16 +160,22 @@ end
 class RestJsonConverter
   def initialize(request, cache_dir = 'restcache')
     @parse = 'application/json'.eql? request.headers[:accept]
+    @request = request
   end
 
   def post_process(response)
     if @parse
-      content = response.body
-      # a cached response body will already be parsed
-      if content.is_a? String
-        content = JSON.parse(content)
+      body = response.body      
+      if response.respond_to?(:content)
+        puts "cached?!?!"
+        return response # a cached response body will already be parsed
       end
-      RestClient::Response.create(content, response.net_http_res, response.args)
+      parsedRespone = RestClient::Response.create(body, response.net_http_res, @request)
+      class << parsedRespone
+        attr_accessor :content
+      end
+      parsedRespone.content = JSON.parse(body)  
+      return parsedRespone
     else
       response
     end

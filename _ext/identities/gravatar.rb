@@ -24,11 +24,11 @@ module Identities
         url = API_URL_TEMPLATE % hash
         response = RestClient.get(url, :user_agent => "rest-client") do |rsp, req, res, &blk|
           if rsp.code.eql? 404
-            rsp = RestClient::Response.create('{}', rsp.net_http_res, rsp.args)
+            rsp = RestClient::Response.create('{}', rsp.net_http_res, req)
             rsp.instance_variable_set(:@code, 200)
             rsp
           else
-            rsp.return!(req, res, &blk)
+            rsp.return!(&blk)
           end
         end
 

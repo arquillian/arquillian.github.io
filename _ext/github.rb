@@ -26,7 +26,7 @@ module Awestruct::Extensions::Github
       milestones_data = RestClient.get milestones_url, :accept => 'application/json',
           :cache_key => "github/milestones_project-#{@project_key}.json", :cache_expiry_age => DURATION_1_DAY
 
-      milestones_data.each do |m| 
+      milestones_data.content.each do |m| 
         release_key = m['title']
         release_key = "#{@prefix_version}_#{release_key}" unless @prefix_version.nil?
 
@@ -40,7 +40,7 @@ module Awestruct::Extensions::Github
           :html_url => issues_url,
           :resolved_issues => {}
         })
-        issues_data.each do |e|
+        issues_data.content.each do |e|
           type = 'Other'
           type = e['labels'].first()['name'] if e['labels'] and e['labels'].first
           release_notes.resolved_issues[type] = [] if !release_notes.resolved_issues.has_key? type

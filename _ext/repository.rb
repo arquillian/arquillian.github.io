@@ -177,7 +177,7 @@ module Awestruct
               org_repos_data = RestClient.get org_url, :accept => 'application/json'
               @repositories.each {|r|
                 #repo_data = org_repos_data.select {|c| r.owner == org_name and r.host == 'github.com' and c['name'] == r.path}
-                repo_data = org_repos_data.select {|c| r.clone_url.eql? c['git_url']}
+                repo_data = org_repos_data.content.select {|c| r.clone_url.eql? c['git_url']}
                 if repo_data.size == 1
                   r.desc = repo_data.first['description']
                   r.commits_url = repo_data.first['commits_url']
@@ -245,7 +245,7 @@ module Awestruct
           # use sample commits to get the github_id for each author
           rekeyed_index = {}
           site.git_author_index.each do |email, author|
-            commit_data = RestClient.get(author.sample_commit_url, :accept => 'application/json')
+            commit_data = RestClient.get(author.sample_commit_url, :accept => 'application/json').content
 
             github_id = commit_data['commit']['author']['login']
             unless commit_data['author'].nil?

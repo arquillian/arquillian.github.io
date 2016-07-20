@@ -43,7 +43,7 @@ module Identities
         @repositories.each do |r|
           url = CONTRIBUTORS_URL_TEMPLATE % [ r.owner, r.path ]
           contributors = RestClient.get url, :accept => 'application/json'
-          contributors.each do |acct|
+          contributors.content.each do |acct|
             github_id = acct['login'].downcase
             author = nil
             @match_filters.each do |filter|
@@ -66,7 +66,7 @@ module Identities
             github_id = author.github_id
             puts "Manually adding #{author.name} (#{github_id}) as a contributor"
             url = USER_URL_TEMPLATE % [ github_id ]
-            user = RestClient.get url, :accept => 'application/json'
+            user = RestClient.get(url, :accept => 'application/json').content
             identity = identities.lookup_by_github_id(github_id, true)
             github_acct_to_identity(user, author, identity)
           end
@@ -76,7 +76,7 @@ module Identities
           @teams.each do |team|
             url = TEAM_MEMBERS_URL_TEMPLATE % team[:id]
             members = RestClient.get(url, :accept => 'application/json') 
-            members.each do |m|
+            members.content.each do |m|
               github_id = m['login']
               identity = identities.lookup_by_github_id(github_id)
               # identity should not be null, mostly for testing
@@ -175,7 +175,7 @@ module Identities
           return
         end
 
-        data = RestClient.get url, :accept => 'application/json'
+        data = RestClient.get(url, :accept => 'application/json').content
         identity.github_id = data['login'].downcase
         identity.username = identity.github_id
         identity.github = OpenStruct.new if identity.github.nil?

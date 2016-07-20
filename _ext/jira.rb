@@ -27,7 +27,7 @@ module Awestruct::Extensions::Jira
       url = @base_url + (PROJECT_PATH_TEMPLATE % @project_key)
       project_data = RestClient.get url, :accept => 'application/json',
           :cache_key => "jira/project-#{@project_key}.json", :cache_expiry_age => DURATION_1_DAY
-      project_data['versions'].each do |v|
+      project_data.content['versions'].each do |v|
         next if !v['released']
         release_key = v['name']
         release_key = "#{@prefix_version}_#{release_key}" unless @prefix_version.nil?
@@ -65,9 +65,9 @@ module Awestruct::Extensions::Jira
       url = @base_url + (COMPONENTS_PATH_TEMPLATE % @project_key)
       components = RestClient.get url, :accept => 'application/json',
           :cache_key => "jira/components-#{@project_key}.json"
-      components.each do |c|
-        component_data = RestClient.get c['self'], :accept => 'application/json',
-            :cache_key => "jira/component-#{@project_key}-#{c['id']}.json"
+      components.content.each do |c|
+        component_data = RestClient.get(c['self'], :accept => 'application/json',
+            :cache_key => "jira/component-#{@project_key}-#{c['id']}.json").content
         if component_data.has_key? 'lead' and component_data['description'] =~ / :: ([^ ]+)$/
           site.component_leads[$1] = OpenStruct.new({
             :name => component_data['lead']['displayName'],

@@ -7,7 +7,7 @@ def getOrCache(tmp_file, url)
       when 404
           response
       else
-        response.return!(request, result, &block)
+        response.return!(&block)
       end
     }.body;
     File.open(tmp_file, 'w') do |out|
@@ -28,7 +28,7 @@ def getOrCacheJSON(tmp_file, json_url)
       when 404
           response
       else
-        response.return!(request, result, &block)
+        response.return!(&block)
       end
     }.body;
     if (response_body.match(/^(\{|\[)/))

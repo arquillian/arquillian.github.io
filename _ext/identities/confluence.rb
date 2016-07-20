@@ -38,7 +38,7 @@ module Identities
           queries << search
           cleansed_query = search.gsub(' ', '-')
           url = File.join(@base_url, SEARCH_PATH) + '?query=' + URI.encode(search)
-          data = RestClient.get(url, :cache_key => "confluence/query-#{cleansed_query}.json", :accept => 'application/json')
+          data = RestClient.get(url, :cache_key => "confluence/query-#{cleansed_query}.json", :accept => 'application/json').content
           if data['totalSize'].to_i == 0
             #puts "No results, advancing confluence user crawler to next query string for #{search}"
             data = nil
@@ -70,7 +70,7 @@ module Identities
         get_session_cookie()
         if @session_cookie
           profile = RestClient.get(url, :cache_key => "confluence/user-#{username}.html", :cookie => @session_cookie)
-          if profile.match(/ id="email".*?>(.+?)</)
+          if profile.body.match(/ id="email".*?>(.+?)</)
             replace = {' dot ' => '.', ' at ' => '@'}
             email = $1.gsub(/ (dot|at) /) {|m| replace[m]}
             identity.email = email if identity.email.nil?
