@@ -129,7 +129,7 @@ class RestGetCache
   end
 
   def execute(response)
-    if response.nil? and @cache and @request.method.eql? :get
+    if response.nil? and @cache and @request.method.eql? 'get'
       # read cache file if it exists and either (no expiry age is specified or the cache file is newer than now - age)
       if File.exist? @cache_file and (@cache_expiry_age.nil? or File.mtime(@cache_file) >= (Time.now - @cache_expiry_age))
         body = File.read(@cache_file)
@@ -142,7 +142,7 @@ class RestGetCache
   end
 
   def cache_miss(response) 
-    if response.code == 200 and @cache and @request.method.eql? :get and
+    if response.code == 200 and @cache and @request.method.eql? 'get' and
         @redirects.eql? @request.headers[:redirects] and !response.body.empty?
       puts "Cache miss because #{@cache_file} is missing or expired"
       FileUtils.mkdir_p(File.dirname @cache_file)
