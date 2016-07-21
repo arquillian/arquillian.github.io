@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 # Need to set the encoding on char regex constants in Ruby 1.9
 if RUBY_VERSION >= "1.9"
   module Vpim

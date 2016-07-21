@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 # FIXME we need a patched atomizer to carry over our custom fields (release & component)
 module Awestruct
   module Extensions

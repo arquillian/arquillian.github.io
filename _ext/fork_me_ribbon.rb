@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 module Awestruct
   module Extensions
     module ForkMeRibbon

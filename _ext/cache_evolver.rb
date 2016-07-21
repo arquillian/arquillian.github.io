@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 module Awestruct::Extensions::CacheEvolver
   def evolve_cache(output_path)
     if site.evolvecache

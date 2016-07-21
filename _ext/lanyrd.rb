@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 require 'ri_cal'
 require 'tzinfo'
 require 'nokogiri'

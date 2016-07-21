@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 module Identities
   module JBossCommunity
     class Crawler

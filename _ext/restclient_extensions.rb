@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 require 'restclient'
 require 'time'
 require 'uri'
@@ -146,11 +147,15 @@ class RestGetCache
         @redirects.eql? @request.headers[:redirects] and !response.body.empty?
       puts "Cache miss because #{@cache_file} is missing or expired"
       FileUtils.mkdir_p(File.dirname @cache_file)
-      File.open(@cache_file, 'w') do |out|
-        out.write response.body
+      begin
+        File.open(@cache_file, 'w:UTF-8') do |out|
+          out.write response.body.encode!('UTF-16', 'UTF-8', :invalid => :replace, :replace => '')
+        end
+      rescue
+        puts ">>> Failed writing file for #{response.body} [#{@request.url}]"
       end
       #puts "Headers #{response.headers[:link].class}"
-      File.open("#{@cache_file}.headers", 'w') do |out|
+      File.open("#{@cache_file}.headers", 'w:UTF-8') do |out|
         out.write response.headers.inject({}) {|collector, (k,v)| collector[k] = v; collector}.to_json
       end
     end
@@ -167,7 +172,6 @@ class RestJsonConverter
     if @parse
       body = response.body      
       if response.respond_to?(:content)
-        puts "cached?!?!"
         return response # a cached response body will already be parsed
       end
       parsedRespone = RestClient::Response.create(body, response.net_http_res, @request)

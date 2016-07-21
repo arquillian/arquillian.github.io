@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 require_relative '../_ext/lanyrd.rb'
 require 'ostruct'
 require 'awestruct/util/inflector'

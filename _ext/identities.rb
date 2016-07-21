@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 require 'json'
 require_relative 'restclient_extensions'
 require_relative 'identities/github'
@@ -200,7 +201,7 @@ module Awestruct::Extensions::Identities
     def execute(site)
       data_file = File.join(site.tmp_dir, 'datacache', 'identities.yml')
       FileUtils.mkdir_p File.dirname data_file
-      File.open(data_file, 'w') do |out|
+      File.open(data_file, 'w:UTF-8') do |out|
         YAML.dump site.identities, out
       end
     end

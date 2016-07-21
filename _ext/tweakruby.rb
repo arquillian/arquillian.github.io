@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 module Kernel
   def require_relative(path)
     require File.join(File.dirname(caller.first), path.to_s)

@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 def getOrCache(tmp_file, url)
   response_body = ""
   if !File.exist?tmp_file
@@ -10,7 +11,7 @@ def getOrCache(tmp_file, url)
         response.return!(&block)
       end
     }.body;
-    File.open(tmp_file, 'w') do |out|
+    File.open(tmp_file, 'w:UTF-8') do |out|
       out.write response_body
     end
   else
@@ -34,7 +35,7 @@ def getOrCacheJSON(tmp_file, json_url)
     if (response_body.match(/^(\{|\[)/))
       json = JSON.parse response_body
     end
-    File.open(tmp_file, 'w') do |out|
+    File.open(tmp_file, 'w:UTF-8') do |out|
       out.write JSON.pretty_generate json
     end
   else

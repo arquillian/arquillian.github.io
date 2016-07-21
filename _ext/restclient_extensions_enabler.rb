@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 require_relative 'restclient_extensions'
 
 module Awestruct::Extensions::RestClientExtensions

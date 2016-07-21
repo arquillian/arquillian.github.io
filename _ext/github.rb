@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 module Awestruct::Extensions::Github
   DEFAULT_BASE_URL = 'https://api.github.com'
 

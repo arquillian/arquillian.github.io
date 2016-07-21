@@ -1,3 +1,5 @@
+# -*- encoding : utf-8 -*-
+
 module Identities
   module GitHub
     CONTRIBUTORS_URL_TEMPLATE = 'https://api.github.com/repos/%s/%s/contributors'

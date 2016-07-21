@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 module Awestruct::Extensions
   # this could be made extensible, for now we are just adding the non-release
   # tag to entries that don't have the release tag

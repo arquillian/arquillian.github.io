@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 require_relative 'restclient_extensions'
 require 'rexml/document'
 require 'uri'
@@ -223,7 +224,7 @@ module Awestruct
 
               if @use_data_cache
                 FileUtils.mkdir_p File.dirname repo_cache_file
-                File.open(repo_cache_file, 'w') do |out|
+                File.open(repo_cache_file, 'w:UTF-8') do |out|
                   site.components.each_pair {|k, c| c.repository.delete_field('client') }
                   YAML.dump([site.components, site.modules], out)
                 end
@@ -312,6 +313,7 @@ module Awestruct
               rekeyed_index.delete id
               puts "Merged #{unmatched_name} <#{unmatched_email}> with matched github id #{match.github_id} based on name"
             else
+              # TODO This should be logged to its own file - for manual data correction
               puts "Could not resolve github id for author #{unmatched_name} <#{unmatched_email}>"
             end
           end
@@ -327,7 +329,7 @@ module Awestruct
 
         def generate_pages(site)
           site.modules.each_pair {|t, modules|
-            modules.each {|m|
+            modules.each { |m|
               module_page_basepath = m.basepath + '-' + t.dasherize
               if !site.engine.nil?
                 module_page = site.engine.load_site_page('modules/_module.html.haml')

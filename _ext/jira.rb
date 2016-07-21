@@ -1,3 +1,5 @@
+# -*- encoding : utf-8 -*-
+
 module Awestruct::Extensions::Jira
   DEFAULT_BASE_URL = 'https://issues.jboss.org'
 
