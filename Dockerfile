@@ -1,4 +1,4 @@
-FROM fedora:latest
+FROM fedora:24
 
 RUN dnf -y update && dnf clean all
 RUN dnf -y install \
@@ -49,7 +49,7 @@ ENV AWESTRUCT_COMMIT a014121
 # Fix encoding
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
-ENV LANGUAGE=en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
 
 WORKDIR $HOME
 
