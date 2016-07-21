@@ -26,27 +26,27 @@ module Awestruct
             cache_key = "ohloh/enlistments-#{@ohloh_project_id}-#{page}.xml"
             # expire after 3 days
             doc = REXML::Document.new RestClient.get url, :accept => 'application/xml',
-                :cache_key => cache_key, :cache_expiry_age => 86400 * 3
+                                                     :cache_key => cache_key, :cache_expiry_age => 86400 * 3
             doc.each_element('/response/result/enlistment/repository/url') do |e|
-              git_url = e.text  
+              git_url = e.text
               path = File.basename(git_url.split('/').last, '.git')
               repository = OpenStruct.new({
-                :path => path,
-                :relative_path => '',
-                :desc => nil,
-                :owner => git_url.split('/').last(2).first,
-                :host => URI(git_url).host,
-                :type => 'git',
-                :html_url => git_url.chomp('.git').sub('git://', 'https://'),
-                :clone_url => git_url
-              })
+                                              :path => path,
+                                              :relative_path => '',
+                                              :desc => nil,
+                                              :owner => git_url.split('/').last(2).first,
+                                              :host => URI(git_url).host,
+                                              :type => 'git',
+                                              :html_url => git_url.chomp('.git').sub('git://', 'https://'),
+                                              :clone_url => git_url
+                                          })
               @repositories << repository
             end
 
             offset = doc.root.elements['first_item_position'].text.to_i
             returned = doc.root.elements['items_returned'].text.to_i
             available = doc.root.elements['items_available'].text.to_i
-            
+
             if offset + returned < available
               page += 1
             else
@@ -55,114 +55,114 @@ module Awestruct
           end
 
           @repositories << OpenStruct.new(
-            :path => 'arquillian-universe-bom',
-            :desc => nil,
-            :relative_path => '',
-            :owner => 'arquillian',
-            :host => 'github.com',
-            :type => 'git',
-            :commits_url => 'https://api.github.com/repos/arquillian/arquillian-universe-bom/commits{/sha}',
-            :html_url => 'https://github.com/arquillian/arquillian-universe-bom',
-            :clone_url => 'git://github.com/arquillian/arquillian-universe-bom.git'
+              :path => 'arquillian-universe-bom',
+              :desc => nil,
+              :relative_path => '',
+              :owner => 'arquillian',
+              :host => 'github.com',
+              :type => 'git',
+              :commits_url => 'https://api.github.com/repos/arquillian/arquillian-universe-bom/commits{/sha}',
+              :html_url => 'https://github.com/arquillian/arquillian-universe-bom',
+              :clone_url => 'git://github.com/arquillian/arquillian-universe-bom.git'
           )
           @repositories << OpenStruct.new(
-            :path => 'shrinkwrap',
-            :desc => nil,
-            :relative_path => '',
-            :owner => 'shrinkwrap',
-            :host => 'github.com',
-            :type => 'git',
-            :commits_url => 'https://api.github.com/repos/shrinkwrap/shrinkwrap/commits{/sha}',
-            :html_url => 'https://github.com/shrinkwrap/shrinkwrap',
-            :clone_url => 'git://github.com/shrinkwrap/shrinkwrap.git'
+              :path => 'shrinkwrap',
+              :desc => nil,
+              :relative_path => '',
+              :owner => 'shrinkwrap',
+              :host => 'github.com',
+              :type => 'git',
+              :commits_url => 'https://api.github.com/repos/shrinkwrap/shrinkwrap/commits{/sha}',
+              :html_url => 'https://github.com/shrinkwrap/shrinkwrap',
+              :clone_url => 'git://github.com/shrinkwrap/shrinkwrap.git'
           )
           @repositories << OpenStruct.new(
-            :path => 'resolver',
-            :desc => nil,
-            :relative_path => '',
-            :owner => 'shrinkwrap',
-            :host => 'github.com',
-            :type => 'git',
-            :commits_url => 'https://api.github.com/repos/shrinkwrap/resolver/commits{/sha}',
-            :html_url => 'https://github.com/shrinkwrap/resolver',
-            :clone_url => 'git://github.com/shrinkwrap/resolver.git'
+              :path => 'resolver',
+              :desc => nil,
+              :relative_path => '',
+              :owner => 'shrinkwrap',
+              :host => 'github.com',
+              :type => 'git',
+              :commits_url => 'https://api.github.com/repos/shrinkwrap/resolver/commits{/sha}',
+              :html_url => 'https://github.com/shrinkwrap/resolver',
+              :clone_url => 'git://github.com/shrinkwrap/resolver.git'
           )
           @repositories << OpenStruct.new(
-            :path => 'descriptors',
-            :desc => nil,
-            :relative_path => '',
-            :owner => 'shrinkwrap',
-            :host => 'github.com',
-            :type => 'git',
-            :commits_url => 'https://api.github.com/repos/shrinkwrap/descriptors/commits{/sha}',
-            :html_url => 'https://github.com/shrinkwrap/descriptors',
-            :clone_url => 'git://github.com/shrinkwrap/descriptors.git'
+              :path => 'descriptors',
+              :desc => nil,
+              :relative_path => '',
+              :owner => 'shrinkwrap',
+              :host => 'github.com',
+              :type => 'git',
+              :commits_url => 'https://api.github.com/repos/shrinkwrap/descriptors/commits{/sha}',
+              :html_url => 'https://github.com/shrinkwrap/descriptors',
+              :clone_url => 'git://github.com/shrinkwrap/descriptors.git'
           )
           @repositories << OpenStruct.new(
-            :path => 'descriptors-docker',
-            :desc => nil,
-            :relative_path => '',
-            :owner => 'shrinkwrap',
-            :host => 'github.com',
-            :type => 'git',
-            :commits_url => 'https://api.github.com/repos/shrinkwrap/descriptors-docker/commits{/sha}',
-            :html_url => 'https://github.com/shrinkwrap/descriptors-docker',
-            :clone_url => 'git://github.com/shrinkwrap/descriptors-docker.git'
+              :path => 'descriptors-docker',
+              :desc => nil,
+              :relative_path => '',
+              :owner => 'shrinkwrap',
+              :host => 'github.com',
+              :type => 'git',
+              :commits_url => 'https://api.github.com/repos/shrinkwrap/descriptors-docker/commits{/sha}',
+              :html_url => 'https://github.com/shrinkwrap/descriptors-docker',
+              :clone_url => 'git://github.com/shrinkwrap/descriptors-docker.git'
           )
           @repositories << OpenStruct.new(
-            :path => 'shrinkwrap-osgi',
-            :desc => nil,
-            :relative_path => '',
-            :owner => 'shrinkwrap',
-            :host => 'github.com',
-            :type => 'git',
-            :commits_url => 'https://api.github.com/repos/shrinkwrap/shrinkwrap-osgi/commits{/sha}',
-            :html_url => 'https://github.com/shrinkwrap/shrinkwrap-osgi',
-            :clone_url => 'git://github.com/shrinkwrap/shrinkwrap-osgi.git'
-          )
-
-          @repositories << OpenStruct.new(
-            :path => 'wildfly-arquillian',
-            :desc => nil,
-            :relative_path => '',
-            :owner => 'wildfly',
-            :host => 'github.com',
-            :type => 'git',
-            :html_url => 'https://github.com/wildfly/wildfly-arquillian',
-            :clone_url => 'git://github.com/wildfly/wildfly-arquillian.git'
+              :path => 'shrinkwrap-osgi',
+              :desc => nil,
+              :relative_path => '',
+              :owner => 'shrinkwrap',
+              :host => 'github.com',
+              :type => 'git',
+              :commits_url => 'https://api.github.com/repos/shrinkwrap/shrinkwrap-osgi/commits{/sha}',
+              :html_url => 'https://github.com/shrinkwrap/shrinkwrap-osgi',
+              :clone_url => 'git://github.com/shrinkwrap/shrinkwrap-osgi.git'
           )
 
           @repositories << OpenStruct.new(
-            :path => 'tomee',
-            :desc => nil,
-            :relative_path => 'arquillian/',
-            :owner => 'apache',
-            :host => 'github.com',
-            :type => 'git',
-            :html_url => 'https://github.com/apache/tomee',
-            :clone_url => 'git://github.com/apache/tomee.git'
+              :path => 'wildfly-arquillian',
+              :desc => nil,
+              :relative_path => '',
+              :owner => 'wildfly',
+              :host => 'github.com',
+              :type => 'git',
+              :html_url => 'https://github.com/wildfly/wildfly-arquillian',
+              :clone_url => 'git://github.com/wildfly/wildfly-arquillian.git'
           )
 
           @repositories << OpenStruct.new(
-            :path => 'jsfunit',
-            :desc => nil,
-            :relative_path => 'jboss-jsfunit-arquillian/',
-            :owner => 'jsfunit',
-            :host => 'github.com',
-            :type => 'git',
-            :html_url => 'https://github.com/jsfunit/jsfunit',
-            :clone_url => 'git://github.com/jsfunit/jsfunit.git'
+              :path => 'tomee',
+              :desc => nil,
+              :relative_path => 'arquillian/',
+              :owner => 'apache',
+              :host => 'github.com',
+              :type => 'git',
+              :html_url => 'https://github.com/apache/tomee',
+              :clone_url => 'git://github.com/apache/tomee.git'
           )
 
           @repositories << OpenStruct.new(
-            :path => 'plugin-arquillian',
-            :desc => nil,
-            :relative_path => '',
-            :owner => 'forge',
-            :host => 'github.com',
-            :type => 'git',
-            :html_url => 'https://github.com/forge/plugin-arquillian',
-            :clone_url => 'git://github.com/forge/plugin-arquillian.git'
+              :path => 'jsfunit',
+              :desc => nil,
+              :relative_path => 'jboss-jsfunit-arquillian/',
+              :owner => 'jsfunit',
+              :host => 'github.com',
+              :type => 'git',
+              :html_url => 'https://github.com/jsfunit/jsfunit',
+              :clone_url => 'git://github.com/jsfunit/jsfunit.git'
+          )
+
+          @repositories << OpenStruct.new(
+              :path => 'plugin-arquillian',
+              :desc => nil,
+              :relative_path => '',
+              :owner => 'forge',
+              :host => 'github.com',
+              :type => 'git',
+              :html_url => 'https://github.com/forge/plugin-arquillian',
+              :clone_url => 'git://github.com/forge/plugin-arquillian.git'
           )
 
           @repositories.sort! {|a,b| a.path <=> b.path }
@@ -313,7 +313,6 @@ module Awestruct
               rekeyed_index.delete id
               puts "Merged #{unmatched_name} <#{unmatched_email}> with matched github id #{match.github_id} based on name"
             else
-              # TODO This should be logged to its own file - for manual data correction
               puts "Could not resolve github id for author #{unmatched_name} <#{unmatched_email}>"
             end
           end

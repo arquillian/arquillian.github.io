@@ -1,4 +1,6 @@
 # -*- encoding : utf-8 -*-
+require 'parallel'
+
 module Awestruct::Extensions::Github
   DEFAULT_BASE_URL = 'https://api.github.com'
 
@@ -27,7 +29,7 @@ module Awestruct::Extensions::Github
       milestones_data = RestClient.get milestones_url, :accept => 'application/json',
           :cache_key => "github/milestones_project-#{@project_key}.json", :cache_expiry_age => DURATION_1_DAY
 
-      milestones_data.content.each do |m| 
+      Parallel.each(milestones_data.content, progress: "Fetching milestones of [#{milestones_url}] ") { |m| 
         release_key = m['title']
         release_key = "#{@prefix_version}_#{release_key}" unless @prefix_version.nil?
 
@@ -49,7 +51,7 @@ module Awestruct::Extensions::Github
         end
 
         site.release_notes[release_key] = release_notes
-      end
+      }
 
     end
   end

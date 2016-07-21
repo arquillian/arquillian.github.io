@@ -23,7 +23,7 @@ module Identities
           return
         end
         url = API_URL_TEMPLATE % hash
-        response = RestClient.get(url, :user_agent => "rest-client") do |rsp, req, res, &blk|
+        response = RestClient.get(url, :user_agent => "rest-client", :accept => 'application/json') do |rsp, req, res, &blk|
           if rsp.code.eql? 404
             rsp = RestClient::Response.create('{}', rsp.net_http_res, req)
             rsp.instance_variable_set(:@code, 200)
@@ -33,7 +33,7 @@ module Identities
           end
         end
 
-        data = JSON.parse response
+        data = response.content
         if data.empty?
           return
         end

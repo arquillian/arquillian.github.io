@@ -147,7 +147,7 @@ class RestGetCache
     response
   end
 
-  def cache_miss(response) 
+  def cache_miss(response)
     if response.code == 200 and @cache and @request.method.eql? 'get' and
         @redirects.eql? @request.headers[:redirects] and !response.body.empty?
       puts "Cache miss because #{@cache_file} is missing or expired"

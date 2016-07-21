@@ -3,6 +3,7 @@ require 'ri_cal'
 require 'tzinfo'
 require 'nokogiri'
 require 'rest-client'
+require 'parallel'
 require_relative 'common.rb'
 ##
 # Lanyrd is an Awestruct extension module for interacting with lanyrd.com
@@ -60,19 +61,24 @@ module Awestruct
       # context=future only works for conferences atm...waiting for session search support
       search_url = "#{@base}/search/?type=session&q=#{@term}"
       
-      sessions = []
+      sessions = Hamster::Set.new
       
-      pages = []
-      
-      page1 = Nokogiri::HTML(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-1.html"), search_url))
-      pages << page1
+      pages = Hamster::Set.new
+      begin 
+        page1 = Nokogiri::HTML(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-1.html"), search_url))
+      rescue => e
+        puts e
+        site.sessions = []
+        return
+      end
+      pages = pages << page1
       
       extract_pages(page1, pages, search_url)
-      pages.each do |page|
+      Parallel.each(pages, progress: "Extracting sessions details from Lanyrd" ) do |page|
         extract_sessions(page, sessions)
       end
-      
-      site.sessions = sessions.sort_by{|session| session.start_datetime}
+      sessions = sessions.sort_by{|session| session.start_datetime}
+      site.sessions = sessions.size.times.map { |i| session.at(i) }
     end
     
     # Find all Pages in a 'root' Page
@@ -83,11 +89,11 @@ module Awestruct
       root.css('div[@class*=pagination]').each do |p|
         last_page_index = Integer(p.search('li').last.at('a').inner_text) +1
       end
-      for index in 2...last_page_index
+      Parallel.each(2...last_page_index, progress: "Fetching Arquillian sessions from Lanyrd") { |index|
         pageinated_url = "#{search_url}&page=#{index}"
         pageX = Nokogiri::HTML(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-#{index}.html"), pageinated_url))
         pages << pageX
-      end
+      }
     end
     
     # Find all sessions in Page
@@ -166,7 +172,7 @@ module Awestruct
             session.speakers << {'name' => name, 'username' => username }
           end
           
-          sessions << session
+          sessions = sessions << session
         end
       end
     end

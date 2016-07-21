@@ -1,4 +1,5 @@
 # -*- encoding : utf-8 -*-
+require 'parallel'
 
 module Identities
   module GitHub
@@ -35,17 +36,17 @@ module Identities
 
       def add_match_filter(match_filter)
         @match_filters << match_filter
-        #File.open('/tmp/committers.yml', 'w') do |out|
+        #File.open('/tmp/committers.yml', 'w:UTF-8') do |out|
         #  YAML.dump(match_filter, out)
         #end
       end
 
       def collect(identities)
-        visited = []
-        @repositories.each do |r|
+        visited = Parallel.each(@repositories, progress:
+            'Processing contributors from GitHub') { |r|
           url = CONTRIBUTORS_URL_TEMPLATE % [ r.owner, r.path ]
           contributors = RestClient.get url, :accept => 'application/json'
-          contributors.content.each do |acct|
+          contributors.content.each { |acct|
             github_id = acct['login'].downcase
             author = nil
             @match_filters.each do |filter|
@@ -58,9 +59,9 @@ module Identities
             end
             identity = identities.lookup_by_github_id(github_id, true)
             github_acct_to_identity(acct, author, identity)
-            visited << github_id
-          end
-        end
+            github_id
+          }
+        }.flatten
 
         # github doesn't keep perfect records of contributors, so handle those omitted contributors
         @match_filters.each do |filter|

@@ -29,26 +29,30 @@
 
 source 'https://rubygems.org'
 
-#gem "awestruct", "0.5.7"
-gem "awestruct", :path => '../awestruct'
-#gem "awestruct", :git => 'git@github.com:awestruct/awestruct.git'
+#gem 'awestruct', '0.5.7'
+gem 'awestruct', :path => '../awestruct'
+#gem 'awestruct', :git => 'git@github.com:awestruct/awestruct.git'
+gem 'git', '1.2.9.1' # newer version incorrectly reads UTF-8 enconded commits (authors for example)
 gem 'asciidoctor'
 gem 'haml-contrib'
 gem 'bootstrap-sass', '< 3.0'
-gem "puma"
-gem "rest-client", ">= 2.0.0"
-gem "hpricot"
-gem "RedCloth"
-gem "redcarpet"
-gem "coffee-script"
-gem "uglifier"
-gem "htmlcompressor"
-gem "compass", "0.12.7"
-gem "ri_cal", "0.8.8"
-gem "tzinfo", "0.3.33"
-gem "therubyracer", "0.11.3"
-gem "jruby-openssl", "0.7.7", :platforms => :jruby
-gem "rb-inotify", :platforms => [:ruby, :jruby]
-gem "versionomy"
+gem 'puma'
+gem 'rest-client', '>= 2.0.0'
+gem 'hpricot'
+gem 'RedCloth'
+gem 'redcarpet'
+gem 'coffee-script'
+gem 'uglifier'
+
+gem 'htmlcompressor'
+gem 'compass', '0.12.7'
+gem 'ri_cal', '0.8.8'
+gem 'tzinfo', '0.3.33'
+gem 'therubyracer', '0.11.3'
+gem 'jruby-openssl', '0.7.7', :platforms => :jruby
+gem 'rb-inotify', :platforms => [:ruby, :jruby]
+gem 'versionomy'
 gem 'rspec', '>= 2.9'
-gem "nokogiri", "1.6.8"
+gem 'nokogiri', '1.6.8'
+gem 'ruby-progressbar'
+gem 'parallel'
