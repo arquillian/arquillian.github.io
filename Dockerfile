@@ -1,4 +1,7 @@
 FROM fedora:24
+MAINTAINER Bartosz Majsak <bartosz@redhat.com>
+
+LABEL Description="This is image provides a build tool chain for arquillian.org website. Follow the README from the repository for details"
 
 RUN dnf -y update && dnf clean all
 RUN dnf -y install \
@@ -28,12 +31,13 @@ RUN dnf -y install \
   zlib-devel \
 && dnf clean all
 
-
 RUN groupadd -r dev && useradd  -g dev -u 1000 dev
 RUN mkdir -p /home/dev
 RUN chown dev:dev /home/dev
 
 USER dev
+
+# Environment variables
 
 ENV HOME /home/dev
 ENV RUBY_VERSION 2.3.1
