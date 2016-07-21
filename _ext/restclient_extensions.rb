@@ -136,7 +136,12 @@ class RestGetCache
         body = File.read(@cache_file)
         headers = {}
         headers = JSON.parse(File.read("#{@cache_file}.headers")) if File.exist? "#{@cache_file}.headers"
-        return RestClient::Response.create(body, RestClient::MockNetHTTPResponse.new(body, 200, headers), @request.args)
+        cachedResponse = RestClient::Response.create(body.to_json, RestClient::MockNetHTTPResponse.new(body, 200, headers), @request)
+        class << cachedResponse
+          attr_accessor :content
+        end
+        cachedResponse.content = if 'application/json'.eql? @request.headers[:accept] then JSON.parse(body) else body end;
+        return cachedResponse
       end
     end
     response
