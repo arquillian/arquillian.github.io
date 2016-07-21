@@ -81,7 +81,7 @@ module Awestruct::Extensions::Repository::Visitors
       clone_dir = File.join(repos_dir, repository.path)
       rc = nil
       if !File.directory? clone_dir
-        puts "Cloning repository #{repository.clone_url} -> #{clone_dir}"
+        # puts "Cloning repository #{repository.clone_url} -> #{clone_dir}"
         rc = Git.clone(repository.clone_url, clone_dir)
         if repository.master_branch.nil?
           rc.checkout(repository.master_branch)
@@ -89,7 +89,7 @@ module Awestruct::Extensions::Repository::Visitors
           repository.master_branch = rc.current_branch
         end
       else
-        puts "Using cloned repository #{clone_dir}"
+        # puts "Using cloned repository #{clone_dir}"
         rc = Git.open(clone_dir)
         master_branch = repository.master_branch
         if master_branch.nil?

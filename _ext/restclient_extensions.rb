@@ -46,7 +46,7 @@ module RestClient
       end
 
       if response.nil?
-        puts 'Fetching ' + self.url
+        # puts 'Fetching ' + self.url
         response = _execute &block
         instances.each do |instance|
           instance.cache_miss(response) if instance.respond_to? 'cache_miss'
@@ -150,7 +150,7 @@ class RestGetCache
   def cache_miss(response)
     if response.code == 200 and @cache and @request.method.eql? 'get' and
         @redirects.eql? @request.headers[:redirects] and !response.body.empty?
-      puts "Cache miss because #{@cache_file} is missing or expired"
+      # puts "Cache miss because #{@cache_file} is missing or expired"
       FileUtils.mkdir_p(File.dirname @cache_file)
       begin
         File.open(@cache_file, 'w:UTF-8') do |out|

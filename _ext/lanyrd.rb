@@ -67,6 +67,7 @@ module Awestruct
       begin 
         page1 = Nokogiri::HTML(getOrCache(File.join(@lanyrd_tmp, "search-#{@term}-1.html"), search_url))
       rescue => e
+        # In case lanyrd is down... which is not that rare
         puts e
         site.sessions = []
         return

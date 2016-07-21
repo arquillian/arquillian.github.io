@@ -1,8 +1,9 @@
 # -*- encoding : utf-8 -*-
+
 def getOrCache(tmp_file, url)
   response_body = ""
   if !File.exist?tmp_file
-    puts url
+    # puts url
     response_body = RestClient.get(url, :cache => false) { |response, request, result, &block|
       case response.code
       when 404
@@ -23,7 +24,7 @@ end
 def getOrCacheJSON(tmp_file, json_url)
   json = {}
   if !File.exist?tmp_file
-    puts 'Grabbing ' + json_url
+    # puts 'Grabbing ' + json_url
     response_body = RestClient.get(json_url, :cache => false, :accept => 'application/json') { |response, request, result, &block|
       case response.code
       when 404
@@ -42,7 +43,7 @@ def getOrCacheJSON(tmp_file, json_url)
     begin
       json = JSON.parse File.read(tmp_file)
     rescue => e
-      puts 'Could not parse JSON file ' + tmp_file + '; ' + e
+      # puts 'Could not parse JSON file ' + tmp_file + '; ' + e
       json = {}
     end
   end

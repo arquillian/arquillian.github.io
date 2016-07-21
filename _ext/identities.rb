@@ -82,7 +82,7 @@ module Awestruct::Extensions::Identities
         # identity = lookup_by_name(contributor.name) if identity.nil?
         if identity.nil?
           # Indication that we have a mismatched account          
-          puts "Could not find contributor with e-mail " + contributor.email
+          # puts "Could not find contributor with e-mail " + contributor.email
         end
         identity
       end
@@ -91,7 +91,7 @@ module Awestruct::Extensions::Identities
         identity = self.find {|e| e.contributor and e.contributor.emails and e.contributor.emails.include? email }
         if identity.nil?
           # Indication that we have a mismatched account
-          puts "Could not find contributor with e-mail " + email
+          # puts "Could not find contributor with e-mail " + email
         end
         identity
       end
