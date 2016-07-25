@@ -676,6 +676,7 @@ module Awestruct::Extensions::Repository::Visitors
       begin
         repository.client.revparse "#{parent_path}pom.xml"
       rescue
+        puts "Unable to resolve published artifacts for #{release.tag}:#{repository.relative_path}"
         return
       end
 

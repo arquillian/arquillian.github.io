@@ -1,8 +1,21 @@
 # -*- encoding : utf-8 -*-
 require 'digest/md5'
+require 'yaml'
 
 module Identities
   module Gravatar
+
+    @lanyrd_mappings
+
+    def self.load
+      lanyrd_mapping_yml = File.join(File.dirname(__FILE__), './lanyrd_mapping.yml')
+      YAML.load_file(lanyrd_mapping_yml) || {}
+    end
+
+    def self.correct_lanyrd_id(twitter_handle)
+      @lanyrd_mappings = load() if @lanyrd_mappings.nil?
+      @lanyrd_mappings[twitter_handle] || twitter_handle
+    end
 
     class Crawler
       API_URL_TEMPLATE = 'http://en.gravatar.com/%s.json'
@@ -96,9 +109,10 @@ module Identities
 
         # QUESTION do we need the speaker flag check?
         if identity.speaker and !identity.twitter.nil? and identity.lanyrd.nil?
+          correct_lanyrd_id = Gravatar::correct_lanyrd_id(identity.twitter.username)
           identity.lanyrd = OpenStruct.new({
-            :username => identity.twitter.username,
-            :profile_url => LANYRD_PROFILE_URL_TEMPLATE % identity.twitter.username
+            :username => correct_lanyrd_id,
+            :profile_url => LANYRD_PROFILE_URL_TEMPLATE % correct_lanyrd_id
           })
         end
 

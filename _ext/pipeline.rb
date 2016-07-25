@@ -62,6 +62,7 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-extension-liferay', 'liferay')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-container-wls', 'wls')
   extension Awestruct::Extensions::Repository::Collector.new(480465, 'd4a1e23d6ac12e6a11767d2a5521e2698e3ebd0e0262acbed3331b4ff79ffe0a', :observers => [github_collector])
+  extension Awestruct::Extensions::Modules::Page.new()
   extension Awestruct::Extensions::Identities::Collect.new(github_collector)
   extension Awestruct::Extensions::Identities::Crawl.new(
     Identities::GitHub::Crawler.new,
@@ -99,8 +100,6 @@ Awestruct::Extensions::Pipeline.new do
 
   # Must be after all other extensions that might populate identities
   extension Awestruct::Extensions::Identities::Cache.new
-
-  extension Awestruct::Extensions::Modules::Page.new()
 
   # Transformers
   transformer Awestruct::Extensions::Minify.new([:js])
