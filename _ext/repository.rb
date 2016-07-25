@@ -321,34 +321,8 @@ module Awestruct
             o.add_match_filter(rekeyed_index) if o.respond_to? 'add_match_filter'
           end
 
-          ## TEMPORARY! -> turn this into a post processor
-          generate_pages(site)
-          ## TEMPORARY!
         end
 
-        def generate_pages(site)
-          site.modules.each_pair {|t, modules|
-            modules.each {|m|
-              module_page_basepath = m.basepath + '-' + t.dasherize
-              if !site.engine.nil?
-                module_page = site.engine.load_site_page('modules/_module.html.haml')
-              else
-                module_page = OpenStruct.new
-              end
-              module_page.output_path = "modules/#{module_page_basepath}/index.html"
-              module_page.url = "/modules/#{module_page_basepath}"
-              module_page.module = m
-              module_page.component = m.component
-              module_page.link_name = m.name.sub(/^Arquillian /, '')
-              module_page.title = m.name
-              m.page = module_page
-              site.engine.set_urls([module_page])
-              site.engine.generate_page(module_page) # TODO why is it needed all of the sudden?
-              site.pages << module_page
-
-            }
-          }
-        end
       end
 
       module Visitors

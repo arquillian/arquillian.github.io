@@ -1,4 +1,3 @@
-# -*- encoding : utf-8 -*-
 require File.join File.dirname(__FILE__), 'tweakruby'
 require_relative 'awestruct_ext'
 require_relative 'restclient_extensions_enabler'
@@ -8,6 +7,7 @@ require_relative 'github'
 require_relative 'repository'
 require_relative 'arquillian'
 require_relative 'releases'
+require_relative 'modules'
 require_relative 'patched_atomizer'
 require_relative 'autotag'
 require_relative 'common'
@@ -19,14 +19,12 @@ require_relative 'disqus_more'
 require_relative 'posts_helper'
 require_relative 'edit_page'
 require_relative 'asset_fingerprinter'
-#require_relative 'cache_evolver'
-#require_relative 'page_debug'
-#require_relative 'fork_me_ribbon'
 
 require 'haml'
 require 'haml/filters/textile'
 require 'compass'
 require 'bootstrap-sass'
+
 Awestruct::Extensions::Pipeline.new do
   # can use engine to tune pipeline per environment by checking profile
   # the convenience methods development? and blogging? are provided
@@ -73,7 +71,7 @@ Awestruct::Extensions::Pipeline.new do
     Identities::JBossCommunity::Crawler.new
   )
 
-  # Releases extension must be after jira and repository extensions and before posts extension 
+  # Releases extension must be after jira and repository extensions and before posts extension
   extension Awestruct::Extensions::Releases::Posts.new('/blog', :for_repo_owners => ['arquillian', 'shrinkwrap'], :since => '2011-01-01')
   extension Awestruct::Extensions::Releases::FutureRelease.new('/api/releases.ics')
 
@@ -101,6 +99,8 @@ Awestruct::Extensions::Pipeline.new do
 
   # Must be after all other extensions that might populate identities
   extension Awestruct::Extensions::Identities::Cache.new
+
+  extension Awestruct::Extensions::Modules::Page.new()
 
   # Transformers
   transformer Awestruct::Extensions::Minify.new([:js])
