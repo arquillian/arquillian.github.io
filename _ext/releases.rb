@@ -97,7 +97,7 @@ module Awestruct::Extensions::Releases
             release_page.release_notes = site.release_notes[release.key]
           end
 
-          # Fix page slugging by NOT alterating the relative-source-path.
+          # Fix page slugging by NOT alternating the relative-source-path.
           release_page.slug = release_page_name.tr('.', '-')
 
           # Workaround for non inherited dynamic front matter. Manually inherit until fixed upstream #125
