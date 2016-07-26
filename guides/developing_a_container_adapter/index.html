@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
     <title>Developing a Container Adapter &#183; Arquillian Guides</title>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <meta content="Learn how to adapt Arquillian to new backends by implementing the Container SPI" name="description" />
-    <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml" />
-    <link href="/stylesheets/screen.css?0fd0a1c2677d9b182484f638c62872880d576e68" rel="stylesheet" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Learn how to adapt Arquillian to new backends by implementing the Container SPI" name="description">
+    <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml">
+    <link href="/stylesheets/screen.css?0fd0a1c2677d9b182484f638c62872880d576e68" rel="stylesheet">
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.js"></script>
     <![endif]-->
-    <link href="/favicon.ico" rel="shortcut icon" />
+    <link href="/favicon.ico" rel="shortcut icon">
   </head>
   <body class="guide">
     <header class="navbar navbar-fixed-top" id="banner" role="banner">
@@ -142,38 +142,36 @@
       </div>
       <div class="container" id="guide">
         <div id="content">
-            <div class="header">
-            <div class="titlebar">
+          <div class="titlebar">
             <h2>Developing a Container Adapter</h2>
             <div class="btn-group">
               <a class="btn" href="https://github.com/arquillian/arquillian.github.com/edit/develop/guides/developing_a_container_adapter.textile">Edit this file</a>
             </div>
           </div>
-            <div class="authors"><strong>Author:</strong>
+          <div class="authors"><strong>Author:</strong>
           <a href="/community/vineetreynolds">Vineet Reynolds</a>  <br />
           <strong>Level:</strong>
           Enhance  <strong style="padding-left: 10px;">Tags:</strong>
           containers, spi, extension  <strong style="padding-left: 10px;">Last Update:</strong>Feb 27, 2014</div>
-            <p>This guide introduces you to Arquillian&#8217;s Container SPI for the purpose of developing a new container adapter. After reading this guide, you&#8217;ll be able to:</p>
-            <ul>
+          <p>This guide introduces you to Arquillian&#8217;s Container SPI for the purpose of developing a new container adapter. After reading this guide, you&#8217;ll be able to:</p>
+          <ul>
           	<li>Write your own Arquillian container adapter</li>
           	<li>Add support for select programming models in tests</li>
           	<li>Test an Arquillian extension</li>
           	<li>Use the container adapter to run tests in the new container</li>
           </ul>
-            <p>You&#8217;ll learn all of these skills by creating an Arquillian extension project that has a Maven build. We&#8217;ve designed this guide to be a <em>fast read</em> to get you started quickly!</p>
-            </div>
-            <h3 id="assumptions">Assumptions</h3>
+          <p>You&#8217;ll learn all of these skills by creating an Arquillian extension project that has a Maven build. We&#8217;ve designed this guide to be a <em>fast read</em> to get you started quickly!</p>
+          <h3>Assumptions</h3>
           <p>This guide assumes you are familiar with using Arquillian. You should understand the basic building blocks of Arquillian, how to set it up and how to develop and execute tests. If you don&#8217;t, you&#8217;ll have better chance of success by first reviewing the two starter guides, <a href="/guides/getting_started">Getting Started</a> and <a href="/guides/getting_started_rinse_and_repeat">Getting Started: Rinse and Repeat</a>.</p>
           <p>Obviously, you should be familiar with the container for which you are writing an adapter, specifically its deployment mechanism and/or API. It also helps to understand Arquillian&#8217;s event model.</p>
           <p>Finally, this guide assumes you are familiar with Maven. All the reference container adapters provided by Arquillian are organized as Maven projects and we will be following that lead in this guide.</p>
-          <h3 id="what_is_a_container_adapter">What is a Container Adapter?</h3>
+          <h3>What is a Container Adapter?</h3>
           <p>A container, generally speaking, is a runtime with which Arquillian interacts when running a test. Arquillian may manage the container&#8217;s lifecycle or simply bind to it. Arquillian may deploy archives or descriptors to the container. Arquillian may transfer execution of the tests into the container, or it may simply make the URL of the deployed application available to the test which is acting as a client. What&#8217;s important is that the container interaction is transparent to the test.</p>
           <p>To recollect a few salient points from the getting started guides, Arquillian supports containers through its extension mechanism. A container adapter is packaged as a JAR and is referenced, along with its dependencies, through as set of Maven coordinates (groupId, artifactId, version). During the execution of tests, a container adapter must be present in the test classpath, allowing Arquillian to locate, load and use it.</p>
           <p>The notion of a container is not restricted to a Servlet container, an EJB container or a Java EE container, despite these being the most common types. A container could be abstracted away as a JVM process (like most Servlet containers and Java EE containers), a cloud service provider (OpenShift and CloudBees) or even a device (Android). Simply put, a container adapter enables Arquillian to communicate with a container so that the test doesn&#8217;t have to.</p>
           <h4>How a container adapter gets discovered</h4>
           <p>Container adapters are Arquillian extensions located using the Service Provider Interface (SPI) mechanism in Java. All Arquillian container adapter extensions must implement the <code>LoadableExtension</code> SPI. The <code>LoadableExtension</code> of a container is used to register a <code>DeployableContainer</code> service. A container adapter implements the <code>DeployableContainer</code> SPI in a manner specific to the container, to enable Arquillian to manage the lifecycle, make deployments and to execute tests in the container.</p>
-          <h3 id="setup_the_project">Setup the Project</h3>
+          <h3>Setup the Project</h3>
           <p>One must first create a new project (preferably in Maven) to compile and package the container adapter.</p>
           <p class="info"><span>Arquillian container adapters are usually created with the groupId of <code>org.jboss.arquillian.container</code> , and with an artifactId of <code>arquillian-{container_acronym}-{managed|remote|embedded}-{container_version}</code>.</span></p>
           <p>Update the project POM with the following necessary dependencies.</p>
@@ -181,7 +179,7 @@
           <pre class="prettify"><code class="prettify">&lt;!-- clip --&gt;&#x000A;&lt;dependencyManagement&gt;&#x000A;    &lt;dependencies&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;org.jboss.arquillian&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;arquillian-bom&lt;/artifactId&gt;&#x000A;            &lt;version&gt;${version.arquillian_core}&lt;/version&gt;&#x000A;            &lt;type&gt;pom&lt;/type&gt;&#x000A;            &lt;scope&gt;import&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;    &lt;/dependencies&gt;&#x000A;&lt;/dependencyManagement&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;dependencies&gt;&#x000A;    &lt;dependency&gt;&#x000A;        &lt;groupId&gt;org.jboss.arquillian.container&lt;/groupId&gt;&#x000A;        &lt;artifactId&gt;arquillian-container-spi&lt;/artifactId&gt;&#x000A;    &lt;/dependency&gt;&#x000A;    &lt;dependency&gt;&#x000A;        &lt;groupId&gt;org.jboss.arquillian.container&lt;/groupId&gt;&#x000A;        &lt;artifactId&gt;arquillian-container-test-spi&lt;/artifactId&gt;&#x000A;    &lt;/dependency&gt;&#x000A;&lt;/dependencies&gt;&#x000A;&lt;!-- clip --&gt;</code></pre>
           <p>The <code>version.arquillian_core</code> property in the above snippet should match the  version of Arquillian Core that the adapter would be tested and built against.</p>
           <p>Additional dependencies will be added in later sections.</p>
-          <h3 id="write_the_extension">Write the Extension</h3>
+          <h3>Write the Extension</h3>
           <h4>Implement the DeployableContainer</h4>
           <p>The <code>DeployableContainer</code> implementation is the heart of a container adapter. Arquillian invokes the methods on the <code>DeployableContainer</code> during various points in the test lifecycle. The table below lists the significance of some of these methods:</p>
           <table>
@@ -265,20 +263,20 @@
           	<li><code>InitialContextExtension</code></li>
           </ul>
           <p>The associated <code>AuxiliaryArchiveAppender</code> implementations in these extensions would enhance the deployment with the test enrichers and associated dependencies. The <code>TestEnricher</code> implementations in these extensions would also be registered as service providers that can be discovered in-container. When a test class instance is to be enriched (before execution of the contained tests), the registered test enrichers (that have been deployed alongside the test) will be used to discover and inject dependencies into the instance.</p>
-          <h3 id="register_the_extension">Register the Extension</h3>
+          <h3>Register the Extension</h3>
           <p>To wire up the container adapter together, create a new Arquillian extension by implementing the <code>LoadableExtension</code> interface in your project. The extension must register the concrete implementation of <code>DeployableContainer</code> as a service. In the following snippet, a <code>LoadableExtension</code> is created that registers the <code>MyDeployableContainer</code> type as a <code>DeployableContainer</code>.</p>
           <pre class="prettify"><code class="prettify">public class MyContainerExtension implements LoadableExtension {&#x000A;    @Override&#x000A;    public void register(ExtensionBuilder builder) {&#x000A;        builder.service(DeployableContainer.class, MyDeployableContainer.class);&#x000A;    }&#x000A;}</code></pre>
           <p>Finally, the container adapter extension needs to be registered using the SPI registration mechanism. You must create a file named org.jboss.arquillian.core.spi.LoadableExtension as shown below and put the fully qualified class name of the class implementing the <code>LoadableExtension</code> SPI on the first line.</p>
           <div class="filename">src/main/resources/META-INF/services/org.jboss.arquillian.core.spi.LoadableExtension</div>
           <pre class="prettify"><code class="prettify">org.jboss.arquillian.container.guide.spi.MyContainerExtension</code></pre>
-          <h3 id="write_the_tests">Write the Tests</h3>
+          <h3>Write the Tests</h3>
           <p>While one can write a container adapter without tests, this is certainly not advisable. Tests can not only serve to define the expected behavior of the adapter, but also serve as useful examples for using the adapter. Generally, tests are written to cover the following areas:</p>
           <ul>
           	<li>Deployment of various types of ShrinkWrap archives: JavaArchive, WebArchive and EnterpriseArchive.</li>
           	<li>Execution of tests run at the client, using the <code>@RunAsClient</code> annotation and injection of dependencies into such tests using the <code>@ArquillianResource</code> annotation.</li>
           	<li>Execution of tests run in-container and injection of dependencies into such tests using the supported annotations.</li>
           </ul>
-          <h3 id="share">Share the Knowledge</h3>
+          <h3>Share the Knowledge</h3>
           <p>Find this guide useful?</p>
           <p class="post_to_twitter"><a href="http://twitter.com/home/?status=Just%20read%20the%20%23Arquillian%20Developing%20a%20Container%20Adapter%20guide%20and%20got%20a%20%23greenbar!%20Get%20yours.%20http://arquillian.org/guides/developing_a_container_adapter/"><img src="/images/post_to_twitter.png" alt="" /></a></p>
           <div class="g-plusone" data-size="tall"></div>
@@ -348,17 +346,17 @@
     <footer>
       <div class="container">
         <div class="project">
-          <img src="/images/arquillian_logo_200px.png" />
+          <img src="/images/arquillian_logo_200px.png">
           <p class="bottom">
             &#169;
             Copyright 2009-2016 Red Hat, Inc.
-            <br />
+            <br>
             <i class="icon-fire"></i>
             Mixed with <a href="http://twitter.github.com/bootstrap">Bootstrap</a>. Baked by <a href="http://awestruct.org">Awestruct</a>.
-            <br />
+            <br>
             <i class="icon-share-alt"></i>
             Website and docs licensed under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
-            <br />
+            <br>
             Code released under <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License, v2.0</a>.
           </p>
         </div>
@@ -407,16 +405,16 @@
             <h4>Stay Informed</h4>
             <ul>
               <li>
-                <a href="https://plus.google.com/100660127586085393031?rel=author"><img alt="Google+" src="/images/social/googleplus-16.png" title="Follow Arquillian on Google+" /></a>
+                <a href="https://plus.google.com/100660127586085393031?rel=author"><img alt="Google+" src="/images/social/googleplus-16.png" title="Follow Arquillian on Google+"></a>
               </li>
               <li>
-                <a href="https://twitter.com/#!/search/%23arquillian"><img alt="Twitter" src="/images/social/twitter-16.png" title="Browse the #arquillian hashtag on Twitter" /></a>
+                <a href="https://twitter.com/#!/search/%23arquillian"><img alt="Twitter" src="/images/social/twitter-16.png" title="Browse the #arquillian hashtag on Twitter"></a>
               </li>
               <li>
-                <a href="http://www.linkedin.com/groups?gid=3120340"><img alt="LinkedIn" src="/images/social/linkedin-16.png" title="Join the Arquillian group on LinkedIn" /></a>
+                <a href="http://www.linkedin.com/groups?gid=3120340"><img alt="LinkedIn" src="/images/social/linkedin-16.png" title="Join the Arquillian group on LinkedIn"></a>
               </li>
               <li>
-                <a href="http://vimeo.com/channels/arquillian"><img alt="Vimeo" src="/images/social/vimeo-16.png" title="Follow the Arquillian channel on Vimeo" /></a>
+                <a href="http://vimeo.com/channels/arquillian"><img alt="Vimeo" src="/images/social/vimeo-16.png" title="Follow the Arquillian channel on Vimeo"></a>
               </li>
             </ul>
           </div>
