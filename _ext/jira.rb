@@ -74,16 +74,20 @@ module Awestruct::Extensions::Jira
       url = @base_url + (COMPONENTS_PATH_TEMPLATE % @project_key)
       components = RestClient.get url, :accept => 'application/json',
           :cache_key => "jira/components-#{@project_key}.json"
-      Parallel.each(components.content, progress: "Fetching component leads data from JIRA of  of [#{url}]") do |c|
+      Parallel.map(components.content, progress: "Fetching component leads data from JIRA of  of [#{url}]") { |c|
         component_data = RestClient.get(c['self'], :accept => 'application/json',
             :cache_key => "jira/component-#{@project_key}-#{c['id']}.json").content
         if component_data.has_key? 'lead' and component_data['description'] =~ / :: ([^ ]+)$/
-          site.component_leads[$1] = OpenStruct.new({
+          [$1, OpenStruct.new({
             :name => component_data['lead']['displayName'],
             :jboss_username => component_data['lead']['name']
-          })
+          })]
+        else
+          []
         end
-      end
+      }.each { |key, lead|
+        site.component_leads[key] = lead;
+      }
     end
   end
 end
