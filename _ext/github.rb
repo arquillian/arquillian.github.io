@@ -28,8 +28,7 @@ module Awestruct::Extensions::Github
       milestones_url = @base_url + (MILESTONE_TEMPLATE % @project_key)
       milestones_data = RestClient.get milestones_url, :accept => 'application/json',
           :cache_key => "github/milestones_project-#{@project_key}.json", :cache_expiry_age => DURATION_1_DAY
-
-      Parallel.each(milestones_data.content, progress: "Fetching milestones of [#{milestones_url}] ") { |m| 
+      Parallel.map(milestones_data.content, progress: "Fetching milestones of [#{milestones_url}] ") { |m|
         release_key = m['title']
         release_key = "#{@prefix_version}_#{release_key}" unless @prefix_version.nil?
 
@@ -50,6 +49,8 @@ module Awestruct::Extensions::Github
           release_notes.resolved_issues[type] << "<a href='#{e['html_url']}'>##{e['number']} #{e['title']}</a>"
         end
 
+        [release_key, release_notes]
+      }.each { |release_key, release_notes|
         site.release_notes[release_key] = release_notes
       }
 
