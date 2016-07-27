@@ -24,9 +24,15 @@ module Awestruct
           while more_pages do
             url = "https://www.ohloh.net/p/#{@ohloh_project_id}/enlistments.xml?page=#{page}&api_key=#{@ohloh_api_key}"
             cache_key = "ohloh/enlistments-#{@ohloh_project_id}-#{page}.xml"
-            # expire after 3 days
-            doc = REXML::Document.new RestClient.get url, :accept => 'application/xml',
-                                                     :cache_key => cache_key, :cache_expiry_age => 86400 * 3
+            begin
+               # expire after 3 days
+              doc = REXML::Document.new RestClient.get url, :accept => 'application/xml',
+                                                       :cache_key => cache_key, :cache_expiry_age => 86400 * 3
+            rescue Exception => e
+              puts "Unable to crawl #{url}. Reason: #{e.message}"
+              break
+            end
+
             doc.each_element('/response/result/enlistment/repository/url') do |e|
               git_url = e.text
               path = File.basename(git_url.split('/').last, '.git')
