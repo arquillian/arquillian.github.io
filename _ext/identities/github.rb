@@ -1,5 +1,10 @@
 # -*- encoding : utf-8 -*-
+require 'net/http'
+require 'digest/md5'
 require 'parallel'
+require 'rmagick'
+
+require_relative '../common.rb'
 
 module Identities
   module GitHub
@@ -9,16 +14,37 @@ module Identities
     PROFILE_URL_TEMPLATE = 'https://api.github.com/users/%s'
 
     # It appears that all github users have a gravatar_id
-    AVATAR_URL_TEMPLATE = 'http://gravatar.com/avatar/%s?s=%i'
+    GRAVATAR_URL_TEMPLATE = 'http://gravatar.com/avatar/%s?s=%i'
+    NON_EXISTING_GRAVATAR_URL = 'https://s.gravatar.com/avatar/6547a2e9af0c5d0b3bec4b0468b05f3d?s=48'
+    GH_AVATAR_URL_TEMPLATE = 'https://avatars.githubusercontent.com/u/%s?s=%i'
     # TODO make the default avatar configurable
     FALLBACK_AVATAR_URL_TEMPLATE = 'https://community.jboss.org/people/sbs-default-avatar/avatar/%i.png'
+
+    NON_EXISTING_GRAVATAR =  getOrCache(File.join(tmp('/tmp', 'avatars'), 'gravatar-6547a2e9af0c5d0b3bec4b0468b05f3d.jpg'), NON_EXISTING_GRAVATAR_URL)
+
     module IdentityHelper
       def avatar_url(size = 48)
-        if !self.gravatar_id.nil?
-          AVATAR_URL_TEMPLATE % [self.gravatar_id, size]
+        if is_gravatar_existing
+          GRAVATAR_URL_TEMPLATE % [self.gravatar_id, size]
+        elsif !self.github.id.nil?
+          GH_AVATAR_URL_TEMPLATE % [self.github.id, size]
         else
           FALLBACK_AVATAR_URL_TEMPLATE % size
         end
+      end
+
+      def is_gravatar_existing()
+        puts "Checking gravatar"
+        if !self.gravatar_id.nil? and !self.gravatar_id.empty?
+          puts tmp('/tmp', 'avatars')
+          puts self.gravatar_id
+          user_gravatar = getOrCache(File.join(tmp('/tmp', 'avatars'), "gravatar-#{self.gravatar_id}.jpg"), GRAVATAR_URL_TEMPLATE % [self.gravatar_id, 48])
+          image_signature(user_gravatar).equal? image_signature(NON_EXISTING_GRAVATAR)
+        end
+      end
+
+      def image_signature(image)
+        Digest::MD5.hexdigest Magick::Image.from_blob(image).first.export_pixels.join
       end
     end
 

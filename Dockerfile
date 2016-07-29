@@ -13,6 +13,7 @@ RUN dnf -y install \
   git \
   glibc-devel \
   glibc-headers \
+  ImageMagick-devel \
   libffi-devel \
   libtool \
   libxml2-devel \
