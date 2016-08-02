@@ -3,6 +3,7 @@ require 'net/http'
 require 'digest/md5'
 require 'parallel'
 require 'rmagick'
+require 'ostruct'
 
 require_relative '../common.rb'
 
@@ -20,26 +21,46 @@ module Identities
     # TODO make the default avatar configurable
     FALLBACK_AVATAR_URL_TEMPLATE = 'https://community.jboss.org/people/sbs-default-avatar/avatar/%i.png'
 
-    NON_EXISTING_GRAVATAR =  getOrCache(File.join(tmp('/tmp', 'avatars'), 'gravatar-6547a2e9af0c5d0b3bec4b0468b05f3d.jpg'), NON_EXISTING_GRAVATAR_URL)
-
     module IdentityHelper
+
+      @config
+      @non_existing_gravatar
+
+      def self.config(config)
+        @config = OpenStruct.new(config)
+        @non_existing_gravatar = getOrCache(File.join(tmp(@config.tmp_dir, 'avatars'), 'gravatar-6547a2e9af0c5d0b3bec4b0468b05f3d.jpg'), NON_EXISTING_GRAVATAR_URL)
+      end
+
+      def self.get_config
+        @config
+      end
+
+      def self.get_non_existing_gravatar
+        @non_existing_gravatar
+      end
+
       def avatar_url(size = 48)
+        config = IdentityHelper::get_config
+
         if is_gravatar_existing
           GRAVATAR_URL_TEMPLATE % [self.gravatar_id, size]
         elsif !self.github.id.nil?
-          GH_AVATAR_URL_TEMPLATE % [self.github.id, size]
+          if config.load_github_avatars
+            GH_AVATAR_URL_TEMPLATE % [self.github.id, size]
+          else
+            GRAVATAR_URL_TEMPLATE % [self.gravatar_id, size] # load gravatar anyway so we have a default image
+          end
         else
           FALLBACK_AVATAR_URL_TEMPLATE % size
         end
       end
 
-      def is_gravatar_existing()
-        puts "Checking gravatar"
+      def is_gravatar_existing
         if !self.gravatar_id.nil? and !self.gravatar_id.empty?
-          puts tmp('/tmp', 'avatars')
-          puts self.gravatar_id
-          user_gravatar = getOrCache(File.join(tmp('/tmp', 'avatars'), "gravatar-#{self.gravatar_id}.jpg"), GRAVATAR_URL_TEMPLATE % [self.gravatar_id, 48])
-          image_signature(user_gravatar).equal? image_signature(NON_EXISTING_GRAVATAR)
+          tmp_dir = IdentityHelper::get_config.tmp_dir
+          non_existing_gravatar = IdentityHelper::get_non_existing_gravatar
+          user_gravatar = getOrCache(File.join(tmp(tmp_dir, 'avatars'), "gravatar-#{self.gravatar_id}.jpg"), GRAVATAR_URL_TEMPLATE % [self.gravatar_id, 48])
+          image_signature(user_gravatar).equal? image_signature(non_existing_gravatar)
         end
       end
 

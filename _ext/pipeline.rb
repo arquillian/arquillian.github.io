@@ -30,8 +30,15 @@ Awestruct::Extensions::Pipeline.new do
   # the convenience methods development? and blogging? are provided
   engine = Engine.instance
 
+  config = Engine.instance.site
+
   # Custom tags and syntax for textile markup
   extension Awestruct::Extensions::TextilePlus.new
+
+  Identities::GitHub::IdentityHelper.config( {
+         :load_github_avatars => config.load_github_avatars,
+         :tmp_dir => config.tmp_dir
+  })
 
   # GitHub API calls should be wrapped with credentials to up limit
   github_auth = Identities::GitHub::Auth.new('.github-auth')
