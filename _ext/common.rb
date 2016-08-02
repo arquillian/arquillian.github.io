@@ -1,4 +1,5 @@
 # -*- encoding : utf-8 -*-
+require 'fileutils'
 
 def getOrCache(tmp_file, url)
   response_body = ""
@@ -49,8 +50,8 @@ end
 
 def tmp(parent, child)
   tmp_dir = File.join(parent, child)
-  if !File.exist?tmp_dir
-    Dir.mkdir(tmp_dir)
+  if !File.exist? tmp_dir
+    FileUtils.mkdir_p tmp_dir
   end
   return tmp_dir
 end
