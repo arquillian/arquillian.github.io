@@ -2,6 +2,7 @@
 require_relative 'restclient_extensions'
 require 'rexml/document'
 require 'uri'
+require 'json'
 
 module Awestruct
   module Extensions
@@ -19,47 +20,35 @@ module Awestruct
 
         def execute(site)
 
-          more_pages = true
-          page = 1
-          while more_pages do
-            url = "https://www.ohloh.net/p/#{@ohloh_project_id}/enlistments.xml?page=#{page}&api_key=#{@ohloh_api_key}"
-            cache_key = "ohloh/enlistments-#{@ohloh_project_id}-#{page}.xml"
-            begin
-               # expire after 3 days
-              doc = REXML::Document.new RestClient.get url, :accept => 'application/xml',
-                                                       :cache_key => cache_key, :cache_expiry_age => 86400 * 3
-            rescue Exception => e
-              puts "Unable to crawl #{url}. Reason: #{e.message}"
-              break
+        url = "https://api.github.com/orgs/arquillian/repos"
+        cache_key = "github/repos.xml"
+        begin
+           # expire after 3 days
+           resp = RestClient.get url, :accept => 'application/json',
+                                                       :cache_key => cache_key, :cache_expiry_age => 3
+           doc = JSON.parse(resp.gsub('\"', '"').gsub('"[','[').gsub(']"',']'))
+
+           doc.each do |e|
+                unless e['pushed_at'].nil?
+                    git_url = e['git_url']
+                    repository = OpenStruct.new({
+                        :path => e['name'],
+                        :relative_path => '',
+                        :desc => nil,
+                        :owner => e['owner']['login'],
+                        :host => URI(git_url).host,
+                        :type => 'git',
+                        :commits_url => e['commits_url'],
+                        :html_url => e['html_url'],
+                        :clone_url => git_url
+                    })
+                    @repositories << repository
+                 end
             end
-
-            doc.each_element('/response/result/enlistment/repository/url') do |e|
-              git_url = e.text
-              path = File.basename(git_url.split('/').last, '.git')
-              repository = OpenStruct.new({
-                                              :path => path,
-                                              :relative_path => '',
-                                              :desc => nil,
-                                              :owner => git_url.split('/').last(2).first,
-                                              :host => URI(git_url).host,
-                                              :type => 'git',
-                                              :html_url => git_url.chomp('.git').sub('git://', 'https://'),
-                                              :clone_url => git_url
-                                          })
-              @repositories << repository
-            end
-
-            offset = doc.root.elements['first_item_position'].text.to_i
-            returned = doc.root.elements['items_returned'].text.to_i
-            available = doc.root.elements['items_available'].text.to_i
-
-            if offset + returned < available
-              page += 1
-            else
-              more_pages = false
-            end
-          end
-
+        rescue Exception => e
+           puts "Unable to crawl #{url}. Reason: #{e.message}"
+        end
+            
           @repositories << OpenStruct.new(
               :path => 'arquillian-universe-bom',
               :desc => nil,
