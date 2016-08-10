@@ -1,0 +1,61 @@
+---
+layout: blog
+title: Arquillian scheduling
+author: dimchokarpachev
+tags: [ scheduling, testing, teaser ]
+--- 
+
+Imagine that you are working on great project that has high test coverage, this means you have to execute a lot of unit tests. Normally you would have to run the whole test suite or select the tests of interest manually. Waiting for them to complete can be frustrating, as a test could fail you could fail late in the execution. Plus you can never be sure that you selected the right tests. Now wouldn’t it be great if you could schedule all these tests, putting the most important ones first, and then see the results of interest right away? So in order to make your testing experience even better we are now bringing scheduling to the Arquillian platform.
+ 
+h3. Examples
+
+h4. Atomic test scheduling
+
+p. After reading the first section you’re probably wondering how the scheduling works. Well here it comes … Annotations, yes annotations.
+Annotating your test using the RunWith annotation and specifying the runner would be the first step. After that you would naturally choose your scheduling strategy and guess how? You guest it, using an annotation. Then last but not least you could specify the individual test classes with the @@Suite.SuiteClasses@ annotation, if you are using a suite that is, and if not you don’t have to specify anything. In case you’re wondering you would also be able to configure each individual scheduling strategy.
+In order to illustrate things a bit more comprehensively, here is a first glimpse of how it all will come down.
+ 
+bc(prettify).. @RunWith(ArquillianScheduling)	
+// Note: you will be able to skip the line below if want to use the default scheduling strategy
+@ScheduleWith(LatestFailedScheduler.class)
+public class ArquillianSchedulingTest {
+	@Test test1(){};
+	@Test test2(){};
+}
+
+p. What this would accomplish is to gather the required statistics information to reorder atomic tests(test1, test2) based on the current scheduling strategy - _LatestFailedScheduler_. The statistics information would generally consist of the failures and passes of an atomic test and the _LatsestFailedScheduler_ would run first the most frequently failing tests based on it. And just like that the on the next run you would have scheduled the desired tests. 
+
+h4. Suite scheduling
+
+p. Another option, as I mentioned above, would be to schedule a suite. For those of you who have to reorder a fairly large amount of tests and want the results of interest faster, suite scheduling would be the answer. 
+ 
+bc(prettify).. @RunWith(ArquillianSuiteScheduling)	
+// Note: you will be able to skip the line below if want to use the default scheduling strategy
+@ScheduleWith(LatestFailedScheduler.class)
+@Suite.SuiteClasses(TestClass1, TestClass2, TestClass 3 ...)
+public class ArquillianSchedulingTest {}
+
+p. As you can see there are not a lot differences between the last and this example. Specifying the suite runner and since this is a test suite, the suite classes would be enough.
+
+p. A useful strategy when scheduling a suite would be to run first the tests touched by changed code. This would allow you to check your newly developed code right away as the affected tests would be run first. Another common use case would be when you just want to run only the tests touched by the changes and leave the others out. Overall you would spend much less time looking at unrelated tests and thus focusing more on the code at hand. Now let’s talk in schedulers:
+
+bc(prettify).. @RunWith(ArquillianSuiteScheduling)	
+@Suite.SuiteClasses({TestClass1, TestClass2, TestClass3, ...})
+// Note: you will be able to skip the line below if want to use the default scheduling strategy
+@ScheduleWith(ChangedFilesSuiteScheduler.class)
+public class ArquillianSuiteSchedulingTest{
+}
+
+p. Just like that with the _ChangedFilesSuiteScheduler_ there would be no more waiting for the tests of interest to execute.
+
+h4. Scheduler configuration
+
+p. Getting back to the annotations again, I mentioned something about configuring every individual strategy earlier. Well to be able to do that you would add another annotation and set its parameters. That would alter the default configuration of the scheduler. Some of the planned configurations include changing the statistics storage directory and other paths as well as trigger other interesting behaviours. These would prove very useful for users using a different OS or for people who just want to customize the strategy according to their needs. To sum up, configuring a scheduling strategy would look like:
+
+bc(prettify).. @ScheduleWith(LatestFailedScheduler.class)
+@LatestFailedSchedulerParams(statisticsDir="test",storeLongTerm=true)
+
+h3. Wraping up ...
+
+p. Don’t get too excited, though, scheduling is still on its way and you would be able to use all the new features soon enough. Please feel free to share your thoughts, ideas and suggestions and don’t hesitate to contact us for any problems that might occur. Your feedback is always welcome. 
+
