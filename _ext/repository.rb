@@ -25,7 +25,7 @@ module Awestruct
         begin
            # expire after 3 days
            resp = RestClient.get url, :accept => 'application/json',
-                                                       :cache_key => cache_key, :cache_expiry_age => 3
+                                                       :cache_key => cache_key, :cache_expiry_age => 86400 * 3
            doc = JSON.parse(resp.gsub('\"', '"').gsub('"[','[').gsub(']"',']'))
 
            doc.each do |e|
