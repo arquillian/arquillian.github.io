@@ -926,7 +926,12 @@ module Awestruct::Extensions::Repository::Visitors
         pomrev = repository.client.revparse("HEAD:#{repository.relative_path}#{container.relative_path}pom.xml")
       end
       pom = REXML::Document.new(rc.cat_file(pomrev))
-      container.name = pom.root.text('name').sub(/ Container$/, '\0 Adapter').sub(/^Arquillian Container (.*)/, 'Arquillian \1 Container Adapter')
+	
+	unless pom.root.text('name').nil?
+            container.name = pom.root.text('name').sub(/ Container$/, '\0 Adapter').sub(/^Arquillian Container (.*)/, 'Arquillian \1 Container Adapter')
+	else
+	    container.name = container.relative_path.sub('/','').sub('-',' ').sub('_',' ')
+	end
       if repository.path == 'jboss-as'
         container.name = container.name.sub(/.*Arquillian /, 'Arquillian JBoss AS 7 ')
       elsif repository.path == 'wildfly-arquillian'
