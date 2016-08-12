@@ -29,7 +29,7 @@ module Awestruct
            doc = JSON.parse(resp.gsub('\"', '"').gsub('"[','[').gsub(']"',']'))
 
            doc.each do |e|
-                unless e['pushed_at'].nil?
+                unless e['pushed_at'].nil? || e['name'] == "arquillian_deprecated"
                     git_url = e['git_url']
                     repository = OpenStruct.new({
                         :path => e['name'],
@@ -44,7 +44,7 @@ module Awestruct
                     })
                     @repositories << repository
                  end
-            end
+           end
         rescue Exception => e
            puts "Unable to crawl #{url}. Reason: #{e.message}"
         end
