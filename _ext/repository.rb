@@ -18,23 +18,36 @@ module Awestruct
 
         def execute(site)
 	
-	url_params = ["users","orgs"]	
-	url_params.each do |url_param|
+	more_pages = true
+	page = 1
+	while more_pages do
 
-            url = "https://api.github.com/#{url_param}/arquillian/repos"
-            cache_key = "github/repos-#{url_param}.xml"
+            url = "https://api.github.com/orgs/arquillian/repos?page=#{page}"
+            cache_key = "github/repos-#{page}.xml"
             begin
                # expire after 3 days
                resp = RestClient.get url, :accept => 'application/json',
                                                            :cache_key => cache_key, :cache_expiry_age => 86400 * 3
-               doc = JSON.parse(resp.gsub('\"', '"').gsub('"[','[').gsub(']"',']'))
+            rescue Exception => e
+               puts "Unable to crawl #{url}. Reason: #{e.message}"
+	       break
+            end
 
-               doc.each do |e|
-		#omitted repositories: 
-		# - without any commit or almost empty (arquillian-sandbox and arquillian-container-gae) 
-		# - deprecated repository (arquillian_deprecated)
-		# - non-maven repository (arquillian-container-jruby)
-                    unless e['size'] < 100 || e['name'] == "arquillian_deprecated" || e['name'] == "arquillian-container-jruby"
+            doc = JSON.parse(resp.gsub('\"', '"').gsub('"[','[').gsub(']"',']'))
+            
+	    if doc.count == 0
+                more_pages = false
+		break
+            end
+	    page += 1
+		
+            doc.each do |e|
+	    #omitted repositories: 
+	    # - without any commit or almost empty (arquillian-sandbox and arquillian-container-gae) 
+	    # - not too interesting with high amount of releases (selenium-bom)
+	    # - deprecated repository (arquillian_deprecated)
+	    # - non-maven repository (arquillian-container-jruby)
+                unless e['pushed_at'].nil? || e['name'] == "arquillian-selenium-bom" || e['name'] == "arquillian-container-gae" || e['name'] == "arquillian_deprecated" || e['name'] == "arquillian-container-jruby"
                         
 			git_url = e['git_url']
                         repository = OpenStruct.new({
@@ -49,10 +62,7 @@ module Awestruct
                             :clone_url => git_url
                         })
                         @repositories << repository
-                     end
-               end
-            rescue Exception => e
-               puts "Unable to crawl #{url}. Reason: #{e.message}"
+                 end
             end
         end
             
