@@ -8,45 +8,52 @@ module Awestruct
   module Extensions
     module Repository
 
-      # FIXME make collectors modular, so that we register an ohloh collector for instance
+      # FIXME make collectors modular, so that we register an api.github collector for instance
       class Collector
-        def initialize(ohloh_project_id, ohloh_api_key, opts = {})
+        def initialize(opts = {})
           @repositories = []
-          @ohloh_project_id = ohloh_project_id
-          @ohloh_api_key = ohloh_api_key
           @use_data_cache = opts[:use_data_cache] || true
           @observers = opts[:observers] || []
         end
 
         def execute(site)
+	
+	url_params = ["users","orgs"]	
+	url_params.each do |url_param|
 
-        url = "https://api.github.com/orgs/arquillian/repos"
-        cache_key = "github/repos.xml"
-        begin
-           # expire after 3 days
-           resp = RestClient.get url, :accept => 'application/json',
-                                                       :cache_key => cache_key, :cache_expiry_age => 86400 * 3
-           doc = JSON.parse(resp.gsub('\"', '"').gsub('"[','[').gsub(']"',']'))
+            url = "https://api.github.com/#{url_param}/arquillian/repos"
+            cache_key = "github/repos-#{url_param}.xml"
+            begin
+               # expire after 3 days
+               resp = RestClient.get url, :accept => 'application/json',
+                                                           :cache_key => cache_key, :cache_expiry_age => 86400 * 3
+               doc = JSON.parse(resp.gsub('\"', '"').gsub('"[','[').gsub(']"',']'))
 
-           doc.each do |e|
-                unless e['pushed_at'].nil? || e['name'] == "arquillian_deprecated"
-                    git_url = e['git_url']
-                    repository = OpenStruct.new({
-                        :path => e['name'],
-                        :relative_path => '',
-                        :desc => nil,
-                        :owner => e['owner']['login'],
-                        :host => URI(git_url).host,
-                        :type => 'git',
-                        :commits_url => e['commits_url'],
-                        :html_url => e['html_url'],
-                        :clone_url => git_url
-                    })
-                    @repositories << repository
-                 end
-           end
-        rescue Exception => e
-           puts "Unable to crawl #{url}. Reason: #{e.message}"
+               doc.each do |e|
+		#omitted repositories: 
+		# - without any commit or almost empty (arquillian-sandbox and arquillian-container-gae) 
+		# - deprecated repository (arquillian_deprecated)
+		# - non-maven repository (arquillian-container-jruby)
+                    unless e['size'] < 100 || e['name'] == "arquillian_deprecated" || e['name'] == "arquillian-container-jruby"
+                        
+			git_url = e['git_url']
+                        repository = OpenStruct.new({
+                            :path => e['name'],
+                            :relative_path => '',
+                            :desc => nil,
+                            :owner => e['owner']['login'],
+                            :host => URI(git_url).host,
+                            :type => 'git',
+                            :commits_url => e['commits_url'],
+                            :html_url => e['html_url'],
+                            :clone_url => git_url
+                        })
+                        @repositories << repository
+                     end
+               end
+            rescue Exception => e
+               puts "Unable to crawl #{url}. Reason: #{e.message}"
+            end
         end
             
           @repositories << OpenStruct.new(
