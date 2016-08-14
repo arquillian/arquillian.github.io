@@ -1027,7 +1027,7 @@ module Awestruct::Extensions::Repository::Visitors
     include Base
 
     def handles(repository)
-      repository.path =~ /^(arquillian-maven|plugin-arquillian|arquillian-gradle-plugin)$/
+      repository.path =~ /^(arquillian-maven|plugin-arquillian|arquillian-gradle-plugin|arquillian-spacelift-gradle)$/
     end
 
     def visit(repository, site)

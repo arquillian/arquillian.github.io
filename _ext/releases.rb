@@ -89,7 +89,6 @@ module Awestruct::Extensions::Releases
             release_page.tags += post_tags
           end
 
- 	puts component
           release_page.tags << 'release' << component.type.gsub('_', '-') << component.key
           if component.type =~ /(platform|extension)/ and release.version.end_with? '.Final'
             release_page.tags << 'jbosscentral' if !release_page.tags.include? 'jbosscentral'
