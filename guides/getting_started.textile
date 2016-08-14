@@ -1008,4 +1008,44 @@ p. Now change the active Maven profile to @arquillian-jbossas-managed@, then run
 
 That's the _same_ test, this time running in a full Java EE container. Arquillian packages the test, deploys to the container as a Java EE archive, executes the tests remotely, captures the results and feeds them back to the Eclipse JUnit result view (or in the Maven surefire results).
 
+p(important). %If JDK 7 is used you should provide the runtime with the arguments -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.KQueueSelectorProvider for MAC OSX or -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.EPollSelectorProvider if your are using Linux.%
+
+p. Here an example for MAC OS:
+
+div(filename). src/test/resources/arquillian.xml
+
+bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+    <container qualifier="jbossas-managed" default="true">
+        <configuration>
+            <property name="jbossHome">target/jboss-as-7.1.1.Final</property>
+			<property name="javaVmArguments">-Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.KQueueSelectorProvider</property>
+        </configuration>
+    </container>
+</arquillian>
+
+div(filename). pom.xml
+
+bc(prettify).. <!-- clip -->
+<build>
+    <plugins>
+        <plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-surefire-plugin</artifactId>
+			<version>2.12</version>
+			<configuration>
+				<jvm>${settings.JAVA_HOME_7}/bin/java</jvm>
+				<forkMode>once</forkMode>
+				<argLine>-XX:-UseSplitVerifier -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.KQueueSelectorProvider</argLine>
+			</configuration>
+		</plugin>
+    </plugins>
+</build> 
+<!-- clip -->
+
+p(important). %To run unit tests inside eclipse you have to provide java.nio.channels.spi.SelectorProvider, too! The best way to achieve this is to configurate a 'Default VM argument' for the installed JDK.%
+
 If you want to dive deeper into Arquillian, move on to "Getting Started: Rinse and Repeat":/guides/getting_started_rinse_and_repeat guide. To learn how to use Forge to automate Arquillian setup and test generation, read through "Get Started Faster with Forge":/guides/get_started_faster_with_forge.
