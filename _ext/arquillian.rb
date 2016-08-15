@@ -1151,7 +1151,7 @@ module Awestruct::Extensions::Repository::Visitors
   module DaemonComponent
     include Base
     def handles(repository)
-          repository.path =~ /^(.*daemon.*)$/
+          repository.path =~ /^(arquillian-daemon)$/
     end
 
     def visit(repository, site)
