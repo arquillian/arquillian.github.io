@@ -70,6 +70,9 @@ RUN bash -l -c "git clone $AWESTRUCT_REPO $AWESTRUCT_REPO_DIR"
 RUN bash -l -c "cd $AWESTRUCT_REPO_DIR && git checkout $AWESTRUCT_COMMIT && gem build awestruct.gemspec"
 RUN bash -l -c "gem install $AWESTRUCT_REPO_DIR/awestruct-0.6.0.alpha.gem --no-rdoc --no-ri"
 
+RUN echo 'alias install-gems="bundle install -j 10 --path ./.gems"' >> $HOME/.bashrc
+RUN source $HOME/.bashrc
+
 # Once released
 # RUN bash -l -c "gem install awestruct -v $AWESTRUCT_VERSION --no-rdoc --no-ri"
 
