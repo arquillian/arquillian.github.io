@@ -99,7 +99,7 @@ module Awestruct::Extensions::Repository::Visitors
         rc.checkout(master_branch)
         begin
           # attempt a light pull
-          rc.pull('origin')
+          rc.pull('origin', master_branch)
         rescue
           # do hard reset to master branch, some forced change might have occured upstream
           rc.fetch('origin')
