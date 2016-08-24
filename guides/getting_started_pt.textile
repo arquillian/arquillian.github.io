@@ -125,13 +125,13 @@ bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.8.1</version>
+            <version>4.12</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
 
-p. Vamos escrever componentes Java EE 6, portanto para que possamos compilar nossos componentes, devemos adicionar também a sua API ao nosso classpath.
+p. Vamos escrever componentes Java EE 7, portanto para que possamos compilar nossos componentes, devemos adicionar também a sua API ao nosso classpath.
 
 Abra novamente o arquivo @pom.xml@ e adicione as seguintes dependências dentro do elemento @<dependencies>@. Sua sessão de dependências deverá ficar assim:
 
@@ -141,21 +141,19 @@ bc(prettify).. <!-- clip -->
 <dependencies>
     <dependency>
         <groupId>org.jboss.spec</groupId>
-        <artifactId>jboss-javaee-6.0</artifactId>
-        <version>1.0.0.Final</version>
+        <artifactId>jboss-javaee-7.0</artifactId>
+        <version>1.0.3.Final</version>
         <type>pom</type>
         <scope>provided</scope>
     </dependency>
     <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.8.1</version>
+        <version>4.12</version>
         <scope>test</scope>
     </dependency>
 </dependencies>
 <!-- clip -->
-
-p(important). %O artefato @org.jboss.spec:jboss-javaee-6.0@ é composto pelas APIs padrões do Java EE 6. Recomendamos que você *não use* os artefatos Java EE do grupo @javax:javaee-api@. Esse pacote contém classes com métodos vazios o que poderá fazer com que sua aplicação lance exceções estranhas relacionadas à ausência de código, se forem deixadas no seu classpath em tempo de execução(mesmo quando rodar testes). "Leia esse FAQ":http://community.jboss.org/wiki/WhatsTheCauseOfThisExceptionJavalangClassFormatErrorAbsentCode se você quiser se aprofundar nesse assunto.%
 
 p. A fundação do seu projeto está pronta! Pule para a próxima sessão, "Abra seu projeto no Eclipse":#open_project_in_eclipse, para que possamos começar a escrever código!
 
@@ -218,11 +216,11 @@ Por padrão, o Forge seta o projeto para usar Java 1.6, convenientemente, a vers
 
 Precisamos agora adicionar as API's do Java EE 6. Isso pode ser feito usando o comando @project add-dependency@ como mostrado abaixo:
 
-bc(command). $ project-add-dependencies org.jboss.spec:jboss-javaee-6.0:1.0.0.Final:pom:provided
+bc(command). $ project-add-dependencies org.jboss.spec:jboss-javaee-7.0:1.3.0.Final:pom:provided
 
-Você também precisará adicionar uma dependência com o JUnit 4.8 em escopo de testes:
+Você também precisará adicionar uma dependência com o JUnit 4.12 em escopo de testes:
 
-bc(command). $ project-add-dependencies junit:junit:4.8.1:test
+bc(command). $ project-add-dependencies junit:junit:4.12:test
 
 O Forge adiciona o repositório do JBoss Community no arquivo pom.xml. Esse repositorio não é necessário para usar o Arquillian. (No entanto, você pode manté-lo se você estiver usando outras bibliotecas disponíveis apenas no repositório do JBoss Community). Se você decidir remover o repositório, você pode fazé-lo facilmente usando o seguinte comando do Forge:
 
@@ -233,42 +231,59 @@ O resultado é o pom.xml gerado pelo Forge e mostrado a seguir:
 div(filename). pom.xml
 
 bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-    xsi:schemaLocation="
-        http://maven.apache.org/POM/4.0.0
-        http://maven.apache.org/xsd/maven-4.0.0.xsd"
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.arquillian.example</groupId>
+    <groupId>org.arquillian.tutorial</groupId>
     <artifactId>arquillian-tutorial</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+    <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>org.jboss.spec</groupId>
+          <artifactId>jboss-javaee-7.0</artifactId>
+          <version>1.0.3.Final</version>
+          <type>pom</type>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
+          <version>4.12</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-6.0</artifactId>
-            <version>1.0.0.Final</version>
-            <type>provided</type>
-            <scope>pom</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.8.1</version>
-            <scope>test</scope>
-        </dependency>
+      <dependency>
+        <groupId>org.jboss.spec</groupId>
+        <artifactId>jboss-javaee-7.0</artifactId>
+        <type>pom</type>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
     <build>
-        <finalName>arquillian-tutorial</finalName>
-        <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
-                <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
-                </configuration>
-            </plugin>
-        </plugins>
+      <finalName>arquillian-tutorial</finalName>
+      <plugins>
+        <plugin>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>2.4</version>
+          <configuration>
+            <failOnMissingWebXml>false</failOnMissingWebXml>
+          </configuration>
+        </plugin>
+      </plugins>
     </build>
 </project>
 
@@ -729,8 +744,8 @@ bc(prettify).. <!-- clip -->
         <dependencies>
             <dependency>
                 <groupId>org.jboss.spec</groupId>
-                <artifactId>jboss-javaee-6.0</artifactId>
-                <version>1.0.0.Final</version>
+                <artifactId>jboss-javaee-7.0</artifactId>
+                <version>1.0.3.Final</version>
                 <type>pom</type>
                 <scope>provided</scope>
             </dependency>
@@ -757,7 +772,7 @@ bc(prettify).. <!-- clip -->
 </profiles>
 <!-- clip -->
 
-p. Agora, *remova* a dependência com @jboss-javaee-6.0@ e as dependências relacionadas ao container Weld EE da sessão principal de dependências @<dependencies>@. As suas sessões @<dependencies>@ e @<profiles>@ deverão ficar assim:
+p. Agora, *remova* a dependência com @jboss-javaee-7.0@ e as dependências relacionadas ao container Weld EE da sessão principal de dependências @<dependencies>@. As suas sessões @<dependencies>@ e @<profiles>@ deverão ficar assim:
 
 div(filename). pom.xml
 
@@ -766,7 +781,7 @@ bc(prettify).. <!-- clip -->
     <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.8.1</version>
+        <version>4.12</version>
         <scope>test</scope>
     </dependency>
     <dependency>
@@ -781,8 +796,8 @@ bc(prettify).. <!-- clip -->
         <dependencies>
             <dependency>
                 <groupId>org.jboss.spec</groupId>
-                <artifactId>jboss-javaee-6.0</artifactId>
-                <version>1.0.0.Final</version>
+                <artifactId>jboss-javaee-7.0</artifactId>
+                <version>1.0.3.Final</version>
                 <type>pom</type>
                 <scope>provided</scope>
             </dependency>
@@ -845,8 +860,8 @@ bc(prettify).. <!-- clip -->
     <dependencies>
         <dependency>
             <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-6.0</artifactId>
-            <version>1.0.0.Final</version>
+            <artifactId>jboss-javaee-7.0</artifactId>
+            <version>1.0.3.Final</version>
             <type>pom</type>
             <scope>provided</scope>
         </dependency>
