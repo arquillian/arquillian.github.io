@@ -1,0 +1,189 @@
+---
+date: 2016-08-17
+author: lordofthejars
+---
+
+Apart from bug fixes and components upgrades that you can see in issues list at the bottom of this post, this release also contains a lot of new feature:
+
+h3. Important Change from Previous Releases
+
+- <i class="icon-star"></i> Changed default definition format :=
+
+p. In Cube Alpha12 and below the default definition format was @CUBE@. This was in that way because at time of writing first version of Cube there was no docker-compose format. Now that docker-compose is the default format, Arquillian Cube interprets by default any orchestration file as docker-compose format.
+
+p. If you are using CUBE format instead of @docker-compose@ you will need to update your @arquillian.xml@ file with next parameter:
+
+bc(prettify).. <extension qualifier="docker">
+  <property name="definitionFormat">CUBE</property>
+</extension>
+
+p. This change is important if you are updating from Alpha12 to Alpha13 and NOT using @docker-compose@. Of course if you've already using docker-compose format you can remove the @definitionFormat@ entry from @arquillian.xml@ file.
+
+=:
+
+h3. New Features
+
+- <i class="icon-star"></i> Arquillian Recorder integration :=
+
+p. Arquillian Recorder project brings neat reports of your Arquillian tests. Now we are providing an integration to the project so that generated report contains also information about Cube and Docker such as Docker version used, Docker containers definition or an schema of the organization of each container.
+
+p.To use it you only need to import recorder and @cube-docker-recorder@ dependencies:
+
+bc(prettify).. <dependency>
+  <groupId>org.arquillian.extension</groupId>
+  <artifactId>arquillian-recorder-reporter-impl</artifactId>
+  <version>${version.arquillian.recorder}</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.arquillian.cube</groupId>
+  <artifactId>arquillian-cube-docker-recorder</artifactId>
+  <version>${version.arquillian.cube}</version>
+  <scope>test</scope>
+</dependency>
+
+p. You can read more about Arquillian Recorder integration in the "recorder section of the Cube documentation.":http://arquillian.org/arquillian-cube/#_arquillian_recorder_reporter_integration
+
+=:
+
+- <i class="icon-star"></i> Added manual attribute at CUBE format :=
+
+p. Sometimes you don't want that Cube starts a Docker container. You only want to have registered and start it when you need it inside test using @CubeController@. In these cases set @manual@ attribute to true in the container definition.
+
+bc(prettify).. tomcat:
+  image: tutum/tomcat:7.0
+  manual: true
+
+p. In previous configuration you are setting that tomcat container will be started manually in the test (or Cube extension).
+
+p. You can read more about manual attribute in the "config section.":http://arquillian.org/arquillian-cube/#_configuration
+
+=:
+
+- <i class="icon-star"></i> Integration with Arquillian Drone :=
+
+p. Arquillian Drone is an Arquillian extension that basically manages Selenium @WebDriver@ instances. Selenium community provides official Docker images with browser (Firefox or Chrome) and VNC server installed. This integration manages this integration automatically for you providing a correct configured @WebDriver@ instance as well as Selenium container and VNC client for recording the session up and running. Finally it also integrates with Arquillian Recorder to provide link to the recording of the test.
+
+p. To use it, apart from Arquillian Drone dependencies you only need to provide @cube-docker-drone@ dependency:
+
+bc(prettify).. <dependency>
+  <groupId>org.arquillian.cube</groupId>
+  <artifactId>arquillian-cube-docker-drone</artifactId>
+  <scope>test</scope>
+  <version>${version.arquillian.cube}</version>
+</dependency>
+
+p. You can read more about Arquillian Drone integration "right here.":http://arquillian.org/arquillian-cube/#_drone
+
+=:
+
+- <i class="icon-star"></i> Integration with Arquillian Graphene :=
+
+p. Arquillian Graphene is a wrapper around Arquillian Drone to provide a simplification in Page Object patter, AJAX testing or High Level find elements.
+
+p. To use it, apart from Arquillian Graphene (and Arquillian Drone) dependencies you only need to add @cube-docker-drone@ dependency. Cube will be smart enough to inspect classpath and decide to provide Graphene integration or not.
+
+bc(prettify).. <dependency>
+  <groupId>org.arquillian.cube</groupId>
+  <artifactId>arquillian-cube-docker-drone</artifactId>
+  <scope>test</scope>
+  <version>${version.arquillian.cube}</version>
+</dependency>
+
+p. You can read more about Arquillian Graphene integration at "http://arquillian.org/arquillian-cube/#_graphene":http://arquillian.org/arquillian-cube/#_graphene.
+
+=:
+
+- <i class="icon-star"></i> Allow parallel execution of tests :=
+
+p. One of the main problems when running Cube tests in parallel against same Docker host is that you cannot instantiate twice the same container due a conflict name (you cannot instantiate two containers with same name). To avoid this, @star@ operator has been created for @CUBE@ format.
+
+p. The idea behind star operator is that if the name and links of a container contains symbol @*@ then Arquillian Cube will change that part with a random UUID and updating the links accordantly.
+
+p. For example:
+
+bc(prettify).. <property name="dockerContainers">
+  tomcat*:
+    image: tutum/tomcat:8.0
+    portBindings: [8080/tcp]
+    links:
+      - ping*
+  ping*:
+    image: jonmorehouse/ping-pong
+    exposedPorts: [8089/tcp]
+</property>
+
+p. Might be executed to Docker host as:
+
+bc(prettify).. <property name="dockerContainers">
+  tomcat_123456:
+    image: tutum/tomcat:8.0
+    portBindings: [54678 -> 8080/tcp]
+    env: [ping_HOSTNAME=ping_123456]
+    links:
+      - ping_123456
+  ping_123456:
+    image: jonmorehouse/ping-pong
+    exposedPorts: [8089/tcp]
+</property>
+
+p. Notice that now the name is generated randomly. Now you can run tests in parallel against same Docker host.
+
+p. Currently we are not providing a way for scaling in docker-compose format, but in next release we will offer this possibility as well.
+
+p. You can read more about this feature at "http://arquillian.org/arquillian-cube/#_parallel_execution":http://arquillian.org/arquillian-cube/#_parallel_execution.
+
+=:
+
+- <i class="icon-star"></i> Provide a mechanism for tests/suites to run if certain assumptions are satisfied :=
+
+p. Sometimes you write a test and you want to force user to run a test against an specific docker machine. In these cases, if the machine where you are running the test does not contain a docker machine with this name, the result will be a failing test. But probably what you expect is to simply skip the test. This is what this feature provides.
+
+p. To do it, you need to use @ArquillianConditionalRunner@ or @RequirementRule@ and import @cube-requirement@ dependency:
+
+bc(prettify).. <dependency>
+  <groupId>org.arquillian.cube</groupId>
+  <artifactId>arquillian-cube-requirement</artifactId>
+  <scope>test</scope>
+  <version>${version.arquillian.cube}</version>
+</dependency>
+
+And the test:
+
+bc(prettify).. @RunWith(ArquillianConditionalRunner.class)
+@RequiresDockerMachine(name = "dev")
+public class HelloWorldServletTest {
+   ...
+}
+
+p. This test is only executed if there is a docker machine named @dev@. If not, it is skipped.
+
+p. You can read more about this feature at "http://arquillian.org/arquillian-cube/#_requirements_module":http://arquillian.org/arquillian-cube/#_requirements_module.
+
+=:
+
+- <i class="icon-star"></i> Integration with RestAssured :=
+
+p. If you are using Docker and RestAssured for testing REST API, probably you have already faced the problem of having to configure RestAssured in all tests with an IP different than localhost and a port different of 8080. Instead of repeating this configuration code again and again in all your tests, Arquillian Cube can do it for you.
+
+p. To do it you only need to add (apart from RestAssured dependency) the @cube-docker-restassured@ dependency.
+
+bc(prettify).. <dependency>
+  <groupId>org.arquillian.cube</groupId>
+  <artifactId>arquillian-cube-docker-restassured</artifactId>
+  <scope>test</scope>
+  <version>${version.arquillian.cube}</version>
+</dependency>
+
+p. You can read more about RestAssured integration at "http://arquillian.org/arquillian-cube/#_rest_assured_integration":http://arquillian.org/arquillian-cube/#_rest_assured_integration.
+
+=:
+
+- <i class="icon-star"></i> Enrichment for Internal IP :=
+
+p. Now you can enrich your tests with internal IP used in an specific container.
+
+bc(prettify).. @CubeIp(containerName = "tomcat")
+String ip;
+
+=:
