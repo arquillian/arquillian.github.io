@@ -88,7 +88,14 @@ module Awestruct::Extensions::Releases
           if post_tags
             release_page.tags += post_tags
           end
-
+          if component.type.nil?
+            STDERR.puts "!!!!!!!!!!!!!!!"
+            STDERR.puts "!!! WARNING !!!"
+            STDERR.puts "!!!!!!!!!!!!!!!"
+            STDERR.puts "The component #{component.html_url} doesn't belong into any of the component types, please edit the arquillian.rb file and add it into an appropriate component type."
+            STDERR.puts "Then remove at least the _tmp/datacache/ directory and try to run the build again."
+            exit(false)
+          end
           release_page.tags << 'release' << component.type.gsub('_', '-') << component.key
           if component.type =~ /(platform|extension)/ and release.version.end_with? '.Final'
             release_page.tags << 'jbosscentral' if !release_page.tags.include? 'jbosscentral'
