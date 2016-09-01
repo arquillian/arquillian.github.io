@@ -1,0 +1,150 @@
+---
+date: 2016-08-30
+author: lordofthejars
+---
+
+!https://camo.githubusercontent.com/852af994863792f63a53297b5ef98df5d3e39424/687474703a2f2f7777772e73746172736869706e6976616e2e636f6d2f626c6f672f77702d636f6e74656e742f75706c6f6164732f323031302f31302f44652d4c616e6369652d63726f702e6a7067!
+
+p. This is the first release of Arquillian Cube Q. Q is an extension of Arquillian Cube that allows you to write chaos tests. As in Cube, it relies on Docker to execute these kind of tests.
+
+p. There are several level of chaos that you might introduce in order to verify how your services are behaving when unexpected happens. Starting from network chaos (latency, bandwidth limitation, …​) to operative system chaos (cpu burn, io burn, dill disk, …​). Arquillian Q as all the Arquillian projects, reuses existing chaos frameworks by integrating them into Arquillian universe.
+
+h3. Supported Chaos
+
+- <i class="icon-star"></i> Network Chaos :=
+
+p. Arquillian Cube Q implements network chaos leveraging "Toxiproxy project":https://github.com/Shopify/toxiproxy.
+
+p. You can use following toxics:
+
+* "latency":https://github.com/Shopify/toxiproxy#latency
+* "down":https://github.com/Shopify/toxiproxy#down
+* "bandwidth":https://github.com/Shopify/toxiproxy#bandwidth
+* "slow close":https://github.com/Shopify/toxiproxy#slow_close
+* "timeout":https://github.com/Shopify/toxiproxy#timeout
+* "slicer":https://github.com/Shopify/toxiproxy#slicer
+
+p. A test with network chaos with Arquillian Cube Q looks like:
+
+bc(prettify).. @RunWith(Arquillian.class)
+public class ToxicFuntionalTestCase {
+
+  @ArquillianResource
+  private NetworkChaos networkChaos;
+
+  @HostIp
+  private String ip;
+
+  @Test
+  public void shouldAddLatency() throws Exception {
+    networkChaos.on("pingpong", 8080).latency(latencyInMillis(4000))
+      .exec(() -> {
+
+        URL url = new URL("http://" + ip + ":" + 8081 + "/hw/HelloWorld");
+        final long l = System.currentTimeMillis();
+        String response = IOUtil.asString(url.openStream());
+        System.out.println(response);
+        System.out.println("Time:" + (System.currentTimeMillis() - l));
+        // assertions
+    });
+  }
+}
+
+p. In this example, the communication with @pingpong@ container on exposed port @8080@ is toxified with a latency of 4 seconds.
+
+p. You can read more about network chaos at "https://github.com/arquillian/arquillian-cube-q#network-chaos":https://github.com/arquillian/arquillian-cube-q#network-chaos and an example at "https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-toxic":https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-toxic
+
+=:
+
+- <i class="icon-star"></i> Container Chaos :=
+
+p. In order to introduce chaos to the container, Arquillian Q integrates with "Pumba project":https://github.com/gaia-adm/pumba.
+
+p. It supports following toxics: 
+
+* stopping a container
+* removing a container
+* killing a container process with a signal.
+
+p. A test with container chaos with Arquillian Cube Q looks as simple as:
+
+bc(prettify).. @RunWith(Arquillian.class)
+public class PumbaFunctionalTestCase {
+
+  @ArquillianResource
+  ContainerChaos containerChaos;
+
+  @ArquillianResource
+  DockerClient dockerClient;
+
+  @Test
+  public void shouldKillContainers() throws Exception {
+    containerChaos
+            .onCubeDockerHost()
+                .killRandomly(
+                        ContainerChaos.ContainersType.regularExpression("^pingpong"),
+                        ContainerChaos.IntervalType.intervalInSeconds(4),
+                        ContainerChaos.KillSignal.SIGTERM
+                )
+            .exec();
+
+        final List<Container> containers = dockerClient.listContainersCmd().exec();
+        // Pumba container is not killed by itself
+        assertThat(containers).hasSize(1);
+
+    }
+
+}
+
+p. In this example, containers called @pingpong@ are killed every 4 seconds.
+
+p. You can read more about container chaos at "https://github.com/arquillian/arquillian-cube-q#container-chaos":https://github.com/arquillian/arquillian-cube-q#container-chaos and an example at "https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-pumba":https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-pumba
+
+=:
+
+- <i class="icon-star"></i> Operative System Chaos :=
+
+p. To do operative system chaos Arquillian Q uses some modified version of "Netflix Simian Army":https://github.com/Netflix/SimianArmy project scripts.
+
+p. At this moment we provide: 
+
+* blocking a port
+* burning CPU or IO
+* filling the disk
+* killing the process
+* null route
+
+p. Here's the example of the test with operative system chaos using Arquillian Cube Q:
+
+bc(prettify).. @RunWith(Arquillian.class)
+public class SimianArmyFunctionalTestCase {
+
+    @ArquillianResource
+    OperativeSystemChaos operativeSystemChaos;
+
+    @HostIp
+    String dockerHost;
+
+    @HostPort(containerName = "pingpong ", value = 8080)
+    int port;
+
+    @Test(expected = Exception.class)
+    public void shouldExecuteBurnCpuChaos() throws Exception {
+        operativeSystemChaos.on("pingpong")
+            .burnCpu(singleCpu())
+            .exec();
+        //.....
+    }
+}
+
+p.This test burns one of the CPU
+
+p. You can read more about operative system chaos at "https://github.com/arquillian/arquillian-cube-q#operative-system-chaos":https://github.com/arquillian/arquillian-cube-q#operative-system-chaos and an example at "https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-simianarmy":https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-simianarmy
+
+=:
+
+h3. What's Next
+
+p. As it is an @Alpha1@ release, you might expect some changes in the API as we move towards the final version, although we will try hard to not break anything. 
+
+p. Currently the toxics are explicitly defined in the code, for example you statically define latency of 4 seconds. Next step is creating a random method using which you can randomize the parameters of the toxics. Similarly you would be able to randomize the order of applying toxics.
