@@ -1,0 +1,68 @@
+---
+date: 2016-09-1
+author: lordofthejars
+---
+
+Apart from bug fixes in the openshift module, we brought very anticipated new feature - support for Kubernetes. This was a joint effort with the amazing "@fabric-8@ team":https://fabric8.io/.
+
+h3. New Features
+
+- <i class="icon-star"></i> Kubernetes Support :=
+
+p. The kubernetes extension helps you write and run integration tests for your Kubernetes/Openshift application.
+
+p. This extension will run tests in a black-box fashion, creating and managing a temporary namespace for your tests, apply all Kubernetes resources required to create your environment and once everything is ready it will run your tests. The tests will be enriched with resources required to access services. Finally when testing is over it will cleanup everything.
+
+p. The test cases are meant to interact with the provided services and assert that the environment is in the expected state.
+
+bc(prettify).. @RunWith(Arquillian.class)
+public class HelloWorldTest {
+
+    @Named("hello-world-service")
+    @ArquillianResource
+    Service helloWorld;
+
+    @Test
+    public void shouldShowHelloWorld() throws IOException {
+        assertNotNull(helloWorld);
+        assertNotNull(helloWorld.getSpec());
+        assertNotNull(helloWorld.getSpec().getPorts());
+        assertFalse(helloWorld.getSpec().getPorts().isEmpty());
+    }
+}
+
+p. In this example, test reads for @kubernetes.json@ file form the root of the classpath, deploys everything and injects Kubernetes components into the test. Notice that you can assert that elements are correctly configured as well as getting information for connecting to the services and validate they have been deployed correctly.
+
+p. You can also import "@io.fabric8:kubernetes-assertions@":https://github.com/fabric8io/fabric8/tree/master/components/kubernetes-assertions, which is built on top of excellent "@assertj@":http://joel-costigliola.github.io/assertj/ project, you'll be able to write assertions like:
+
+bc(prettify).. @RunWith(Arquillian.class)
+public class ExampleTest {
+
+  @ArquillianResource
+  KubernetesClient client;
+
+  @ArquillianResource
+  Session session;
+
+  @Test
+  public void testAtLeastOnePod() throws Exception {
+    assertThat(client).pods()
+                      .runningStatus()
+                      .filterNamespace(session.getNamespace())
+                      .hasSize(1);
+  }
+}
+
+p. You can read more about Kubernetes integration at "http://arquillian.org/arquillian-cube/#_kubernetes":http://arquillian.org/arquillian-cube/#_kubernetes and full example at "https://github.com/arquillian/arquillian-cube/tree/master/kubernetes/ftest-kubernetes":https://github.com/arquillian/arquillian-cube/tree/master/kubernetes/ftest-kubernetes
+
+=:
+
+- <i class="icon-star"></i> Fabric8 Support :=
+
+p. The Fabric8 extension can be used along with the Kubernetes extension to provide a tighter integration with the Fabric8 Microservices Platform.
+
+p. It provides @Fabric8Label@ provider and @Fabric8Annotation@ provider.
+
+p. You can read more about Fabric 8 integration at "http://arquillian.org/arquillian-cube/#_fabric8":http://arquillian.org/arquillian-cube/#_fabric8
+
+=:
