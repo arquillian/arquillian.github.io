@@ -1,0 +1,132 @@
+---
+date: 2016-09-23
+author: lordofthejars
+---
+
+p. This is the first release of Arquillian Pact. This extension provides an integration between Arquillian and "Pact":https://docs.pact.io/.
+
+p. Pact is a framework that provides support for Consumer Driven Contracts testing. You can read more about Consumer Driven Contracts in this interesting "blog post":http://martinfowler.com/articles/consumerDrivenContracts.html or in our upcoming book "Testing Java Microservices":https://www.manning.com/books/testing-java-microservices.
+
+Full documentation of the project can be found at "http://arquillian.org/arquillian-pact/":http://arquillian.org/arquillian-pact/
+
+h3. Consumer
+
+p. First thing to do is to develop the Consumer part of the test. Consumer part of Consumer-Driven Contract defines requirements from the consumer of the API which are then used to develop the client interaction with the API as well as to validate provider implementation.
+
+p. <i class="icon-star"></i> Dependencies
+
+bc(prettify).. <dependencies>
+    <dependency>
+        <groupId>org.arquillian.pact</groupId>
+        <artifactId>arquillian-pact-consumer-core</artifactId>
+        <version>${version.arquillian_pact}</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>au.com.dius</groupId>
+        <artifactId>pact-jvm-consumer_2.11</artifactId>
+        <scope>test</scope>
+        <version>3.5.0-beta.1</version>
+    </dependency>
+</dependencies>
+
+
+p. <i class="icon-star"></i> Test
+
+bc(prettify).. @RunWith(Arquillian.class)
+public class ClientGatewayTest {
+
+    @Deployment
+    public static JavaArchive createDeployment() {
+        return ShrinkWrap.create(JavaArchive.class).addClasses(ClientGateway.class);
+    }
+
+    @Pact(provider="test_provider", consumer="test_consumer")
+    public PactFragment createFragment(PactDslWithProvider builder) {
+
+        Map<String, String> header = new HashMap<>();
+        header.put("Content-Type", "application/json");
+
+        return builder
+                .given("test state")
+                .uponReceiving("ConsumerTest test interaction")
+                .path("/")
+                .method("GET")
+                .willRespondWith()
+                .status(200)
+                .headers(header)
+                .body("{\"responsetest\": true, \"name\": \"harry\"}")
+                .toFragment(); (4)
+    }
+
+    @EJB
+    ClientGateway clientGateway;
+    
+    @Test 
+    @PactVerification("test_provider")
+    public void should_return_message() throws IOException {
+        assertThat(clientGateway.getMessage(), is("{\"responsetest\": true, \"name\": \"harry\"}"));
+    }
+}
+
+
+p. You can see more examples in the "GitHub repository":https://github.com/arquillian/arquillian-pact/tree/master/consumer/.
+
+
+h3. Provider
+
+p. The next thing you need to do is share the contract (aka "pact" file) with Provider project and validate that provider produces the expected responses to defined requests. This is done by replaying all requests defined in contract against real provider and validating that the response is the expected one.
+
+p. We currently support following locations of the contracts:
+* an arbitrary URL
+* "Pact Broker":https://github.com/bethesque/pact_broker - repository of the contracts
+* local directory
+
+p. <i class="icon-star"></i> Dependencies
+
+bc(prettify).. <dependency>
+    <groupId>org.arquillian.pact</groupId>
+    <artifactId>arquillian-pact-provider-core</artifactId>
+    <scope>test</scope>
+    <version>${version.arquillian_pact}</version>
+</dependency>
+<dependency>
+    <groupId>au.com.dius</groupId>
+    <artifactId>pact-jvm-provider_2.11</artifactId>
+    <scope>test</scope>
+    <version>3.5.0-beta.1</version>
+</dependency>
+
+p.  <i class="icon-star"></i> Test
+
+bc(prettify).. @RunWith(Arquillian.class)
+@Provider("test_provider")
+@PactFolder("pacts")
+public class MyServiceProviderTest {
+
+    @Deployment(testable = false)
+    public static WebArchive createDeployment() {
+        return ShrinkWrap.create(WebArchive.class).addClass(MyService.class);
+    }
+
+    @CurrentConsumer
+    Consumer consumer;
+
+    @CurrentInteraction
+    RequestResponseInteraction interaction;
+
+    @ArquillianResource
+    URL webapp;
+
+    @ArquillianResource
+    Target target;
+
+    @Test
+    public void should_provide_valid_answers() {
+        target.testInteraction(webapp, consumer.getName(), interaction);
+    }
+
+}
+
+p. You can see full example in our "GitHub repository":https://github.com/arquillian/arquillian-pact/tree/master/provider/.
+
