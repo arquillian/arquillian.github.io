@@ -466,6 +466,8 @@ module Awestruct::Extensions::Repository::Visitors
           'org_jboss_arquillian' => 'Arquillian Core',
           'org_jboss_arquillian_core' => 'Arquillian Core',
           'arquillian_cube' => 'Arquillian Cube Extension',
+          'arquillian_cube_q' => 'Arquillian Cube Q Extension',
+          'arquillian_pact' => 'Arquillian Pact Extension',
           'arquillian_drone' => 'Arquillian Drone Extension',
           'arquillian_warp' => 'Arquillian Warp',
           'arquillian_graphene' => 'Graphene',
@@ -602,6 +604,16 @@ module Awestruct::Extensions::Repository::Visitors
               :jboss_username => 'lfryc'
             })
           elsif repository.path.eql? 'arquillian-cube'
+            lead = OpenStruct.new({
+              :name => 'Alex Soto',
+              :jboss_username => 'lordofthejars'
+            })
+          elsif repository.path.eql? 'arquillian-cube-q'
+            lead = OpenStruct.new({
+              :name => 'Alex Soto',
+              :jboss_username => 'lordofthejars'
+            })
+          elsif repository.path.eql? 'arquillian-pact'
             lead = OpenStruct.new({
               :name => 'Alex Soto',
               :jboss_username => 'lordofthejars'
@@ -926,7 +938,7 @@ module Awestruct::Extensions::Repository::Visitors
         pomrev = repository.client.revparse("HEAD:#{repository.relative_path}#{container.relative_path}pom.xml")
       end
       pom = REXML::Document.new(rc.cat_file(pomrev))
-	
+
 	unless pom.root.text('name').nil?
             container.name = pom.root.text('name').sub(/ Container$/, '\0 Adapter').sub(/^Arquillian Container (.*)/, 'Arquillian \1 Container Adapter')
 	else
@@ -962,7 +974,7 @@ module Awestruct::Extensions::Repository::Visitors
     include Base
 
     def handles(repository)
-      repository.path =~ /^(arquillian-extension-.+|jsfunit|arquillian-graphene|arquillian-droidium|arquillian-spacelift|arquillian-recorder|arquillian-cube|arquillian-governor|arquillian-cube-q)$/
+      repository.path =~ /^(arquillian-extension-.+|jsfunit|arquillian-graphene|arquillian-droidium|arquillian-spacelift|arquillian-recorder|arquillian-cube|arquillian-governor|arquillian-cube-q|arquillian-pact)$/
     end
 
     def visit(repository, site)
