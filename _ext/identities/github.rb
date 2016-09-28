@@ -125,16 +125,20 @@ module Identities
         if !@teams.nil?
           @teams.each do |team|
             url = TEAM_MEMBERS_URL_TEMPLATE % team[:id]
-            members = RestClient.get(url, :accept => 'application/json') 
-            members.content.each do |m|
-              github_id = m['login']
-              identity = identities.lookup_by_github_id(github_id)
-              # identity should not be null, mostly for testing
-              if !identity.nil?
-                identity.send(team[:name] + '=', true)
-                identity.teams = [] if identity.teams.nil?
-                identity.teams << team[:name]
+            begin
+              members = RestClient.get(url, :accept => 'application/json')
+              members.content.each do |m|
+                github_id = m['login']
+                identity = identities.lookup_by_github_id(github_id)
+                # identity should not be null, mostly for testing
+                if !identity.nil?
+                  identity.send(team[:name] + '=', true)
+                  identity.teams = [] if identity.teams.nil?
+                  identity.teams << team[:name]
+                end
               end
+            rescue Exception => e
+              puts "Failed fetching #{url}. Reason: '#{e.message}'."
             end
           end
         end
