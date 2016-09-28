@@ -60,7 +60,13 @@ module Identities
           tmp_dir = IdentityHelper::get_config.tmp_dir
           non_existing_gravatar = IdentityHelper::get_non_existing_gravatar
           user_gravatar = getOrCache(File.join(tmp(tmp_dir, 'avatars'), "gravatar-#{self.gravatar_id}.jpg"), GRAVATAR_URL_TEMPLATE % [self.gravatar_id, 48])
-          image_signature(user_gravatar).equal? image_signature(non_existing_gravatar)
+          begin
+            image_signature(user_gravatar).equal? image_signature(non_existing_gravatar)
+          rescue Exception => e
+            puts "Failed loading gravatar. #{e}"
+            puts self.to_yaml
+            return false
+          end  
         end
       end
 
