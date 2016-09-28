@@ -1,0 +1,77 @@
+---
+date: 2016-09-14
+author: matousjobanek
+---
+
+!(graphic pull-right)/images/blog/drone_400.png!
+
+h3. Chrome options
+
+This release brings you a possibility to set chrome options for a chromeDriver through your arquillian.xml file. You can find all possible options that can be set on this "web page":https://sites.google.com/a/chromium.org/chromedriver/capabilities.
+The process of setting options uses a "ChromeOptions class":https://seleniumhq.github.io/selenium/docs/api/java/org/openqa/selenium/chrome/ChromeOptions.html which means that the parameter names (used in arquillian.xml) are tightly coupled with the names of the set/add methods defined in the class. It is expected that the name of each parameter consists of:
+<pre>"chrome" + (name of the set/add method of ChromeOption class without first three chars)</pre> the whole string should be in camelcase. For example, in case of an option *args* which is coupled with the method <a href="https://seleniumhq.github.io/selenium/docs/api/java/org/openqa/selenium/chrome/ChromeOptions.html#addArguments-java.util.List-">addArguments</a>, the parameter should look like this:
+<pre style='color:#000000;background:#ffffff;'><span style='color:#000080; '>&lt;</span><span style='color:#000080; '>property</span> <span style='color:#074726; '>name</span><span style='color:#0000ff; '>=</span><span style='color:#0000e6; '>"</span><span style='color:#0000e6; '>chromeArguments</span><span style='color:#0000e6; '>"</span><span style='color:#000080; '>></span><code>--first-argument --second-argument</code><span style='color:#000080; '>&lt;/</span><span style='color:#000080; '>property</span><span style='color:#000080; '>></span>
+</pre>
+
+p(info). %Please notice that there are two methods named <i>addArguments</i> in the ChromeOptions class, one with a parameter which is a list of strings and second one with an array of strings - Drone treads with them as with one single method (for other methods it is applied analogically).%
+
+h4. Value formats
+
+* In the cases, when the value can be an array or list of strings/files, you should specify all of them in one string separated by space. (This is also applied for extensions as well as for encoded extensions.)
+
+* It is a little bit different in the case of experimental options. Since there is expected a set of dictionaries, the most suitable way is using JSON format (can be in multiline format) - for example:
+<pre style='color:#000000;background:#ffffff;'><span style='color:#000080; '>&lt;</span><span style='color:#000080; '>property</span> <span style='color:#074726; '>name</span><span style='color:#0000ff; '>=</span><span style='color:#0000e6; '>"</span><span style='color:#0000e6; '>chromeExperimentalOption</span><span style='color:#0000e6; '>"</span><span style='color:#000080; '>></span><code>
+{
+  "perfLoggingPrefs": {
+    "traceCategories": ",blink.console,disabled-by-default-devtools.timeline,benchmark"
+  },
+  "prefs": {
+    "download.default_directory": "/usr/local/path/to/download/directory"
+  }
+}
+</code><span style='color:#000080; '>&lt;/</span><span style='color:#000080; '>property</span><span style='color:#000080; '>></span>
+</pre>
+
+
+h4. Debug
+
+If you struggle with passing required chrome options through the arquillian.xml file, you can use a parameter @chromePrintOptions@ with a value @true@:
+<pre style='color:#000000;background:#ffffff;'><span style='color:#000080; '>&lt;</span><span style='color:#000080; '>property</span> <span style='color:#074726; '>name</span><span style='color:#0000ff; '>=</span><span style='color:#0000e6; '>"</span><span style='color:#0000e6; '>chromePrintOptions</span><span style='color:#0000e6; '>"</span><span style='color:#000080; '>></span><code>true</code><span style='color:#000080; '>&lt;/</span><span style='color:#000080; '>property</span><span style='color:#000080; '>></span>
+</pre> This ensures that Drone prints out the whole content of ChromeOptions in a JSON format on a standard output.
+
+
+
+h3. Firefox 48
+
+Since Mozilla has changed the internals of Firefox in a way that makes the community-provided Firefox Driver no longer work, you need to use Geckodriver. This applies for Firefox 48+. The gecko drivers can be downloaded "here":https://github.com/mozilla/geckodriver/releases
+This Drone release partially supports (there is needed an input from the user site) these changes. To get it run you need to download the Geckodriver and specify a path to the driver using a parameter @firefoxDriverBinary@ there in your arquillian.xml file:
+<pre style='color:#000000;background:#ffffff;'><span style='color:#000080; '>&lt;</span><span style='color:#000080; '>property</span> <span style='color:#074726; '>name</span><span style='color:#0000ff; '>=</span><span style='color:#0000e6; '>"</span><span style='color:#0000e6; '>firefoxDriverBinary</span><span style='color:#0000e6; '>"</span><span style='color:#000080; '>></span><code>/path/to/your/driver/binary</code><span style='color:#000080; '>&lt;/</span><span style='color:#000080; '>property</span><span style='color:#000080; '>></span>
+</pre> Apart from this configuration, you also need to have Selenium 3 on your classpath - see below.
+
+
+h3. Selenium version
+
+As this release of Drone is a minor release and the latest Selenium release is a beta version that also contains a change of required Java version, we decided no to fully support it so far. In other words, Selenium 3 dependency is not automatically fetched by Drone 2.0.1.Final (the default one is still 2.53.1).
+If you need to use the latest version of Selenium (for example because of Geckodriver - see above), then the most easiest way is specifying @selenium-bom@ dependency in a @dependencyManagement@ part of your pom.xml file:
+
+div(filename). pom.xml
+
+bc(prettify)..  <!-- clip -->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.arquillian.selenium</groupId>
+            <artifactId>selenium-bom</artifactId>
+            <version>3.0.0-beta3</version>
+            <scope>import</scope>
+            <type>pom</type>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+<!-- clip -->
+
+
+p(info). %*IMPORTANT:* If you also use the @arquillian-drone-bom@ (or other BOMs), make sure that the @selenium-bom@ is placed <u>before</u> other BOMs - to make the change effective.%
+
+The full support of Selenium 3 and Geckodriver will be provided by next release of Drone (2.1.0.Alpha1), so stay tuned.
+We hope that you'll enjoy our new stuff and look forward to hear your feedback.
