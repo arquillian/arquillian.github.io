@@ -1,0 +1,143 @@
+---
+date: 2016-11-03
+author: lordofthejars
+---
+
+p. Arquillian Pact is an extension that provides an integration between Arquillian and "Pact":https://docs.pact.io/.
+
+h3. What's new
+
+p. <i class="icon-star"></i> Skip Deployment
+
+p. In case of consumer driven contracts, there are two kinds of tests - consumer tests and provider tests. Usually in your CI environment you want to run provider tests against two different scenarios:
+
+p. Against a master branch of provider to detect if provider team has done its work.
+
+p. Against (pre)production. if you support deploying consumer independently of a provider, you need to see what’s happen if you deploy this new consumer with new contract to (pre)production. You want to verify that everything is going to continue working with new consumer on production.
+
+p. In both cases, test is exactly the same code and tests the same purposes. But there is an slightly difference in both cases, in first scenario, you want to deploy the HEAD provider code. So one way todo it is using Arquillian container @@Deployment@ method to create the package, start the container and deploy it. But in later case, when you want to run contract test against provider that is already deployed on (pre)production environment, you don’t need to deploy anything nor starting or stopping any container. For this reason @skipDeployment@ configuration attribute has been created.
+
+p. @skipDeployment@ default value by default is set to false, which means that test will behave as it usually does, but when it is set to true, Arquillian is going to ignore anything related with container. You can think about a dynamic way of converting an Arquillian container test into Arquillian standalone test.
+
+p. Let's see an example:
+
+bc(prettify).. @RunWith(Arquillian.class)
+@Provider("test_provider")
+@PactFolder("pacts")
+@RunAsClient
+public class MyServiceProviderTest {
+
+    @Deployment(testable = false)
+    public static WebArchive createDeployment() {
+        return ShrinkWrap.create(WebArchive.class).addClass(MyService.class);
+    }
+
+    @ArquillianResource
+    @Environment("myservice.url")
+    URL webapp;
+
+    @ArquillianResource
+    Target target;
+
+    @Test
+    public void should_provide_valid_answers() {
+        target.testInteraction(webapp);
+    }
+
+}
+
+p. Given previous test, if @skipDeployment@ is false, this test will behave like:
+
+# Start chosen application server (Wildfly, TomEE, Tomcat, …​).
+# Package and Deploy MyService.
+# Enrich webapp URL with the one provided by application server. @Environment variable is ignored.
+# Executes contract test against deployed application.
+# Undeploy and stop everything.
+
+p. But if you set @skipDeployment@ to true, lifecycle is slightly different:
+
+# Enrich webapp URL with Java system property or environment variable named @myservice.url@ set in @@Environment@.
+# Executes contract tests against URL provided by @Environment.
+
+p. And it does nothing else. Notice that with a simple attribute you can enable/disable how Arquillian behaves regarding deployment lifecycle, and how you can reuse same test (DRY) for different scenarios.
+
+p. You can read more about this feature at "Pact documentation":https://github.com/arquillian/arquillian-pact#skip-deployment
+
+p. <i class="icon-star"></i> Implements provider states with parameters introduced at Version 3 of Pact Spec
+
+p. You can also use parameters for defining __pact states__. This feature is introduced in version 3 of pact contract files.
+
+In consumer part you can add states with parameters doing:
+
+bc(prettify).. Map<String, Object> stateParams = new HashMap<>();
+stateParams.put("name", "Alexandra");
+
+return builder
+        .given("test state", stateParams)
+        .uponReceiving("ConsumerTest test interaction")
+        .path("/")
+        .method("GET")
+        .willRespondWith()
+        .status(200)
+        .headers(header)
+        .body("{\"responsetest\": true, \"name\": \"harry\"}")
+        .toFragment();
+
+p. Notice that you are using @given@ passing state name and parameters.
+
+p. Then in provider side:
+
+bc(prettify)..  @State("test state")
+public void testStateMethod(Map<String, Object> params) {
+    assertThat(params).containsEntry("name", "Alexandra");
+}
+
+p. <i class="icon-star"></i> Changed default pact contract file to version 3 instead of version 2.
+
+p. <i class="icon-star"></i> Updated Pact version artifact to 3.5.0-beta2.
+
+p. <i class="icon-star"></i> Add Pact Publisher mechanism
+
+p. Arquillian Pact also offers to developers a way to publish "pact" contract files. With Pact you usually need to relay on build tool to publish "pact" files. Pact offers a Maven/Gradle plugin for publishing contracts to Pact Broker, but if you want to use Git repository or sharing contracts or shared folder, then you’ll need to start hacking the build tool which is not always easy.
+
+p. In Arquillian Pact we have defined a Pact Publishing SPI so you can implement your own publisher. Also three implementations different publishers are provided (Folder, URL[POST method] and Git).
+
+p. It is important to note that by default @publishContracts@ configuration attribute is false. This means that by default when you run any consumer contract test, contracts are not published. @publishContracts@ configuration attribute should be only set to true if and only if you are releasing a new consumer, and this will be done by your CI/CD environment.
+
+p. For example to use it with Folder Publisher, arquillian.xml might look like:
+
+bc(prettify).. <?xml version="1.0"?>
+<?xml version="1.0"?>
+<arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns="http://jboss.org/schema/arquillian"
+            xsi:schemaLocation="http://jboss.org/schema/arquillian
+    http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <extension qualifier="pact-consumer">
+        <property name="pactPublishConfiguration">
+            provider: folder
+            outputFolder: /mypacts
+        </property>
+    </extension>
+
+</arquillian>
+
+p. With this configuration and setting @publishContracts@ to true, Arquillian Pact copies generated contracts to @outputFolder@.
+
+p. You can set outputFolder value using Java system property or environment variable by using form @${name:-defaultvalue}@. For example @outputFolder: ${output:-/mypacts}@ will see if there is a Java system property with name output and get the value, if there is no value, then checks for environment variable and if not will return the default value.
+
+p. You can read more about this feature at "Pact documentation":https://github.com/arquillian/arquillian-pact#pact-publisher
+
+p. <i class="icon-star"></i> @@Pact@ annotation can be used at class level
+
+p. You can use @@Pact@ annotation at class level, so methods that defines a pact fragment, just need to return @PactFragment@ class. Information will be picked from class level. In case of setting annotation at class and method level, method one will take precedence.
+
+h3. Bug fixing
+
+p. <i class="icon-star"></i> GitPactLoader uses password field as passphrase.
+
+@GitPactLoader@ uses password field as passphrase which is totally wrong since passphrase of a private key is not a password. "issue-31":https://github.com/arquillian/arquillian-pact/issues/31
+
+p. <i class="icon-star"></i> GitPactLoader uses a default key which was wrong.
+
+GitPactLoader uses a default key which was wrong which was not the one in current user home directory.
