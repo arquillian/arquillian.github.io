@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Arquillian Pact  Extension 1.0.0.Alpha3 Released &#183; Arquillian Blog</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="The Arquillian team is proud to announce the 1.0.0.Alpha3 release of the Arquillian Pact  Extension component!" name="description">
+    <meta content="Alex Soto" name="author">
+    <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml">
+    <link href="/stylesheets/screen.css?0fd0a1c2677d9b182484f638c62872880d576e68" rel="stylesheet">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.js"></script>
+    <![endif]-->
+    <script src="http://s7.addthis.com/js/250/addthis_widget.js#pubid=ra-4eab99ce39a26d46"></script>
+    <link href="/favicon.ico" rel="shortcut icon">
+  </head>
+  <body class="blog">
+    <header class="navbar navbar-fixed-top" id="banner" role="banner">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-target=".nav-collapse" data-toggle="collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <div class="g-plusone-slot">
+            <div class="g-plusone" data-annotation="none"></div>
+          </div>
+          <a class="brand" href="/">
+            <span class="logo"></span>
+            <span class="name">Arquillian</span>
+          </a>
+          <nav class="nav-collapse" role="navigation">
+            <ul class="nav">
+              <li><a href="/invasion/">Invasion!</a></li>
+              <li><a href="/features/">Features</a></li>
+              <li><a href="/guides/">Guides</a></li>
+              <li class="active"><a href="/blog/">Blog</a></li>
+              <li><a href="/community/">Community</a></li>
+              <li><a href="/modules/">Modules</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </header>
+    <div id="main" role="main">
+      <div id="content-header">
+        <div class="container">
+          <h1>
+            <a href="/blog/">Arquillian Blog</a>
+          </h1>
+        </div>
+      </div>
+      <div class="container">
+        <div id="content">
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2016/11/03/arquillian-pact-1-0-0-Alpha3/">Arquillian Pact  Extension 1.0.0.Alpha3 Released</a>
+              </h2>
+              <div class="byline">
+                <a href="/community/lordofthejars">
+                  <img class="avatar" height="44" src="https://avatars.githubusercontent.com/u/1517153?s=44" width="44" />
+                </a>
+                <span class="author">Posted by
+                <a href="/community/lordofthejars">Alex Soto</a></span>
+                <span class="dateinline">on Nov 03, 2016</span>
+                <div class="date"><abbr>Nov</abbr> 03</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2016/11/03/arquillian-pact-1-0-0-Alpha3/#disqus_thread" data-disqus-identifier="ac11b20e01e2538772d56fb9efa831c3ca3aa4f9">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha3</em> release of the <em>Arquillian Pact  Extension</em> component!</p>
+              <p>Arquillian Pact is an extension for writing contract-driven tests which provides integration with <a href="https://docs.pact.io/">Pact</a> framework.</p>
+              <h3>What&#8217;s new</h3>
+              <p><i class="icon-star"></i> <b>Skipping the deployment</b></p>
+              <p>In case of consumer driven contracts, there are two kinds of tests &#8211; consumer tests and provider tests. Usually in your CI environment you want to run provider tests against two different scenarios:</p>
+              <p>Against a master branch of provider to detect if provider team has already implemented all the functionalities defined in your contracts.</p>
+              <p>Against (pre)production. If you support deploying consumer independently of a provider, then you need to ensure that if you deploy new consumer with the new contracts to (pre)production everything will be still working and you haven&#8217;t introduced any regressions.</p>
+              <p>In both cases, the test itself is exactly the same. There is only one slight difference in both cases which how you set up your test environments. In the first scenario, you want to deploy the latest provider code. One way of doing it is using Arquillian container control and <code>@Deployment</code> method to create the package, start the container and deploy it. But in the latter case, when you want to run contract test against provider that is already deployed on (pre)production environment, you don’t need to deploy anything nor control the lifecycle of any container. For this reason we provided <code>skipDeployment</code> flag.</p>
+              <p><code>skipDeployment</code> default value by default is set to <code>false</code>, which means that the test will behave as it usually does, but when it is set to <code>true</code>, Arquillian is going to ignore anything related to container lifecycle. To use this strategy your test needs to be defined as `@RunAsClient`. You can think of it as a dynamic way of converting an Arquillian container test into Arquillian standalone test.</p>
+              <p>Let&#8217;s see an example:</p>
+              <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;@Provider("test_provider")&#x000A;@PactFolder("pacts")&#x000A;@RunAsClient&#x000A;public class MyServiceProviderTest {</code>&#x000A;&#x000A;<code class="prettify">    @Deployment(testable = false)&#x000A;    public static WebArchive createDeployment() {&#x000A;        return ShrinkWrap.create(WebArchive.class).addClass(MyService.class);&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @ArquillianResource&#x000A;    @Environment("myservice.url")&#x000A;    URL webapp;</code>&#x000A;&#x000A;<code class="prettify">    @ArquillianResource&#x000A;    Target target;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void should_provide_valid_answers() {&#x000A;        target.testInteraction(webapp);&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">}</code></pre>
+              <p>Given previous test, if <code>skipDeployment</code> is <code>false</code>, this test will behave like:</p>
+              <ol>
+              	<li>Start chosen application server (Wildfly, TomEE, Tomcat, …​)</li>
+              	<li>Package and Deploy MyService</li>
+              	<li>Enrich webapp URL with the one provided by application server. <code>@Environment</code> reference is ignored.</li>
+              	<li>Executes contract test against deployed application.</li>
+              	<li>Undeploy and stop everything.</li>
+              </ol>
+              <p>But if you set <code>skipDeployment</code> to <code>true</code>, lifecycle is slightly different:</p>
+              <ol>
+              	<li>Enrich webapp URL with Java system property or environment variable named <code>myservice.url</code> set in <code>@Environment</code>.<br />
+              # Executes contract tests against URL provided by @Environment.</li>
+              </ol>
+              <p>There is no additional &#8220;behind the scenes&#8221; Arquillian magic involved. Notice that with a simple attribute you can enable/disable how Arquillian behaves regarding the deployment lifecycle, and how you can reuse same test (DRY) for different scenarios.</p>
+              <p>You can read more about this feature in <a href="https://github.com/arquillian/arquillian-pact#skip-deployment">Pact documentation</a></p>
+              <p><i class="icon-star"></i> <b>Provider states with parameters introduced in Version 3 of Pact Spec</b></p>
+              <p>You can also use parameters for defining <i>pact states</i>. This feature is introduced in version 3 of pact contract files.</p>
+              <p>In consumer part you can add states with parameters doing:</p>
+              <pre class="prettify"><code class="prettify">Map&lt;String, Object&gt; stateParams = new HashMap&lt;&gt;();&#x000A;stateParams.put("name", "Alexandra");</code>&#x000A;&#x000A;<code class="prettify">return builder&#x000A;        .given("test state", stateParams)&#x000A;        .uponReceiving("ConsumerTest test interaction")&#x000A;        .path("/")&#x000A;        .method("GET")&#x000A;        .willRespondWith()&#x000A;        .status(200)&#x000A;        .headers(header)&#x000A;        .body("{\"responsetest\": true, \"name\": \"harry\"}")&#x000A;        .toFragment();</code></pre>
+              <p>Notice that you are using <code>given</code> passing state name and parameters.</p>
+              <p>Then in provider side:</p>
+              <pre class="prettify"><code class="prettify"> @State("test state")&#x000A;public void testStateMethod(Map&lt;String, Object&gt; params) {&#x000A;    assertThat(params).containsEntry("name", "Alexandra");&#x000A;}</code></pre>
+              <p><i class="icon-star"></i> <b>Pact Publisher mechanism</b></p>
+              <p>Arquillian Pact also offers additional ways to of publishing &#8220;pact&#8221; contract files comparing to what Pact itself is providing. With Pact you usually need to relay on the build tool to publish &#8220;pact&#8221; files. Pact offers a Maven and Gradle plugin for publishing contracts to Pact Broker, but if you want to use Git repository or sharing contracts through an arbitrary folder, then you’ll need to start hacking the build tool which is not always as easy as it should be :)</p>
+              <p>In Arquillian Pact we have defined a Pact Publishing SPI so you can implement your own publisher. We currently support three different publishers &#8211; Folder, URL[POST method] and Git.</p>
+              <p>For example to use it with Folder Publisher, <code>arquillian.xml</code> might look like:</p>
+              <pre class="prettify"><code class="prettify">&lt;?xml version="1.0"?&gt;&#x000A;&lt;arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&#x000A;            xmlns="http://jboss.org/schema/arquillian"&#x000A;            xsi:schemaLocation="http://jboss.org/schema/arquillian&#x000A;    http://jboss.org/schema/arquillian/arquillian_1_0.xsd"&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;extension qualifier="pact-consumer"&gt;&#x000A;        &lt;property name="pactPublishConfiguration"&gt;&#x000A;            provider: folder&#x000A;            outputFolder: /mypacts&#x000A;        &lt;/property&gt;&#x000A;    &lt;/extension&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/arquillian&gt;</code></pre>
+              <p>With this configuration and setting <code>publishContracts</code> to true, Arquillian Pact copies generated contracts to <code>outputFolder</code>.</p>
+              <p>It is important to note that by default <code>publishContracts</code> configuration attribute is <code>false</code>. This means that when you run any consumer contract test, contracts are not published. <code>publishContracts</code> configuration attribute should be only set to <code>true</code> if and only if you are publishing a new version of a consumer, and this will be done by your CI/CD environment.</p>
+              <p>You can set <code>outputFolder</code> value using Java system property or environment variable by using form <code>${name:-defaultvalue}</code>. For example <code>outputFolder: ${output:-/mypacts}</code> will first check if there is a Java system property with name output and get the value, if there is no value, then checks for environment variable. If that is not defined too it will use the default value i.e. <code>/mypacts</code>.</p>
+              <p>You can read more about this feature in <a href="https://github.com/arquillian/arquillian-pact#pact-publisher">Pact documentation</a></p>
+              <p><i class="icon-star"></i> <b><code>@Pact</code> annotation can be used at class level</b></p>
+              <p>You can use <code>@Pact</code> annotation at class level, so methods that defines a pact fragment, just need to return <code>PactFragment</code> class. Information will be picked from class level. In case of setting annotation at class and method level too, the one defined on the method will take precedence.</p>
+              <h3>Bug fixing</h3>
+              <p><i class="icon-star"></i> <b>GitPactLoader &#8211; password field as passphrase bug</b></p>
+              <p><code>GitPactLoader</code> was using password field as passphrase which is totally wrong since passphrase of a private key is not a password. <a href="https://github.com/arquillian/arquillian-pact/issues/31">issue-31</a></p>
+              <p><i class="icon-star"></i> <b>GitPactLoader &#8211; always using default key</b></p>
+              <p><code>GitPactLoader</code> was always using default key instead of the one in current user home directory.</p>
+              <h3>What is Arquillian?</h3>
+              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+              <h3>Release details</h3>
+              <table class="table table-bordered table-striped">
+                <tbody>
+                  <tr>
+                    <th>Component</th>
+                    <td>
+                      <a href="/modules/pact-extension/">Arquillian Pact  Extension</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Version</th>
+                    <td>
+                      1.0.0.Alpha3
+                      <span class="label tag">
+                        <a href="https://github.com/arquillian/arquillian-pact/commit/a5f5ef8007ceb0f1aacac98a2874f313a73914e0.html">view tag</a>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Release date</th>
+                    <td>2016-11-03</td>
+                  </tr>
+                  <tr>
+                    <th>Released by</th>
+                    <td>Bartosz Majsak</td>
+                  </tr>
+                  <tr>
+                    <th>Compiled against</th>
+                    <td>
+                      <ul class="unstyled">
+                        <li>
+                          <a href="/modules/core-platform/">Arquillian Core</a>
+                          &#8211;
+                          <a href="/blog/2016/01/28/arquillian-core-1-1-11-Final/">1.1.11.Final</a>
+                        </li>
+                        <li>
+                          <a href="/modules/resolver-shrinkwrap/">ShrinkWrap Resolver</a>
+                          &#8211;
+                          <a href="/blog/2016/09/04/resolver-2-2-4/">2.2.4</a>
+                        </li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>
+                Published artifacts
+                <small>org.arquillian.pact</small>
+              </h3>
+              <ul>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-consumer-api
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-consumer-api/1.0.0.Alpha3/arquillian-pact-consumer-api-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-consumer-api/1.0.0.Alpha3/arquillian-pact-consumer-api-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-consumer-api/1.0.0.Alpha3/arquillian-pact-consumer-api-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-consumer-core
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-consumer-core/1.0.0.Alpha3/arquillian-pact-consumer-core-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-consumer-core/1.0.0.Alpha3/arquillian-pact-consumer-core-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-consumer-core/1.0.0.Alpha3/arquillian-pact-consumer-core-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-consumer-spi
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-consumer-spi/1.0.0.Alpha3/arquillian-pact-consumer-spi-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-consumer-spi/1.0.0.Alpha3/arquillian-pact-consumer-spi-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-consumer-spi/1.0.0.Alpha3/arquillian-pact-consumer-spi-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-consumer-git-publisher
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-consumer-git-publisher/1.0.0.Alpha3/arquillian-pact-consumer-git-publisher-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-consumer-git-publisher/1.0.0.Alpha3/arquillian-pact-consumer-git-publisher-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-consumer-git-publisher/1.0.0.Alpha3/arquillian-pact-consumer-git-publisher-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-provider-api
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-api/1.0.0.Alpha3/arquillian-pact-provider-api-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-provider-api/1.0.0.Alpha3/arquillian-pact-provider-api-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-api/1.0.0.Alpha3/arquillian-pact-provider-api-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-provider-core
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-core/1.0.0.Alpha3/arquillian-pact-provider-core-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-provider-core/1.0.0.Alpha3/arquillian-pact-provider-core-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-core/1.0.0.Alpha3/arquillian-pact-provider-core-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-provider-spi
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-spi/1.0.0.Alpha3/arquillian-pact-provider-spi-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-provider-spi/1.0.0.Alpha3/arquillian-pact-provider-spi-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-spi/1.0.0.Alpha3/arquillian-pact-provider-spi-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-provider-pact-broker-loader
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-pact-broker-loader/1.0.0.Alpha3/arquillian-pact-provider-pact-broker-loader-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-provider-pact-broker-loader/1.0.0.Alpha3/arquillian-pact-provider-pact-broker-loader-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-pact-broker-loader/1.0.0.Alpha3/arquillian-pact-provider-pact-broker-loader-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-provider-maven-loader
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-maven-loader/1.0.0.Alpha3/arquillian-pact-provider-maven-loader-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-provider-maven-loader/1.0.0.Alpha3/arquillian-pact-provider-maven-loader-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-maven-loader/1.0.0.Alpha3/arquillian-pact-provider-maven-loader-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-provider-git-loader
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-git-loader/1.0.0.Alpha3/arquillian-pact-provider-git-loader-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-provider-git-loader/1.0.0.Alpha3/arquillian-pact-provider-git-loader-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-provider-git-loader/1.0.0.Alpha3/arquillian-pact-provider-git-loader-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-git
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-git/1.0.0.Alpha3/arquillian-pact-git-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-git/1.0.0.Alpha3/arquillian-pact-git-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-git/1.0.0.Alpha3/arquillian-pact-git-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.pact
+                  &raquo;
+                  arquillian-pact-configuration
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-configuration/1.0.0.Alpha3/arquillian-pact-configuration-1.0.0.Alpha3.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/pact/arquillian-pact-configuration/1.0.0.Alpha3/arquillian-pact-configuration-1.0.0.Alpha3-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/pact/arquillian-pact-configuration/1.0.0.Alpha3/arquillian-pact-configuration-1.0.0.Alpha3.pom" target="_blank">pom</a>
+                </li>
+              </ul>
+              <h3>
+                Release notes and resolved issues
+                <small>8</small>
+              </h3>
+              <p></p>
+              <dl>
+                <dt>Enhancement</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://github.com/arquillian/arquillian-pact/issues/34">#34 Skip deployment in container mode</a></li>
+                    <li><a href="https://github.com/arquillian/arquillian-pact/issues/23">#23 Updates default pact version contract to version 3</a></li>
+                    <li><a href="https://github.com/arquillian/arquillian-pact/issues/21">#21 Update Pact version to 3.5.0-beta2</a></li>
+                    <li><a href="https://github.com/arquillian/arquillian-pact/issues/20">#20 Add PactStorage in consumer</a></li>
+                    <li><a href="https://github.com/arquillian/arquillian-pact/issues/19">#19 Simplify setting Consumer/Provider in consumer part</a></li>
+                  </ul>
+                </dd>
+              </dl>
+              <dl>
+                <dt>Bug</dt>
+                <dd>
+                  <ul class="unstyled">
+                    <li><a href="https://github.com/arquillian/arquillian-pact/issues/31">#31 In GitPactLoader should use username password instead of passphrase</a></li>
+                    <li><a href="https://github.com/arquillian/arquillian-pact/issues/30">#30 In GitPactLoader by default key is not correct</a></li>
+                    <li><a href="https://github.com/arquillian/arquillian-pact/issues/25">#25 Implements provider states with parameters introduced at Version 3 of Pact Spec </a></li>
+                  </ul>
+                </dd>
+              </dl>
+              <p>
+                Thanks to the following list of contributors:
+                <a href="/community/lordofthejars">Alex Soto</a>, <a href="/community/bartoszmajsak">Bartosz Majsak</a>, <a href="/community/eddumelendez">Eddú Meléndez Gonzales</a>
+              </p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2016/11/03/arquillian-pact-1-0-0-Alpha3/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/pact/">pact</a>
+            </div>
+            <div id="comments">
+              
+                          <div id="disqus_thread"></div>
+                          <script type="text/javascript">
+                          var disqus_shortname = 'arquillian';
+                          var disqus_url = "http://arquillian.org/blog/2016/11/03/arquillian-pact-1-0-0-Alpha3/";
+                          var disqus_developer = null;
+                          var disqus_identifier = "ac11b20e01e2538772d56fb9efa831c3ca3aa4f9";
+                          (function() {
+                            var dsq = document.createElement("script"); dsq.type = "text/javascript"; dsq.async = true;
+                            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                            (document.getElementsByTagName("head")[0] || document.getElementsByTagName("body")[0]).appendChild(dsq);
+                          })();
+                          </script>
+                          <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript=arquillian">comments powered by Disqus.</a></noscript>
+            </div>
+            
+                        <script type="text/javascript">
+                        var disqus_shortname = 'arquillian';
+                        (function () {
+                          var s = document.createElement('script'); s.async = true;
+                          s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+                          (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+                        }());
+                        </script>
+          </article>
+          <ul class="pager">
+            <li class="previous">
+              <a href="/blog/2016/11/02/arquillian-recorder-1-1-5-Final/">&laquo; Previous</a>
+            </li>
+            <li class="pages">Post 463 of 463</li>
+            <li class="disabled next">
+              <a href="#">Next &raquo;</a>
+            </li>
+          </ul>
+        </div>
+        <aside id="sidebar" role="complementary">
+          <div class="addthis_toolbox addthis_default_style">
+            <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+            <a class="addthis_counter addthis_button_tweet"></a>
+            <a class="addthis_counter addthis_pill_style"></a>
+          </div>
+          <div class="subscribe">
+            <h2 class="icon news">
+              <a href="/blog/atom.xml">Subscribe to the Arquillian Blog</a>
+            </h2>
+            <p><em>Get the latest information on features, releases and events.</em></p>
+          </div>
+          <nav class="latest">
+            <h2>Latest Posts</h2>
+            <ul>
+              <li>
+                <div class="title">
+                  <a href="/blog/2016/11/03/arquillian-pact-1-0-0-Alpha3/">Arquillian Pact  Extension 1.0.0.Alpha3 Released</a>
+                </div>
+                <div class="meta">
+                  Nov 03, 2016
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2016/11/02/arquillian-recorder-1-1-5-Final/">Arquillian Recorder 1.1.5.Final Released</a>
+                </div>
+                <div class="meta">
+                  Nov 02, 2016
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2016/11/01/arquillian-container-se-1-0-1-Final/">Arquillian Container SE 1.0.1.Final Released</a>
+                </div>
+                <div class="meta">
+                  Nov 01, 2016
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2016/10/18/arquillian-container-osgi-2-2-0-Final/">Arquillian OSGi 2.2.0.Final Released</a>
+                </div>
+                <div class="meta">
+                  Oct 18, 2016
+                </div>
+              </li>
+              <li>
+                <div class="title">
+                  <a href="/blog/2016/10/13/arquillian-cube-q-1-0-0-Alpha2/">Arquillian Cube Q Extension 1.0.0.Alpha2 Released</a>
+                </div>
+                <div class="meta">
+                  Oct 13, 2016
+                </div>
+              </li>
+            </ul>
+            
+                        <div id="popularposts" class="dsq-widget">
+                          <h2 class="dsq-widget-title">Popular Posts</h2>
+                          <script src="http://arquillian.disqus.com/popular_threads_widget.js?num_items=5"></script>
+                          <script>
+                            var ppw = document.getElementById("popularposts");
+                            if (ppw.getElementsByTagName('li').length == 0) {
+                              var p = document.createElement('p');
+                              p.className = 'noresults';
+                              p.appendChild(document.createTextNode('No popular posts reported.')); 
+                              ppw.appendChild(p);
+                            }
+                          </script>
+                          <noscript>
+                            <p>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">popular posts powered by Disqus</a>.</p>
+                          </noscript>
+                        </div>
+          </nav>
+          <nav class="tags">
+            <h2>Tags</h2>
+            <div class="tag-cloud">
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/2010/">2010</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/2011/">2011</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/2012/">2012</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/2013/">2013</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/2014/">2014</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/ajocado/">ajocado</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/android/">android</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/angularjs/">angularjs</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/announcement/">announcement</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/as7/">as7</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/atdd/">atdd</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/award/">award</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/awards/">awards</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/best-practice/">best-practice</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/bom/">bom</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/byteman/">byteman</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/cdi/">cdi</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/chameleon/">chameleon</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/community/">community</a>
+              </span>
+              <span class="tag tag-2">
+                <a href="http://arquillian.org/blog/tags/container-adapter/">container-adapter</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/contributors/">contributors</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/core/">core</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/cube/">cube</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/daemon/">daemon</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/dependencies/">dependencies</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/descriptors/">descriptors</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/docker/">docker</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/docs/">docs</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/droidium/">droidium</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/drone/">drone</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/event/">event</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/examples/">examples</a>
+              </span>
+              <span class="tag tag-3">
+                <a href="http://arquillian.org/blog/tags/extension/">extension</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/forge/">forge</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/glassfish/">glassfish</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/governor/">governor</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/gradle/">gradle</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/graphene/">graphene</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/gsoc/">gsoc</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/guice/">guice</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/guides/">guides</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/gwt/">gwt</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/hack-idea/">hack-idea</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/hackfest/">hackfest</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/howto/">howto</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/jacoco/">jacoco</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/javaone/">javaone</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/jboss/">jboss</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/jbossas/">jbossas</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/jbosscentral/">jbosscentral</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/jbossworld/">jbossworld</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/jetty/">jetty</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/jpa/">jpa</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/jrebel/">jrebel</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/judcon/">judcon</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/liferay/">liferay</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/maven/">maven</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/migration/">migration</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/mission/">mission</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/nonrelease/">nonrelease</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/openejb/">openejb</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/openshift/">openshift</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/openwebbeans/">openwebbeans</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/osgi/">osgi</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/pact/">pact</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/page-fragment/">page-fragment</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/performance/">performance</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/persistence/">persistence</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/photos/">photos</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/platform/">platform</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/plugin/">plugin</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/portal/">portal</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/q/">q</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/qunit/">qunit</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/recorder/">recorder</a>
+              </span>
+              <span class="tag tag-6">
+                <a href="http://arquillian.org/blog/tags/release/">release</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/resolver/">resolver</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/rest/">rest</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/roadmap/">roadmap</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/screenrecorder/">screenrecorder</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/se/">se</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/seam2/">seam2</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/selenium/">selenium</a>
+              </span>
+              <span class="tag tag-2">
+                <a href="http://arquillian.org/blog/tags/shrinkwrap/">shrinkwrap</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/spacelift/">spacelift</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/spock/">spock</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/spring/">spring</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/stats/">stats</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/tck/">tck</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/test-runner/">test-runner</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/testing/">testing</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/thucydides/">thucydides</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/tip/">tip</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/tomcat/">tomcat</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/tool-plugin/">tool-plugin</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/transaction/">transaction</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/undertow/">undertow</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/video/">video</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/warp/">warp</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/was/">was</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/website/">website</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/weld/">weld</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/wls/">wls</a>
+              </span>
+              <span class="tag tag-1">
+                <a href="http://arquillian.org/blog/tags/wrapup/">wrapup</a>
+              </span>
+            </div>
+          </nav>
+        </aside>
+      </div>
+    </div>
+    <footer>
+      <div class="container">
+        <div class="project">
+          <img src="/images/arquillian_logo_200px.png">
+          <p class="bottom">
+            &#169;
+            Copyright 2009-2016 Red Hat, Inc.
+            <br>
+            <i class="icon-fire"></i>
+            Mixed with <a href="http://twitter.github.com/bootstrap">Bootstrap</a>. Baked by <a href="http://awestruct.org">Awestruct</a>.
+            <br>
+            <i class="icon-share-alt"></i>
+            Website and docs licensed under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
+            <br>
+            Code released under <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License, v2.0</a>.
+          </p>
+        </div>
+        <div class="footer-nav">
+          <h4>Learn</h4>
+          <ul>
+            <li>
+              <a href="/invasion">Mission</a>
+            </li>
+            <li>
+              <a href="/features">Features</a>
+            </li>
+            <li>
+              <a href="/guides">Guides</a>
+            </li>
+            <li>
+              <a href="https://docs.jboss.org/author/display/ARQ/Reference+Guide">Manual</a>
+            </li>
+            <li>
+              <a href="http://community.jboss.org/en/arquillian/faq">FAQs</a>
+            </li>
+          </ul>
+        </div>
+        <div class="footer-nav">
+          <h4>Get Involved</h4>
+          <ul>
+            <li>
+              <a href="http://community.jboss.org/en/arquillian?view=discussions">Forums</a>
+            </li>
+            <li>
+              <a href="https://issues.jboss.org/browse/ARQ">Issue Tracker</a>
+            </li>
+            <li>
+              <a href="https://github.com/arquillian">Source Code</a>
+            </li>
+            <li>
+              <a href="/community/contributors">Contributors</a>
+            </li>
+            <li>
+              <a href="https://community.jboss.org/groups/testing">Testing SIG</a>
+            </li>
+          </ul>
+        </div>
+        <div class="sponser">
+          <div class="follow-us">
+            <h4>Stay Informed</h4>
+            <ul>
+              <li>
+                <a href="https://plus.google.com/100660127586085393031?rel=author"><img alt="Google+" src="/images/social/googleplus-16.png" title="Follow Arquillian on Google+"></a>
+              </li>
+              <li>
+                <a href="https://twitter.com/#!/search/%23arquillian"><img alt="Twitter" src="/images/social/twitter-16.png" title="Browse the #arquillian hashtag on Twitter"></a>
+              </li>
+              <li>
+                <a href="http://www.linkedin.com/groups?gid=3120340"><img alt="LinkedIn" src="/images/social/linkedin-16.png" title="Join the Arquillian group on LinkedIn"></a>
+              </li>
+              <li>
+                <a href="http://vimeo.com/channels/arquillian"><img alt="Vimeo" src="/images/social/vimeo-16.png" title="Follow the Arquillian channel on Vimeo"></a>
+              </li>
+            </ul>
+          </div>
+          <p>This website is open source! If you want to improve it, <a href="http://github.com/arquillian/arquillian.github.com">fork the project</a>, hack on it, then send a <a href="https://help.github.com/articles/using-pull-requests">pull request</a>. You can also view the <a href="http://www.seethestats.com/site/arquillian.org">visitor stats</a>.</p>
+          <p class="image"><a href="http://jboss.org"><img src="/images/jboss_redhat_branding.png" class="branding" title="Red Hat, Inc." alt="Red Hat, Inc." /></a></p>
+          <p>Arquillian is a <a href="http://jboss.org">JBoss Community</a> project and development is sponsored by Red Hat, Inc.</p>
+          <p class="bottom"><a href="http://www.redhat.com/legal/legal_statement.html">Terms of Use</a> | <a href="http://www.redhat.com/legal/privacy_statement.html">Privacy Policy</a></p>
+        </div>
+        <a class="visible-desktop" href="#" id="toTop">Top</a>
+      </div>
+    </footer>
+    <script>
+      $(function() {
+        $('html').addClass('ready');
+        prettify();
+        activateFooterGravity();
+        activateTooltips();
+        activateToTopControl();
+      });
+    </script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.2/bootstrap.min.js"></script>
+    <script src="/javascripts/prettify.js"></script>
+    <script src="/javascripts/site.js?bd6a597285db4e44c754379cff5581dc0b63ca5e"></script>
+    <script>
+      (function() {
+        var po = document.createElement('script'); po.async = true; po.src = 'https://apis.google.com/js/plusone.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+      })();
+    </script>
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount','UA-18727998-3']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+     var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+  </body>
+</html>
