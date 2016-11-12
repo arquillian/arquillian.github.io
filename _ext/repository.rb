@@ -3,6 +3,7 @@ require_relative 'restclient_extensions'
 require 'rexml/document'
 require 'uri'
 require 'json'
+require 'parallel'
 
 module Awestruct
   module Extensions
@@ -17,55 +18,55 @@ module Awestruct
         end
 
         def execute(site)
-	
-	more_pages = true
-	page = 1
-	while more_pages do
+
+          more_pages = true
+          page = 1
+          while more_pages do
 
             url = "https://api.github.com/orgs/arquillian/repos?page=#{page}"
             cache_key = "github/repos-#{page}.xml"
             begin
-               # expire after 3 days
-               resp = RestClient.get url, :accept => 'application/json',
-                                                           :cache_key => cache_key, :cache_expiry_age => 86400 * 3
+              # expire after 3 days
+              resp = RestClient.get url, :accept => 'application/json',
+                                    :cache_key => cache_key, :cache_expiry_age => 86400 * 3
             rescue Exception => e
-               puts "Unable to crawl #{url}. Reason: #{e.message}"
-	       break
+              puts "Unable to crawl #{url}. Reason: #{e.message}"
+              break
             end
 
-            doc = JSON.parse(resp.gsub('\"', '"').gsub('"[','[').gsub(']"',']'))
-            
-	    if doc.count == 0
-                more_pages = false
-		break
+            doc = JSON.parse(resp.gsub('\"', '"').gsub('"[', '[').gsub(']"', ']'))
+
+            if doc.count == 0
+              more_pages = false
+              break
             end
-	    page += 1
-		
+            page += 1
+
             doc.each do |e|
-	    #omitted repositories: 
-	    # - without any commit or almost empty (arquillian-sandbox and arquillian-container-gae) 
-	    # - not too interesting with high amount of releases (selenium-bom)
-	    # - deprecated repository (arquillian_deprecated)
-	    # - non-maven repository (arquillian-container-jruby)
-                unless e['pushed_at'].nil? || e['name'] == "arquillian-selenium-bom" || e['name'] == "arquillian-container-gae" || e['name'] == "arquillian_deprecated" || e['name'] == "arquillian-container-jruby"
-			
-			git_url = e['git_url']
-                        repository = OpenStruct.new({
-                            :path => e['name'],
-                            :relative_path => '',
-                            :desc => nil,
-                            :owner => e['owner']['login'],
-                            :host => URI(git_url).host,
-                            :type => 'git',
-                            :commits_url => e['commits_url'],
-                            :html_url => e['html_url'],
-                            :clone_url => git_url
-                        })
-                        @repositories << repository
-                 end
+              #omitted repositories:
+              # - without any commit or almost empty (arquillian-sandbox and arquillian-container-gae)
+              # - not too interesting with high amount of releases (selenium-bom)
+              # - deprecated repository (arquillian_deprecated)
+              # - non-maven repository (arquillian-container-jruby)
+              unless e['pushed_at'].nil? || e['name'] == "arquillian-selenium-bom" || e['name'] == "arquillian-container-gae" || e['name'] == "arquillian_deprecated" || e['name'] == "arquillian-container-jruby"
+
+                git_url = e['git_url']
+                repository = OpenStruct.new({
+                                                :path => e['name'],
+                                                :relative_path => '',
+                                                :desc => nil,
+                                                :owner => e['owner']['login'],
+                                                :host => URI(git_url).host,
+                                                :type => 'git',
+                                                :commits_url => e['commits_url'],
+                                                :html_url => e['html_url'],
+                                                :clone_url => git_url
+                                            })
+                @repositories << repository
+              end
             end
-        end
-            
+          end
+
           @repositories << OpenStruct.new(
               :path => 'shrinkwrap',
               :desc => nil,
@@ -166,19 +167,18 @@ module Awestruct
               :clone_url => 'git://github.com/forge/plugin-arquillian.git'
           )
 
-          @repositories.sort! {|a,b| a.path <=> b.path }
+          @repositories.sort! { |a, b| a.path <=> b.path }
           # get the description for each github repository
           # TODO this may need review for efficiency
-          @repositories.map {|r|
+          @repositories.map { |r|
             r.owner if r.host == 'github.com'
-          }.uniq.each {|org_name|
+          }.uniq.each { |org_name|
             more_pages = true
             org_url = "https://api.github.com/orgs/#{org_name}/repos"
             while more_pages
               org_repos_data = RestClient.get org_url, :accept => 'application/json'
-              @repositories.each {|r|
-                #repo_data = org_repos_data.select {|c| r.owner == org_name and r.host == 'github.com' and c['name'] == r.path}
-                repo_data = org_repos_data.content.select {|c| r.clone_url.eql? c['git_url']}
+              @repositories.each { |r|
+                repo_data = org_repos_data.content.select { |c| r.clone_url.eql? c['git_url'] }
                 if repo_data.size == 1
                   r.desc = repo_data.first['description']
                   r.commits_url = repo_data.first['commits_url']
@@ -225,7 +225,7 @@ module Awestruct
               if @use_data_cache
                 FileUtils.mkdir_p File.dirname repo_cache_file
                 File.open(repo_cache_file, 'w:UTF-8') do |out|
-                  site.components.each_pair {|k, c| c.repository.delete_field('client') }
+                  site.components.each_pair { |_, c| c.repository.delete_field('client') }
                   YAML.dump([site.components, site.modules], out)
                 end
               end
@@ -243,9 +243,46 @@ module Awestruct
 
           puts "Loaded #{site.components.size} components and #{site.modules.size} modules"
 
-          # use sample commits to get the github_id for each author
+          rekeyed_index = find_author_email(site.git_author_index, site.github_mapping)
+
+          # QUESTION should we do this in identities/github.rb?
+          # FALLBACK ONLY BLOCK
+          rekeyed_index.keys.each do |id|
+            author = rekeyed_index[id]
+            next unless author.github_id.nil?
+            # an unmatched account will have exactly one e-mail
+            unmatched_email = author.emails.first
+            unmatched_name = author.name
+            # attempt a name match (somewhat weak, but it will have to do)
+            match = rekeyed_index.values.find { |candidate|
+              !candidate.equal? author and candidate.name.downcase.eql? unmatched_name.downcase
+            }
+            if match
+              # this is rather crude, but put the e-mail w/ lots of commits first
+              if author.commits > match.commits
+                match.emails.unshift unmatched_email
+              else
+                match.emails << unmatched_email
+              end
+              match.commits += author.commits
+              match.repositories |= author.repositories
+              rekeyed_index.delete id
+              puts "Merged #{unmatched_name} <#{unmatched_email}> with matched github id #{match.github_id} based on name"
+            else
+              puts "Could not resolve github id for author #{unmatched_name} <#{unmatched_email}>"
+            end
+          end
+
+          @observers.each do |o|
+            o.add_match_filter(rekeyed_index) if o.respond_to? 'add_match_filter'
+          end
+
+        end
+
+        def find_author_email(git_author_index, github_mapping)
           rekeyed_index = {}
-          site.git_author_index.each do |email, author|
+
+          git_author_index.each do |email, author|
             commit_data = RestClient.get(author.sample_commit_url, :accept => 'application/json').content
 
             github_id = commit_data['commit']['author']['login']
@@ -257,7 +294,7 @@ module Awestruct
             github_id = "" if github_id.nil?
 
             if github_id.empty?
-              match = site.github_mapping.find{|candidate| candidate.email.eql? author.email}
+              match = github_mapping.find{|candidate| candidate.email.eql? author.email}
               if match
                 github_id = match.github_id
                 puts "Used github mapping to lookup github_id #{github_id} for #{author.name} <#{author.email}>"
@@ -288,39 +325,7 @@ module Awestruct
               rekeyed_index[email] = author
             end
           end
-
-          # QUESTION should we do this in identities/github.rb?
-          # FALLBACK ONLY BLOCK
-          rekeyed_index.keys.each do |id|
-            author = rekeyed_index[id]
-            next unless author.github_id.nil?
-            # an unmatched account will have exactly one e-mail
-            unmatched_email = author.emails.first
-            unmatched_name = author.name
-            # attempt a name match (somewhat weak, but it will have to do)
-            match = rekeyed_index.values.find{|candidate|
-              !candidate.equal? author and candidate.name.downcase.eql? unmatched_name.downcase
-            }
-            if match
-              # this is rather crude, but put the e-mail w/ lots of commits first
-              if author.commits > match.commits
-                match.emails.unshift unmatched_email
-              else
-                match.emails << unmatched_email
-              end
-              match.commits += author.commits
-              match.repositories |= author.repositories
-              rekeyed_index.delete id
-              puts "Merged #{unmatched_name} <#{unmatched_email}> with matched github id #{match.github_id} based on name"
-            else
-              puts "Could not resolve github id for author #{unmatched_name} <#{unmatched_email}>"
-            end
-          end
-
-          @observers.each do |o|
-            o.add_match_filter(rekeyed_index) if o.respond_to? 'add_match_filter'
-          end
-
+          rekeyed_index
         end
 
       end
