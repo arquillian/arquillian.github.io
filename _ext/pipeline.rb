@@ -64,7 +64,7 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Jira::ReleaseNotes.new('SHRINKDESC:12311080', 'descriptors')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-cube', 'cube')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-cube-q', 'q')
-  extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-pact', 'pact')
+  extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-algeron', 'algeron')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-container-chameleon', 'chameleon')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-governor', 'governor')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-recorder', 'recorder')

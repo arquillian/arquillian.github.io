@@ -467,7 +467,7 @@ module Awestruct::Extensions::Repository::Visitors
           'org_jboss_arquillian_core' => 'Arquillian Core',
           'arquillian_cube' => 'Arquillian Cube Extension',
           'arquillian_cube_q' => 'Arquillian Cube Q Extension',
-          'arquillian_pact' => 'Arquillian Pact Extension',
+          'algeron' => 'Arquillian Algeron Extension',
           'arquillian_drone' => 'Arquillian Drone Extension',
           'arquillian_warp' => 'Arquillian Warp',
           'arquillian_graphene' => 'Graphene',
@@ -613,7 +613,7 @@ module Awestruct::Extensions::Repository::Visitors
               :name => 'Alex Soto',
               :jboss_username => 'lordofthejars'
             })
-          elsif repository.path.eql? 'arquillian-pact'
+          elsif repository.path.eql? 'arquillian-algeron'
             lead = OpenStruct.new({
               :name => 'Alex Soto',
               :jboss_username => 'lordofthejars'
@@ -974,7 +974,7 @@ module Awestruct::Extensions::Repository::Visitors
     include Base
 
     def handles(repository)
-      repository.path =~ /^(arquillian-extension-.+|jsfunit|arquillian-graphene|arquillian-droidium|arquillian-spacelift|arquillian-recorder|arquillian-cube|arquillian-governor|arquillian-cube-q|arquillian-pact)$/
+      repository.path =~ /^(arquillian-extension-.+|jsfunit|arquillian-graphene|arquillian-droidium|arquillian-spacelift|arquillian-recorder|arquillian-cube|arquillian-governor|arquillian-cube-q|arquillian-algeron)$/
     end
 
     def visit(repository, site)
