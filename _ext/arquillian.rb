@@ -467,7 +467,7 @@ module Awestruct::Extensions::Repository::Visitors
           'org_jboss_arquillian_core' => 'Arquillian Core',
           'arquillian_cube' => 'Arquillian Cube Extension',
           'arquillian_cube_q' => 'Arquillian Cube Q Extension',
-          'algeron' => 'Arquillian Algeron Extension',
+          'arquillian_algeron' => 'Arquillian Algeron Extension',
           'arquillian_drone' => 'Arquillian Drone Extension',
           'arquillian_warp' => 'Arquillian Warp',
           'arquillian_graphene' => 'Graphene',
