@@ -3,49 +3,49 @@ date: 2016-12-01
 author: matousjobanek
 ---
 
-You probably know the cases when you have to built some project before running another one or before running tests to use a created archive. "Maven Importer":https://github.com/shrinkwrap/resolver#maven-importer provided by ShrinkWrap Resolver can partially help you with it - it compiles the classes and collects dependencies from the pom.xml file. However, you cannot use Maven plugins, profiles or some variables as it doesn't do the real Maven build - it just tries to simulate it. You can definitely imagine a situation that you don't have any Maven binary installed on you PC or that you need different Maven version for one specific build. That's why ShrinkWrap Resolver introduces a new feature: Embedded Maven.
+You probably know the cases when you have to build a project before running another one or before running tests to use a created archive. "Maven Importer":https://github.com/shrinkwrap/resolver#maven-importer provided by ShrinkWrap Resolver can partially help you with it - it compiles the classes and collects dependencies from the @pom.xml@ file. However, you cannot use Maven plugins, profiles or some variables as it doesn't do the real Maven build - it just tries to simulate it. You can definitely imagine a situation that you don't have any Maven binary installed in your local repository or that you need different Maven version for one specific build. That's why ShrinkWrap Resolver introduces a new feature: Embedded Maven.
 
 h2. Embedded Maven
 
-Embedded Maven provides you a possibility to invoke a Maven built of some project directly from your Java code. Internally, it uses "maven-invoker":http://maven.apache.org/shared/maven-invoker/ and mainly the classes "Invoker":https://maven.apache.org/components/shared/maven-invoker/apidocs/org/apache/maven/shared/invoker/Invoker.html and "InvocationRequest":https://maven.apache.org/components/shared/maven-invoker/apidocs/org/apache/maven/shared/invoker/InvocationRequest.html, which basically offers the functionality of running Maven builds from the Java code.
+Embedded Maven provides you a possibility to invoke a Maven build for a selected project directly from your Java code. Internally, it uses "maven-invoker":http://maven.apache.org/shared/maven-invoker/ and mainly the classes "Invoker":https://maven.apache.org/components/shared/maven-invoker/apidocs/org/apache/maven/shared/invoker/Invoker.html and "InvocationRequest":https://maven.apache.org/components/shared/maven-invoker/apidocs/org/apache/maven/shared/invoker/InvocationRequest.html, which basically offers the functionality of running Maven builds directly from the Java code.
 So now there can arise some questions: Why should I use Embedded Maven? What are the benefits?
 There are bunch of functions added to make the usage more user friendly. The most significant additional functions are:
 
 * downloading and using Maven binaries that the user desires
 
-* uncluttered API (you can write code that runs either trivial or complex builds on one single line)
+* uncluttered API (you can write code that runs either trivial or complex builds in one single line)
 
-* additional methods & functions (eg. for ignoring build failures or making the build output quiet)
+* additional methods & functions (eg. ignoring build failures or making the build output quiet)
 
 * Java class representing a built project
 
-* easy getting a ShrinkWrap Archive created by the build
+* easy way of getting a ShrinkWrap Archive created by the build, so you can further enrich it if needed
 
 * automatic functions such as skipping tests and formatting a build output
 
-* possibility to use one's Invoker and InvocationRequest instances
+* possibility to use one's @Invoker@ and @InvocationRequest@ instances
 
 * and more ...
 
 
-h3. How to use it?
+h3. How can I use it?
 
-Your starting point is a class "EmbeddedMaven":https://github.com/shrinkwrap/resolver/blob/master/maven/api-maven-embedded/src/main/java/org/jboss/shrinkwrap/resolver/api/maven/embedded/EmbeddedMaven.java which offers you three methods. At this point you have to decide which approach of setting Maven build options you want to use.
+Your starting point is a class "EmbeddedMaven":https://github.com/shrinkwrap/resolver/blob/master/maven/api-maven-embedded/src/main/java/org/jboss/shrinkwrap/resolver/api/maven/embedded/EmbeddedMaven.java which offers you three methods. At this point you have to decide which approach of setting Maven build options you want to follow.
 
 
 h4. 1) ShrinkWrap Resolver API
 
 <b>Recommended</b>
-You can use ShrinkWrap Resolver API that offers you additional features and more comfortable but slightly limited way. This approach is linked with these two methods:
+You can use ShrinkWrap Resolver API that offers additional features in more comfortable but slightly limited way. This approach is linked with these two methods:
 <div style="background: #f8f8f8; overflow:auto;width:auto;"><pre style="margin: 0; line-height: 125%">EmbeddedMaven<span style="color: #666666">.</span><span style="color: #7D9029">forProject</span><span style="color: #666666">(</span>File pomFile<span style="color: #666666">)</span>
 EmbeddedMaven<span style="color: #666666">.</span><span style="color: #7D9029">forProject</span><span style="color: #666666">(</span>String pomFile<span style="color: #666666">)</span>
 </pre></div>where you have to specify a POM file of a project you want to build.
 
-Why it is limited? Contrary to second approach or to the pure maven-invoker:
+Why it is limited? Contrary to second approach or to the pure @maven-invoker@:
 
 <ul>
-    <li>you can set neither output handler nor error handler because it is already set by ShrinkWrap Resolver. On the other hand, it has three positive effects:
-                <b style="margin-left: 40px;">I)</b> the output is automatically formatted (with a prefix "->" to make the output visibly separated)
+    <li>you cannot set neither output handler nor error handler because it is already set by ShrinkWrap Resolver. On the other hand, it has three positive effects:
+                <b style="margin-left: 40px;">I)</b> the output is automatically formatted (with a prefix @->@ to make the output visibly separated)
                 <b style="margin-left: 40px;">II)</b> after the completion, the build output is accessible using method "BuiltProject#getMavenLog()":https://github.com/shrinkwrap/resolver/blob/master/maven/api-maven-embedded/src/main/java/org/jboss/shrinkwrap/resolver/api/maven/embedded/BuiltProject.java#L92
                 <b style="margin-left: 40px;">III)</b> you can easily suppress the build output using method "ConfigurationStage#setQuiet()":https://github.com/shrinkwrap/resolver/blob/master/maven/api-maven-embedded/src/main/java/org/jboss/shrinkwrap/resolver/api/maven/embedded/pom/equipped/ConfigurationStage.java#L338
     </li>
@@ -56,7 +56,7 @@ Why it is limited? Contrary to second approach or to the pure maven-invoker:
 
 h4. 2) Using your own Maven Invoker
 
-In the second approach, you can use your own Invoker and InvocationRequest instances. If you use it, then it is expected that all settings is done by yourself so no automatic features are provided by ShrinkWrap Resolver. This approach is linked with the method:
+With the second approach, you can use your own @Invoker@ and @InvocationRequest@ instances. If you use it, then it is expected that all settings are done by yourself so no automatic features are provided by ShrinkWrap Resolver. This approach is linked with the method:
 <div style="background: #f8f8f8; overflow:auto;width:auto;"><pre style="margin: 0; line-height: 125%">EmbeddedMaven<span style="color: #666666">.</span><span style="color: #7D9029">withMavenInvokerSet</span><span style="color: #666666">(</span>InvocationRequest request<span style="color: #666666">,</span> Invoker invoker<span style="color: #666666">)</span>
 </pre></div>
 
@@ -64,16 +64,16 @@ In the second approach, you can use your own Invoker and InvocationRequest insta
 Why it is less comfortable? You can see the differences in these two test cases that does completely the same thing but using different approaches: "first approach":https://github.com/shrinkwrap/resolver/blob/master/maven/impl-maven-embedded/src/test/java/org/jboss/shrinkwrap/resolver/impl/maven/embedded/pom/equipped/PomEquippedEmbeddedMavenForJarSampleTestCase.java "second approach":https://github.com/shrinkwrap/resolver/blob/master/maven/impl-maven-embedded/src/test/java/org/jboss/shrinkwrap/resolver/impl/maven/embedded/invoker/equipped/InvokerEquippedEmbeddedMavenForJarSampleTestCase.java
 These are the disadvantages:
 
-* methods such as setGoals and setProfiles accept only a list of string.
-* you have to set the property @skipTests@ for each InvocationRequest if you don't want to run the tests.
+* methods such as @setGoals@ and @setProfiles@ accept only a list of string.
+* you have to set the property @skipTests@ for each @InvocationRequest@ if you don't want to run the tests.
 * you don't have an access to the Maven build output after the build completion
 * the build output is not automatically formatted and it cannot be easily suppressed
-* the methods for setting Maven home or binaries are accessible in Invoker object, but it is advised not to use them as the Maven home is used by ShrinkWrap Resolver
+* the methods for setting Maven home or binaries are accessible in @Invoker@ object, but it is advised not to use them as the Maven home is used by ShrinkWrap Resolver
 <br/>
 
 h3. Downloading Maven binaries
 
-In cases when there is no Maven binaries installed on the machine or when another Maven version is needed for some specific build, you can ask ShrinkWrap Resolver to download the specific version from the Apache web pages and use it. For this purpose there is a method:
+In case when there is no Maven binaries installed on the machine or when another Maven version is needed for some specific build, you can ask ShrinkWrap Resolver to download the specific version from the Apache web pages and use it. For this purpose there is a method:
 <div style="background: #f8f8f8; overflow:auto;width:auto;"><pre style="margin: 0; line-height: 125%">EmbeddedMaven<span style="color: #666666">.</span><span style="color: #7D9029">forProject</span><span style="color: #666666">(</span><span style="color: #BA2121">&quot;path/to/pom.xml&quot;</span><span style="color: #666666">).</span><span style="color: #7D9029">useMaven3Version</span><span style="color: #666666">(</span>String version<span style="color: #666666">)</span>
 </pre></div>
 
@@ -124,7 +124,7 @@ that returns an archive with a default name that was created by the Maven build.
 * either combination of artifactId + version + packaging suffix (eg.
 * or a finalName set in @<build>@ section of project's POM file + packaging suffix
 
-if no archive with a corresponding name is found, then @null@ is returned. @Null@ is returned also for project with <code style='color:#000000;background:#ffffff;'>packaging=pom</code> as it is usually a parent project with a set of modules. To get all modules that are specified use the method:
+if no archive with a corresponding name is found, then @null@ is returned. @null@ is also returned for the projects with <code style='color:#000000;background:#ffffff;'>packaging=pom</code> as it is usually a parent project with a set of modules. To get all modules that are specified use the method:
 <div style="background: #f8f8f8; overflow:auto;width:auto;"><pre style="margin: 0; line-height: 125%">builtProject<span style="color: #666666">.</span><span style="color: #7D9029">getModules</span><span style="color: #666666">()</span>
 </pre></div>
 
@@ -139,7 +139,7 @@ There are several other useful methods provided by this Java class. For more inf
 
 h3. Examples
 
-First example is just package a project and get the default archive:
+First example is just packaging a project and getting the default archive out of it:
 <div style="background: #f8f8f8; overflow:auto;width:auto;"><pre style="margin: 0; line-height: 125%">EmbeddedMaven<span style="color: #666666">.</span><span style="color: #7D9029">forProject</span><span style="color: #666666">(</span><span style="color: #BA2121">&quot;some/pom.xml&quot;</span><span style="color: #666666">).</span><span style="color: #7D9029">setGoals</span><span style="color: #666666">(</span><span style="color: #BA2121">&quot;package&quot;</span><span style="color: #666666">).</span><span style="color: #7D9029">build</span><span style="color: #666666">().</span><span style="color: #7D9029">getDefaultBuiltArchive</span><span style="color: #666666">();</span>
 </pre></div>
 Then let's say that we want to build some project using goals @clean@ and @package@ and with activated profile @production@:
