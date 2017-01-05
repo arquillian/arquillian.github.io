@@ -49,7 +49,7 @@ module Awestruct::Extensions::Jira
         # HTML has all characters escaped therefore previous css selector
         # '#editcopy > ul > li' was not working
         doc.search('div[id=\"editcopy\"] > ul > li').each { |e|
-          # For some strang reason elements have '\n' characters all over the place
+          # For some strange reason elements have '\n' characters all over the place
           type = e.parent.previous_element.inner_text.gsub('\n', '').strip
           release_notes.resolved_issues[type] = [] if !release_notes.resolved_issues.has_key? type
           release_notes.resolved_issues[type] << e.inner_html.gsub('\n', '').strip
