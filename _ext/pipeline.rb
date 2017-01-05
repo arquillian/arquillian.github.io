@@ -117,6 +117,7 @@ Awestruct::Extensions::Pipeline.new do
 
   # Transformers
   transformer Awestruct::Extensions::Minify.new([:js])
+  transformer Awestruct::Extensions::Guide::WrapHeaderAndAssignHeadingIds.new
 
   # Helpers
   helper Awestruct::Extensions::PostsHelper
@@ -128,5 +129,6 @@ Awestruct::Extensions::Pipeline.new do
   helper Awestruct::Extensions::AssetFingerprinter
 
   extension Awestruct::Extensions::RedirectCreator.new
+
 
 end

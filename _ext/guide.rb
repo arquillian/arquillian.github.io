@@ -7,27 +7,17 @@ module Awestruct
 
       class Index
         include Guide
-        @@transformers_registered = false
 
         def initialize(path_prefix, num_changes = nil)
           @path_prefix = path_prefix
           @num_changes = num_changes
         end
 
-        # transform gets called twice in the process of loading the pipeline, so
-        # we use a class variable to detect this scenario and shortcircuit
-        def transform(transformers)
-          if not @@transformers_registered
-              transformers << WrapHeaderAndAssignHeadingIds.new
-              @@transformers_registered = true
-          end
-        end
-
         def execute(site)
           guides = []
 
           site.pages.each do |page|
-            if ( page.relative_source_path =~ /^#{@path_prefix}\/(?!(index|generator))/ )
+            if (page.relative_source_path =~ /^#{@path_prefix}\/(?!(index|generator))/)
 
               guide = OpenStruct.new
               page.guide = guide
@@ -79,7 +69,11 @@ module Awestruct
               # only add the main guide to the guide index (i.e., it doesn't have a locale suffix)
               if !(page.relative_source_path =~ /.*_[a-z]{2}(_[a-z]{2})?\..*/)
                 guide.group = page.guide_group
-                guide.order = if page.guide_order then page.guide_order else 100 end
+                guide.order = if page.guide_order then
+                                page.guide_order
+                              else
+                                100
+                              end
                 # default guide language is english
                 guide.language = site.languages.en
                 guides << guide
@@ -102,7 +96,7 @@ module Awestruct
               trans_postfix = $4
               #puts "#{trans_base_name} #{trans_lang} #{trans_postfix}"
 
-              trans_page = page.site.pages.find{|e| e.source_path =~ /.*#{trans_base_name}_#{trans_lang}.#{trans_postfix}/}
+              trans_page = page.site.pages.find { |e| e.source_path =~ /.*#{trans_base_name}_#{trans_lang}.#{trans_postfix}/ }
 
               trans_page.language_parent = page
               trans_page.language = page.site.languages.send(trans_lang)
@@ -116,7 +110,7 @@ module Awestruct
               languages << trans_page
             end
           end
-          return languages.sort{|a,b| a.language.code <=> b.language.code }
+          return languages.sort { |a, b| a.language.code <=> b.language.code }
         end
       end
 
@@ -130,7 +124,6 @@ module Awestruct
 
             # Wrap <div class="header"> around the h2 section
             # If you can do this more efficiently, feel free to improve it
-            # puts page_content
             guide_content = guide_root.search('.titlebar').first.parent
             indent = get_indent(get_depth(guide_content) + 2)
             in_header = true
@@ -149,7 +142,7 @@ module Awestruct
               end
             end
 
-            guide_header = Hpricot::Elem.new('div', {:class=>'header'})
+            guide_header = Hpricot::Elem.new('div', {:class => 'header'})
             guide_content.children[0, header_children.length] = [guide_header]
             guide_header.children = header_children
             guide_content.insert_before(Hpricot::Text.new("\n" + indent), guide_header)
@@ -196,11 +189,10 @@ module Awestruct
         g.log(size).path(page.relative_source_path[1..-1]).each do |c|
           if authors[c.author.name]
             authors[c.author.name] = authors[c.author.name] + 1
-          elsif
-            authors[c.author.name] = 1
+          elsif authors[c.author.name] = 1
           end
         end
-        return authors.sort{|a, b| b[1] <=> a[1]}.map{|x| x[0]}
+        return authors.sort { |a, b| b[1] <=> a[1] }.map { |x| x[0] }
       end
 
       def page_changes(page, size)
