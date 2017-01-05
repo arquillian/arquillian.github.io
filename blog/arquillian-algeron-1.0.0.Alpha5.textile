@@ -1,0 +1,104 @@
+---
+date: 2016-12-05
+author: lordofthejars
+---
+
+p. Arquillian Pact has been rebranded to Arquillian Algeron. This is an extension for writing contract-driven tests.
+p. Currently we are providing you seamless integration with well known "Pact":https://docs.pact.io/ framework but more integrations will come in next releases.
+
+h3. What's new
+
+p. <i class="icon-star"></i> **Arquillian Pact has been rebranded to Arquillian Algeron**
+
+p. Now Arquillian Pact is under the umbrella of Consumer Driven Contract project called Arquillian Algeron.
+
+p. This change has implied a deep change on the architecture of Arquillian Pact. To migrate from Arquillian Algeron to Arquillian Algeron Pact, you need to do some changes.
+
+p. The first one is that the base package is not @org.arquillian.pact@ anymore but @org.arquillian.algeron.pact@.
+
+p. Artifact Id has changed from @arquillian-pact-consumer-core@ and @arquillian-pact-provider-core@ to @arquillian-algeron-pact-consumer-core@ and @arquillian-algeron-pact-provider-core@.
+
+p. Contract loaders has been renamed and relocated to a common place, so instead of @@PactFolder@ now it is @@ContractsFolder@. In general all loaders annotations has been renamed by replacing the **Pact** element to **Contracts**.
+
+p. Pact publisher is not configured anymore in @pact-consumer@ extension but in @algeron-consumer@ and is renamed to consumer publisher. You can read about it at "Consumer Publisher section":https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha5#4-arquillian-algeron-consumer-publisher
+
+p. Pact Loaders has been renamed to **Contracts Retriever**.
+
+p. <i class="icon-star"></i> **Allow user to define states like Cucumber expressions**
+
+p. You can pass as state expressions following Cucumber approach on Given/When/Then so for example you can pass next state in consumer:
+
+bc(prettify).. public PactFragment createFragment(PactDslWithProvider builder) {
+  builder.given("I have 36 cukes in my belly")
+         ...
+}
+
+You can get it on provider side like:
+
+bc(prettify).. @State("I have (\\d+) cukes in my belly")
+public void stateMethod(int numberOfCukes) {
+  this.numberOfCukes = numberOfCukes;
+}
+
+You can read more about this feature at "Pact States section":https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha5#pact-states
+
+p. <i class="icon-star"></i> **AssertJ integration**
+
+p. A custom assertj matcher has been created so asserting contracts using `Target` in provider side could be done in a readable way instead of calling a method.
+
+bc(prettify).. @ArquillianResource
+URL webapp;
+
+@ArquillianResource
+Target target;
+
+@Test
+public void should_provide_valid_answers() {
+  Assertions.assertThat(target).withUrl(webapp).satisfiesContract();
+}
+
+You can read more about this feature at "AssertJ Integration section":https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha5#assertj-integration
+
+p. <i class="icon-star"></i> **Retrieving/Loading contracts can be configured using annotations and in @arquillian.xml@**
+
+p. Consumer can publish contracts when the contract is generated. Its configuration parameters are set in @arquillian.xml@. But in provider side, retrieving contracts to verify them are configured using annotations.
+
+p. To make things more standard, now retrievers can be configured using annotations or as publishers in @arquillian.xml@. For example:
+
+bc(prettify).. <extension qualifier="algeron-provider">
+  <property name="retrieverConfiguration">
+          provider: folder
+          contractsFolder: <folder where contracts are stored>
+    </property>
+</extension>
+
+You can read more about this feature at "Retrievers as Configuration section":https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha5#52-retrievers-as-configuration
+
+p. <i class="icon-star"></i> **Create integration between Pact Provider and Arquillian Reporter**
+
+p. Now if you have Arquillian Recorder dependency in classpath and you set @@VerificationReports@ to use @recorder@ as reporting format, the result of the verification of the provider is reported in Arquillian Recorder too.
+
+You can read more about this feature at "Arquillian Recorder Reporter integration":https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha5#547-arquillian-recorder-reporter-integration
+
+p. <i class="icon-star"></i> **PactVerification value Not Mandatory**
+
+p. When you want to write a consumer test method you need to specify that the method tests a consumer contract by using @@PactVerification@ annotation and setting which provider you are verifying. In case of using @@Pact@ annotation at class level, this information is redundant (the value of the annotation) so it could be retrieved from there instead of forcing users to set it again. For example you can do:
+
+bc(prettify).. @RunWith(Arquillian.class)
+@Pact(provider="test_provider", consumer="test_consumer")
+public class ClientGatewayTest {
+
+  @Test
+  @PactVerification
+  public void should_return_message() throws IOException {
+    assertThat(clientGateway.getMessage(), is("{\"responsetest\": true, \"name\": \"harry\"}"));
+  }
+}
+
+Notice that now you don't need to set the provider in @@PactVerification@ annotation since it is retrieved from class level.
+
+h3. Bug fixing
+
+p. <i class="icon-star"></i> **Test does not fail when contract is not verified**
+
+p. If multiple interactions are validated in provider side within same test, Arquillian takes only in consideration the first interaction result as final test result. To fix this a new Arquillian Core has been released (1.1.12) which fixes this issue. So we encourage all users to use Arquillian Core 1.1.12 as minimum version to avoid this problem. Notice that this also applies to previous versions of Arquillian Pact.
