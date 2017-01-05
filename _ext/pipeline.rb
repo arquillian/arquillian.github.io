@@ -7,6 +7,7 @@ require_relative 'github'
 require_relative 'repository'
 require_relative 'arquillian'
 require_relative 'releases'
+require_relative 'redirect'
 require_relative 'modules'
 require_relative 'patched_atomizer'
 require_relative 'autotag'
@@ -58,6 +59,7 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Identities::Storage.new
   # the JIRA extension registers its own extensions
   Awestruct::Extensions::Jira::Project.new(self, 'ARQ:12310885')
+
   extension Awestruct::Extensions::Jira::ReleaseNotes.new('ARQGRA:12312222', 'graphene')
   extension Awestruct::Extensions::Jira::ReleaseNotes.new('SHRINKWRAP:12310884', 'shrinkwrap')
   extension Awestruct::Extensions::Jira::ReleaseNotes.new('SHRINKRES:12312120', 'resolver')
@@ -124,4 +126,7 @@ Awestruct::Extensions::Pipeline.new do
   helper Awestruct::Extensions::EditPage
   #helper Awestruct::Extensions::CacheEvolver
   helper Awestruct::Extensions::AssetFingerprinter
+
+  extension Awestruct::Extensions::RedirectCreator.new
+
 end
