@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Functional Testing using Drone and Graphene &#183; Arquillian Guides</title>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Discover how Arquillian Graphene simplifies testing the web UI of your application." name="description">
-    <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml">
-    <link href="/stylesheets/screen.css?0fd0a1c2677d9b182484f638c62872880d576e68" rel="stylesheet">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="Discover how Arquillian Graphene simplifies testing the web UI of your application." name="description" />
+    <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml" />
+    <link href="/stylesheets/screen.css?0fd0a1c2677d9b182484f638c62872880d576e68" rel="stylesheet" />
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.js"></script>
     <![endif]-->
-    <link href="/favicon.ico" rel="shortcut icon">
+    <link href="/favicon.ico" rel="shortcut icon" />
   </head>
   <body class="guide">
     <header class="navbar navbar-fixed-top" id="banner" role="banner">
@@ -142,26 +142,28 @@
       </div>
       <div class="container" id="guide">
         <div id="content">
-          <div class="titlebar">
+            <div class="header">
+            <div class="titlebar">
             <h2>Functional Testing using Drone and Graphene</h2>
             <div class="btn-group">
               <a class="btn" href="https://github.com/arquillian/arquillian.github.com/edit/develop/guides/functional_testing_using_graphene.textile">Edit this file</a>
             </div>
           </div>
-          <div class="authors"><strong>Authors:</strong>
+            <div class="authors"><strong>Authors:</strong>
           <a href="/community/mojavelinux">Dan Allen</a>, <a href="/community/kpiwko">Karel Piwko</a>, <a href="/community/jhuska">Juraj Huska</a>, <a href="/community/lfryc">Lukas Fryc</a>, <a href="/community/bleathem">Brian Leathem</a>, <a href="/community/matousjobanek">Matous Jobanek</a>  <br />
           <strong>Level:</strong>
           More Coverage  <strong style="padding-left: 10px;">Tags:</strong>
           graphene, drone, selenium, as7  <strong style="padding-left: 10px;">Last Update:</strong>Sep 23, 2016</div>
-          <p>This guide introduces you to functional testing using the Arquillian Graphene extension. After reading this guide, you&#8217;ll be able to:</p>
-          <ul>
+            <p>This guide introduces you to functional testing using the Arquillian Graphene extension. After reading this guide, you&#8217;ll be able to:</p>
+            <ul>
           	<li>Add required Arquillian extensions to your Arquillian-based test suite</li>
           	<li>Package portions of your web application to test the web user interface (UI)</li>
           	<li>Inject WebDriver API to your test case</li>
           	<li>Control the browser using Graphene to validate the behavior of your web application</li>
           </ul>
-          <p>You&#8217;ll appreciate how much heavy lifting Graphene is doing to perform automated functional testing!</p>
-          <h3>Assumptions</h3>
+            <p>You&#8217;ll appreciate how much heavy lifting Graphene is doing to perform automated functional testing!</p>
+            </div>
+            <h3 id="assumptions">Assumptions</h3>
           <p>We&#8217;ll assume that you&#8217;ve read the Arquillian <a href="/guides/getting_started">Getting Started</a> guide and have an Arquillian test suite setup in your project. We&#8217;ll be adding a simple <acronym title="JavaServer Faces">JSF</acronym> login form to the project as an example web UI to test. From there, you can apply these instructions to web pages written in any web framework you would like to test.</p>
           <p>The instructions in this guide are specific to a Maven project, though remember that Arquillian is not tied to Maven in any way. We&#8217;ll be running the tests on a JBoss AS 7 instance, though you can use any web container supported by Arquillian.</p>
           <p>In this guide, we&#8217;ll be using the following technologies:</p>
@@ -173,25 +175,25 @@
           </ul>
           <p>All these listed technologies are part of the Arquillian test platform. Both Arquillian Drone and Graphene are working with <a href="http://seleniumhq.org">Selenium WebDriver</a>, which is, in short, <a href="https://dvcs.w3.org/hg/webdriver/raw-file/default/webdriver-spec.html">a standard technology</a> for browser automation. Arquillian Drone integrates the Selenium framework with Arquillian and facilitates some of the tedious processes needed to test the frontend of any web application. Arquillian Graphene is built on top of the <a href="http://selenium.googlecode.com/git/docs/api/java/org/openqa/selenium/WebDriver.html">Selenium WebDriver API</a> and adds a lot of features for writing reusable and maintainable functional tests. You will see them in a minute!</p>
           <p>If you&#8217;re already familiar with Selenium, you&#8217;ll discover that Arquillian manages the Selenium life cycle in much the same way it manages the container life cycle. If Selenium is new to you, this is a great opportunity to begin using its enhanced version Graphene to test the web UI of your application.</p>
-          <h3>Introducing Client Mode</h3>
+          <h3 id="introducing_client_mode">Introducing Client Mode</h3>
           <p>If you&#8217;ve ever written an Arquillian based test, you know that it looks almost the same as a unit test in your unit testing framework of choice. Let&#8217;s look at an example of an Arquillian test that uses JUnit:</p>
           <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;public class BasicInContainerTest {&#x000A;    @Deployment&#x000A;    public static JavaArchive createDeployment() {&#x000A;        return ShrinkWrap.create(JavaArchive.class)&#x000A;            .addClass(MyBean.class)&#x000A;            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    @Inject&#x000A;    MyBean bean;</code>&#x000A; &#x000A;<code class="prettify">    @Test&#x000A;    public void should_inject_bean_instance() {&#x000A;        Assert.assertNotNull(bean);&#x000A;    }&#x000A;}</code></pre>
           <p>Here we have deployed a CDI bean to the server inside a bean archive. In the test, we&#8217;ve injected the instance of the bean, then asserted that the injection has occurred. Arquillian first enriches the archive with the test infrastructure. It then connects to the server to deploy the archive and execute the test method inside of the container by launching the JUnit test runner a second time inside that environment. Finally, Arquillian retrieves the results from that remote execution. This example demonstrates the default run mode of Arquillian: in-container. In a sense, the local JUnit runner is a client of the container, being driven by Arquillian.</p>
           <p>The other run mode in Arquillian is the client run mode. In this mode, Arquillian deploys the test archive &#8216;as is&#8217; to the container. It then allows the tests to run in the same JVM as the test runner. Now your test case is a client of the container. The test no longer runs inside the container, yet Arquillian still handles the life cycle of the container as well as deployment of the test archive. It&#8217;s the ideal mode for web UI testing.</p>
-          <h3>Enabling Client Mode</h3>
+          <h3 id="enabling_client_mode">Enabling Client Mode</h3>
           <p>How do you activate client mode? Quite simply. You either mark a deployment as non-testable, meaning Arquillian will not enrich the archive, or you can mark a specified method with the annotation <code>@RunAsClient</code>. Here&#8217;s an example:</p>
           <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;public class BasicClientTest {&#x000A;    @Deployment(testable = false)&#x000A;    public static WebArchive createDeployment() {&#x000A;        return ShrinkWrap.create(WebArchive.class)&#x000A;            .addClasses(MyBean.class)&#x000A;            .setWebXML("WEB-INF/web.xml");&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    @Test&#x000A;    public void should_login_successfully() {&#x000A;    }&#x000A;}</code></pre>
           <p>It&#8217;s also possible to mix in-container and client modes in the same test! Just leave off the <code>testable</code> attribute. Any method annotated with <code>@RunAsClient</code> will execute from the client, the remainder will execute inside the container, giving you the best of both worlds!</p>
           <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;public class MixedRunModeTest {&#x000A;    @Deployment&#x000A;    public static JavaArchive createDeployment() {&#x000A;        return ShrinkWrap.create(JavaArchive.class)&#x000A;            .addClass(MyBean.class)&#x000A;            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");&#x000A;    }</code>&#x000A;    &#x000A;<code class="prettify">    @Inject&#x000A;    MyBean bean;</code>&#x000A; &#x000A;<code class="prettify">    @Test&#x000A;    public void should_run_in_container() {&#x000A;        // executed from the server JVM&#x000A;        Assert.assertNotNull(bean);&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    @RunAsClient&#x000A;    public void should_run_as_client() {&#x000A;        // executed from the client JVM&#x000A;    }&#x000A;}</code></pre>
           <p>Now that you understand how to run a test in client mode, let&#8217;s check out how to test a web UI by using Arquillian Graphene to drive your browser.</p>
-          <h3>Graphene Overview</h3>
+          <h3 id="graphene_overview">Graphene Overview</h3>
           <p>Arquillian Graphene is a set of extensions for the <a href="http://docs.seleniumhq.org">WebDriver API</a>, focused on rapid development and usability in a Java environment. Its API encourages people to write tests for AJAX-based web applications in a concise and maintainable way. Graphene strives for reusable tests by simplifying the use of web page abstractions (<a href="https://docs.jboss.org/author/display/ARQGRA2/Page+Objects">Page Objects</a> and <a href="https://docs.jboss.org/author/display/ARQGRA2/Page+Fragments">Page Fragments</a>). You will get a taste of the Graphene API in just a minute!</p>
           <p>Arquillian Graphene depends on Arquillian Drone, which is an extension that manages the life cycle of the tested browsers. Drone simplifies the initial test setup and prepares tests for continuous integration in variety of web browsers.</p>
           <p>Currently the list of supported browsers is pretty large, a bounded set of those provided by the Selenium project: e.g. Chrome, Firefox, Internet Explorer, Safari, Opera. It also supports the <a href="http://blog.arhg.net/2009/10/what-is-headless-browser.html">headless browsers</a> PhantomJS and HTMLUnit. Like Arquillian Core; Arquillian Graphene and  Arquillian Drone extensions are, well, pretty extensible.</p>
           <p>Let&#8217;s get Arquillian Graphene configured so that we can start writing some tests.</p>
           <p class="info"><span>Even though you don&#8217;t have to learn Graphene in order to use WebDriver in Arquillian tests, it is highly recommended. When using Graphene, the most tedious parts of using WebDriver will be brought under control and you&#8217;ll seamlessly leverage best practices.</span></p>
           <p class="info"><span>For more information about how Drone can enable you with Selenium 1 testing, or testing in a mobile environment, check out the <a href="https://docs.jboss.org/author/display/ARQ/Drone">Drone reference documentation</a>.</span></p>
-          <h3>Set Up Graphene</h3>
+          <h3 id="set_up_graphene">Set Up Graphene</h3>
           <p>Let&#8217;s start by setting up the libraries in the Maven pom.xml file needed to use the Graphene extension. As with the previous tutorials, we need to instruct Maven which versions of the artifacts to use by importing a <acronym title="Bill of Materials">BOM</acronym>, or version matrix. If you followed the getting started guide, you should already have a BOM defined for Arquillian in the <code>&lt;dependencyManagement&gt;</code> section.</p>
           <div class="filename">pom.xml</div>
           <pre class="prettify"><code class="prettify">&lt;!-- clip --&gt;&#x000A;&lt;dependencyManagement&gt;&#x000A;    &lt;dependencies&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;org.jboss.arquillian&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;arquillian-bom&lt;/artifactId&gt;&#x000A;            &lt;version&gt;1.1.11.Final&lt;/version&gt;&#x000A;            &lt;type&gt;pom&lt;/type&gt;&#x000A;            &lt;scope&gt;import&lt;/scope&gt;&#x000A;        &lt;/dependency&gt;&#x000A;    &lt;/dependencies&gt;&#x000A;&lt;/dependencyManagement&gt;&#x000A;&lt;!-- clip --&gt;</code></pre>
@@ -218,7 +220,7 @@
           <pre class="prettify"><code class="prettify">&lt;arquillian&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;!-- clip --&gt;&#x000A;    &lt;extension qualifier="webdriver"&gt;&#x000A;        &lt;property name="browser"&gt;${browser}&lt;/property&gt;&#x000A;    &lt;/extension&gt;&#x000A;    &lt;!-- clip --&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;/arquillian&gt;</code></pre>
           <p class="info"><span><a href="http://phantomjs.org/">PhantomJS</a> can be used as the default browser; thanks to its ability to operate in resource-limited environments such as continuous integration servers, while closely simulating the behavior of the Chrome browser.</span></p>
           <p class="important"><span>If you&#8217;re using Maven prior to version 3.0.5 and you can&#8217;t upgrade, you&#8217;ll need to use <code>maven-resource-plugin</code> version 2.5 or higher in order for the filtering of test resources to work correctly. You can do that by specifying the plugin version in <pluginmanagement> of your <code>pom.xml</code> file.</pluginmanagement></span></p>
-          <h3>Create a Login Screen</h3>
+          <h3 id="create_a_login_screen">Create a Login Screen</h3>
           <p>When writing a web UI test, you have to make sure you deploy a complete web application, even if it&#8217;s only a fraction of your full application (e.g., a micro application). Therefore, the <code>@Deployment</code> method for these types of tests is going to be a bit more complex, but don&#8217;t let it turn you off. Over time, you&#8217;ll divide up the deployment into reusable parts to trim down the configuration on a per-test basis.</p>
           <p>To create the login screen of the application, we need the following files and resources:</p>
           <ol>
@@ -241,12 +243,12 @@
           <p>The <code>LoginController</code> is <code>@SessionScoped</code> so that it can store the current user for the duration of the user&#8217;s session, and <code>@Named</code> so that it can be accessed by the action button on the login form.</p>
           <p>Finally we need to create the UI screens. In the <code>src/main/webapp</code> directory create a login page:</p>
           <div class="filename">src/main/webapp/login.xhtml</div>
-          <pre class="prettify"><code class="prettify">&lt;!DOCTYPE html&gt;&#x000A;&lt;html xmlns="http://www.w3.org/1999/xhtml"&#x000A;    xmlns:ui="http://java.sun.com/jsf/facelets"&#x000A;    xmlns:h="http://java.sun.com/jsf/html"&#x000A;    xmlns:f="http://java.sun.com/jsf/core"&gt;&#x000A;    &lt;head&gt;&#x000A;        &lt;title&gt;Log in&lt;/title&gt;&#x000A;    &lt;/head&gt;&#x000A;    &lt;body&gt;&#x000A;        &lt;h:messages/&gt;&#x000A;        &lt;h:form id="loginForm" prependId="false"&gt;&#x000A;            &lt;h:panelGrid columns="2"&gt;&#x000A;                &lt;h:outputLabel for="userName"&gt;Username:&lt;/h:outputLabel&gt;&#x000A;                &lt;h:inputText id="userName" value="\#{credentials.username}"/&gt;&#x000A;                &lt;h:outputLabel for="password"&gt;Password:&lt;/h:outputLabel&gt;&#x000A;                &lt;h:inputSecret id="password" value="\#{credentials.password}"/&gt;&#x000A;                &lt;h:commandButton id="login" value="Log in"&#x000A;                    action="\#{loginController.login}"/&gt;&#x000A;            &lt;/h:panelGrid&gt;&#x000A;        &lt;/h:form&gt;&#x000A;    &lt;/body&gt;&#x000A;&lt;/html&gt;</code></pre>
+          <pre class="prettify"><code class="prettify">&lt;!DOCTYPE html&gt;&#x000A;&lt;html xmlns="http://www.w3.org/1999/xhtml"&#x000A;    xmlns:ui="http://java.sun.com/jsf/facelets"&#x000A;    xmlns:h="http://java.sun.com/jsf/html"&#x000A;    xmlns:f="http://java.sun.com/jsf/core"&gt;&#x000A;    &lt;head&gt;&#x000A;        &lt;title&gt;Log in&lt;/title&gt;&#x000A;    &lt;/head&gt;&#x000A;    &lt;body&gt;&#x000A;        &lt;h:messages/&gt;&#x000A;        &lt;h:form id="loginForm" prependId="false"&gt;&#x000A;            &lt;h:panelGrid columns="2"&gt;&#x000A;                &lt;h:outputLabel for="userName"&gt;Username:&lt;/h:outputLabel&gt;&#x000A;                &lt;h:inputText id="userName" value="#{credentials.username}"/&gt;&#x000A;                &lt;h:outputLabel for="password"&gt;Password:&lt;/h:outputLabel&gt;&#x000A;                &lt;h:inputSecret id="password" value="#{credentials.password}"/&gt;&#x000A;                &lt;h:commandButton id="login" value="Log in"&#x000A;                    action="#{loginController.login}"/&gt;&#x000A;            &lt;/h:panelGrid&gt;&#x000A;        &lt;/h:form&gt;&#x000A;    &lt;/body&gt;&#x000A;&lt;/html&gt;</code></pre>
           <p>and a home page:</p>
           <div class="filename">src/main/webapp/home.xhtml</div>
-          <pre class="prettify"><code class="prettify">&lt;!DOCTYPE html&gt;&#x000A;&lt;html xmlns="http://www.w3.org/1999/xhtml"&#x000A; xmlns:ui="http://java.sun.com/jsf/facelets"&#x000A;	xmlns:h="http://java.sun.com/jsf/html"&#x000A;	xmlns:f="http://java.sun.com/jsf/core"&gt;&#x000A;&lt;h:head&gt;&#x000A;	&lt;title&gt;Home&lt;/title&gt;&#x000A;&lt;/h:head&gt;&#x000A;&lt;h:body&gt;&#x000A;	&lt;h:messages /&gt;&#x000A;	&lt;h:form prependId="false"&gt;&#x000A;		&lt;h:commandButton value="Who Am I ?" action="\#{loginController.renderLoggedIn}"&gt;&#x000A;			&lt;f:ajax render="whoami" /&gt;&#x000A;		&lt;/h:commandButton&gt;&#x000A;		&lt;h:panelGroup id="whoami"&gt;&#x000A;			&lt;h:panelGroup rendered="\#{loginController.renderedLoggedIn}"&gt;&#x000A;				&lt;p&gt;You are signed in as \#{currentUser.username}.&lt;/p&gt;&#x000A;			&lt;/h:panelGroup&gt;&#x000A;		&lt;/h:panelGroup&gt;&#x000A;	&lt;/h:form&gt;&#x000A;&lt;/h:body&gt;&#x000A;&lt;/html&gt;</code></pre>
+          <pre class="prettify"><code class="prettify">&lt;!DOCTYPE html&gt;&#x000A;&lt;html xmlns="http://www.w3.org/1999/xhtml"&#x000A; xmlns:ui="http://java.sun.com/jsf/facelets"&#x000A;	xmlns:h="http://java.sun.com/jsf/html"&#x000A;	xmlns:f="http://java.sun.com/jsf/core"&gt;&#x000A;&lt;h:head&gt;&#x000A;	&lt;title&gt;Home&lt;/title&gt;&#x000A;&lt;/h:head&gt;&#x000A;&lt;h:body&gt;&#x000A;	&lt;h:messages /&gt;&#x000A;	&lt;h:form prependId="false"&gt;&#x000A;		&lt;h:commandButton value="Who Am I ?" action="#{loginController.renderLoggedIn}"&gt;&#x000A;			&lt;f:ajax render="whoami" /&gt;&#x000A;		&lt;/h:commandButton&gt;&#x000A;		&lt;h:panelGroup id="whoami"&gt;&#x000A;			&lt;h:panelGroup rendered="#{loginController.renderedLoggedIn}"&gt;&#x000A;				&lt;p&gt;You are signed in as #{currentUser.username}.&lt;/p&gt;&#x000A;			&lt;/h:panelGroup&gt;&#x000A;		&lt;/h:panelGroup&gt;&#x000A;	&lt;/h:form&gt;&#x000A;&lt;/h:body&gt;&#x000A;&lt;/html&gt;</code></pre>
           <p>Now we need to write a test to see if these components come together to produce a functioning login screen.</p>
-          <h3>Create a Test Archive</h3>
+          <h3 id="create_a_test_archive">Create a Test Archive</h3>
           <p>Here&#8217;s the shell of a test case for testing the login screen with just the <code>@Deployment</code> method in place. All the files all listed explicitly to illustrate what&#8217;s being included.</p>
           <div class="filename">src/test/java/org/arquillian/example/LoginScreenGrapheneTest.java</div>
           <pre class="prettify"><code class="prettify">package org.arquillian.example;</code>&#x000A;&#x000A;<code class="prettify">import java.io.File;&#x000A;import org.jboss.arquillian.container.test.api.Deployment;&#x000A;import org.jboss.arquillian.junit.Arquillian;&#x000A;import org.jboss.shrinkwrap.api.ShrinkWrap;&#x000A;import org.jboss.shrinkwrap.api.asset.EmptyAsset;&#x000A;import org.jboss.shrinkwrap.api.asset.StringAsset;&#x000A;import org.jboss.shrinkwrap.api.spec.WebArchive;&#x000A;import org.junit.Assert;&#x000A;import org.junit.Test;&#x000A;import org.junit.runner.RunWith;</code>&#x000A;&#x000A;<code class="prettify">@RunWith(Arquillian.class)&#x000A;public class LoginScreenGrapheneTest {&#x000A;    private static final String WEBAPP_SRC = "src/main/webapp";</code>&#x000A;    &#x000A;<code class="prettify">    @Deployment(testable = false)&#x000A;    public static WebArchive createDeployment() {&#x000A;        return ShrinkWrap.create(WebArchive.class, "login.war")&#x000A;            .addClasses(Credentials.class, User.class, LoginController.class)&#x000A;            .addAsWebResource(new File(WEBAPP_SRC, "login.xhtml"))&#x000A;            .addAsWebResource(new File(WEBAPP_SRC, "home.xhtml"))&#x000A;            .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")&#x000A;            .addAsWebInfResource(&#x000A;                new StringAsset("&lt;faces-config version=\"2.0\"/&gt;"),&#x000A;                "faces-config.xml");&#x000A;    }&#x000A;}</code></pre>
@@ -260,7 +262,7 @@
           <div class="filename">src/test/java/org/arquillian/example/LoginScreenGrapheneTest.java</div>
           <pre class="prettify"><code class="prettify">// clip&#x000A;@RunWith(Arquillian.class)&#x000A;public class LoginScreenGrapheneTest {&#x000A;    @Deployment(testable = false)&#x000A;    public static WebArchive createDeployment() {&#x000A;        return Deployments.createLoginScreenDeployment();&#x000A;    }&#x000A;}</code></pre>
           <p>Now let&#8217;s get a handle to Drone and Graphene.</p>
-          <h3>Inject the WebDriver API</h3>
+          <h3 id="inject_the_webdriver_api">Inject the WebDriver API</h3>
           <p>Let&#8217;s start with injecting the well known <code>WebDriver</code> object, which represents a handle to the browser:</p>
           <div class="filename">src/test/java/org/arquillian/example/LoginScreenGrapheneTest.java</div>
           <pre class="prettify"><code class="prettify">// clip&#x000A;import org.jboss.arquillian.drone.api.annotation.Drone;&#x000A;import org.openqa.selenium.WebDriver;&#x000A;// clip</code>&#x000A;&#x000A;<code class="prettify">@RunWith(Arquillian.class)&#x000A;public class LoginScreenGrapheneTest {&#x000A;    @Deployment(testable = false)&#x000A;    public static WebArchive createDeployment() {&#x000A;        return Deployments.createLoginScreenDeployment();&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Drone&#x000A;    private WebDriver browser;&#x000A;}</code></pre>
@@ -270,7 +272,7 @@
           <div class="filename">src/test/java/org/arquillian/example/LoginScreenGrapheneTest.java</div>
           <pre class="prettify"><code class="prettify">// clip&#x000A;import java.net.URL;&#x000A;import org.jboss.arquillian.test.api.ArquillianResource;&#x000A;// clip</code>&#x000A;&#x000A;<code class="prettify">@RunWith(Arquillian.class)&#x000A;public class LoginScreenGrapheneTest {&#x000A;    @Deployment(testable = false)&#x000A;    public static WebArchive createDeployment() {&#x000A;        return Deployments.createLoginScreenDeployment();&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Drone&#x000A;    private WebDriver browser;</code>&#x000A;&#x000A;<code class="prettify">    @ArquillianResource&#x000A;    private URL deploymentUrl;&#x000A;}</code></pre>
           <p>Now even the URL of your deployed archive is injected in the test. It&#8217;s now time to drive the browser to verify the functionality of the web application.</p>
-          <h3>Drive the Browser</h3>
+          <h3 id="drive_the_browser">Drive the Browser</h3>
           <p>Here&#8217;s the test method that pokes at the login screen to make sure it works. We use Graphene to verify that the welcome message appears after a successful login.</p>
           <div class="filename">src/test/java/org/arquillian/example/LoginScreenGrapheneTest.java</div>
           <pre class="prettify"><code class="prettify">// clip&#x000A;import static org.jboss.arquillian.graphene.Graphene.guardHttp;&#x000A;import static org.jboss.arquillian.graphene.Graphene.waitAjax;&#x000A;import static org.junit.Assert.assertEquals;&#x000A;import static org.junit.Assert.assertTrue;</code>&#x000A;&#x000A;<code class="prettify">import org.openqa.selenium.WebElement;&#x000A;import org.openqa.selenium.support.FindBy;</code>&#x000A;&#x000A;&#x000A;<code class="prettify">@FindBy(id = "loginForm:userName")                                  // 2. injects an element&#x000A;private WebElement userName;</code>&#x000A;&#x000A;<code class="prettify">@FindBy(id = "loginForm:password")&#x000A;private WebElement password;</code>&#x000A;&#x000A;<code class="prettify">@FindBy(id = "loginForm:login")&#x000A;private WebElement loginButton;</code>&#x000A;&#x000A;<code class="prettify">@Test&#x000A;public void should_login_successfully() {&#x000A;    browser.get(deploymentUrl.toExternalForm() + "login.jsf");      // 1. open the tested page</code>&#x000A;&#x000A;<code class="prettify">    userName.sendKeys("demo");                                      // 3. control the page&#x000A;    password.sendKeys("demo");</code>&#x000A;&#x000A;<code class="prettify">    guardHttp(loginButton).click();</code>&#x000A;&#x000A;<code class="prettify">    assertEquals("Welcome", facesMessage.getText().trim());&#x000A;    whoAmI.click();&#x000A;    waitAjax().until().element(signedAs).is().present();&#x000A;    assertTrue(signedAs.getText().contains("demo"));&#x000A;}&#x000A;// clip</code></pre>
@@ -290,7 +292,7 @@
           <p class="info"><span>The test works in Firefox, but what about other browsers? Switching browsers is easy with the current setup, you just need to select the right maven profile. To test with Chrome you also need to point Arquillian to the chrome driver, which can be downloaded from this <a href="https://code.google.com/p/chromedriver/downloads/list">site</a>. You will also need to specify the <code>chromeDriverBinary</code> property in the <code>webdriver</code> extension configuration in your <code>arquillian.xml</code>.</span></p>
           <p>In order to test your page without executing any real browsers, let&#8217;s disable all profiles. Your test will run against the headless PhantomJS browser, which we specified earlier as the default browser.%</p>
           <p><strong>Oh, wait!</strong> But we haven&#8217;t tested anything yet, we have just opened the page and have written text into the text inputs.</p>
-          <h3>Defining the Test Logic</h3>
+          <h3 id="defining_the_test_logic">Defining the Test Logic</h3>
           <p>Let&#8217;s define what we will actually test: when a user logs into the application, he can use an AJAX widget which prints his name.</p>
           <p>For that, we will need to describe all the elements that we will find on our test page:</p>
           <pre class="prettify"><code class="prettify">// clip&#x000A;import org.jboss.arquillian.graphene.findby.FindByJQuery;&#x000A;// clip</code>&#x000A;&#x000A;<code class="prettify">@FindBy(id = "loginForm:userName")          // 1. injects an element by default location strategy ("idOrName")&#x000A;private WebElement userName;</code>&#x000A;&#x000A;<code class="prettify">@FindBy(id = "loginForm:password")&#x000A;private WebElement password;</code>&#x000A;&#x000A;<code class="prettify">@FindBy(id = "login")&#x000A;private WebElement loginButton;</code>&#x000A;&#x000A;<code class="prettify">@FindBy(tagName = "li")                     // 2. injects a first element with given tag name&#x000A;private WebElement facesMessage;</code>&#x000A;&#x000A;<code class="prettify">@FindByJQuery("p:visible")                  // 3. injects an element using jQuery selector&#x000A;private WebElement signedAs;</code>&#x000A;&#x000A;<code class="prettify">@FindBy(css = "input[type=submit]")&#x000A;private WebElement whoAmI;&#x000A;// clip</code></pre>
@@ -328,7 +330,7 @@
           <p>For the sake of completeness, let&#8217;s look at how you could refactor the test when Request Guards don&#8217;t help:</p>
           <pre class="prettify"><code class="prettify">// clip&#x000A;import static org.jboss.arquillian.graphene.Graphene.waitModel;&#x000A;// clip</code>&#x000A;&#x000A;<code class="prettify">browser.get(deploymentUrl.toExternalForm() + "login.jsf");</code>&#x000A;&#x000A;<code class="prettify">userName.sendKeys("demo");&#x000A;password.sendKeys("demo");</code>&#x000A;&#x000A;<code class="prettify">waitModel().until().element(facesMessage).is().present();     // once the element is present, page is loaded&#x000A;assertEquals("Welcome", facesMessage.getText().trim());</code>&#x000A;&#x000A;<code class="prettify">guardAjax(whoAmI).click();&#x000A;waitAjax().until().element(signedAs).text().contains("demo"); // use condition as an assertion&#x000A;// clip</code></pre>
           <p>Use Request Guards whereever you can, as they are the simplest form of synchronization API. Use the Waiting API everywhere else.</p>
-          <h3>Abstract Pages and their Fragments</h3>
+          <h3 id="abstract_pages_and_their_fragments">Abstract Pages and their Fragments</h3>
           <p>As your application grows, you will continue to author new tests.  It will quickly become apparent that you need to tame the size of your growing functional test suite.</p>
           <p class="important"><span>A huge functional test suite without a proper structure can become a maintainance nightmare.</span></p>
           <p>It is possible that a bell in your head already started to ring when you read the test logic defined above:</p>
@@ -365,11 +367,11 @@
           <pre class="prettify"><code class="prettify">//clip&#x000A;@Location("login.jsf")&#x000A;public class LoginPage {</code>&#x000A;&#x000A;<code class="prettify">    @FindBy&#x000A;    private LoginForm loginForm;        // locates the root of a page fragment on a particular page</code>&#x000A;    &#x000A;<code class="prettify">    public LoginForm getLoginForm() {   // we can either manipulate with the login form or just expose it&#x000A;       return loginForm;&#x000A;    }&#x000A;}&#x000A;//clip</code></pre>
           <p>We&#8217;re using the same mechanism for locating Page Fragments as we used for <code>WebElement</code> fields. The usage of the page fragment in the test is pretty straightforward.</p>
           <p><em>Arquillian makes integration testing a breeze. Arquillian Graphene adds great support for functional tests. Together, they make developing tests fun again.</em></p>
-          <h3>Documentation and other useful resources</h3>
+          <h3 id="documentation_and_other_useful_resources">Documentation and other useful resources</h3>
           <p>If you are looking for more Graphene goodness, be sure to check the <a href="https://docs.jboss.org/author/display/ARQGRA2/Home">Graphene Reference Documentation</a>.</p>
           <p class="info"><span>This guide really isn&#8217;t the fastest way to develop functional tests, but the goal of this guide is just to teach you the basics. You can refer to tips &amp; tricks on how to achieve <a href="http://lukas.fryc.eu/blog/2013/06/testing-jsf-richfaces-arquillian-2-rapid-test-development.html">rapid test development turnaround</a>.</span></p>
           <p class="info"><span>Even though this guide follows the best practices on how to manage Graphene, including a few extra tricks allowing you to do continuous integration, you should follow up by reading <a href="http://lukas.fryc.eu/blog/2013/06/testing-jsf-richfaces-arquillian-4-continous-integration.html">how to achieving good coverage</a> to guard your test against regressions across multiple browsers.</span></p>
-          <h3>Share the Knowledge</h3>
+          <h3 id="share">Share the Knowledge</h3>
           <p>Find this guide useful?</p>
           <p class="post_to_twitter"><a href="http://twitter.com/home/?status=Just%20read%20the%20%23Arquillian%20Functional%20Testing%20using%20Drone%20and%20Graphene%20guide%20and%20got%20a%20%23greenbar!%20Get%20yours.%20http://arquillian.org/guides/functional_testing_using_graphene/"><img src="/images/post_to_twitter.png" alt="" /></a></p>
           <div class="g-plusone" data-size="tall"></div>
@@ -477,17 +479,17 @@
     <footer>
       <div class="container">
         <div class="project">
-          <img src="/images/arquillian_logo_200px.png">
+          <img src="/images/arquillian_logo_200px.png" />
           <p class="bottom">
             &#169;
-            Copyright 2009-2016 Red Hat, Inc.
-            <br>
+            Copyright 2009-2017 Red Hat, Inc.
+            <br />
             <i class="icon-fire"></i>
             Mixed with <a href="http://twitter.github.com/bootstrap">Bootstrap</a>. Baked by <a href="http://awestruct.org">Awestruct</a>.
-            <br>
+            <br />
             <i class="icon-share-alt"></i>
             Website and docs licensed under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
-            <br>
+            <br />
             Code released under <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License, v2.0</a>.
           </p>
         </div>
@@ -536,16 +538,16 @@
             <h4>Stay Informed</h4>
             <ul>
               <li>
-                <a href="https://plus.google.com/100660127586085393031?rel=author"><img alt="Google+" src="/images/social/googleplus-16.png" title="Follow Arquillian on Google+"></a>
+                <a href="https://plus.google.com/100660127586085393031?rel=author"><img alt="Google+" src="/images/social/googleplus-16.png" title="Follow Arquillian on Google+" /></a>
               </li>
               <li>
-                <a href="https://twitter.com/#!/search/%23arquillian"><img alt="Twitter" src="/images/social/twitter-16.png" title="Browse the #arquillian hashtag on Twitter"></a>
+                <a href="https://twitter.com/#!/search/%23arquillian"><img alt="Twitter" src="/images/social/twitter-16.png" title="Browse the #arquillian hashtag on Twitter" /></a>
               </li>
               <li>
-                <a href="http://www.linkedin.com/groups?gid=3120340"><img alt="LinkedIn" src="/images/social/linkedin-16.png" title="Join the Arquillian group on LinkedIn"></a>
+                <a href="http://www.linkedin.com/groups?gid=3120340"><img alt="LinkedIn" src="/images/social/linkedin-16.png" title="Join the Arquillian group on LinkedIn" /></a>
               </li>
               <li>
-                <a href="http://vimeo.com/channels/arquillian"><img alt="Vimeo" src="/images/social/vimeo-16.png" title="Follow the Arquillian channel on Vimeo"></a>
+                <a href="http://vimeo.com/channels/arquillian"><img alt="Vimeo" src="/images/social/vimeo-16.png" title="Follow the Arquillian channel on Vimeo" /></a>
               </li>
             </ul>
           </div>
@@ -568,7 +570,7 @@
     </script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.2/bootstrap.min.js"></script>
     <script src="/javascripts/prettify.js"></script>
-    <script src="/javascripts/site.js?bd6a597285db4e44c754379cff5581dc0b63ca5e"></script>
+    <script src="/javascripts/site.js?36725ae7190fde44ceca06bde916b4bc0c83091d"></script>
     <script src="/javascripts/jquery-scroll.js"></script>
     <script src="http://apis.google.com/js/plusone.js"></script>
     <script>
