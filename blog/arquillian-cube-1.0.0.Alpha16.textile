@@ -1,0 +1,73 @@
+---
+date: 2017-01-10
+author: lordofthejars
+---
+
+p. New version of Arquillian Cube 1.0.0.Alpha16 has been released with quite a bunch of enhancements and bugfixes.
+
+h3. What's new
+
+p. <i class="icon-star"></i> **RestAssured configuration done via @RequestSpecBuilder@**
+
+p. In the previous version of Arquillian Cube, all parameters were set using internal @RestAssured@ static method. This approach made test methods unable to be ran in parallel.
+To address this issue we provide injection of @RequestSpecBuilder@ class which lets you specify parameters such as host, port or HTTP headers on a test basis.
+
+bc(prettify).. @ArquillianResource
+RequestSpecBuilder requestSpecBuilder;
+
+@Test
+public void should_receive_ok_message() {
+      RestAssured
+          .given()
+            .spec(requestSpecBuilder.build())
+          .when()
+            .get()
+          .then()
+            .assertThat().body("status", equalTo("OK"));
+}
+
+p. <i class="icon-star"></i> **Arquillian Recorder/Reporter integration with Kubernetes**
+
+p. We have enhanced integration of "Arquillian Recorder/Reporter":https://github.com/arquillian/arquillian-recorder in Cube by providing Kubernetes module. By using it you can easily get access to all configuration parameters used for test execution, as well as the session status which include @Pods@, @Services@, @Replication Controllers@, @Namespaces@, ...
+
+p. <i class="icon-star"></i> **Kubernetes namespace prefix are fully configurable**
+
+p. @namespace.prefix@ configuration parameter has been added to configure the namespace prefix.
+
+p. <i class="icon-star"></i> **Creates an AssertJ custom assertions for Docker**
+
+p. Now you can use @AssertJ@ custom assertions for validating Docker containers.
+
+bc(prettify).. @ArquillianResource
+DockerClient docker;
+assertThat(docker).hasImage("myimage");
+assertThat(docker).container("myinstancename").hasExposedPorts(8080);
+assertThat(docker).container("myinstancename").hasBindPorts(8080)
+
+p. <i class="icon-star"></i> **Creates stop/kill attribute**
+
+p. It may happen that certain docker image takes a lot of time to shutdown. For example shutting down selenium server in standalone debug mode might take ~10 seconds on the modern machine. These images are not really relavant for your test logic, they simply provide browsers to exercise our app against.
+
+p. At the end of the tests, you spend 10 seconds waiting that this instance is stopped without a real need. We can simply kill such an image and save time during the build.
+
+p. For this purpose boolean attribute @killContainer@ in @CUBE@ format has been added to set that an image should be killed. By default it is false which means that container is stopped normally.
+
+p. <i class="icon-star"></i> **Support for IP address management**
+
+p. Add support for adding @IPAM@ options in network section in @docker-compose@ files.
+
+p. <i class="icon-star"></i> **Add @cleanBuildImage@ attribute**
+
+p. Configuration boolean @cleanBuildImage@ parameter has been added so you can choose if all build images should be removed from docker host or not after finishing the build. By default build images are removed.
+
+p. <i class="icon-star"></i> **Reporting improvements**
+
+p. Arquillian Recorder Reporter now also displays information about containers like IO, Network or disk usage.
+
+p. <i class="icon-star"></i> **Port forwarding**
+
+p. Make possible to configure the port forwarder server bind address. This way you can run more than one instance of the port forwarder on the same machine.
+
+p. <i class="icon-star"></i> **UI videos in @MP4@ format**
+
+p. In the previous version of Cube, videos recorded during UI tests were stored in @flv@ format. As Flash is slowly disappearing we decided to switch to format supported by HTML5 @<video>@ tag.
