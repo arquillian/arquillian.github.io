@@ -3,13 +3,14 @@ date: 2017-01-10
 author: lordofthejars
 ---
 
-p. New version of Arquillian Cube 1.0.0.Alpha16 has been released with several bug fixing and enhancements.
+p. New version of Arquillian Cube 1.0.0.Alpha16 has been released with quite a bunch of enhancements and bugfixes.
 
 h3. What's new
 
 p. <i class="icon-star"></i> **RestAssured configuration done via @RequestSpecBuilder@**
 
-p. In previous version of Arquillian Cube, all parameters where set using internal @RestAssured@ static method. This made test code not able to run in parallel. To avoid this problem now your test is enrichable with @RequestSpecBuilder@ class with required correct parameters like host or port already set.
+p. In the previous version of Arquillian Cube, all parameters were set using internal @RestAssured@ static method. This approach made test methods unable to be ran in parallel.
+To address this issue we provide injection of @RequestSpecBuilder@ class which lets you specify parameters such as host, port or HTTP headers on a test basis.
 
 bc(prettify).. @ArquillianResource
 RequestSpecBuilder requestSpecBuilder;
@@ -18,15 +19,16 @@ RequestSpecBuilder requestSpecBuilder;
 public void should_receive_ok_message() {
       RestAssured
           .given()
-          .spec(requestSpecBuilder.build())
+            .spec(requestSpecBuilder.build())
           .when()
-          .get()
-          .assertThat().body("status", equalTo("OK"));
+            .get()
+          .then()
+            .assertThat().body("status", equalTo("OK"));
 }
 
-p. <i class="icon-star"></i> **Arquillian Recorder Reporter integration with Kubernetes**
+p. <i class="icon-star"></i> **Arquillian Recorder/Reporter integration with Kubernetes**
 
-p. Arquillian Recorder Reporter is integrated with Kubernetes module so user is able to get from report the configuration files used and also the session status which include @Pods@, @Services@, @Replication Controllers@, @Namespaces@, ...
+p. We have enhanced integration of "Arquillian Recorder/Reporter":https://github.com/arquillian/arquillian-recorder in Cube by providing Kubernetes module. By using it you can easily get access to all configuration parameters used for test execution, as well as the session status which include @Pods@, @Services@, @Replication Controllers@, @Namespaces@, ...
 
 p. <i class="icon-star"></i> **Kubernetes namespace prefix are fully configurable**
 
@@ -44,122 +46,28 @@ assertThat(docker).container("myinstancename").hasBindPorts(8080)
 
 p. <i class="icon-star"></i> **Creates stop/kill attribute**
 
-p. Sometimes there are some docker images which takes a lot of time to shutdown. For example shutting down selenium server in standalone debug mode takes 10 seconds. These images does nothing with our logic, they are simply hosts of a browser to run tests.
+p. It may happen that certain docker image takes a lot of time to shutdown. For example shutting down selenium server in standalone debug mode might take ~10 seconds on the modern machine. These images are not really relavant for your test logic, they simply provide browsers to exercise our app against.
 
-p. So at the end of the tests, you spent 10 seconds waiting that this instance is stopped. In this containers that logic is not involved it might be useful to kill it instead of stopping it.
+p. At the end of the tests, you spend 10 seconds waiting that this instance is stopped without a real need. We can simply kill such an image and save time during the build.
 
-p. Attribute boolean @killContainer@ in @CUBE@ format has been added to set that an image should be killed. By default it is false which means that container is stopped normally.
+p. For this purpose boolean attribute @killContainer@ in @CUBE@ format has been added to set that an image should be killed. By default it is false which means that container is stopped normally.
 
-p. <i class="icon-star"></i> **Add support for network IPAM**
+p. <i class="icon-star"></i> **Support for IP address management**
 
 p. Add support for adding @IPAM@ options in network section in @docker-compose@ files.
 
-p. <i class="icon-star"></i> **Add cleanBuildImage attribute**
+p. <i class="icon-star"></i> **Add @cleanBuildImage@ attribute**
 
-p. Configuration boolean @cleanBuildImage@ parameter has been added so you can choose if all build images should be removed from docker host or not. By default build images are removed.
+p. Configuration boolean @cleanBuildImage@ parameter has been added so you can choose if all build images should be removed from docker host or not after finishing the build. By default build images are removed.
 
-p. <i class="icon-star"></i> **Display reporting parameters like IO, network, disk usage into a table form**
+p. <i class="icon-star"></i> **Reporting improvements**
 
 p. Arquillian Recorder Reporter now also displays information about containers like IO, Network or disk usage.
 
-p. <i class="icon-star"></i> **Make the port forwarder bind address configurable**
+p. <i class="icon-star"></i> **Port forwarding**
 
-p. Make possible to configure the port forwarder server bind address. In that way you can run more than once instance of the port forwarder on the same machine.
+p. Make possible to configure the port forwarder server bind address. This way you can run more than one instance of the port forwarder on the same machine.
 
-p. <i class="icon-star"></i> **Make the port forwarder bind address configurable**
+p. <i class="icon-star"></i> **UI videos in @MP4@ format**
 
-p. Make possible to configure the port forwarder server bind address. In that way you can run more than once instance of the port forwarder on the same machine.
-
-p. <i class="icon-star"></i> **UI Videos of Drone/Graphene integration ar recorded in @mp4@**
-
-p. In previous version of Cube, UI videos recorded from browser were stored in @flv@ format which causes some troubles on running them.
-
-p. This has been changed so now the output format is in @mp4@.
-
-h3. Bug fixing
-
-p. <i class="icon-star"></i> **@StatsLogsResultCallback@ is not releasing thread only for Tomcat Container**
-
-p. When Using tomcat container with Recorder dependency added in your class path. Test execution is going in infinite loop due to @StatsLogsResultCallback@ onComplete event.
-
-p. This has been fixed by using `countdownlatch` and unblock thread when all stats has been received.
-
-p. <i class="icon-star"></i> **@StatsLogsResultCallback@ is not releasing thread only for Tomcat Container**
-
-p. When Using tomcat container with Recorder dependency added in your class path. Test execution is going in infinite loop due to @StatsLogsResultCallback@ onComplete event.
-
-p. <i class="icon-star"></i> **Port-fowarder does not accept you to specify the local port**
-
-p. Now port can be specified by using @pod:port@ construction.
-
-p. <i class="icon-star"></i> **OpenShift port-forwarding does not support overriding the local port value**
-
-p. Now port can be overridden by using @host:port@ construction.
-
-p. <i class="icon-star"></i> **ArquillianKubeResourceProvider should also work with javax.inject.Named**
-
-p. Currently, they require a custom annotation @org.arquillian.cube.kubernetes.annotations.Named@. Users that read examples easily confuse that with @javax.inject.Named@. Now both annotations are supported.
-
-p. <i class="icon-star"></i> **GitServer in @arquillian-cube-openshift@ is using @hostPort@**
-
-p. Using a hostPort is not considered a good practice and in many environments its not even allowed. In other cases it requires messing up with security context constraints and may lead to hard to troubleshoot issues.
-
-p. Now it uses @Service@ to expose the server.
-
-p. <i class="icon-star"></i> **Port forwarder: Freezes with a high number of incoming connections**
-
-p. Tests freezes when a number higher than WORKER_TASK_MAX_THREADS (currently 32) of clients connect "at the same time".
-
-p. Use the IO thread in the response listener instead of the worker one.
-
-p. <i class="icon-star"></i> **Port forwarder: Some connections are never released**
-
-p. Sometimes incoming connections are never released, they keep active forever, even though the remote endpoint has already closed the connection.
-
-p. Using IO thread in the response listener makes connection to be released.
-
-p. <i class="icon-star"></i> **Couldn't create a service with mentioned networks in docker-compose.yml version 2**
-
-p. Using custom networks instead of the default ones makes the container not been attached to it. And the same happened when defining multiple networks.
-
-p. Now multiple networks can be defined in @docker-compose@ file.
-
-p. <i class="icon-star"></i> **Classpath problems when using Git support in @context@ element**
-
-p. When using @context@ element in @docker-compose@ pointing to a Git server, Cube throws a @ClassNotFoundException@.
-
-p. Classpath issues has been resolved by excluding @httpclient@ dependency from @jgit@ which was the one causing the problem. Now the default one provided by Cube is the only one in classpath.
-
-p. <i class="icon-star"></i> **Null Pointer Exception is thrown when docker machine is not accessible**
-
-p. f developer has more than one docker machine on computer and it does not specify in arquillian.xml any machine, Cube tries to autoresolve. The problem is that if one of docker machine throws an exception, this exception is at top of the output which makes everything fail.
-
-p. To fix it, error lines are removed from parsing logic.
-
-p. <i class="icon-star"></i> **Await polling strategy should not make assumptions about the container environment**
-
-p. In case of using @ss@ await strategy but @ss@ command is not installed, instead of failing, it will fallback to @wait-for-it@ strategy.
-
-p. <i class="icon-star"></i> **Unable to use log await strategy**
-
-p. Log await strategy uses polling to get messages, this makes that sometimes log await does not work correctly.
-
-p. Now asynchronous code is being used altogether with counter latch.
-
-p. <i class="icon-star"></i> **Unable to use ArquillianConditionalRunner for in-container tests**
-
-p. @ArquillianConditionalRunner@ are not appending to package sent to container causing a @ClassNotFoundException@.
-
-p. This is fixed by adding all of them in the package sent to container.
-
-p. <i class="icon-star"></i> **Multiple image tags pulled if a specific tag is not specified in the container spec**
-
-p. If no tag is specified in the image, all the images of that image are pulled.
-
-p. To fix it if no tag is provide, by default @latest@ tag is only pulled.
-
-p. <i class="icon-star"></i> **Docker uri with @tcp://@ scheme incorrectly forces @tlsVerify@ on OS X**
-
-p. On OS X if the @tcp dockerUri@ scheme is used, cube forces @tlsVerify = true@ and sets a @certPath@ property.
-
-p. Now @tlsVerify@ flag is set automatically correct.
+p. In the previous version of Cube, videos recorded during UI tests were stored in @flv@ format. As Flash is slowly disappearing we decided to switch to format supported by HTML5 @<video>@ tag.
