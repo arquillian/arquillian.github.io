@@ -1,0 +1,77 @@
+---
+date: 2017-02-02
+author: lordofthejars
+---
+
+p. New version of Arquillian Cube 1.0.0.Alpha17 has been released!
+
+h3. What's new
+
+p. <i class="icon-star"></i> **Graphene URL auto resolution**
+
+p. In previous versions, Graphene URL auto resolution was based on rather complex algorithm with absolute or relative URLs to detect which was the real URL in Docker space ("Old auto resolution":https://github.com/arquillian/arquillian-cube/blob/1.0.0.Alpha16/docs/drone.adoc#graphene). This has been simplified so now only full URLs are permitted.
+
+p. In this version if URL contains @dockerHost@, it's resolved to docker host IP. If it contains an IP then this IP is used. If a string is provided, this is considered as the container name and Arquillian Cube resolves it to the internal container IP.
+
+p. <i class="icon-star"></i> **Support for @@CubeIp@ in Container Objects**
+
+p. Now a Container Object can also be enriched with internal IP of the given container.
+
+p. Thanks "Ramon Rivas":https://github.com/rivasdiaz for providing this feature!
+
+p. <i class="icon-star"></i> **Provide URL enrichment for standalone mode**
+
+p. New enrichment is provided to construct an URL for black-box tests pointing to a given docker host and resolved exposed port.
+
+bc(prettify).. @DockerUrl(protocol="http", containerName = "helloworld", exposedPort = "8080", context = "/hello")
+@ArquillianResource
+URL url;
+
+p. In the example above URL is the docker host IP pointing to binding port of exposed port @8080@ of the container @helloworld@ and using @/hello@ as context.
+
+p. <i class="icon-star"></i> **Set Environment variables for Container Objects**
+
+p. Now you can set environment variables to defined container objects.
+
+bc(prettify).. @Cube(“tomee”)
+@Image("tomee:8-jre-1.7.2-webprofile")
+@Environment(key = "A", value = "a")
+@Environment(key = "B", value = "b")
+public static class ImageContainerObject {
+}
+
+p. Annotation can also be used on the field definition.
+
+p. <i class="icon-star"></i> **Create Volumes for Container Objects**
+
+bc(prettify).. @Cube(“tomee”)
+@Image("tomee:8-jre-1.7.2-webprofile")
+@Volume(hostPath = "/mypath", containerPath = "/containerPath")
+@Volume(hostPath = "/mypath2", containerPath = "/containerPath2")
+public static class ImageContainerObject {
+}
+
+p. Annotation can also be used on the field definition.
+
+p. <i class="icon-star"></i> **Add @@DockerUrl@ support for RestAssured enricher**
+
+p. Now you can configure URL for REST-Assured integration using @@DockerUrl@ annotation.
+
+bc(prettify).. @DockerUrl(containerName = "pingpong", exposedPort = 8080)
+@ArquillianResource
+RequestSpecBuilder requestSpecBuilder;
+
+p. @RequestSpecBuilder@ is configured with docker host IP, and resolving port binding from container @pingpong@ and exposed port @8080@.
+
+p. <i class="icon-star"></i> **Provide a new URL @ResourceProvider@ for Kubernetes and Openshift**
+
+Now you can get URL to connect to a Kubernetes/OpenShift service with ease.
+
+bc(prettify).. @Named("hello-world-service")
+@PortForward
+@ArquillianResource
+URL url;
+
+p. In this case the URL is provided pointing directly to the service @hello-world@ so you can easily query it.
+
+p. Kudos to "Ioannis Canellos":https://github.com/iocanel for providing this feature.
