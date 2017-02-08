@@ -132,6 +132,7 @@ module Awestruct
         session.conference_start_datetime = convert_to_date(conference_startdate_node, session.timezone )
         session.event_location = session_detail.css('p[@class=location]').first.inner_text.split(/\//).map{|l| l.strip}.reverse.join(', ')
 
+        session.description = session_detail.css('div[@class*=description]').first.inner_text
         session.speaker_names = []
         session.speakers = []
 
@@ -207,7 +208,6 @@ module Awestruct
         cal = RiCal.Calendar do |cal|
           site.sessions.select { |s| not s.start_datetime.nil? }.each do |session|
             cal.event do |e|
-              puts e
               e.dtstart = session.start_datetime
               e.dtend = session.end_datetime
               e.summary = session.title
