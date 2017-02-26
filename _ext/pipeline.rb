@@ -88,7 +88,7 @@ Awestruct::Extensions::Pipeline.new do
 
   # Releases extension must be after jira and repository extensions and before posts extension
   extension Awestruct::Extensions::Releases::Posts.new('/blog', :for_repo_owners => ['arquillian', 'shrinkwrap'], :since => '2011-01-01')
-  extension Awestruct::Extensions::Releases::FutureRelease.new('/api/releases.ics')
+  #extension Awestruct::Extensions::Releases::FutureRelease.new('/api/releases.ics')
 
   extension Awestruct::Extensions::Lanyrd::Search.new('arquillian')
   extension Awestruct::Extensions::Lanyrd::Export.new('/invasion/events/arquillian.ics')

@@ -266,10 +266,8 @@ module Awestruct::Extensions::Repository::Visitors
       })
       prev_sha = nil
       rc.tags.select {|t|
-          # supports formats: 1.0.0.Alpha1
-          #t.name =~ /^[1-9]\d*\.\d+\.\d+\.((Alpha|Beta|CR)[1-9]\d*|Final)$/
-          # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0 or 0.1
-          t.name =~ /^([a-z]+-?)?[0-9]\d*\.\d+(\.\d+)?([\.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
+          # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0 or 1.0.0.0 or 0.1
+          t.name =~ /^([a-z]+-?)?[0-9]\d*\.\d+\.\d+(\.\d+)?([.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
       }.sort_by{|t| rc.gcommit(t).author_date}.each do |t|
         # skip tag if arquillian has nothing to do with it
         next if repository.relative_path and rc.log(1).object(t.name).path(repository.relative_path).size.zero?
@@ -423,10 +421,8 @@ module Awestruct::Extensions::Repository::Visitors
       })
       prev_sha = nil
       rc.tags.select {|t|
-          # supports formats: 1.0.0.Alpha1
-          #t.name =~ /^[1-9]\d*\.\d+\.\d+\.((Alpha|Beta|CR)[1-9]\d*|Final)$/
-          # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0 or 0.1
-          t.name =~ /^([a-z]+-?)?[0-9]\d*\.\d+(\.\d+)?([\.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
+        # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0 or 1.0.0.0 or 0.1
+        t.name =~ /^([a-z]+-?)?[0-9]\d*\.\d+\.\d+(\.\d+)?([.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
       }.sort_by{|t| rc.gcommit(t).author_date}.each do |t|
         # skip tag if arquillian has nothing to do with it
         next if repository.relative_path and rc.log(1).object(t.name).path(repository.relative_path).size.zero?

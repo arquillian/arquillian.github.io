@@ -118,9 +118,9 @@ module Awestruct::Extensions::Releases
 
     def find_input_path(root_dir, simple_path)
       path_glob = File.join(root_dir, simple_path + '.*')
-      candidates = Dir[path_glob]
+      candidates = Dir[path_glob].select { |f| File.basename(f, '.*') == File.basename(simple_path) }
       return nil if candidates.empty?
-      throw Exception.new("multiple source paths for page detected that match #{simple_path}") if candidates.size != 1
+      throw Exception.new("multiple source paths for page detected that match #{simple_path} - #{candidates}") if candidates.size != 1
       dir_pathname = Pathname.new(root_dir)
       path_name = Pathname.new(candidates[0])
       path_name.relative_path_from(dir_pathname).to_s 
