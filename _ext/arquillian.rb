@@ -1181,4 +1181,29 @@ module Awestruct::Extensions::Repository::Visitors
     end
   end
 
+  module TestReportComponent
+    include Base
+
+    def handles(repository)
+      repository.path =~ /^(arquillian-reporter)$/
+    end
+
+    def visit(repository, site)
+      c = site.components[repository.path]
+      c.type = 'test_reports'
+      c.type_name = c.type.humanize.titleize
+      if site.modules[c.type].nil?
+        site.modules[c.type] = []
+      end
+      m = OpenStruct.new({
+                             :basepath => c.repository.path,
+                             :name => c.name,
+                             :desc => c.desc,
+                             :component => c
+                         })
+      c.modules << m
+      site.modules[c.type] << m
+    end
+  end
+
 end
