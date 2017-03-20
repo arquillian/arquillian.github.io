@@ -4,6 +4,7 @@ require 'rexml/document'
 require 'uri'
 require 'json'
 require 'parallel'
+require 'git'
 
 module Awestruct
   module Extensions

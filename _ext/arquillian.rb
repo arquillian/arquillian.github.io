@@ -1206,4 +1206,18 @@ module Awestruct::Extensions::Repository::Visitors
     end
   end
 
+  module DocumentedComponent
+    include Base
+
+    def handles(repository)
+      repository.has_docs = Git.ls_remote( repository.clone_dir)['remotes'].has_key? 'origin/gh-pages'
+      repository.has_docs
+    end
+
+    def visit(repository, site)
+      c = site.components[repository.path]
+      c.has_docs = repository.has_docs
+    end
+  end
+
 end
