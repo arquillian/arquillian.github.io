@@ -207,13 +207,11 @@ module Awestruct
             if File.exist? repo_cache_file and @use_data_cache
               (site.components, site.modules) = YAML.load_file(repo_cache_file)
             else
-              ## REVIEW BEGIN
               if r.host.eql? 'github.com'
                 @observers.each do |o|
                   o.add_repository(r) if o.respond_to? 'add_repository'
                 end
               end
-              ## REVIEW END
               Visitors.defined.each do |v|
                 if v.handles(r)
                   start_time = Time.now

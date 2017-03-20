@@ -14,6 +14,7 @@ class Artifact
 
   class Coordinates
     attr_reader :groupId, :artifactId, :packaging, :version
+
     def initialize(groupId, artifactId, packaging = :jar, version = nil)
       @groupId = groupId
       @artifactId = artifactId
@@ -40,18 +41,18 @@ class Artifact
 
     def to_url(base_url = 'http://repo1.maven.org/maven2')
       [base_url, @groupId.gsub('.', '/'), @artifactId, @version,
-          @artifactId + '-' + @version + '.' + @packaging.to_s] * '/'
+       @artifactId + '-' + @version + '.' + @packaging.to_s] * '/'
     end
 
     #https://repository.jboss.org/nexus/content/repositories/unzip/org/jboss/arquillian/core/arquillian-core-api/1.1.5.Final/arquillian-core-api-1.1.5.Final-javadoc.jar-unzip/index.html
     def to_javadoc_url(base_url = 'https://repository.jboss.org/nexus/content/repositories/unzip')
       [base_url, @groupId.gsub('.', '/'), @artifactId, @version,
-        @artifactId + '-' + @version + '-javadoc' + '.' + @packaging.to_s + '-unzip/index.html'] * '/'
-      end
+       @artifactId + '-' + @version + '-javadoc' + '.' + @packaging.to_s + '-unzip/index.html'] * '/'
+    end
 
     def to_pom_url(base_url = 'http://repo1.maven.org/maven2')
       [base_url, @groupId.gsub('.', '/'), @artifactId, @version,
-          @artifactId + '-' + @version + '.' + @packaging.to_s].join('/').gsub(/\.jar$/, '.pom')
+       @artifactId + '-' + @version + '.' + @packaging.to_s].join('/').gsub(/\.jar$/, '.pom')
     end
 
     def to_relative
@@ -93,7 +94,7 @@ module Awestruct::Extensions::Repository::Visitors
         rc = Git.open(clone_dir)
         master_branch = repository.master_branch
         if master_branch.nil?
-          master_branch = rc.branches.find{|b| !b.remote and  !(b.name.include? 'detached' or b.name.include? 'no branch')}.name
+          master_branch = rc.branches.find { |b| !b.remote and !(b.name.include? 'detached' or b.name.include? 'no branch') }.name
           repository.master_branch = master_branch
         end
         rc.checkout(master_branch)
@@ -116,11 +117,11 @@ module Awestruct::Extensions::Repository::Visitors
     # by the relative path, if present
     def self.resolve_contributors_between(site, repository, sha1, sha2)
       range_author_index = {}
-      RepositoryHelpers.resolve_commits_between(repository, sha1, sha2).map {|c|
+      RepositoryHelpers.resolve_commits_between(repository, sha1, sha2).map { |c|
         # we'll use email as the key to finding their identity; the sha we just need temporarily
         # clear out bogus characters from email and downcase
         OpenStruct.new({:name => c.author.name, :email => c.author.email.downcase.gsub(/[^\w@\.\(\)]/, ''), :commits => 0, :sha => c.sha})
-      }.each {|e|
+      }.each { |e|
         # This loop both grabs unique authors by email and counts their commits
         if !range_author_index.has_key? e.email
           range_author_index[e.email] = e
@@ -128,22 +129,22 @@ module Awestruct::Extensions::Repository::Visitors
         range_author_index[e.email].commits += 1
       }
 
-      range_author_index.values.each {|e|
+      range_author_index.values.each { |e|
         # this loop registers author in global index if not present
         if repository.host.eql? 'github.com'
           site.git_author_index[e.email] ||= OpenStruct.new({
-            :email => e.email,
-            :name => e.name,
-            :sample_commit_sha => e.sha,
-            :sample_commit_url => RepositoryHelpers.build_commit_url(repository, e.sha, 'json'),
-            :commits => 0,
-            :repositories => []
-          })
+                                                                :email => e.email,
+                                                                :name => e.name,
+                                                                :sample_commit_sha => e.sha,
+                                                                :sample_commit_url => RepositoryHelpers.build_commit_url(repository, e.sha, 'json'),
+                                                                :commits => 0,
+                                                                :repositories => []
+                                                            })
           site.git_author_index[e.email].commits += e.commits
           site.git_author_index[e.email].repositories |= [repository.html_url]
         end
         e.delete_field('sha')
-      }.sort {|a, b| a.name <=> b.name}
+      }.sort { |a, b| a.name <=> b.name }
     end
 
     # Retrieves the commits in the range, filtered on the relative
@@ -193,7 +194,7 @@ module Awestruct::Extensions::Repository::Visitors
       end
 
       unique_modules.each do |submodule|
-        MavenHelpers.traverse_modules("#{rev}#{submodule}/", repository) { |y, x| yield(y, x)}
+        MavenHelpers.traverse_modules("#{rev}#{submodule}/", repository) { |y, x| yield(y, x) }
       end
     end
 
@@ -206,6 +207,7 @@ module Awestruct::Extensions::Repository::Visitors
   # FIXME at least try to make GenericMavenComponent build on this one; perhaps a website component?
   module GenericComponent
     include Base
+
     def handles(repository)
       repository.path == 'arquillian-showcase' or
           !File.exist? File.join(repository.clone_dir, repository.relative_path, 'pom.xml')
@@ -214,16 +216,16 @@ module Awestruct::Extensions::Repository::Visitors
     def visit(repository, site)
       rc = repository.client
       c = OpenStruct.new({
-        :repository => repository,
-        :basepath => repository.path.eql?(repository.owner) ? repository.path : repository.path.sub(/^#{repository.owner}-/, ''),
-        :owner => repository.owner,
-        :name => repository.name,
-        :desc => repository.desc,
-        :contributors => []
-      })
+                             :repository => repository,
+                             :basepath => repository.path.eql?(repository.owner) ? repository.path : repository.path.sub(/^#{repository.owner}-/, ''),
+                             :owner => repository.owner,
+                             :name => repository.name,
+                             :desc => repository.desc,
+                             :contributors => []
+                         })
       # FIXME not dry (from below)!
       RepositoryHelpers.resolve_contributors_between(site, repository, nil, rc.revparse('HEAD')).each do |contrib|
-        i = c.contributors.index {|n| n.email == contrib.email}
+        i = c.contributors.index { |n| n.email == contrib.email }
         if i.nil?
           c.contributors << contrib
         else
@@ -248,27 +250,27 @@ module Awestruct::Extensions::Repository::Visitors
     def visit(repository, site)
       rc = repository.client
       c = OpenStruct.new({
-        :repository => repository,
-        :basepath => repository.path.eql?(repository.owner) ? repository.path : repository.path.sub(/^#{repository.owner}-/, ''),
-        :key => repository.path.split('-').last, # this is how components are matched in jira
-        :owner => repository.owner,
-        :html_url => repository.relative_path.empty? ? repository.html_url : "#{repository.html_url}/tree/#{repository.master_branch}/#{repository.relative_path.chomp('/')}",
-        :external => !repository.owner =~ /arquillian|shrinkwrap/,
-        :name => resolve_name(repository),
-        :desc => repository.desc,
-        :groupId => resolve_group_id(repository),
-        :parent => true,
-        :lead => resolve_current_lead(repository, site.component_leads),
-        # we should not assume the license for external modules (hardcoding is not ideal either)
-        :license => ['jbossas', 'wildfly' 'jsfunit'].include?(repository.owner) ? 'LGPL-2.1' : 'Apache-2.0',
-        :releases => [],
-        :contributors => []
-      })
+                             :repository => repository,
+                             :basepath => repository.path.eql?(repository.owner) ? repository.path : repository.path.sub(/^#{repository.owner}-/, ''),
+                             :key => repository.path.split('-').last, # this is how components are matched in jira
+                             :owner => repository.owner,
+                             :html_url => repository.relative_path.empty? ? repository.html_url : "#{repository.html_url}/tree/#{repository.master_branch}/#{repository.relative_path.chomp('/')}",
+                             :external => !repository.owner =~ /arquillian|shrinkwrap/,
+                             :name => resolve_name(repository),
+                             :desc => repository.desc,
+                             :groupId => resolve_group_id(repository),
+                             :parent => true,
+                             :lead => resolve_current_lead(repository, site.component_leads),
+                             # we should not assume the license for external modules (hardcoding is not ideal either)
+                             :license => ['jbossas', 'wildfly' 'jsfunit'].include?(repository.owner) ? 'LGPL-2.1' : 'Apache-2.0',
+                             :releases => [],
+                             :contributors => []
+                         })
       prev_sha = nil
-      rc.tags.select {|t|
-          # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0 or 1.0.0.0 or 0.1
-          t.name =~ /^([a-z]+-?)?[0-9]\d*\.\d+\.\d+(\.\d+)?([.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
-      }.sort_by{|t| rc.gcommit(t).author_date}.each do |t|
+      rc.tags.select { |t|
+        # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0 or 1.0.0.0 or 0.1
+        t.name =~ /^([a-z]+-?)?[0-9]\d*\.\d+\.\d+(\.\d+)?([.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
+      }.sort_by { |t| rc.gcommit(t).author_date }.each do |t|
         # skip tag if arquillian has nothing to do with it
         next if repository.relative_path and rc.log(1).object(t.name).path(repository.relative_path).size.zero?
         # for some reason, we have to use ^0 to get to the actual commit, can't use t.sha
@@ -276,21 +278,21 @@ module Awestruct::Extensions::Repository::Visitors
         commit = rc.gcommit(sha)
         committer = commit.committer
         release = OpenStruct.new({
-          :tag => t.name,
-          :version => t.name.gsub(/^([a-z]+-?)/, ''),
-          :key => (c.key.eql?('core') ? '' : c.key + '_') + t.name, # jira release version key, should we add owner?
-          #:license => 'track?',
-          :sha => sha,
-          :html_url => RepositoryHelpers.build_commit_url(repository, sha, 'html'),
-          :json_url => RepositoryHelpers.build_commit_url(repository, sha, 'json'),
-          :date => commit.author_date,
-          :released_by => OpenStruct.new({
-            :name => committer.name,
-            :email => committer.email.downcase
-          }),
-          :contributors => RepositoryHelpers.resolve_contributors_between(site, repository, prev_sha, sha),
-          :published_artifacts => []
-        })
+                                     :tag => t.name,
+                                     :version => t.name.gsub(/^([a-z]+-?)/, ''),
+                                     :key => (c.key.eql?('core') ? '' : c.key + '_') + t.name, # jira release version key, should we add owner?
+                                     #:license => 'track?',
+                                     :sha => sha,
+                                     :html_url => RepositoryHelpers.build_commit_url(repository, sha, 'html'),
+                                     :json_url => RepositoryHelpers.build_commit_url(repository, sha, 'json'),
+                                     :date => commit.author_date,
+                                     :released_by => OpenStruct.new({
+                                                                        :name => committer.name,
+                                                                        :email => committer.email.downcase
+                                                                    }),
+                                     :contributors => RepositoryHelpers.resolve_contributors_between(site, repository, prev_sha, sha),
+                                     :published_artifacts => []
+                                 })
         release.compiledeps = []
         c.releases << release
         prev_sha = sha
@@ -300,7 +302,7 @@ module Awestruct::Extensions::Repository::Visitors
       c.releases.each do |r|
         # FIXME not dry!
         r.contributors.each do |contrib|
-          i = c.contributors.index {|n| n.email == contrib.email}
+          i = c.contributors.index { |n| n.email == contrib.email }
           if i.nil?
             c.contributors << contrib
           else
@@ -311,7 +313,7 @@ module Awestruct::Extensions::Repository::Visitors
 
       # FIXME not dry!
       RepositoryHelpers.resolve_contributors_between(site, repository, prev_sha, rc.revparse('HEAD')).each do |contrib|
-        i = c.contributors.index {|n| n.email == contrib.email}
+        i = c.contributors.index { |n| n.email == contrib.email }
         if i.nil?
           c.contributors << contrib
         else
@@ -322,13 +324,13 @@ module Awestruct::Extensions::Repository::Visitors
       # we can be pretty sure we'll have at least one commit, otherwise why the repository ;)
       last = rc.log(1).path(repository.relative_path).first
       c.last_commit = OpenStruct.new({
-        :author => last.author,
-        :date => last.date,
-        :message => last.message,
-        :sha => last.sha,
-        :html_url => RepositoryHelpers.build_commit_url(repository, last.sha, 'html'),
-        :json_url => RepositoryHelpers.build_commit_url(repository, last.sha, 'json')
-      })
+                                         :author => last.author,
+                                         :date => last.date,
+                                         :message => last.message,
+                                         :sha => last.sha,
+                                         :html_url => RepositoryHelpers.build_commit_url(repository, last.sha, 'html'),
+                                         :json_url => RepositoryHelpers.build_commit_url(repository, last.sha, 'json')
+                                     })
       c.unreleased_commits = RepositoryHelpers.resolve_commits_between(repository, prev_sha, rc.revparse('HEAD')).size
 
       c.modules = []
@@ -370,9 +372,9 @@ module Awestruct::Extensions::Repository::Visitors
           # FIXME parameterize (keep in mind the JIRA extension hits most of the leads)
           if repository.path.eql? 'arquillian-gradle-plugin'
             lead = OpenStruct.new({
-              :name => 'Benjamin Muschko',
-              :github_id => 'bmuschko'
-            })
+                                      :name => 'Benjamin Muschko',
+                                      :github_id => 'bmuschko'
+                                  })
           end
         end
         # update the global index (why not?)
@@ -403,27 +405,27 @@ module Awestruct::Extensions::Repository::Visitors
       @root_head_pom = nil
       rc = repository.client
       c = OpenStruct.new({
-        :repository => repository,
-        :basepath => repository.path.eql?(repository.owner) ? repository.path : repository.path.sub(/^#{repository.owner}-/, ''),
-        :key => repository.path.split('-').last, # this is how components are matched in jira
-        :owner => repository.owner,
-        :html_url => repository.relative_path.empty? ? repository.html_url : "#{repository.html_url}/tree/#{repository.master_branch}/#{repository.relative_path.chomp('/')}",
-        :external => !repository.owner =~ /arquillian|shrinkwrap/,
-        :name => resolve_name(repository),
-        :desc => repository.desc,
-        :groupId => resolve_group_id(repository),
-        :parent => true,
-        :lead => resolve_current_lead(repository, site.component_leads),
-        # we should not assume the license for external modules (hardcoding is not ideal either)
-        :license => ['jbossas', 'wildfly' 'jsfunit'].include?(repository.owner) ? 'LGPL-2.1' : 'Apache-2.0',
-        :releases => [],
-        :contributors => []
-      })
+                             :repository => repository,
+                             :basepath => repository.path.eql?(repository.owner) ? repository.path : repository.path.sub(/^#{repository.owner}-/, ''),
+                             :key => repository.path.split('-').last, # this is how components are matched in jira
+                             :owner => repository.owner,
+                             :html_url => repository.relative_path.empty? ? repository.html_url : "#{repository.html_url}/tree/#{repository.master_branch}/#{repository.relative_path.chomp('/')}",
+                             :external => !repository.owner =~ /arquillian|shrinkwrap/,
+                             :name => resolve_name(repository),
+                             :desc => repository.desc,
+                             :groupId => resolve_group_id(repository),
+                             :parent => true,
+                             :lead => resolve_current_lead(repository, site.component_leads),
+                             # we should not assume the license for external modules (hardcoding is not ideal either)
+                             :license => ['jbossas', 'wildfly' 'jsfunit'].include?(repository.owner) ? 'LGPL-2.1' : 'Apache-2.0',
+                             :releases => [],
+                             :contributors => []
+                         })
       prev_sha = nil
-      rc.tags.select {|t|
+      rc.tags.select { |t|
         # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0 or 1.0.0.0 or 0.1
         t.name =~ /^([a-z]+-?)?[0-9]\d*\.\d+\.\d+(\.\d+)?([.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
-      }.sort_by{|t| rc.gcommit(t).author_date}.each do |t|
+      }.sort_by { |t| rc.gcommit(t).author_date }.each do |t|
         # skip tag if arquillian has nothing to do with it
         next if repository.relative_path and rc.log(1).object(t.name).path(repository.relative_path).size.zero?
         # for some reason, we have to use ^0 to get to the actual commit, can't use t.sha
@@ -431,21 +433,21 @@ module Awestruct::Extensions::Repository::Visitors
         commit = rc.gcommit(sha)
         committer = commit.committer
         release = OpenStruct.new({
-          :tag => t.name,
-          :version => t.name.gsub(/^([a-z]+-?)/, ''),
-          :key => (c.key.eql?('core') ? '' : c.key + '_') + t.name, # jira release version key, should we add owner?
-          #:license => 'track?',
-          :sha => sha,
-          :html_url => RepositoryHelpers.build_commit_url(repository, sha, 'html'),
-          :json_url => RepositoryHelpers.build_commit_url(repository, sha, 'json'),
-          :date => commit.author_date,
-          :released_by => OpenStruct.new({
-            :name => committer.name,
-            :email => committer.email.downcase
-          }),
-          :contributors => RepositoryHelpers.resolve_contributors_between(site, repository, prev_sha, sha),
-          :published_artifacts => []
-        })
+                                     :tag => t.name,
+                                     :version => t.name.gsub(/^([a-z]+-?)/, ''),
+                                     :key => (c.key.eql?('core') ? '' : c.key + '_') + t.name, # jira release version key, should we add owner?
+                                     #:license => 'track?',
+                                     :sha => sha,
+                                     :html_url => RepositoryHelpers.build_commit_url(repository, sha, 'html'),
+                                     :json_url => RepositoryHelpers.build_commit_url(repository, sha, 'json'),
+                                     :date => commit.author_date,
+                                     :released_by => OpenStruct.new({
+                                                                        :name => committer.name,
+                                                                        :email => committer.email.downcase
+                                                                    }),
+                                     :contributors => RepositoryHelpers.resolve_contributors_between(site, repository, prev_sha, sha),
+                                     :published_artifacts => []
+                                 })
         if site.resolve_published_artifacts and repository.owner =~ /arquillian|shrinkwrap/
           resolve_published_artifacts(site.dir, repository, release)
         end
@@ -456,46 +458,46 @@ module Awestruct::Extensions::Repository::Visitors
         depversions = resolve_dep_versions(repository, release.tag)
         release.compiledeps = []
         {
-          'arquillian' => 'Arquillian Core',
-          'arquillian_core' => 'Arquillian Core',
-          'jboss_arquillian_core' => 'Arquillian Core',
-          'org_jboss_arquillian' => 'Arquillian Core',
-          'org_jboss_arquillian_core' => 'Arquillian Core',
-          'arquillian_cube' => 'Arquillian Cube Extension',
-          'arquillian_cube_q' => 'Arquillian Cube Q Extension',
-          'arquillian_algeron' => 'Arquillian Algeron Extension',
-          'arquillian_drone' => 'Arquillian Drone Extension',
-          'arquillian_warp' => 'Arquillian Warp',
-          'arquillian_graphene' => 'Graphene',
-          'org_jboss_arquillian_graphene' => 'Graphene',
-          'arquillian_transaction' => 'Arquillian Transaction Extension',
-          'arquillian_persistence' => 'Arquillian Persistence Extension',
-          'arquillian_spring' => 'Arquillian Spring Framework Extension',
-          'arquillian_byteman' => 'Arquillian Extension Byteman',
-          'arquillian_jacoco' => 'Arquillian Extension Jacoco',
-          'arquillian_recorder' => 'Arquillian Recorder',
-          'recorder' => 'Arquillian Recorder',
-          'arquillian_governor' => 'Arquillian Governor',
-          'arquillian_rest' => 'Arquillian REST Extension',
-          'arquillian_spacelift' => 'Arquillian Spacelift',
-          'arquillian_chameleon' => 'Arquillian Container Chameleon',
-          'arquillian_cukes_in_space' => 'Arquillian Cukes in Space',
-          'shrinkwrap_shrinkwrap' => 'ShrinkWrap',
-          'jboss_shrinkwrap' => 'ShrinkWrap',
-          'shrinkwrap' => 'ShrinkWrap',
-          'shrinkwrap_descriptors' => 'ShrinkWrap Descriptors',
-          'shrinkwrap_descriptor' => 'ShrinkWrap Descriptors',
-          'shrinkwrap_resolver' => 'ShrinkWrap Resolver',
-          'shrinkwrap_resolvers' => 'ShrinkWrap Resolver',
-          'selenium' => 'Selenium',
-          'junit_junit' => 'JUnit',
-          'testng_testng' => 'TestNG',
-          'spock' => 'Spock',
-          'selendroid' => 'Selendroid'
+            'arquillian' => 'Arquillian Core',
+            'arquillian_core' => 'Arquillian Core',
+            'jboss_arquillian_core' => 'Arquillian Core',
+            'org_jboss_arquillian' => 'Arquillian Core',
+            'org_jboss_arquillian_core' => 'Arquillian Core',
+            'arquillian_cube' => 'Arquillian Cube Extension',
+            'arquillian_cube_q' => 'Arquillian Cube Q Extension',
+            'arquillian_algeron' => 'Arquillian Algeron Extension',
+            'arquillian_drone' => 'Arquillian Drone Extension',
+            'arquillian_warp' => 'Arquillian Warp',
+            'arquillian_graphene' => 'Graphene',
+            'org_jboss_arquillian_graphene' => 'Graphene',
+            'arquillian_transaction' => 'Arquillian Transaction Extension',
+            'arquillian_persistence' => 'Arquillian Persistence Extension',
+            'arquillian_spring' => 'Arquillian Spring Framework Extension',
+            'arquillian_byteman' => 'Arquillian Extension Byteman',
+            'arquillian_jacoco' => 'Arquillian Extension Jacoco',
+            'arquillian_recorder' => 'Arquillian Recorder',
+            'recorder' => 'Arquillian Recorder',
+            'arquillian_governor' => 'Arquillian Governor',
+            'arquillian_rest' => 'Arquillian REST Extension',
+            'arquillian_spacelift' => 'Arquillian Spacelift',
+            'arquillian_chameleon' => 'Arquillian Container Chameleon',
+            'arquillian_cukes_in_space' => 'Arquillian Cukes in Space',
+            'shrinkwrap_shrinkwrap' => 'ShrinkWrap',
+            'jboss_shrinkwrap' => 'ShrinkWrap',
+            'shrinkwrap' => 'ShrinkWrap',
+            'shrinkwrap_descriptors' => 'ShrinkWrap Descriptors',
+            'shrinkwrap_descriptor' => 'ShrinkWrap Descriptors',
+            'shrinkwrap_resolver' => 'ShrinkWrap Resolver',
+            'shrinkwrap_resolvers' => 'ShrinkWrap Resolver',
+            'selenium' => 'Selenium',
+            'junit_junit' => 'JUnit',
+            'testng_testng' => 'TestNG',
+            'spock' => 'Spock',
+            'selendroid' => 'Selendroid'
         }.each do |key, name|
           if depversions.has_key? key
             depversion = depversions[key]
-            if(depversion.include?("${"))
+            if (depversion.include?("${"))
               if depversion =~ /\$\{version\.(.*)\}/
                 depversion = depversions[$1]
               end
@@ -511,7 +513,7 @@ module Awestruct::Extensions::Repository::Visitors
       c.releases.each do |r|
         # FIXME not dry!
         r.contributors.each do |contrib|
-          i = c.contributors.index {|n| n.email == contrib.email}
+          i = c.contributors.index { |n| n.email == contrib.email }
           if i.nil?
             c.contributors << contrib
           else
@@ -521,7 +523,7 @@ module Awestruct::Extensions::Repository::Visitors
       end
       # FIXME not dry!
       RepositoryHelpers.resolve_contributors_between(site, repository, prev_sha, rc.revparse('HEAD')).each do |contrib|
-        i = c.contributors.index {|n| n.email == contrib.email}
+        i = c.contributors.index { |n| n.email == contrib.email }
         if i.nil?
           c.contributors << contrib
         else
@@ -532,13 +534,13 @@ module Awestruct::Extensions::Repository::Visitors
       # we can be pretty sure we'll have at least one commit, otherwise why the repository ;)
       last = rc.log(1).path(repository.relative_path).first
       c.last_commit = OpenStruct.new({
-        :author => last.author,
-        :date => last.date,
-        :message => last.message,
-        :sha => last.sha,
-        :html_url => RepositoryHelpers.build_commit_url(repository, last.sha, 'html'),
-        :json_url => RepositoryHelpers.build_commit_url(repository, last.sha, 'json')
-      })
+                                         :author => last.author,
+                                         :date => last.date,
+                                         :message => last.message,
+                                         :sha => last.sha,
+                                         :html_url => RepositoryHelpers.build_commit_url(repository, last.sha, 'html'),
+                                         :json_url => RepositoryHelpers.build_commit_url(repository, last.sha, 'json')
+                                     })
       c.unreleased_commits = RepositoryHelpers.resolve_commits_between(repository, prev_sha, rc.revparse('HEAD')).size
 
       c.modules = []
@@ -586,64 +588,64 @@ module Awestruct::Extensions::Repository::Visitors
           # FIXME parameterize (keep in mind the JIRA extension hits most of the leads)
           if repository.path.eql? 'jboss-as' or repository.path.eql? 'wildfly'
             lead = OpenStruct.new({
-              :name => 'Jason T. Greene',
-              :jboss_username => 'jason.greene'
-            })
+                                      :name => 'Jason T. Greene',
+                                      :jboss_username => 'jason.greene'
+                                  })
           elsif repository.path.eql? 'plugin-arquillian'
             lead = OpenStruct.new({
-              :name => 'Paul Bakker',
-              :jboss_username => 'pbakker'
-            })
+                                      :name => 'Paul Bakker',
+                                      :jboss_username => 'pbakker'
+                                  })
           elsif repository.path.eql? 'arquillian-graphene'
             lead = OpenStruct.new({
-              :name => 'Lukáš Fryč',
-              :jboss_username => 'lfryc'
-            })
+                                      :name => 'Lukáš Fryč',
+                                      :jboss_username => 'lfryc'
+                                  })
           elsif repository.path.eql? 'arquillian-cube'
             lead = OpenStruct.new({
-              :name => 'Alex Soto',
-              :jboss_username => 'lordofthejars'
-            })
+                                      :name => 'Alex Soto',
+                                      :jboss_username => 'lordofthejars'
+                                  })
           elsif repository.path.eql? 'arquillian-cube-q'
             lead = OpenStruct.new({
-              :name => 'Alex Soto',
-              :jboss_username => 'lordofthejars'
-            })
+                                      :name => 'Alex Soto',
+                                      :jboss_username => 'lordofthejars'
+                                  })
           elsif repository.path.eql? 'arquillian-algeron'
             lead = OpenStruct.new({
-              :name => 'Alex Soto',
-              :jboss_username => 'lordofthejars'
-            })
+                                      :name => 'Alex Soto',
+                                      :jboss_username => 'lordofthejars'
+                                  })
           elsif repository.owner.eql? 'arquillian'
             lead = OpenStruct.new({
-              :name => 'Aslak Knutsen',
-              :jboss_username => 'aslak'
-            })
+                                      :name => 'Aslak Knutsen',
+                                      :jboss_username => 'aslak'
+                                  })
           elsif repository.path.eql? 'resolver'
             lead = OpenStruct.new({
-              :name => 'Karel Piwko',
-              :jboss_username => 'kpiwko'
-            })
+                                      :name => 'Karel Piwko',
+                                      :jboss_username => 'kpiwko'
+                                  })
           elsif repository.path.eql? 'descriptors-docker'
             lead = OpenStruct.new({
-              :name => 'George Gastaldi',
-              :jboss_username => 'gastaldi'
-            })
+                                      :name => 'George Gastaldi',
+                                      :jboss_username => 'gastaldi'
+                                  })
           elsif repository.path.eql? 'shrinkwrap-osgi'
             lead = OpenStruct.new({
-              :name => 'Carlos Sierra Andrés',
-              :jboss_username => 'csierra'
-            })
+                                      :name => 'Carlos Sierra Andrés',
+                                      :jboss_username => 'csierra'
+                                  })
           elsif repository.owner.eql? 'shrinkwrap'
             lead = OpenStruct.new({
-              :name => 'Andrew Lee Rubinger',
-              :jboss_username => 'alrubinger'
-            })
+                                      :name => 'Andrew Lee Rubinger',
+                                      :jboss_username => 'alrubinger'
+                                  })
           elsif repository.path.eql? 'tomee'
             lead = OpenStruct.new({
-              :name => 'David Blevins',
-              :jboss_username => 'dblevins'
-            })
+                                      :name => 'David Blevins',
+                                      :jboss_username => 'dblevins'
+                                  })
           end
         end
         # update the global index (why not?)
@@ -708,7 +710,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def load_root_head_pom(repository)
       @root_head_pom ||= REXML::Document.new(
-        repository.client.cat_file(repository.client.revparse("HEAD:#{repository.relative_path}pom.xml"))
+          repository.client.cat_file(repository.client.revparse("HEAD:#{repository.relative_path}pom.xml"))
       )
     end
   end
@@ -796,16 +798,16 @@ module Awestruct::Extensions::Repository::Visitors
         site.modules[c.type] = []
       end
       m = OpenStruct.new({
-        :basepath => c.repository.path.match(/-([^-]+)$/)[1],
-        :name => c.name,
-        :desc => c.desc,
-        :component => c
-      })
+                             :basepath => c.repository.path.match(/-([^-]+)$/)[1],
+                             :name => c.name,
+                             :desc => c.desc,
+                             :component => c
+                         })
       m.artifacts = [
-        Artifact.new('JUnit Integration',
-            Artifact::Coordinates.new('org.jboss.arquillian.junit', 'arquillian-junit-container')),
-        Artifact.new('TestNG Integration',
-            Artifact::Coordinates.new('org.jboss.arquillian.testng', 'arquillian-testng-container'))
+          Artifact.new('JUnit Integration',
+                       Artifact::Coordinates.new('org.jboss.arquillian.junit', 'arquillian-junit-container')),
+          Artifact.new('TestNG Integration',
+                       Artifact::Coordinates.new('org.jboss.arquillian.testng', 'arquillian-testng-container'))
       ]
       c.modules << m
       site.modules[c.type] << m
@@ -819,8 +821,6 @@ module Awestruct::Extensions::Repository::Visitors
     def handles(repository)
       repository.path =~ /^arquillian\-testrunner\-.+/ and
           File.exist? File.join(repository.clone_dir, 'pom.xml')
-      #repository.path =~ /^arquillian\-testrunner\-.+/ and
-      #    repository.path != 'arquillian-testrunner-jbehave'
     end
 
     def visit(repository, site)
@@ -831,11 +831,11 @@ module Awestruct::Extensions::Repository::Visitors
         site.modules[c.type] = []
       end
       m = OpenStruct.new({
-        :basepath => c.repository.path.match(/-([^-]+)$/)[1],
-        :name => c.name,
-        :desc => c.desc,
-        :component => c
-      })
+                             :basepath => c.repository.path.match(/-([^-]+)$/)[1],
+                             :name => c.name,
+                             :desc => c.desc,
+                             :component => c
+                         })
       c.modules << m
       site.modules[c.type] << m
     end
@@ -846,7 +846,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def handles(repository)
       repository.path != 'arquillian-container-reloaded' and
-          (repository.path =~ /^arquillian\-container\-.+/ or ['jboss-as', 'wildfly-arquillian', 'tomee'].include? repository.path)
+          (repository.path =~ /^arquillian-container-.+/ or ['jboss-as', 'wildfly-arquillian', 'tomee'].include? repository.path)
     end
 
     def visit(repository, site)
@@ -891,32 +891,32 @@ module Awestruct::Extensions::Repository::Visitors
           (management, min_version) = [$1, $3]
           module_cnt += 1
           adapters << OpenStruct.new({
-            :relative_path => MavenHelpers.to_relative_sub_path(pathrev, repository.relative_path),
-            :basepath => mod.sub(/container(?=-)/, vendor),
-            :vendor => vendor,
-            :management => management,
-            :min_version => min_version
-          })
+                                         :relative_path => MavenHelpers.to_relative_sub_path(pathrev, repository.relative_path),
+                                         :basepath => mod.sub(/container(?=-)/, vendor),
+                                         :vendor => vendor,
+                                         :management => management,
+                                         :min_version => min_version
+                                     })
         elsif mod.eql? 'arquillian-openshift' or
-          (mod.eql? 'arquillian-openshift-express' and !(pom.text('/project/name') =~ /.*Relocation/)) or
-          mod.eql? 'arquillian-cloudbees'
+            (mod.eql? 'arquillian-openshift-express' and !(pom.text('/project/name') =~ /.*Relocation/)) or
+            mod.eql? 'arquillian-cloudbees'
           # FIXME this should be openshift-remote
           module_cnt += 1
           adapters << OpenStruct.new({
-            :relative_path => MavenHelpers.to_relative_sub_path(pathrev, repository.relative_path),
-            :basepath => mod,
-            :vendor => vendor,
-            :management => 'remote'
-          })
+                                         :relative_path => MavenHelpers.to_relative_sub_path(pathrev, repository.relative_path),
+                                         :basepath => mod,
+                                         :vendor => vendor,
+                                         :management => 'remote'
+                                     })
         elsif mod.eql? 'arquillian-container-chameleon'
           # FIXME this should be openshift-remote
           module_cnt += 1
           adapters << OpenStruct.new({
-            :relative_path => MavenHelpers.to_relative_sub_path(pathrev, repository.relative_path),
-            :basepath => mod,
-            :vendor => vendor,
-            :management => 'any'
-          })
+                                         :relative_path => MavenHelpers.to_relative_sub_path(pathrev, repository.relative_path),
+                                         :basepath => mod,
+                                         :vendor => vendor,
+                                         :management => 'any'
+                                     })
         end
       end
       adapters
@@ -935,11 +935,11 @@ module Awestruct::Extensions::Repository::Visitors
       end
       pom = REXML::Document.new(rc.cat_file(pomrev))
 
-	unless pom.root.text('name').nil?
-            container.name = pom.root.text('name').sub(/ Container$/, '\0 Adapter').sub(/^Arquillian Container (.*)/, 'Arquillian \1 Container Adapter')
-	else
-	    container.name = container.relative_path.sub('/','').sub('-',' ').sub('_',' ')
-	end
+      unless pom.root.text('name').nil?
+        container.name = pom.root.text('name').sub(/ Container$/, '\0 Adapter').sub(/^Arquillian Container (.*)/, 'Arquillian \1 Container Adapter')
+      else
+        container.name = container.relative_path.sub('/', '').sub('-', ' ').sub('_', ' ')
+      end
       if repository.path == 'jboss-as'
         container.name = container.name.sub(/.*Arquillian /, 'Arquillian JBoss AS 7 ')
       elsif repository.path == 'wildfly-arquillian'
@@ -952,8 +952,8 @@ module Awestruct::Extensions::Repository::Visitors
       end
       container.desc = pom.root.text('description') || '!!!Missing description!!!'
       container.artifacts = [
-        Artifact.new(container.name,
-            Artifact::Coordinates.new(component.groupId, pom.root.text('artifactId'), :jar, component.latest_version))
+          Artifact.new(container.name,
+                       Artifact::Coordinates.new(component.groupId, pom.root.text('artifactId'), :jar, component.latest_version))
       ]
       # FIXME also need to check common submodule
       pom.each_element('/project/dependencies/dependency') do |dep|
@@ -982,12 +982,12 @@ module Awestruct::Extensions::Repository::Visitors
         site.modules[c.type] = []
       end
       m = OpenStruct.new({
-        #:basepath => c.repository.path.match(/-([^-]+)$/)[1],
-        :basepath => c.repository.path.split('-').last,
-        :name => c.name,
-        :desc => c.desc,
-        :component => c
-      })
+                             #:basepath => c.repository.path.match(/-([^-]+)$/)[1],
+                             :basepath => c.repository.path.split('-').last,
+                             :name => c.name,
+                             :desc => c.desc,
+                             :component => c
+                         })
       resolve_extension_artifacts(repository, m)
       c.modules << m
       site.modules[c.type] << m
@@ -1024,7 +1024,7 @@ module Awestruct::Extensions::Repository::Visitors
         packaging = primarypom.root.text('packaging')
         groupId = pom.root.text('groupId') || pom.root.elements['parent'].text('groupId')
         mod.artifacts = [
-          Artifact.new(name, Artifact::Coordinates.new(groupId, artifactId, packaging, mod.component.latest_version))
+            Artifact.new(name, Artifact::Coordinates.new(groupId, artifactId, packaging, mod.component.latest_version))
         ]
       end
     end
@@ -1048,11 +1048,11 @@ module Awestruct::Extensions::Repository::Visitors
         site.modules[c.type] = []
       end
       m = OpenStruct.new({
-        :basepath => c.repository.path,
-        :name => c.name,
-        :desc => c.desc,
-        :component => c
-      })
+                             :basepath => c.repository.path,
+                             :name => c.name,
+                             :desc => c.desc,
+                             :component => c
+                         })
       c.modules << m
       site.modules[c.type] << m
     end
@@ -1073,11 +1073,11 @@ module Awestruct::Extensions::Repository::Visitors
         site.modules[c.type] = []
       end
       m = OpenStruct.new({
-        :basepath => c.repository.path,
-        :name => c.name,
-        :desc => c.desc,
-        :component => c
-      })
+                             :basepath => c.repository.path,
+                             :name => c.name,
+                             :desc => c.desc,
+                             :component => c
+                         })
       c.modules << m
       site.modules[c.type] << m
     end
@@ -1098,11 +1098,11 @@ module Awestruct::Extensions::Repository::Visitors
         site.modules[c.type] = []
       end
       m = OpenStruct.new({
-        :basepath => c.repository.path,
-        :name => c.name,
-        :desc => c.desc,
-        :component => c
-      })
+                             :basepath => c.repository.path,
+                             :name => c.name,
+                             :desc => c.desc,
+                             :component => c
+                         })
       c.modules << m
       site.modules[c.type] << m
     end
@@ -1124,11 +1124,11 @@ module Awestruct::Extensions::Repository::Visitors
       end
       c.extensions = populate_modules(repository, 'master')
       m = OpenStruct.new({
-        :basepath => c.repository.path,
-        :name => c.name,
-        :desc => c.desc,
-        :component => c
-      })
+                             :basepath => c.repository.path,
+                             :name => c.name,
+                             :desc => c.desc,
+                             :component => c
+                         })
       c.modules << m
       site.modules[c.type] << m
     end
@@ -1147,9 +1147,9 @@ module Awestruct::Extensions::Repository::Visitors
         name = modpom.text("/project/name")
 
         modules.push OpenStruct.new({
-          :name => name,
-          :groupId => group_id,
-          :artifactId => artifact_id})
+                                        :name => name,
+                                        :groupId => group_id,
+                                        :artifactId => artifact_id})
       end
 
       return modules
@@ -1158,8 +1158,9 @@ module Awestruct::Extensions::Repository::Visitors
 
   module DaemonComponent
     include Base
+
     def handles(repository)
-          repository.path =~ /^(arquillian-daemon)$/
+      repository.path =~ /^(arquillian-daemon)$/
     end
 
     def visit(repository, site)
@@ -1170,11 +1171,11 @@ module Awestruct::Extensions::Repository::Visitors
         site.modules[c.type] = []
       end
       m = OpenStruct.new({
-        :basepath => c.repository.path,
-        :name => c.name,
-        :desc => c.desc,
-        :component => c
-      })
+                             :basepath => c.repository.path,
+                             :name => c.name,
+                             :desc => c.desc,
+                             :component => c
+                         })
       c.modules << m
       site.modules[c.type] << m
     end
