@@ -1210,13 +1210,12 @@ module Awestruct::Extensions::Repository::Visitors
     include Base
 
     def handles(repository)
-      repository.has_docs = Git.ls_remote( repository.clone_dir)['remotes'].has_key? 'origin/gh-pages'
-      repository.has_docs
+      true
     end
 
     def visit(repository, site)
       c = site.components[repository.path]
-      c.has_docs = repository.has_docs
+      c.has_docs = Git.ls_remote( repository.clone_dir)['remotes'].has_key? 'origin/gh-pages' if not c.nil?
     end
   end
 
