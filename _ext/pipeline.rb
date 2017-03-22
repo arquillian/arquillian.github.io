@@ -27,10 +27,6 @@ require 'compass'
 require 'bootstrap-sass'
 
 Awestruct::Extensions::Pipeline.new do
-  # can use engine to tune pipeline per environment by checking profile
-  # the convenience methods development? and blogging? are provided
-  engine = Engine.instance
-
   config = Engine.instance.site
 
   # Custom tags and syntax for textile markup
@@ -129,6 +125,5 @@ Awestruct::Extensions::Pipeline.new do
   helper Awestruct::Extensions::AssetFingerprinter
 
   extension Awestruct::Extensions::RedirectCreator.new
-
 
 end
