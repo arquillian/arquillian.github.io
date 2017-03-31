@@ -1,0 +1,55 @@
+---
+date: 2017-03-18
+author: matousjobanek
+---
+
+!(graphic pull-right)/images/blog/drone_400.png!
+
+In this release, we bring you a new way of a managing binaries such as drivers or Selenium Server.
+
+Previously, when you wanted to use for example Chrome browser for your tests, you had to download the @chrome-driver@ binary first, then define the path to the binary in your @arquillian.xml@ file and then run the UI tests.
+With the new binary management, the first two steps are not needed anymore. If you don't specify the path in your @arquillian.xml@ file, Drone automatically downloads the latest version of the binary, set the necessary properties and use the binary in your UI tests.
+
+h2. Automatic Download
+
+h3. How does it work?
+
+Let say that you want to use Firefox for UI tests. First of all, Drone checks if the path to the Gecko webdriver binary is already set. In this case, it would check a system property @webdriver.gecko.driver@; if this is empty then it checks the @arquillian.xml@ property @firefoxDriverBinary@. In case that both properties are empty, then the automatic download starts.
+
+Now, we have several options how to specify which binary should be downloaded (version, from URL, latest) and where it should be stored. For storage purposes cache directories @$HOME/.arquillian/drone/subdirectory_specific_to_binary@ are used so the binaries are not downloaded over and over again.
+
+h4.  Version
+
+Using the property
+
+pre. <property name="firefoxDriverVersion">v0.14.0</property>
+
+you can define which version of the Gecko webdriver should be downloaded. The binary is then cached in a directory @$HOME/.arquillian/drone/firefox/v0.14.0/@.
+
+h4. URL
+
+Using the property
+
+pre. <property name="firefoxDriverUrl">http://url/to/gecko/webdriver</property>
+
+ you can define which URL the Gecko webdriver should be downloaded from. The directory where it is stored depends if you also specify the version of this binary or not. In case you use also the before-mentioned property @firefoxDriverVersion@ then it is cached in corresponding directory @$HOME/.arquillian/drone/firefox/specified_version/@. Otherwise it is downloaded into @$project.directory/target/drone/downloaded/@ so no cache is used.
+
+h4. Latest
+
+In case you don’t define any property then Drone finds the latest version of the given binary and downloads this one. The binary (in case of Gecko webdriver) is cached at @$HOME/.arquillian/drone/firefox/latest_version/@.
+
+
+Some additional information and list of supported binaries and properties can be found in the "Drone documentation":http://arquillian.org/arquillian-extension-drone/#_automatic_download
+
+h3. Selenium Server
+
+Apart from the fact that the Selenium Server binary is automatically downloaded, in the case of @RemoteWebDriver@ it is also automatically started with the correct parameters (path to the webdriver that should be used).
+
+So, if you use @RemoteWebDriver@ Drone checks the address specified using property @remoteAddress@ in arquillian.xml file (default is: @http://localhost:4444/wd/hub@) and if the address is not accessible (there isn't running anything) then it automatically starts selenium server instance on the given address.
+
+For example I'd like to use @RemoteWebDriver@ with the browser Firefox and without specifying any custom remote address, then the Selenium Server would be started using command:
+
+pre. java -Dwebdriver.gecko.driver=target/.../geckodriver
+     -jar target/.../selenium-server-standalone-3.3.1.jar -port 4444
+
+We hope that you'll enjoy our new stuff and look forward to hearing your feedback.
