@@ -3,6 +3,7 @@ package org.arquillian.tests.pom;
 import org.arquillian.tests.utilities.PageVerifier;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 public class FeaturesPage {
@@ -11,10 +12,12 @@ public class FeaturesPage {
     private WebDriver driver;
 
     @FindBy(className = "features")
-    private ContentFragment content;
+    private WebElement content;
+
+    private String selector = "[class='features'] h2";
 
     public ContentFragment content() {
-        return content;
+        return new ContentFragment(content, selector);
     }
 
     public FeaturesPageVerifier verify() {

@@ -10,8 +10,15 @@ public class MenuFragment {
     @Root
     private WebElement menuRoot;
 
+    private String selector;
+
+    public MenuFragment(WebElement menuRoot, String selector) {
+        this.menuRoot = menuRoot;
+        this.selector = selector;
+    }
+
     public MenuVerifier verify() {
-        return new MenuVerifier(menuRoot);
+        return new MenuVerifier(menuRoot, selector);
     }
 
     public MenuNavigator navigate() {
@@ -19,8 +26,8 @@ public class MenuFragment {
     }
 
     public class MenuVerifier extends FragmentVerifier {
-        public MenuVerifier(WebElement fragmentRoot) {
-            super(fragmentRoot);
+        public MenuVerifier(WebElement menuRoot, String selector) {
+            super(menuRoot, selector);
         }
     }
 

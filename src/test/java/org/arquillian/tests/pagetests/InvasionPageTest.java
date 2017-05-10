@@ -32,7 +32,7 @@ public class InvasionPageTest {
     }
 
     @Test
-    public void should_have_sidebar_with_all_items() throws Exception {
+    public void should_have_all_sidebar_items() throws Exception {
         invasionPage.sidebar()
             .verify()
             .containsInOrder("Mission", "Team", "Origins", "Buzz", "Events", "Press", "Videos", "Spread Ike!");

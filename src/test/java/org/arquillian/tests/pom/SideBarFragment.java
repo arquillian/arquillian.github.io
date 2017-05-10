@@ -10,8 +10,15 @@ public class SideBarFragment {
     @Root
     private WebElement sidebarRoot;
 
+    private String selector;
+
+    public SideBarFragment(WebElement sidebarRoot, String selector) {
+        this.sidebarRoot = sidebarRoot;
+        this.selector = selector;
+    }
+
     public SideBarVerifier verify() {
-        return new SideBarVerifier(sidebarRoot);
+        return new SideBarVerifier(sidebarRoot, selector);
     }
 
     public SideBarNavigator navigate() {
@@ -19,8 +26,8 @@ public class SideBarFragment {
     }
 
     public class SideBarVerifier extends FragmentVerifier {
-        public SideBarVerifier(WebElement fragmentRoot) {
-            super(fragmentRoot);
+        public SideBarVerifier(WebElement sidebarRoot, String selector) {
+            super(sidebarRoot, selector);
         }
     }
 
