@@ -1,5 +1,6 @@
-package org.arquillian.tests.pom;
+package org.arquillian.tests.pom.pageObjects;
 
+import org.arquillian.tests.pom.fragmentObjects.MenuFragment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -13,9 +14,9 @@ public class MainPage {
     @FindBy(css = "[class='nav-collapse']")
     private WebElement menu;
 
-    private String selector = "[class='nav'] li";
-
     public MenuFragment menu() {
-        return new MenuFragment(menu, selector);
+        String selector = "[class='nav'] li";
+        String navigationSelector = "[class='nav']";
+        return new MenuFragment(menu, selector, navigationSelector);
     }
 }

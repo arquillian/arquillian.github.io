@@ -1,7 +1,7 @@
 package org.arquillian.tests.pagetests;
 
-import org.arquillian.tests.pom.BlogPage;
-import org.arquillian.tests.pom.MainPage;
+import org.arquillian.tests.pom.pageObjects.BlogPage;
+import org.arquillian.tests.pom.pageObjects.MainPage;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -42,4 +42,14 @@ public class BlogPageTest {
     }
 
     //fixme bug - missing release notes for blogs
+
+    @Test
+    public void should_have_sidebar_with_items() throws Exception {
+        mainPage.menu()
+            .navigate().to("Blog");
+
+        blogPage.sidebar()
+            .verify()
+            .containsInOrder("Subscribe to the Arquillian Blog", "Latest Posts", "Popular Posts", "Tags");
+    }
 }

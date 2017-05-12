@@ -1,4 +1,4 @@
-package org.arquillian.tests.pom;
+package org.arquillian.tests.pom.fragmentObjects;
 
 import java.util.List;
 import org.jboss.arquillian.graphene.fragment.Root;

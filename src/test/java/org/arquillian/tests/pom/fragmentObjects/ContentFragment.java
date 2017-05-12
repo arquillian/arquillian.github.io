@@ -1,4 +1,4 @@
-package org.arquillian.tests.pom;
+package org.arquillian.tests.pom.fragmentObjects;
 
 import org.arquillian.tests.utilities.FragmentVerifier;
 import org.jboss.arquillian.graphene.fragment.Root;

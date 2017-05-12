@@ -1,5 +1,6 @@
-package org.arquillian.tests.pom;
+package org.arquillian.tests.pom.pageObjects;
 
+import org.arquillian.tests.pom.fragmentObjects.ContentFragment;
 import org.arquillian.tests.utilities.PageVerifier;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;

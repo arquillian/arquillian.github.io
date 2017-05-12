@@ -1,5 +1,6 @@
-package org.arquillian.tests.pom;
+package org.arquillian.tests.pom.pageObjects;
 
+import org.arquillian.tests.pom.fragmentObjects.SideBarFragment;
 import org.arquillian.tests.utilities.PageVerifier;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;
@@ -14,12 +15,12 @@ public class InvasionPage {
     @FindBy(id = "sidebar")
     private WebElement sidebar;
 
-    private String selector = "[class='nav'] li";
-
     public SideBarFragment sidebar() {
-        return new SideBarFragment(sidebar, selector);
-
+        String selector = "[class='nav'] li";
+        String navigationSelector = "[class='nav']";
+        return new SideBarFragment(sidebar, selector, navigationSelector);
     }
+
     public InvasionPageVerifier verify() {
         return new InvasionPageVerifier(driver);
     }

@@ -1,7 +1,7 @@
 package org.arquillian.tests.pagetests;
 
-import org.arquillian.tests.pom.CommunityPage;
-import org.arquillian.tests.pom.MainPage;
+import org.arquillian.tests.pom.pageObjects.CommunityPage;
+import org.arquillian.tests.pom.pageObjects.MainPage;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;

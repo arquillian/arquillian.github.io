@@ -1,13 +1,13 @@
 package org.arquillian.tests.pagetests;
 
-import org.arquillian.tests.pom.BlogPage;
-import org.arquillian.tests.pom.CommunityPage;
-import org.arquillian.tests.pom.DocsPage;
-import org.arquillian.tests.pom.FeaturesPage;
-import org.arquillian.tests.pom.GuidesPage;
-import org.arquillian.tests.pom.InvasionPage;
-import org.arquillian.tests.pom.MainPage;
-import org.arquillian.tests.pom.ModulesPage;
+import org.arquillian.tests.pom.pageObjects.BlogPage;
+import org.arquillian.tests.pom.pageObjects.CommunityPage;
+import org.arquillian.tests.pom.pageObjects.DocsPage;
+import org.arquillian.tests.pom.pageObjects.FeaturesPage;
+import org.arquillian.tests.pom.pageObjects.GuidesPage;
+import org.arquillian.tests.pom.pageObjects.InvasionPage;
+import org.arquillian.tests.pom.pageObjects.MainPage;
+import org.arquillian.tests.pom.pageObjects.ModulesPage;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
