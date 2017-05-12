@@ -1,6 +1,6 @@
 package org.arquillian.tests.pagetests;
 
-import org.arquillian.tests.pom.CommunityPage;
+import org.arquillian.tests.pom.DocsPage;
 import org.arquillian.tests.pom.MainPage;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -13,7 +13,7 @@ import org.openqa.selenium.WebDriver;
 
 @RunWith(Arquillian.class)
 @RunAsClient
-public class CommunityPageTest {
+public class DocsPageTest {
 
     @Drone
     private WebDriver driver;
@@ -22,7 +22,7 @@ public class CommunityPageTest {
     private MainPage mainPage;
 
     @Page
-    private CommunityPage communityPage;
+    private DocsPage docsPage;
 
     @Before
     public void open() {
@@ -30,12 +30,14 @@ public class CommunityPageTest {
     }
 
     @Test
-    public void should_have_content_listing_all_sections() throws Exception {
+    public void should_have_content_listing_all_blogs_with_title_and_release_notes() throws Exception {
         mainPage.menu()
-            .navigate().to("Community");
-
-        communityPage.content()
+            .navigate().to("Docs");
+        //"//*[@class='well']//descendant::a:not(class='muted')]"
+        //System.out.println(driver.findElement(ByJQuery.selector(".well a:root")).getText());
+        /*docsPage.content()
             .verify()
-            .containsInOrder("Forums and Wiki", "Chat (IRC)", "Issue Tracker", "Source Repository", "Arquillian Nobles");
+            .containsInOrder("Core", "Algeron Extension", "Cube Extension", "Cube Q Extension", "Drone Extension",
+                "Extension Performance", "Persistence Extension", "Warp", "Graphene");*/
     }
 }

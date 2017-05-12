@@ -1,6 +1,6 @@
 package org.arquillian.tests.pagetests;
 
-import org.arquillian.tests.pom.CommunityPage;
+import org.arquillian.tests.pom.BlogPage;
 import org.arquillian.tests.pom.MainPage;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -13,7 +13,7 @@ import org.openqa.selenium.WebDriver;
 
 @RunWith(Arquillian.class)
 @RunAsClient
-public class CommunityPageTest {
+public class BlogPageTest {
 
     @Drone
     private WebDriver driver;
@@ -22,7 +22,7 @@ public class CommunityPageTest {
     private MainPage mainPage;
 
     @Page
-    private CommunityPage communityPage;
+    private BlogPage blogPage;
 
     @Before
     public void open() {
@@ -30,12 +30,16 @@ public class CommunityPageTest {
     }
 
     @Test
-    public void should_have_content_listing_all_sections() throws Exception {
-        mainPage.menu()
-            .navigate().to("Community");
+    public void should_have_content_listing_all_blogs_with_title_and_release_notes() throws Exception {
 
-        communityPage.content()
+        mainPage.menu()
+            .navigate().to("Blog");
+
+        blogPage.blogs()
             .verify()
-            .containsInOrder("Forums and Wiki", "Chat (IRC)", "Issue Tracker", "Source Repository", "Arquillian Nobles");
+                .hasTitle()
+                .hasReleaseNotes();
     }
+
+    //fixme bug - missing release notes for blogs
 }

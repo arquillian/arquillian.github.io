@@ -27,17 +27,18 @@ public class FeaturePageTest {
     @Before
     public void open() {
         driver.navigate().to("http://arquillian.org");
-        mainPage.menu()
-            .navigate().to("Features");
     }
 
     @Test
     public void should_have_content_listing_all_features() throws Exception {
+        mainPage.menu()
+            .navigate().to("Features");
+
         featuresPage.content()
             .verify()
             .containsInOrder("Real Tests", "IDE Friendly", "Test Enrichment", "Classpath Control", "Drive the Browser",
                 "Debug the Server", "Container Agnostic", "Extensible Platform", "Strong Tooling");
     }
 
-    //todo fix bug - misplaced divs in strong tooling
+    //fixme bug - misplaced divs in strong tooling
 }
