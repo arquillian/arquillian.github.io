@@ -48,7 +48,6 @@ public class MainPageTest {
     @Page
     private ModulesPage modulesPage;
 
-
     @Before
     public void open() {
         driver.navigate().to("http://arquillian.org");
@@ -122,5 +121,36 @@ public class MainPageTest {
 
         modulesPage.verify().hasTitle("Modules · Arquillian")
             .hasContent();
+    }
+
+    @Test
+    public void should_have_contributor_section_with_author_title_and_content() throws Exception {
+        mainPage.content()
+            .verify()
+            .hasSectionsDisplayedInOrder("Contributor Spotlight", "Latest News", "Upcoming Events");
+    }
+
+    @Test
+    public void should_have_section_contributor_spotlight_with_one_author_entry() throws Exception {
+        mainPage.content()
+            .verify()
+            .hasSectionTitled("Contributor Spotlight")
+            .hasNumberOfSectionEntries("Contributor Spotlight", 1);
+    }
+
+    @Test
+    public void should_have_section_latest_news_with_three_blog_entries() throws Exception {
+        mainPage.content()
+            .verify()
+            .hasSectionTitled("Latest News")
+            .hasNumberOfSectionEntries("Latest News", 3);
+    }
+
+    @Test
+    public void should_have_section_upcoming_events_with_two_event_entries() throws Exception {
+        mainPage.content()
+            .verify()
+            .hasSectionTitled("Upcoming Events")
+            .hasNumberOfSectionEntries("Upcoming Events", 2);
     }
 }

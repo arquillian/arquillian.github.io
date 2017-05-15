@@ -27,5 +27,26 @@ public class ContentFragment {
 
             return this;
         }
+
+        public ContentVerifier hasSectionTitled(String sectionName) {
+            WebElement element = contentRoot.findElement(By.id(getSectionId(sectionName)));
+
+            assertThat(element.isDisplayed()).isTrue();
+
+            return this;
+        }
+
+        public ContentVerifier hasNumberOfSectionEntries(String sectionName, int noOfArticles) {
+            final List<WebElement> fragmentItems =
+                contentRoot.findElement(By.id(getSectionId(sectionName))).findElements(By.cssSelector("h3"));
+
+            assertThat(fragmentItems.size()).isEqualTo(noOfArticles);
+
+            return this;
+        }
+
+        private String getSectionId(String sectionName) {
+            return sectionName.substring(sectionName.indexOf(' ') + 1).toLowerCase();
+        }
     }
 }

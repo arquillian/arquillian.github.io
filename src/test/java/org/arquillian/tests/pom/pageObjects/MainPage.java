@@ -1,5 +1,6 @@
 package org.arquillian.tests.pom.pageObjects;
 
+import org.arquillian.tests.pom.fragmentObjects.ContentFragment;
 import org.arquillian.tests.pom.fragmentObjects.MenuFragment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;
@@ -12,6 +13,13 @@ public class MainPage {
 
     @FindBy(css = "[class='nav']")
     private MenuFragment menu;
+
+    @FindBy(css = "[id = 'activity']")
+    private ContentFragment content;
+
+    public ContentFragment content() {
+        return content;
+    }
 
     public MenuFragment menu() {
         return menu;
