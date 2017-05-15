@@ -7,6 +7,7 @@ import org.openqa.selenium.WebElement;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TabPaneContentFragment {
+
     @Root
     private WebElement contentRoot;
 

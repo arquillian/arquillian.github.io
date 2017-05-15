@@ -58,7 +58,7 @@ public class MainPageTest {
     public void should_have_all_menu_items() throws Exception {
         mainPage.menu()
             .verify()
-            .containsInOrder("Invasion!", "Features", "Guides", "Docs", "Blog", "Community", "Modules");
+            .hasMenuItemsDisplayedInOrder("Invasion!", "Features", "Guides", "Docs", "Blog", "Community", "Modules");
     }
 
     @Test

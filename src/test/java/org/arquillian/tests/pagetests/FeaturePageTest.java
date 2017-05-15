@@ -36,7 +36,7 @@ public class FeaturePageTest {
 
         featuresPage.content()
             .verify()
-            .containsInOrder("Real Tests", "IDE Friendly", "Test Enrichment", "Classpath Control", "Drive the Browser",
+            .hasSectionsDisplayedInOrder("Real Tests", "IDE Friendly", "Test Enrichment", "Classpath Control", "Drive the Browser",
                 "Debug the Server", "Container Agnostic", "Extensible Platform", "Strong Tooling");
     }
 

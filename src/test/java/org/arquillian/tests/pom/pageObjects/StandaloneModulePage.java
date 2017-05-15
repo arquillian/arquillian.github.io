@@ -16,7 +16,7 @@ public class StandaloneModulePage {
     @Drone
     private WebDriver driver;
 
-    @FindBy(id = "content")
+    @FindBy(css = "[id = 'content']")
     private WebElement contentRoot;
 
     public IndividualModulePageVerifier verify() {
@@ -24,8 +24,7 @@ public class StandaloneModulePage {
     }
 
     public PageNavigator navigate() {
-        String navigationSelector = "[class = 'row']";
-        return new PageNavigator(contentRoot, navigationSelector);
+        return new PageNavigator(contentRoot);
     }
 
     public class IndividualModulePageVerifier {

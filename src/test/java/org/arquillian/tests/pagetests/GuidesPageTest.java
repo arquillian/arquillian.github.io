@@ -38,7 +38,7 @@ public class GuidesPageTest {
         mainPage.menu()
             .navigate().to("Guides");
 
-        guidesPage.navigationList()
+        guidesPage.descriptionList()
             .verify()
             .containsEntries("Getting Started: Rinse and Repeat", "Functional Testing using Drone and Graphene",
                 "Get Started Faster with Forge", "Reference Guide", "FAQs");
@@ -49,7 +49,7 @@ public class GuidesPageTest {
         mainPage.menu()
             .navigate().to("Guides");
 
-        guidesPage.navigationList()
+        guidesPage.descriptionList()
             .navigate().to("Getting Started: Rinse and Repeat");
 
         fetchedGuidePage.verify()
@@ -64,6 +64,6 @@ public class GuidesPageTest {
 
         guidesPage.sidebar()
             .verify()
-            .containsInOrder("ICON LEGEND", "CONVENTIONS");
+            .hasSubSectionHeaders("ICON LEGEND", "CONVENTIONS");
     }
 }

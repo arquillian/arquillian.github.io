@@ -7,14 +7,11 @@ public class PageNavigator {
 
     private WebElement fragmentRoot;
 
-    private String selector;
-
-    public PageNavigator(WebElement fragmentRoot, String selector) {
+    public PageNavigator(WebElement fragmentRoot) {
         this.fragmentRoot = fragmentRoot;
-        this.selector = selector;
     }
 
     public void to(String fragmentItem) {
-        fragmentRoot.findElement(By.cssSelector(selector)).findElement(By.partialLinkText(fragmentItem)).click();
+        fragmentRoot.findElement(By.partialLinkText(fragmentItem)).click();
     }
 }

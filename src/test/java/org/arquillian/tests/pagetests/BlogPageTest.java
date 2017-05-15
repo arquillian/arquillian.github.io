@@ -35,7 +35,7 @@ public class BlogPageTest {
         mainPage.menu()
             .navigate().to("Blog");
 
-        blogPage.blogs()
+        blogPage.blogContent()
             .verify()
                 .hasTitle()
                 .hasReleaseNotes();
@@ -44,12 +44,12 @@ public class BlogPageTest {
     //fixme bug - missing release notes for blogs
 
     @Test
-    public void should_have_sidebar_with_items() throws Exception {
+    public void should_have_sidebar_with_sub_sections() throws Exception {
         mainPage.menu()
             .navigate().to("Blog");
 
         blogPage.sidebar()
             .verify()
-            .containsInOrder("Subscribe to the Arquillian Blog", "Latest Posts", "Popular Posts", "Tags");
+            .hasSubSectionHeaders("Subscribe to the Arquillian Blog", "Latest Posts", "Popular Posts", "Tags");
     }
 }

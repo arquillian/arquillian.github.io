@@ -161,16 +161,15 @@ public class DocsPageTest {
             .hasContent();
     }
 
-    @Test
+   @Test
     public void should_have_all_core_concepts_menu_items() throws Exception {
         mainPage.menu()
             .navigate().to("Docs");
 
         docsPage.menu()
             .verify()
-            .containsInOrder("Test runners", "Deployments", "Test enrichers", "Containers", "Run modes", "Extensions");
+            .hasMenuItemsDisplayedInOrder("Test runners", "Deployments", "Test enrichers", "Containers", "Run modes", "Extensions");
     }
-
     @Test
     public void should_display_content_for_test_runners_menu_item() throws Exception {
         mainPage.menu()

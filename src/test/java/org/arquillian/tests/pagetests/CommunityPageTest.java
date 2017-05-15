@@ -36,6 +36,6 @@ public class CommunityPageTest {
 
         communityPage.content()
             .verify()
-            .containsInOrder("Forums and Wiki", "Chat (IRC)", "Issue Tracker", "Source Repository", "Arquillian Nobles");
+            .hasSectionsDisplayedInOrder("Where Are We?", "Forums and Wiki", "Chat (IRC)", "Issue Tracker", "Source Repository", "Arquillian Nobles");
     }
 }

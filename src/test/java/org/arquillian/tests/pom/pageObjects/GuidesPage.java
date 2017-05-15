@@ -1,11 +1,10 @@
 package org.arquillian.tests.pom.pageObjects;
 
-import org.arquillian.tests.pom.fragmentObjects.NavigationListFragment;
+import org.arquillian.tests.pom.fragmentObjects.DescriptionListFragment;
 import org.arquillian.tests.pom.fragmentObjects.SideBarFragment;
 import org.arquillian.tests.utilities.PageVerifier;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 public class GuidesPage {
@@ -13,22 +12,18 @@ public class GuidesPage {
     @Drone
     private WebDriver driver;
 
-    @FindBy(id = "content")
-    private WebElement navList;
+    @FindBy(css = "[id = 'content']")
+    private DescriptionListFragment descList;
 
-    @FindBy(id = "sidebar")
-    private WebElement sidebar;
+    @FindBy(css = "[id = 'sidebar']")
+    private SideBarFragment sidebar;
 
-    public NavigationListFragment navigationList() {
-        String selector = "dl a";
-        String navigationSelector = "dl";
-        return new NavigationListFragment(navList, selector, navigationSelector);
+    public DescriptionListFragment descriptionList() {
+        return descList;
     }
 
     public SideBarFragment sidebar() {
-        String selector = "h3";
-        String navigationSelector = "h3";
-        return new SideBarFragment(sidebar, selector, navigationSelector);
+        return sidebar;
     }
 
     public GuidesPageVerifier verify() {

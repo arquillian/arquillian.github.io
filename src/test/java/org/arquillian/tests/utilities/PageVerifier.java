@@ -22,5 +22,4 @@ public class PageVerifier {
         assertThat(driver.findElement(By.id("content")).isDisplayed()).isTrue();
         return this;
     }
-
 }

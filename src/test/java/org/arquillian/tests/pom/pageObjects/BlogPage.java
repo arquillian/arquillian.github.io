@@ -5,7 +5,6 @@ import org.arquillian.tests.pom.fragmentObjects.SideBarFragment;
 import org.arquillian.tests.utilities.PageVerifier;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 public class BlogPage {
@@ -13,20 +12,18 @@ public class BlogPage {
     @Drone
     private WebDriver driver;
 
-    @FindBy(id = "content")
-    private BlogFragment blogs;
+    @FindBy(css = "[id = 'content']")
+    private BlogFragment blogContent;
 
-    @FindBy(id = "sidebar")
-    private WebElement sidebar;
+    @FindBy(css = "[id = 'sidebar']")
+    private SideBarFragment sidebar;
 
-    public BlogFragment blogs() {
-        return blogs;
+    public BlogFragment blogContent() {
+        return blogContent;
     }
 
     public SideBarFragment sidebar() {
-        String selector = "h2";
-        String navigationSelector = "h2";
-        return new SideBarFragment(sidebar, selector, navigationSelector);
+        return sidebar;
     }
 
     public BlogPageVerifier verify() {

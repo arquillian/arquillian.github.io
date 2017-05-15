@@ -4,7 +4,6 @@ import org.arquillian.tests.pom.fragmentObjects.ContentFragment;
 import org.arquillian.tests.utilities.PageVerifier;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 public class CommunityPage {
@@ -12,13 +11,11 @@ public class CommunityPage {
     @Drone
     private WebDriver driver;
 
-    @FindBy(id = "content")
-    private WebElement content;
-
-    private String selector = "[id='section'] h2";
+    @FindBy(css = "[id = 'content']")
+    private ContentFragment content;
 
     public ContentFragment content() {
-        return new ContentFragment(content, selector);
+        return content;
     }
 
     public CommunityPageVerifier verify() {

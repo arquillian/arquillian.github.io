@@ -1,28 +1,31 @@
 package org.arquillian.tests.pom.fragmentObjects;
 
-import org.arquillian.tests.utilities.FragmentVerifier;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.jboss.arquillian.graphene.fragment.Root;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ContentFragment {
 
     @Root
     private WebElement contentRoot;
 
-    private String selector;
-
-    public ContentFragment(WebElement contentRoot, String selector) {
-        this.contentRoot = contentRoot;
-        this.selector = selector;
-    }
-
     public ContentVerifier verify() {
-        return new ContentVerifier(contentRoot, selector);
+        return new ContentVerifier();
     }
 
-    public class ContentVerifier extends FragmentVerifier {
-        public ContentVerifier(WebElement contentRoot, String selector) {
-            super(contentRoot, selector);
+    public class ContentVerifier {
+        public ContentVerifier hasSectionsDisplayedInOrder(String... expectedFragmentItems) {
+            final List<WebElement> fragmentItems = contentRoot.findElements(By.cssSelector("h2"));
+            final List<String> fragmentItemsTitles =
+                fragmentItems.stream().map(WebElement::getText).collect(Collectors.toList());
+
+            assertThat(fragmentItemsTitles).containsExactly(expectedFragmentItems);
+
+            return this;
         }
     }
 }

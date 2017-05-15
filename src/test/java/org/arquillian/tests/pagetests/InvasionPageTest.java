@@ -27,19 +27,23 @@ public class InvasionPageTest {
     @Before
     public void open() {
         driver.navigate().to("http://arquillian.org");
-        mainPage.menu()
-            .navigate().to("Invasion!");
     }
 
     @Test
     public void should_have_all_sidebar_items() throws Exception {
+        mainPage.menu()
+            .navigate().to("Invasion!");
+
         invasionPage.sidebar()
             .verify()
-            .containsInOrder("Mission", "Team", "Origins", "Buzz", "Events", "Press", "Videos", "Spread Ike!");
+            .hasLinkableSubSections("Mission", "Team", "Origins", "Buzz", "Events", "Press", "Videos", "Spread Ike!");
     }
 
     @Test
     public void should_be_able_to_go_to_main_invasion_page() throws Exception {
+        mainPage.menu()
+            .navigate().to("Invasion!");
+
         invasionPage.sidebar()
             .navigate().to("Mission");
 
@@ -49,6 +53,9 @@ public class InvasionPageTest {
 
     @Test
     public void should_be_able_to_go_to_team_sub_page() throws Exception {
+        mainPage.menu()
+            .navigate().to("Invasion!");
+
         invasionPage.sidebar()
             .navigate().to("Team");
 
@@ -58,6 +65,9 @@ public class InvasionPageTest {
 
     @Test
     public void should_be_able_to_go_to_origins_sub_page() throws Exception {
+        mainPage.menu()
+            .navigate().to("Invasion!");
+
         invasionPage.sidebar()
             .navigate().to("Origins");
 
@@ -67,6 +77,9 @@ public class InvasionPageTest {
 
     @Test
     public void should_be_able_to_go_to_buzz_sub_page() throws Exception {
+        mainPage.menu()
+            .navigate().to("Invasion!");
+
         invasionPage.sidebar()
             .navigate().to("Buzz");
 
@@ -76,6 +89,9 @@ public class InvasionPageTest {
 
     @Test
     public void should_be_able_to_go_to_events_sub_page() throws Exception {
+        mainPage.menu()
+            .navigate().to("Invasion!");
+
         invasionPage.sidebar()
             .navigate().to("Events");
 
@@ -85,6 +101,9 @@ public class InvasionPageTest {
 
     @Test
     public void should_be_able_to_go_to_press_sub_page() throws Exception {
+        mainPage.menu()
+            .navigate().to("Invasion!");
+
         invasionPage.sidebar()
             .navigate().to("Press");
 
@@ -94,6 +113,9 @@ public class InvasionPageTest {
 
     @Test
     public void should_be_able_to_go_to_videos_sub_page() throws Exception {
+        mainPage.menu()
+            .navigate().to("Invasion!");
+
         invasionPage.sidebar()
             .navigate().to("Videos");
 
@@ -103,6 +125,9 @@ public class InvasionPageTest {
 
     @Test
     public void should_be_able_to_go_to_spread_ike_sub_page() throws Exception {
+        mainPage.menu()
+            .navigate().to("Invasion!");
+
         invasionPage.sidebar()
             .navigate().to("Spread Ike!");
 
