@@ -26,13 +26,7 @@ public class GuidesPage {
         return sidebar;
     }
 
-    public GuidesPageVerifier verify() {
-        return new GuidesPageVerifier(driver);
-    }
-
-    public class GuidesPageVerifier extends PageVerifier {
-        public GuidesPageVerifier(WebDriver driver) {
-            super(driver);
-        }
+    public PageVerifier verify() {
+        return new PageVerifier(driver);
     }
 }

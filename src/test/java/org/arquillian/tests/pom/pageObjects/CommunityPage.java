@@ -18,13 +18,7 @@ public class CommunityPage {
         return content;
     }
 
-    public CommunityPageVerifier verify() {
-        return new CommunityPageVerifier(driver);
-    }
-
-    public class CommunityPageVerifier extends PageVerifier {
-        public CommunityPageVerifier(WebDriver driver) {
-            super(driver);
-        }
+    public PageVerifier verify() {
+        return new PageVerifier(driver);
     }
 }

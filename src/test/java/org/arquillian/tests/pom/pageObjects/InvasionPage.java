@@ -18,13 +18,7 @@ public class InvasionPage {
         return sidebar;
     }
 
-    public InvasionPageVerifier verify() {
-        return new InvasionPageVerifier(driver);
-    }
-
-    public class InvasionPageVerifier extends PageVerifier {
-        public InvasionPageVerifier(WebDriver driver) {
-            super(driver);
-        }
+    public PageVerifier verify() {
+        return new PageVerifier(driver);
     }
 }

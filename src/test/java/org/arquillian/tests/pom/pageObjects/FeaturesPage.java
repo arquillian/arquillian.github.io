@@ -18,13 +18,7 @@ public class FeaturesPage {
         return features;
     }
 
-    public FeaturesPageVerifier verify() {
-        return new FeaturesPageVerifier(driver);
-    }
-
-    public class FeaturesPageVerifier extends PageVerifier {
-        public FeaturesPageVerifier(WebDriver driver) {
-            super(driver);
-        }
+    public PageVerifier verify() {
+        return new PageVerifier(driver);
     }
 }

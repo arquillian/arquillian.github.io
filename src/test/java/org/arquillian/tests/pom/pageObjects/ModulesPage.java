@@ -18,13 +18,7 @@ public class ModulesPage {
         return navList;
     }
 
-    public ModulesPageVerifier verify() {
-        return new ModulesPageVerifier(driver);
-    }
-
-    public class ModulesPageVerifier extends PageVerifier {
-        public ModulesPageVerifier(WebDriver driver) {
-            super(driver);
-        }
+    public PageVerifier verify() {
+        return new PageVerifier(driver);
     }
 }

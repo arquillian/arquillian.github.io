@@ -26,13 +26,7 @@ public class BlogPage {
         return sidebar;
     }
 
-    public BlogPageVerifier verify() {
-        return new BlogPageVerifier(driver);
-    }
-
-    public class BlogPageVerifier extends PageVerifier {
-        public BlogPageVerifier(WebDriver driver) {
-            super(driver);
-        }
+    public PageVerifier verify() {
+        return new PageVerifier(driver);
     }
 }

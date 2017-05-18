@@ -34,13 +34,7 @@ public class DocsPage {
         return tabContent;
     }
 
-    public DocsPageVerifier verify() {
-        return new DocsPageVerifier(driver);
-    }
-
-    public class DocsPageVerifier extends PageVerifier {
-        public DocsPageVerifier(WebDriver driver) {
-            super(driver);
-        }
+    public PageVerifier verify() {
+        return new PageVerifier(driver);
     }
 }

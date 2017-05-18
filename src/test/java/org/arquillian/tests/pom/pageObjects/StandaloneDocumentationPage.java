@@ -8,13 +8,7 @@ public class StandaloneDocumentationPage {
     @Drone
     private WebDriver driver;
 
-    public IndividualDocumentationPageVerifier verify() {
-        return new IndividualDocumentationPageVerifier(driver);
-    }
-
-    public class IndividualDocumentationPageVerifier extends PageVerifier {
-        public IndividualDocumentationPageVerifier(WebDriver driver) {
-            super(driver);
-        }
+    public PageVerifier verify() {
+        return new PageVerifier(driver);
     }
 }

@@ -8,6 +8,7 @@ import org.arquillian.tests.pom.pageObjects.GuidesPage;
 import org.arquillian.tests.pom.pageObjects.InvasionPage;
 import org.arquillian.tests.pom.pageObjects.MainPage;
 import org.arquillian.tests.pom.pageObjects.ModulesPage;
+import org.arquillian.tests.pom.pageObjects.StandaloneDocumentationPage;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -47,6 +48,9 @@ public class MainPageTest {
 
     @Page
     private ModulesPage modulesPage;
+
+    @Page
+    private StandaloneDocumentationPage fetchedGuidePage;
 
     @Before
     public void open() {
@@ -120,6 +124,16 @@ public class MainPageTest {
             .navigate().to("Modules");
 
         modulesPage.verify().hasTitle("Modules · Arquillian")
+            .hasContent();
+    }
+
+    @Test
+    public void should_be_able_to_go_to_getting_started_page() throws Exception {
+        mainPage.button()
+            .navigate().to("Get Started!");
+
+        fetchedGuidePage.verify()
+            .hasTitle("Getting Started · Arquillian Guides")
             .hasContent();
     }
 
