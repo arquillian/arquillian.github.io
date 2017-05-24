@@ -2,6 +2,7 @@ package org.arquillian.tests.pagetests;
 
 import org.arquillian.tests.pom.pageObjects.BlogPage;
 import org.arquillian.tests.pom.pageObjects.MainPage;
+import org.arquillian.tests.pom.pageObjects.StandalonePage;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -23,6 +24,9 @@ public class BlogPageTest {
 
     @Page
     private BlogPage blogPage;
+
+    @Page
+    private StandalonePage fetchedBlogPage;
 
     @Before
     public void open() {
@@ -51,5 +55,22 @@ public class BlogPageTest {
         blogPage.sidebar()
             .verify()
             .hasSubSectionHeaders("Subscribe to the Arquillian Blog", "Latest Posts", "Popular Posts", "Tags");
+    }
+
+    @Test
+    public void should_be_able_to_go_to_jacoco_blog_from_cloud_tag() {
+        mainPage.menu()
+            .navigate().to("Blog");
+
+        blogPage.cloudTag()
+            .navigate().to("jacoco");
+
+        fetchedBlogPage.verify().hasTitle("Arquillian Blog · Arquillian")
+            .hasContent();
+
+        blogPage.blogContent()
+            .verify()
+                .hasTitle()
+                .hasReleaseNotes();
     }
 }

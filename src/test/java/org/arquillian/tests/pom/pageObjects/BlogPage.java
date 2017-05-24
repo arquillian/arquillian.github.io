@@ -1,6 +1,7 @@
 package org.arquillian.tests.pom.pageObjects;
 
 import org.arquillian.tests.pom.fragmentObjects.BlogFragment;
+import org.arquillian.tests.pom.fragmentObjects.CloudTagFragment;
 import org.arquillian.tests.pom.fragmentObjects.SideBarFragment;
 import org.arquillian.tests.utilities.PageVerifier;
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -18,12 +19,19 @@ public class BlogPage {
     @FindBy(css = "[id = 'sidebar']")
     private SideBarFragment sidebar;
 
+    @FindBy(css = "[class = 'tag-cloud']")
+    private CloudTagFragment cloudTag;
+
     public BlogFragment blogContent() {
         return blogContent;
     }
 
     public SideBarFragment sidebar() {
         return sidebar;
+    }
+
+    public CloudTagFragment cloudTag() {
+        return cloudTag;
     }
 
     public PageVerifier verify() {

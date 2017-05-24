@@ -8,7 +8,7 @@ import org.arquillian.tests.pom.pageObjects.GuidesPage;
 import org.arquillian.tests.pom.pageObjects.InvasionPage;
 import org.arquillian.tests.pom.pageObjects.MainPage;
 import org.arquillian.tests.pom.pageObjects.ModulesPage;
-import org.arquillian.tests.pom.pageObjects.StandaloneDocumentationPage;
+import org.arquillian.tests.pom.pageObjects.StandalonePage;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -50,7 +50,7 @@ public class MainPageTest {
     private ModulesPage modulesPage;
 
     @Page
-    private StandaloneDocumentationPage fetchedGuidePage;
+    private StandalonePage fetchedGuidePage;
 
     @Before
     public void open() {

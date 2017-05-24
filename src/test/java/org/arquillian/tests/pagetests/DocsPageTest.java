@@ -2,7 +2,7 @@ package org.arquillian.tests.pagetests;
 
 import org.arquillian.tests.pom.pageObjects.DocsPage;
 import org.arquillian.tests.pom.pageObjects.MainPage;
-import org.arquillian.tests.pom.pageObjects.StandaloneDocumentationPage;
+import org.arquillian.tests.pom.pageObjects.StandalonePage;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -26,7 +26,7 @@ public class DocsPageTest {
     private DocsPage docsPage;
 
     @Page
-    private StandaloneDocumentationPage fetchedDocumentationPage;
+    private StandalonePage fetchedDocumentationPage;
 
     @Before
     public void open() {

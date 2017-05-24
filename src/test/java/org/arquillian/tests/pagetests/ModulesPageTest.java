@@ -1,6 +1,6 @@
 package org.arquillian.tests.pagetests;
 
-import org.arquillian.tests.pom.pageObjects.StandaloneDocumentationPage;
+import org.arquillian.tests.pom.pageObjects.StandalonePage;
 import org.arquillian.tests.pom.pageObjects.StandaloneModulePage;
 import org.arquillian.tests.pom.pageObjects.MainPage;
 import org.arquillian.tests.pom.pageObjects.ModulesPage;
@@ -30,7 +30,7 @@ public class ModulesPageTest {
     private StandaloneModulePage fetchedModulePage;
 
     @Page
-    private StandaloneDocumentationPage fetchedDocumentationPage;
+    private StandalonePage fetchedDocumentationPage;
 
     @Before
     public void open() {
