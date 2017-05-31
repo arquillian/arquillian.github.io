@@ -59,7 +59,7 @@ bc(output). ***INFO*** Installing Addon from Git 	[1/4] ...
             ***INFO*** Installing Addon from Git:Installing addon (org.arquillian.forge:arquillian-addon,1.0.0-SNAPSHOT) 	[4/4] ...
             ***SUCCESS*** Addon(s) [org.arquillian.forge:arquillian-addon,1.0.0-SNAPSHOT] installed successfully.
 
-The Addon is ready to use. Now we need to set up Arquillian, Container Adapter, Test Framework. We'll configure Arquillian to use JBoss AS 7 in Managed mode, JUnit as a test framework.
+The Addon is ready to use. Now we need to set up Arquillian, Container Adapter, Test Framework. We'll configure Arquillian to use wildfly in Managed mode, JUnit as a test framework.
 
 bc(command). $ arquillian-setup --test-framework junit --container-adapter wildfly-managed
 
@@ -152,9 +152,9 @@ bc(prettify).. package org.arquillian.tutorial.beans;
 
 p. As you can see, the test injects the class under test (i.e., @MySimpleBean@) using CDI, so this will immediately prove if the test really runs in a container.
 
-You can run the test from your IDE, from Maven (outside of Forge) or from Forge itself. Let's run with mvn
+You can run the test from your IDE, from Maven (outside of Forge) or from Forge itself. Let's stick with Forge.
 
-bc(command). $ mvn test
+bc(command). $ build test
 
 bc(output).. ...
 -------------------------------------------------------
@@ -194,9 +194,9 @@ If you open the @Language@ class, you'll see a typical JPA entity structure.
 
 Now we need a Data Access Object (DAO) to manage this entity. Copy this dao class into your project.
 
-div(filename). src/main/java/org/arquillian/tutorial/domain/LanguageDao.java
+div(filename). src/main/java/org/arquillian/tutorial/repository/LanguageDao.java
 
-bc(prettify).. package org.arquillian.tutorial.domain;
+bc(prettify).. package org.arquillian.tutorial.repository;
 
 import org.arquillian.tutorial.domain.Language;
 import javax.annotation.PostConstruct;
@@ -234,17 +234,17 @@ public class LanguageDao {
 
 It's now time to create our test class. This part should look familiar from the first half of this tutorial, except this time we instruct the @create-test@ command to prepare the test for testing JPA.
 
-bc(command). $ arquillian-create-test --targets org.arquillian.tutorial.domain.LanguageDao --enable-jpa
+bc(command). $ arquillian-create-test --targets org.arquillian.tutorial.repository.LanguageDao --enable-jpa
 
-bc(output). ***SUCCESS*** Created test class org.arquillian.tutorial.domain.LanguageDaoTest
+bc(output). ***SUCCESS*** Created test class org.arquillian.tutorial.repository.LanguageDaoTest
 
 This again creates a new test, but also adds your persistence.xml to the deployment. Here's the test it generated:
 
-div(filename). src/test/java/org/arquillian/example/domain/LanguageDaoTest.java
+div(filename). src/test/java/org/arquillian/example/repository/LanguageDaoTest.java
 
-bc(prettify).. package org.arquillian.tutorial.domain;
+bc(prettify).. package org.arquillian.tutorial.repository;
 
-               import org.arquillian.tutorial.domain.LanguageDao;
+               import org.arquillian.tutorial.repository.LanguageDao;
 
                import javax.inject.Inject;
 
@@ -291,9 +291,15 @@ bc(prettify). .addClass(LanguageDao.class)
 
 bc(prettify). .addClasses(Language.class, LanguageDao.class)
 
+After adding `Language.class`, you have to import Language class to compile LanguageDaoTest.
+Add following import statement in `LanguageDaoTest.java`
+
+bc(prettify)..
+import org.arquillian.tutorial.domain.Language;
+
 Now write a new test method to assert the behavior of @listLanguages()@.
 
-div(filename). src/test/java/org/arquillian/example/dao/LanguageDaoTest.java
+div(filename). src/test/java/org/arquillian/example/repository/LanguageDaoTest.java
 
 bc(prettify). @Test
 public void testListLanguages() {
@@ -302,7 +308,7 @@ public void testListLanguages() {
 
 Now run the tests.
 
-bc(command). $ build
+bc(command). $ build test
  
 *Congratulations!* Another *(greenbar)green bar* with Arquillian!
 
@@ -314,6 +320,6 @@ bc(command). $ arquillian-container-setup --container-adapter glassfish-remote
 
 Simply switch between containers by switching the Maven profile. For example in Forge:
 
-bc(command). $ build --profile arquillian-glassfish-remote
+bc(command). $ build test --profile arquillian-glassfish-remote
 
 p(warning). %Some additional setup is required to get this test to work on a standalone GlassFish instance. Call it homework ~:)%
