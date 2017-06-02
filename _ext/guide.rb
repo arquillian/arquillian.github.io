@@ -97,17 +97,20 @@ module Awestruct
               #puts "#{trans_base_name} #{trans_lang} #{trans_postfix}"
 
               trans_page = page.site.pages.find { |e| e.source_path =~ /.*#{trans_base_name}_#{trans_lang}.#{trans_postfix}/ }
-
-              trans_page.language_parent = page
-              trans_page.language = page.site.languages.send(trans_lang)
-              trans_page.language.code = trans_lang
-              if !trans_page.translators.nil?
-                trans_page.translators.each do |username|
-                  page.site.identities.lookup(username).translator = true
+	      if !trans_page.nil?
+                trans_page.language_parent = page
+                trans_page.language = page.site.languages.send(trans_lang)
+                trans_page.language.code = trans_lang
+                if !trans_page.translators.nil?
+                  trans_page.translators.each do |username|
+                    page.site.identities.lookup(username).translator = true
+                  end
                 end
-              end
 
-              languages << trans_page
+                languages << trans_page
+              else
+               puts "The #{trans_lang} translation for the page #{trans_base_name} won't be added"
+	      end
             end
           end
           return languages.sort { |a, b| a.language.code <=> b.language.code }
