@@ -1,0 +1,29 @@
+sudo: required
+services:
+  - docker
+addons:
+   apt:
+     sources:
+       - git-core
+     packages:
+       - git
+
+cache:
+  directories:
+    - $HOME/.m2
+    - $HOME/cache/
+
+branches:
+    except:    
+        - /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+
+install:
+  - TRAVIS_WORK_DIR="${PWD}/.."
+  - ./scripts/prepare_build_prod_and_run.sh --working-dir=${TRAVIS_WORK_DIR} --use-cache=$HOME/cache/_tmp --store-cache=$HOME/cache/_tmp
+  - git clone https://github.com/MatousJobanek/arquillian.github.com-tests ${TRAVIS_WORK_DIR}/arquillian.github.com-tests
+
+script:
+  - #mvn clean install -f ${TRAVIS_WORK_DIR}/arquillian.github.com-tests/pom.xml -Darquillian.blog.url=http://localhost:4242/ -Dbrowser=phantomjs
+
+after_success:
+  - ./scripts/deploy_push.sh ./ "/home/dev/scripts"
