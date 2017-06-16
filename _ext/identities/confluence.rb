@@ -39,7 +39,7 @@ module Identities
           queries << search
           cleansed_query = search.gsub(' ', '-')
           url = File.join(@base_url, SEARCH_PATH) + '?query=' + URI.encode(search)
-          data = RestClient.get(url, :cache_key => "confluence/query-#{cleansed_query}.json", :accept => 'application/json').content
+          data = RestClient.get(url, :cache_key => "confluence/query-#{cleansed_query}.json", :accept => 'application/json', :timeout => 30).content
           if data['totalSize'].to_i == 0
             #puts "No results, advancing confluence user crawler to next query string for #{search}"
             data = nil
