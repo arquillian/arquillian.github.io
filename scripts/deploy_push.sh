@@ -26,12 +26,12 @@ echo "git project: ${GIT_PROJECT}"
 LAST_COMMIT=`git ls-remote ${GIT_PROJECT} master | awk '{print $1;}'`
 CURRENT_BRANCH=`git status | grep 'On branch' | awk '{print $3;}'`
 
-echo "=> adding as origin"
-git ${VARIABLE_TO_SET_GH_PATH} remote add origin ${GIT_PROJECT}
+echo "=> config"
+git ${VARIABLE_TO_SET_GH_PATH} config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*;
 echo "=> fetching"
-git ${VARIABLE_TO_SET_GH_PATH} fetch origin
+git ${VARIABLE_TO_SET_GH_PATH} fetch --unshallow origin master
 echo "=> retrieving master branch"
-git ${VARIABLE_TO_SET_GH_PATH} branch master origin/master
+git ${VARIABLE_TO_SET_GH_PATH} checkout master
 echo "=> pulling"
 git ${VARIABLE_TO_SET_GH_PATH} pull -f origin master
 echo "=> returning back"
