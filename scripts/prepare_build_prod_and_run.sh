@@ -100,6 +100,11 @@ fi
 if [[ -n "${USE_CACHE}" && -d "${USE_CACHE}" ]]; then
     echo "=> Copying cached _tmp dir from ${USE_CACHE} to ${ARQUILLIAN_PROJECT_DIR}/_tmp"
     cp -rf ${USE_CACHE} ${ARQUILLIAN_PROJECT_DIR}/_tmp
+else
+    LANYRD_RETURN_CODE=`curl -I http://lanyrd.com/ | head -n 1 | cut -d$' ' -f2`
+    if [[ "${LANYRD_RETURN_CODE}" = "503" ]]; then
+        ${ARQUILLIAN_PROJECT_DIR}/_backup/restore_cache.sh
+    fi
 fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
