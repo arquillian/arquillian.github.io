@@ -165,6 +165,6 @@ public class MainPageTest {
         mainPage.content()
             .verify()
             .hasSectionTitled("Upcoming Events")
-            .hasNumberOfSectionEntries("Upcoming Events", 2);
+            .hasNumberOfSectionEntries("Upcoming Events", 1);
     }
 }
