@@ -18,14 +18,16 @@ ARQUILLIAN_PROJECT_DIR=${1}
 DOCKER_SCRIPTS_LOCATION=${2}
 
 VARIABLE_TO_SET_GH_PATH="--git-dir=${ARQUILLIAN_PROJECT_DIR}/.git --work-tree=${ARQUILLIAN_PROJECT_DIR}"
-GH_REF=`git ${VARIABLE_TO_SET_GH_PATH} remote get-url origin | awk "{sub(/https:\/\//,\"https://${GITHUB_AUTH}@\")}; 1" | awk "{sub(/\.git$/, \"\")} 1"`
-echo "gh ref: ${GH_REF}"
+GH_AUTH_REF=`git ${VARIABLE_TO_SET_GH_PATH} remote get-url origin | awk "{sub(/https:\/\//,\"https://${GITHUB_AUTH}@\")}; 1" | awk "{sub(/\.git$/, \"\")} 1"`
+echo "gh ref: ${GH_AUTH_REF}"
 GIT_PROJECT=`git ${VARIABLE_TO_SET_GH_PATH} remote get-url origin | awk "{sub(/\.git$/, \"\")} 1"`
 echo "git project: ${GIT_PROJECT}"
 
 LAST_COMMIT=`git ls-remote ${GIT_PROJECT} master | awk '{print $1;}'`
 CURRENT_BRANCH=`git status | grep 'On branch' | awk '{print $3;}'`
 
+echo "=> adding as origin"
+git ${VARIABLE_TO_SET_GH_PATH} remote add origin ${GIT_PROJECT}
 echo "=> fetching"
 git ${VARIABLE_TO_SET_GH_PATH} fetch origin
 echo "=> retrieving master branch"
@@ -42,8 +44,8 @@ docker kill arquillian-blog
 docker rm arquillian-blog
 
 echo "=> Pushing generated pages to master..."
-echo "=> git ${VARIABLE_TO_SET_GH_PATH} push ${GH_REF} master"
-git ${VARIABLE_TO_SET_GH_PATH} push ${GH_REF} master
+echo "=> git ${VARIABLE_TO_SET_GH_PATH} push ${GH_AUTH_REF} master"
+git ${VARIABLE_TO_SET_GH_PATH} push ${GH_AUTH_REF} master
 echo "=> Changing to branch ${CURRENT_BRANCH}..."
 git ${VARIABLE_TO_SET_GH_PATH} checkout ${CURRENT_BRANCH}
 
