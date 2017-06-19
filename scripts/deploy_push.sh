@@ -29,7 +29,7 @@ CURRENT_BRANCH=`git status | grep 'On branch' | awk '{print $3;}'`
 echo "=> fetching"
 git ${VARIABLE_TO_SET_GH_PATH} fetch origin
 echo "=> retrieving master branch"
-git ${VARIABLE_TO_SET_GH_PATH} checkout -b master origin/master
+git ${VARIABLE_TO_SET_GH_PATH} branch master origin/master
 echo "=> pulling"
 git ${VARIABLE_TO_SET_GH_PATH} pull -f origin master
 echo "=> returning back"
