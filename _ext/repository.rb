@@ -50,12 +50,13 @@ module Awestruct
               # - deprecated repository (arquillian_deprecated)
               # - non-maven repository (arquillian-container-jruby)
               unless e['pushed_at'].nil? || e['name'] == "arquillian-selenium-bom" || e['name'] == "arquillian-container-gae" || e['name'] == "arquillian_deprecated" || e['name'] == "arquillian-container-jruby"
-
+                puts e['description']
+                puts e['description'] =~ /.*This Repository Is Obsolete.*/i
                 git_url = e['git_url']
                 repository = OpenStruct.new({
                                                 :path => e['name'],
                                                 :relative_path => '',
-                                                :desc => nil,
+                                                :desc => e['description'],
                                                 :owner => e['owner']['login'],
                                                 :host => URI(git_url).host,
                                                 :type => 'git',
@@ -349,6 +350,15 @@ module Awestruct
           def visit(repository, site)
             raise Error.new("#{self.inspect}#visit not defined!")
           end
+
+          def get_type_name(repository, type)
+            if repository.desc =~ /.*This Repository Is Obsolete.*/i
+              "obsolete_" + type
+            else
+              type
+            end
+          end
+
         end
       end
 
