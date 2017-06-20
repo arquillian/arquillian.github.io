@@ -49,7 +49,6 @@ docker kill arquillian-blog
 docker rm arquillian-blog
 
 echo "=> Pushing generated pages to master..."
-echo "=> git ${VARIABLE_TO_SET_GH_PATH} push ${GH_AUTH_REF} master"
 git ${VARIABLE_TO_SET_GH_PATH} push ${GH_AUTH_REF} master
 
 echo "=> Changing to branch ${CURRENT_BRANCH}..."
