@@ -59,7 +59,8 @@ ENV LANGUAGE en_US.UTF-8
 WORKDIR $HOME
 
 RUN gpg2 --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-RUN curl -sSL https://get.rvm.io | /bin/bash -s stable --ruby=$RUBY_VERSION 
+# workaround for https://github.com/rvm/rvm/issues/4068
+RUN curl -sSL https://raw.githubusercontent.com/wayneeseguin/rvm/stable/binscripts/rvm-installer | /bin/bash -s stable --ruby=$RUBY_VERSION
 RUN bash -l -c "rvm use $RUBY_VERSION"
 RUN bash -l -c "rvm cleanup all"
 # Install Rake and Bundler for driving the Awestruct build & site

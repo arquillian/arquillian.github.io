@@ -21,12 +21,12 @@ case $i in
     CLEAN="true"
     shift
     ;;
-    -imf=*|--ignore-maven-failure=*)
-    IGNORE_MAVEN_FAILURE="${i#*=}"
+    -itf=*|--ignore-test-failure=*)
+    IGNORE_TEST_FAILURE="${i#*=}"
     shift
     ;;
-    -imf|--ignore-maven-failure)
-    IGNORE_MAVEN_FAILURE="true"
+    -itf|--ignore-test-failure)
+    IGNORE_TEST_FAILURE="true"
     shift
     ;;
     -bc=*|--browser-command=*)
@@ -48,6 +48,38 @@ case $i in
     -gp=*|--github-project=*)
     GIT_PROJECT="${i#*=}"
     shift
+    ;;
+    -h|--help)
+    echo "Usage: you can use scripts publish.sh and prepare_build_prod_and_run.sh with following parameters"
+    echo -e ""
+    echo -e "  -wd=<path>  \t\t \t Path to working directory - where all necessary directories and files will be stored."
+    echo -e "  --working-dir=<path> \t  \t Default value is -/tmp/arquillian-blog"
+    echo -e ""
+    echo -e "  -ga=<token> \t\t \t Your GitHub authentication token"
+    echo -e "  --github-auth=<token>  \t If not set, content of the file .../project-directory/.github-auth is taken"
+    echo -e ""
+    echo -e "  -c [-c=<true/false>] \t \t If the content of the working directory should be removed."
+    echo -e "  --clean \t \t \t Default value is false"
+    echo -e ""
+    echo -e "  -itf [-itf=<true/false>] \t If a potential failure of test execution should be ignored"
+    echo -e "  --ignore-test-failure  \t Default value is false"
+    echo ""
+    echo -e "  -bc=<command> \t\t Command that should be used for opening a browser"
+    echo -e "  --browser-command=<command>  \t Default value is 'firefox'"
+    echo ""
+    echo -e "  -bt=<browser> \t\t Browser to be used for executing UI tests"
+    echo -e "  --browser-test=<browser>  \t Default value is 'chromeHeadless'"
+    echo ""
+    echo -e "  -uc=<path> \t\t \t Path to '_tmp' directory to be used as a cache. If specified then it is copied to the project directory"
+    echo -e "  --use-cache=<path> "
+    echo ""
+    echo -e "  -sc=<path> \t\t  \t Path to a location where the '_tmp' directory should be stored as a cache"
+    echo -e "  --store-cache=<path>"
+    echo ""
+    echo -e "  -gp=<url> \t\t \t Url to GitHub project to be cloned and used for generating web pages"
+    echo -e "  --github-project=<url>  \t Default value is: `git remote get-url origin`"
+    echo ""
+    exit
     ;;
     *)
     ;;
@@ -74,7 +106,7 @@ if [[ -z "${GIT_PROJECT}" ]]; then
 fi
 
 if [[ ${TRAVIS} != "true" ]]; then
-    ARQUILLIAN_PROJECT_DIR="${WORKING_DIR}/arquillian.github.com"
+    ARQUILLIAN_PROJECT_DIR="${WORKING_DIR}/${PWD##*/}"
 
     if [ ! -d "${ARQUILLIAN_PROJECT_DIR}" ]; then
         CURRENT_BRANCH=`git branch | grep \* | cut -d ' ' -f2`
@@ -90,19 +122,22 @@ if [[ ${TRAVIS} != "true" ]]; then
         git clone -b ${BRANCH_TO_CLONE} ${GIT_PROJECT} ${ARQUILLIAN_PROJECT_DIR}
 
     else
-        echo "=> The project arquillian.github.com project will not be cloned because it exist on location: ${ARQUILLIAN_PROJECT_DIR}"
+        echo "=> The project ${ARQUILLIAN_PROJECT_DIR##*/} will not be cloned because it exist on location: ${ARQUILLIAN_PROJECT_DIR}"
     fi
 else
     ARQUILLIAN_PROJECT_DIR="${PWD}"
     echo "=> Travis environment - using project ${ARQUILLIAN_PROJECT_DIR}"
 fi
 
+ARQUILLIAN_PROJECT_DIR_NAME=${ARQUILLIAN_PROJECT_DIR##*/}
+
 if [[ -n "${USE_CACHE}" && -d "${USE_CACHE}" ]]; then
-    echo "=> Copying cached _tmp dir from ${USE_CACHE} to ${ARQUILLIAN_PROJECT_DIR}/_tmp"
+    echo "=> Copying cached _tmp directory ${USE_CACHE} to ${ARQUILLIAN_PROJECT_DIR}/_tmp"
     cp -rf ${USE_CACHE} ${ARQUILLIAN_PROJECT_DIR}/_tmp
 else
     LANYRD_RETURN_CODE=`curl -I http://lanyrd.com/ | head -n 1 | cut -d$' ' -f2`
-    if [[ "${LANYRD_RETURN_CODE}" = "503" ]]; then
+    if [[ "${LANYRD_RETURN_CODE}" =~ [4,5][0-9][0-9] ]]; then
+        echo "=> Lanyrd does not seem to be available - it returns ${LANYRD_RETURN_CODE}. The backup stored in _backup will be used."
         ${ARQUILLIAN_PROJECT_DIR}/_backup/restore_cache.sh
     fi
 fi
@@ -136,7 +171,7 @@ AWESTRUCT_PROD_LOG="awestruct-server-production_log"
 
 echo "#!/bin/bash
 bash --login <<EOF
-cd arquillian.github.com
+cd ${ARQUILLIAN_PROJECT_DIR_NAME}
 echo 'bundle install -j 10 --path ./.gems'
 bundle install -j 10 --path ./.gems
 EOF" > ${SCRIPTS_LOCATION}/install_bundle.sh
@@ -145,7 +180,7 @@ EOF" > ${SCRIPTS_LOCATION}/install_bundle.sh
 
 echo "#!/bin/bash
 bash --login <<EOF
-cd arquillian.github.com
+cd ${ARQUILLIAN_PROJECT_DIR_NAME}
 
 echo \"======================\"
 echo 'running awestruct -d'
@@ -164,7 +199,7 @@ EOF" > ${SCRIPTS_LOCATION}/build_dev.sh
 
 echo "#!/bin/bash
 bash --login <<EOF
-cd arquillian.github.com
+cd ${ARQUILLIAN_PROJECT_DIR_NAME}
 
 echo \"=========================================\"
 echo  'running awestruct --server -P production'
@@ -187,7 +222,7 @@ git config --global user.email "arquillian-team@lists.jboss.org"
 git config --global user.name "Alien Ike"
 echo ${GITHUB_AUTH} > ~/.github-auth
 
-cd arquillian.github.com
+cd ${ARQUILLIAN_PROJECT_DIR_NAME}
 echo \"=========================================\"
 echo 'running awestruct -P production --deploy'
 echo \"=========================================\"
@@ -213,6 +248,11 @@ cd ${ARQUILLIAN_PROJECT_DIR}
 echo "=> Building arquillian-blog image..."
 docker build -t arquillian/blog .
 cd ${CURRENT_DIR}
+
+if [[ -z "$(docker images -q arquillian/blog 2> /dev/null)" ]]; then
+  echo "=> The docker image arquillian/blog has not been built - see the log for more information."
+  exit 1
+fi
 
 echo "=> Launching arquillian-blog container... "
 DOCKER_ID=`docker run -d -it --net=host -v ${ARQUILLIAN_PROJECT_DIR}:/home/dev/${ARQUILLIAN_PROJECT_DIR##*/} --name=arquillian-blog -v ${LOGS_LOCATION}:${DOCKER_LOGS_LOCATION} -v ${SCRIPTS_LOCATION}:${DOCKER_SCRIPTS_LOCATION} -p 4242:4242 arquillian/blog`

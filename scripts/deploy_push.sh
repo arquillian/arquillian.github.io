@@ -24,19 +24,24 @@ GIT_PROJECT=`git ${VARIABLE_TO_SET_GH_PATH} remote get-url origin | awk "{sub(/\
 echo "git project: ${GIT_PROJECT}"
 
 LAST_COMMIT=`git ls-remote ${GIT_PROJECT} master | awk '{print $1;}'`
-CURRENT_BRANCH=`git status | grep 'On branch' | awk '{print $3;}'`
+CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
 
-echo "=> config"
-git ${VARIABLE_TO_SET_GH_PATH} config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*;
-echo "=> fetching"
-git ${VARIABLE_TO_SET_GH_PATH} fetch --unshallow origin master
+git ${VARIABLE_TO_SET_GH_PATH} pull --all
+
 echo "=> retrieving master branch"
+if [[ ${TRAVIS} = "true" ]]; then
+    CURRENT_BRANCH=`git status | grep HEAD | awk '{print $4}'`
+    git ${VARIABLE_TO_SET_GH_PATH} config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+    git ${VARIABLE_TO_SET_GH_PATH} fetch --unshallow origin master
+else
+    git ${VARIABLE_TO_SET_GH_PATH} fetch origin
+fi
+
 git ${VARIABLE_TO_SET_GH_PATH} checkout master
-echo "=> pulling"
 git ${VARIABLE_TO_SET_GH_PATH} pull -f origin master
-echo "=> returning back"
 git ${VARIABLE_TO_SET_GH_PATH} checkout ${CURRENT_BRANCH}
 
+echo "=> Running deploy script"
 docker exec -it arquillian-blog ${DOCKER_SCRIPTS_LOCATION}/deploy.sh
 
 echo "=> Killing and removing arquillian-blog container..."
@@ -44,8 +49,8 @@ docker kill arquillian-blog
 docker rm arquillian-blog
 
 echo "=> Pushing generated pages to master..."
-echo "=> git ${VARIABLE_TO_SET_GH_PATH} push ${GH_AUTH_REF} master"
 git ${VARIABLE_TO_SET_GH_PATH} push ${GH_AUTH_REF} master
+
 echo "=> Changing to branch ${CURRENT_BRANCH}..."
 git ${VARIABLE_TO_SET_GH_PATH} checkout ${CURRENT_BRANCH}
 
