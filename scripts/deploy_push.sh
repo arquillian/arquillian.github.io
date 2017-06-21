@@ -1,5 +1,13 @@
 #!/bin/bash
 
+######################### Load & set variables #########################
+
+WORKING_DIR=${1}
+. ${WORKING_DIR}/variables
+
+
+######################### Deploy & push #########################
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [[ ${TRAVIS} = "true" ]]; then
@@ -14,14 +22,9 @@ if [[ ${TRAVIS} = "true" ]]; then
     fi
 fi
 
-ARQUILLIAN_PROJECT_DIR=${1}
-DOCKER_SCRIPTS_LOCATION=${2}
-
 VARIABLE_TO_SET_GH_PATH="--git-dir=${ARQUILLIAN_PROJECT_DIR}/.git --work-tree=${ARQUILLIAN_PROJECT_DIR}"
 GH_AUTH_REF=`git ${VARIABLE_TO_SET_GH_PATH} remote get-url origin | awk "{sub(/https:\/\//,\"https://${GITHUB_AUTH}@\")}; 1" | awk "{sub(/\.git$/, \"\")} 1"`
-echo "gh ref: ${GH_AUTH_REF}"
 GIT_PROJECT=`git ${VARIABLE_TO_SET_GH_PATH} remote get-url origin | awk "{sub(/\.git$/, \"\")} 1"`
-echo "git project: ${GIT_PROJECT}"
 
 LAST_COMMIT=`git ls-remote ${GIT_PROJECT} master | awk '{print $1;}'`
 CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
@@ -42,11 +45,11 @@ git ${VARIABLE_TO_SET_GH_PATH} pull -f origin master
 git ${VARIABLE_TO_SET_GH_PATH} checkout ${CURRENT_BRANCH}
 
 echo "=> Running deploy script"
-docker exec -it arquillian-blog ${DOCKER_SCRIPTS_LOCATION}/deploy.sh
+docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/deploy.sh
 
-echo "=> Killing and removing arquillian-blog container..."
-docker kill arquillian-blog
-docker rm arquillian-blog
+echo "=> Killing and removing arquillian-org container..."
+docker kill arquillian-org
+docker rm arquillian-org
 
 echo "=> Pushing generated pages to master..."
 git ${VARIABLE_TO_SET_GH_PATH} push ${GH_AUTH_REF} master

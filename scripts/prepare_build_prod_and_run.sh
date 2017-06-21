@@ -1,94 +1,11 @@
 #!/bin/bash
 
-######################### parse input parameters #########################
+######################### Parse arguments #########################
 
-for i in "$@"
-do
-case $i in
-    -wd=*|--working-dir=*)
-    WORKING_DIR="${i#*=}"
-    shift
-    ;;
-    -ga=*|--github-auth=*)
-    GITHUB_AUTH="${i#*=}"
-    shift
-    ;;
-    -c=*|--clean=*)
-    CLEAN="${i#*=}"
-    shift
-    ;;
-    -c|--clean)
-    CLEAN="true"
-    shift
-    ;;
-    -itf=*|--ignore-test-failure=*)
-    IGNORE_TEST_FAILURE="${i#*=}"
-    shift
-    ;;
-    -itf|--ignore-test-failure)
-    IGNORE_TEST_FAILURE="true"
-    shift
-    ;;
-    -bc=*|--browser-command=*)
-    BROWSER_COMMAND="${i#*=}"
-    shift
-    ;;
-    -bt=*|--browser-test=*)
-    BROWSER_TEST="${i#*=}"
-    shift
-    ;;
-    -uc=*|--use-cache=*)
-    USE_CACHE="${i#*=}"
-    shift
-    ;;
-    -sc=*|--store-cache=*)
-    STORE_CACHE="${i#*=}"
-    shift
-    ;;
-    -gp=*|--github-project=*)
-    GIT_PROJECT="${i#*=}"
-    shift
-    ;;
-    -h|--help)
-    echo "Usage: you can use scripts publish.sh and prepare_build_prod_and_run.sh with following parameters"
-    echo -e ""
-    echo -e "  -wd=<path>  \t\t \t Path to working directory - where all necessary directories and files will be stored."
-    echo -e "  --working-dir=<path> \t  \t Default value is -/tmp/arquillian-blog"
-    echo -e ""
-    echo -e "  -ga=<token> \t\t \t Your GitHub authentication token"
-    echo -e "  --github-auth=<token>  \t If not set, content of the file .../project-directory/.github-auth is taken"
-    echo -e ""
-    echo -e "  -c [-c=<true/false>] \t \t If the content of the working directory should be removed."
-    echo -e "  --clean \t \t \t Default value is false"
-    echo -e ""
-    echo -e "  -itf [-itf=<true/false>] \t If a potential failure of test execution should be ignored"
-    echo -e "  --ignore-test-failure  \t Default value is false"
-    echo ""
-    echo -e "  -bc=<command> \t\t Command that should be used for opening a browser"
-    echo -e "  --browser-command=<command>  \t Default value is 'firefox'"
-    echo ""
-    echo -e "  -bt=<browser> \t\t Browser to be used for executing UI tests"
-    echo -e "  --browser-test=<browser>  \t Default value is 'chromeHeadless'"
-    echo ""
-    echo -e "  -uc=<path> \t\t \t Path to '_tmp' directory to be used as a cache. If specified then it is copied to the project directory"
-    echo -e "  --use-cache=<path> "
-    echo ""
-    echo -e "  -sc=<path> \t\t  \t Path to a location where the '_tmp' directory should be stored as a cache"
-    echo -e "  --store-cache=<path>"
-    echo ""
-    echo -e "  -gp=<url> \t\t \t Url to GitHub project to be cloned and used for generating web pages"
-    echo -e "  --github-project=<url>  \t Default value is: `git remote get-url origin`"
-    echo ""
-    exit
-    ;;
-    *)
-    ;;
-esac
-done
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+. ${SCRIPT_DIR}/parse_arguments.sh
 
 ######################### set variables & clone & create dirs #########################
-
-CURRENT_DIR=`pwd`
 
 WORKING_DIR=`readlink -f ${WORKING_DIR:-/tmp/arquillian-blog}`
 echo "=> Working directory is: ${WORKING_DIR}"
@@ -142,7 +59,6 @@ else
     fi
 fi
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ -z "${GITHUB_AUTH}" ]; then
     GITHUB_AUTH=`cat ${SCRIPT_DIR}/../.github-auth`
 fi
@@ -240,49 +156,58 @@ chmod +x ${SCRIPTS_LOCATION}/*
 
 #rm -r _tmp _site
 
-echo "=> Killing and removing any already existing arquillian-blog containers..."
-docker kill arquillian-blog
-docker rm arquillian-blog
+echo "=> Killing and removing any already existing arquillian-org containers..."
+docker kill arquillian-org
+docker rm arquillian-org
 
-cd ${ARQUILLIAN_PROJECT_DIR}
-echo "=> Building arquillian-blog image..."
-docker build -t arquillian/blog .
-cd ${CURRENT_DIR}
+if [[ "$BUILD_IMAGE" = "true" || "$BUILD_IMAGE" = "yes" ]]; then
+    cd ${ARQUILLIAN_PROJECT_DIR}
+    echo "=> Building arquillian-org image..."
+    docker build -t arquillian-org .
+    cd ${CURRENT_DIR}
 
-if [[ -z "$(docker images -q arquillian/blog 2> /dev/null)" ]]; then
-  echo "=> The docker image arquillian/blog has not been built - see the log for more information."
-  exit 1
+    if [[ -z "$(docker images -q arquillian/blog 2> /dev/null)" ]]; then
+      echo "=> The docker image arquillian-org has not been built - see the log for more information."
+      exit 1
+    fi
+else
+    echo "=> Pulling arquillian-org image..."
+    docker pull arquillian/arquillian-org
 fi
 
-echo "=> Launching arquillian-blog container... "
-DOCKER_ID=`docker run -d -it --net=host -v ${ARQUILLIAN_PROJECT_DIR}:/home/dev/${ARQUILLIAN_PROJECT_DIR##*/} --name=arquillian-blog -v ${LOGS_LOCATION}:${DOCKER_LOGS_LOCATION} -v ${SCRIPTS_LOCATION}:${DOCKER_SCRIPTS_LOCATION} -p 4242:4242 arquillian/blog`
+if [[ ${TRAVIS} = "true" ]]; then
+    sudo chown -R 1000 $ARQUILLIAN_PROJECT_DIR
+fi
+
+echo "=> Launching arquillian-org container... "
+DOCKER_ID=`docker run -d -it --net=host -v ${ARQUILLIAN_PROJECT_DIR}:/home/dev/${ARQUILLIAN_PROJECT_DIR##*/} --name=arquillian-org -v ${LOGS_LOCATION}:${DOCKER_LOGS_LOCATION} -v ${SCRIPTS_LOCATION}:${DOCKER_SCRIPTS_LOCATION} -p 4242:4242 arquillian/arquillian-org`
 echo "=> Running container with id ${DOCKER_ID}"
 
 
 ######################### Executing scripts inside of docker image - building & running #########################
 
 echo "=> Installing gems inside of the container..."
-docker exec -it arquillian-blog ${DOCKER_SCRIPTS_LOCATION}/install_bundle.sh
+docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/install_bundle.sh
 
 echo "=> Building the pages with dev profile..."
-docker exec -it arquillian-blog ${DOCKER_SCRIPTS_LOCATION}/build_dev.sh
+docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/build_dev.sh
 if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_DEV_LOG}; then
     >&2 echo "=> There occurred an error when the pages were being generated with the command 'awestruct -d'."
     >&2 echo "=> Check the output or the log files located in ${LOGS_LOCATION}"
-    >&2 echo "=> Killing and removing arquillian-blog container..."
-    docker kill arquillian-blog
-    docker rm arquillian-blog
+    >&2 echo "=> Killing and removing arquillian-org container..."
+    docker kill arquillian-org
+    docker rm arquillian-org
     exit 1
 fi
 
 echo "=> Building & running the pages with prod profile..."
-docker exec -it arquillian-blog ${DOCKER_SCRIPTS_LOCATION}/build_prod_and_run.sh
+docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/build_prod_and_run.sh
 if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_PROD_LOG}; then
     >&2 echo "=> There occurred an error when the pages were being generated with the command 'running awestruct -P production --deploy'."
     >&2 echo "=> Check the output or the log files located in ${LOGS_LOCATION}"
-    >&2 echo "=> Killing and removing arquillian-blog container..."
-    docker kill arquillian-blog
-    docker rm arquillian-blog
+    >&2 echo "=> Killing and removing arquillian-org container..."
+    docker kill arquillian-org
+    docker rm arquillian-org
     exit 1
 fi
 
@@ -291,6 +216,17 @@ if [[ -n "${STORE_CACHE}" ]]; then
     cp -fr ${ARQUILLIAN_PROJECT_DIR}/_tmp ${STORE_CACHE}
 fi
 
-PROCESS_LINE=`docker exec -i arquillian-blog ps aux | grep puma | grep -v grep`
+PROCESS_LINE=`docker exec -i arquillian-org ps aux | grep puma | grep -v grep`
 
 PROCESS_TO_KILL=`echo ${PROCESS_LINE} | awk '{print $2}'`
+
+
+
+######################### Writing variables into ${WORKING_DIR}/variables #########################
+
+echo "
+export PROCESS_TO_KILL=${PROCESS_TO_KILL}
+export ARQUILLIAN_PROJECT_DIR=${ARQUILLIAN_PROJECT_DIR}
+export DOCKER_SCRIPTS_LOCATION=${DOCKER_SCRIPTS_LOCATION}
+export LOGS_LOCATION=${LOGS_LOCATION}
+" > ${WORKING_DIR}/variables
