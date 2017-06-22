@@ -1,5 +1,6 @@
 package org.arquillian.tests.utilities;
 
+import org.jboss.arquillian.graphene.Graphene;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
@@ -14,7 +15,14 @@ public class PageNavigator {
     }
 
     public void to(String fragmentItem) {
-        waitGui().until().element(By.partialLinkText(fragmentItem)).is().present();
-        fragmentRoot.findElement(By.partialLinkText(fragmentItem)).click();
+        By bySelector = By.partialLinkText(fragmentItem);
+        Graphene.waitModel().until().element(bySelector).is().visible();
+        Graphene.guardHttp(fragmentRoot.findElement(bySelector)).click();
+    }
+
+    public void select(String fragmentItem) {
+        By bySelector = By.partialLinkText(fragmentItem);
+        Graphene.waitModel().until().element(bySelector).is().visible();
+        fragmentRoot.findElement(bySelector).click();
     }
 }

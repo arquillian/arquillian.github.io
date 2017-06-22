@@ -3,6 +3,7 @@ package org.arquillian.tests.pagetests;
 import org.arquillian.tests.pom.pageObjects.BlogPage;
 import org.arquillian.tests.pom.pageObjects.MainPage;
 import org.arquillian.tests.pom.pageObjects.StandalonePage;
+import org.arquillian.tests.utilities.ArquillianBlogInstance;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -31,11 +32,11 @@ public class BlogPageTest {
 
     @Before
     public void open() {
-        driver.navigate().to("http://arquillian.org");
+        driver.navigate().to(ArquillianBlogInstance.getUrl());
     }
 
     @Test
-    @Ignore
+    @Ignore("not all blog announcements has to have a release note")
     public void should_have_content_listing_all_blogs_with_title_and_release_notes() throws Exception {
 
         mainPage.menu()

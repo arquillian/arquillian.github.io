@@ -1,10 +1,12 @@
 package org.arquillian.tests.pom.fragmentObjects;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import org.jboss.arquillian.graphene.Graphene;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,7 +21,9 @@ public class ContentFragment {
 
     public class ContentVerifier {
         public ContentVerifier hasSectionsDisplayedInOrder(String... expectedFragmentItems) {
-            final List<WebElement> fragmentItems = contentRoot.findElements(By.cssSelector("h2"));
+            By h2 = By.cssSelector("h2");
+            Graphene.waitModel().until().element(h2).is().visible();
+            final List<WebElement> fragmentItems = contentRoot.findElements(h2);
             final List<String> fragmentItemsTitles =
                 fragmentItems.stream().map(WebElement::getText).collect(Collectors.toList());
 

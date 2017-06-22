@@ -1,9 +1,10 @@
 package org.arquillian.tests.pagetests;
 
-import org.arquillian.tests.pom.pageObjects.StandalonePage;
-import org.arquillian.tests.pom.pageObjects.StandaloneModulePage;
 import org.arquillian.tests.pom.pageObjects.MainPage;
 import org.arquillian.tests.pom.pageObjects.ModulesPage;
+import org.arquillian.tests.pom.pageObjects.StandaloneModulePage;
+import org.arquillian.tests.pom.pageObjects.StandalonePage;
+import org.arquillian.tests.utilities.ArquillianBlogInstance;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -34,7 +35,7 @@ public class ModulesPageTest {
 
     @Before
     public void open() {
-        driver.navigate().to("http://arquillian.org");
+        driver.navigate().to(ArquillianBlogInstance.getUrl());
     }
 
     @Test

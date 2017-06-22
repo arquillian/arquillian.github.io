@@ -1,13 +1,16 @@
 package org.arquillian.tests.pom.pageObjects;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import org.arquillian.tests.utilities.PageNavigator;
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.Graphene;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,7 +33,9 @@ public class StandaloneModulePage {
     public class IndividualModulePageVerifier {
 
         public IndividualModulePageVerifier hasTitle(String title) {
-            assertThat(driver.getTitle()).isEqualTo(title);
+            Graphene.waitModel()
+                    .withMessage(String.format("The expected title is [%s] but was [%s]", title, driver.getTitle()))
+                    .until((Function<WebDriver, Boolean>)webDriver -> title.equals(driver.getTitle()));
             return this;
         }
 
