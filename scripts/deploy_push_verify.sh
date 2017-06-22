@@ -44,12 +44,26 @@ git ${VARIABLE_TO_SET_GH_PATH} checkout master
 git ${VARIABLE_TO_SET_GH_PATH} pull -f origin master
 git ${VARIABLE_TO_SET_GH_PATH} checkout ${CURRENT_BRANCH}
 
+    git ${VARIABLE_TO_SET_GH_PATH} log --pretty=oneline -10
+
 echo "=> Running deploy script"
 docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/deploy.sh
+
+    git ${VARIABLE_TO_SET_GH_PATH} log --pretty=oneline -10
 
 echo "=> Killing and removing arquillian-org container..."
 docker kill arquillian-org
 docker rm arquillian-org
+
+echo "=> creating timestamp"
+TIMESTAMP=`date --rfc-3339=seconds`
+echo ${TIMESTAMP} > ${ARQUILLIAN_PROJECT_DIR}/last_update.txt
+echo "=> adding"
+git ${VARIABLE_TO_SET_GH_PATH} add ${ARQUILLIAN_PROJECT_DIR}/last_update.txt
+echo "=> commiting"
+git ${VARIABLE_TO_SET_GH_PATH} commit -m "Changed last update timestamp"
+
+    git ${VARIABLE_TO_SET_GH_PATH} log --pretty=oneline -10
 
 echo "=> Pushing generated pages to master..."
 git ${VARIABLE_TO_SET_GH_PATH} push ${GH_AUTH_REF} master
@@ -62,3 +76,32 @@ if [[ "${NEW_COMMIT}" = "${LAST_COMMIT}" ]]; then
     echo "=> There wasn't pushed any new commit - see the log for more information"
     exit 1;
 fi
+
+
+######################### Wait for latest version if pushed to arquillian organization #########################
+
+if [[ ! "${GIT_PROJECT}" =~ .*[\:,\/]arquillian\/arquillian\.github\..* ]]; then
+    echo "=> Tests won't be executed against production because it hasn't been pushed to the arquillian organization"
+    exit 0;
+fi
+
+limit=30
+while `curl http://arquillian.org/last_update.txt` != "${TIMESTAMP}"; do
+    let "limit--"
+    if [[ limit == "0" ]]; then
+        echo "=> the webpages hasn't been updated in last 30 seconds"
+        exit 1
+    fi
+    sleep 1
+done
+
+
+######################### Verify production #########################
+
+echo "
+export ARQUILLIAN_BLOG_TEST_URL=http://arquillian.org/
+" >> ${WORKING_DIR}/variables
+
+${SCRIPT_DIR}/verify.sh ${WORKING_DIR}
+
+exit $?

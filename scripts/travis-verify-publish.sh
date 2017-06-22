@@ -18,8 +18,7 @@ fi
 
 docker exec -i arquillian-org kill ${PROCESS_TO_KILL}
 
-${SCRIPT_DIR}/deploy_push.sh ${WORKING_DIR}
-if [[ "$?" != "0" ]]; then
-    exit $?
-fi
+${SCRIPT_DIR}/deploy_push_verify.sh ${WORKING_DIR}
+
+exit $?
 

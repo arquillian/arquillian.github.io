@@ -3,11 +3,12 @@
 ######################### Load & set variables #########################
 
 WORKING_DIR=${1}
-. ${1}/variables
-
-######################### Running tests #########################
+. ${WORKING_DIR}/variables
 
 TEST_PROJECT_DIRECTORY="${WORKING_DIR}/arquillian.github.com-tests"
+ARQUILLIAN_BLOG_TEST_URL=${ARQUILLIAN_BLOG_TEST_URL:-"http://localhost:4242/"}
+
+######################### Running tests #########################
 
 if [ -d ${TEST_PROJECT_DIRECTORY} ]; then
     rm -rf ${TEST_PROJECT_DIRECTORY}
@@ -15,7 +16,7 @@ fi
 git clone https://github.com/matousjobanek/arquillian.github.com-tests.git ${TEST_PROJECT_DIRECTORY}
 
 #todo use mvnw
-MAVEN_COMMAND="mvn clean verify -f ${TEST_PROJECT_DIRECTORY}/pom.xml -Darquillian.blog.url=http://localhost:4242/ -Dbrowser=${BROWSER_TEST}"
+MAVEN_COMMAND="mvn clean verify -f ${TEST_PROJECT_DIRECTORY}/pom.xml -Darquillian.blog.url=${ARQUILLIAN_BLOG_TEST_URL} -Dbrowser=${BROWSER_TEST}"
 echo "=> Running tests using command: ${MAVEN_COMMAND}"
 $MAVEN_COMMAND 2>&1 | tee ${LOGS_LOCATION}/maven-ui-tests_log
 
