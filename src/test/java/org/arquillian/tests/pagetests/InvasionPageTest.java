@@ -58,7 +58,7 @@ public class InvasionPageTest {
             .navigate().to("Invasion!");
 
         invasionPage.sidebar()
-            .navigate().select("Team");
+            .navigate().to("Team");
 
         invasionPage.verify().hasTitle("Team · Arquillian")
             .hasContent();
