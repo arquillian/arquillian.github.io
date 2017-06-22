@@ -797,7 +797,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      c.type = get_type_name(c, 'platform')
+      c.type = get_type_name(repository, 'platform')
       c.type_name = c.type.humanize.titleize
       c.name = 'Arquillian Core'
       if site.modules[c.type].nil?
@@ -831,7 +831,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      c.type = get_type_name(c, 'test_runner')
+      c.type = get_type_name(repository, 'test_runner')
       c.type_name = c.type.humanize.titleize
       if site.modules[c.type].nil?
         site.modules[c.type] = []
@@ -857,7 +857,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      c.type = get_type_name(c, 'container_adapter')
+      c.type = get_type_name(repository, 'container_adapter')
       c.type_name = c.type.humanize.titleize
       if site.modules[c.type].nil?
         site.modules[c.type] = []
@@ -982,7 +982,7 @@ module Awestruct::Extensions::Repository::Visitors
     def visit(repository, site)
       c = site.components[repository.path]
       return if c.nil?
-      c.type = get_type_name(c, 'extension')
+      c.type = get_type_name(repository, 'extension')
       c.type_name = c.type.humanize.titleize
       if site.modules[c.type].nil?
         site.modules[c.type] = []
@@ -1046,7 +1046,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      c.type = get_type_name(c, 'tool_plugin')
+      c.type = get_type_name(repository, 'tool_plugin')
       c.type_name = c.type.humanize.titleize
       # temporarily fix broken name
       c.name = 'Arquillian Forge Plugin' if c.name.eql? 'plugin-arquillian'
@@ -1073,7 +1073,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      c.type = get_type_name(c, 'shrinkwrap')
+      c.type = get_type_name(repository, 'shrinkwrap')
       c.type_name = c.type.humanize.titleize
       if site.modules[c.type].nil?
         site.modules[c.type] = []
@@ -1098,7 +1098,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      c.type = get_type_name(c, 'tck')
+      c.type = get_type_name(repository, 'tck')
       c.type_name = c.type.humanize.titleize
       if site.modules[c.type].nil?
         site.modules[c.type] = []
@@ -1123,7 +1123,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      c.type = get_type_name(c, 'bom')
+      c.type = get_type_name(repository, 'bom')
       c.type_name = c.type.humanize.titleize
       if site.modules[c.type].nil?
         site.modules[c.type] = []
@@ -1171,7 +1171,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      c.type = get_type_name(c, 'daemon')
+      c.type = get_type_name(repository, 'daemon')
       c.type_name = c.type.humanize.titleize
       if site.modules[c.type].nil?
         site.modules[c.type] = []
@@ -1196,7 +1196,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def visit(repository, site)
       c = site.components[repository.path]
-      c.type = get_type_name(c, 'test_reports')
+      c.type = get_type_name(repository, 'test_reports')
       c.type_name = c.type.humanize.titleize
       if site.modules[c.type].nil?
         site.modules[c.type] = []

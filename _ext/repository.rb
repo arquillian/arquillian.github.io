@@ -28,7 +28,7 @@ module Awestruct
             cache_key = "github/repos-#{page}.xml"
             begin
               # expire after 3 days
-              resp = RestClient.get url, :accept => 'application/json',
+              resp = RestClient.get url, :accept => 'application/vnd.github.mercy-preview+json',
                                     :cache_key => cache_key, :cache_expiry_age => 86400 * 3
             rescue Exception => e
               puts "Unable to crawl #{url}. Reason: #{e.message}"
@@ -50,8 +50,6 @@ module Awestruct
               # - deprecated repository (arquillian_deprecated)
               # - non-maven repository (arquillian-container-jruby)
               unless e['pushed_at'].nil? || e['name'] == "arquillian-selenium-bom" || e['name'] == "arquillian-container-gae" || e['name'] == "arquillian_deprecated" || e['name'] == "arquillian-container-jruby"
-                puts e['description']
-                puts e['description'] =~ /.*This Repository Is Obsolete.*/i
                 git_url = e['git_url']
                 repository = OpenStruct.new({
                                                 :path => e['name'],
@@ -62,6 +60,7 @@ module Awestruct
                                                 :type => 'git',
                                                 :commits_url => e['commits_url'],
                                                 :html_url => e['html_url'],
+                                                :topics => e['topics'],
                                                 :clone_url => git_url
                                             })
                 @repositories << repository
@@ -352,7 +351,7 @@ module Awestruct
           end
 
           def get_type_name(repository, type)
-            if repository.desc =~ /.*This Repository Is Obsolete.*/i
+            if !repository.topics.nil? and repository.topics.include? 'obsolete'
               "obsolete_" + type
             else
               type
