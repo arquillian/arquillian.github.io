@@ -7,8 +7,11 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 ######################### verify & open page & ask & publish #########################
 
+### execute tests against running awestruct production pages
 ${SCRIPT_DIR}/verify.sh ${WORKING_DIR}
 
+
+### open browser on http://localhost:4242/ and wait till user confirms that he wants to continue with the deploy phase
 $BROWSER_COMMAND http://localhost:4242/ > /dev/null 2>&1 &
 
 echo -e "======================================================================================================"
@@ -26,8 +29,11 @@ while true; do
     esac
 done
 
+
+### stop awestruct production process
 docker exec -i arquillian-org kill ${PROCESS_TO_KILL}
 
+### deploy & push & run test against production
 ${SCRIPT_DIR}/deploy_push_verify.sh ${WORKING_DIR}
 
 exit $?

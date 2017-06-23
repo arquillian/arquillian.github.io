@@ -7,6 +7,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 ######################### set variables & clone & create dirs #########################
 
+### set & clean working directory - the set one or default one: /tmp/arquillian-blog
 WORKING_DIR=`readlink -f ${WORKING_DIR:-/tmp/arquillian-blog}`
 echo "=> Working directory is: ${WORKING_DIR}"
 if [ ! -d ${WORKING_DIR} ]; then
@@ -18,11 +19,12 @@ elif [[ "$CLEAN" = "true" || "$CLEAN" = "yes" ]] ; then
     rm -rf ${WORKING_DIR}/*
 fi
 
-if [[ -z "${GIT_PROJECT}" ]]; then
-    GIT_PROJECT=`git remote get-url origin`
-fi
 
+### for non-travis environment, the project is cloned
 if [[ ${TRAVIS} != "true" ]]; then
+    if [[ -z "${GIT_PROJECT}" ]]; then
+        GIT_PROJECT=`git remote get-url origin`
+    fi
     ARQUILLIAN_PROJECT_DIR="${WORKING_DIR}/${PWD##*/}"
 
     if [ ! -d "${ARQUILLIAN_PROJECT_DIR}" ]; then
@@ -41,16 +43,21 @@ if [[ ${TRAVIS} != "true" ]]; then
     else
         echo "=> The project ${ARQUILLIAN_PROJECT_DIR##*/} will not be cloned because it exist on location: ${ARQUILLIAN_PROJECT_DIR}"
     fi
+
+### for travis it is expected that I'm located in the project dir to be processed
 else
     ARQUILLIAN_PROJECT_DIR="${PWD}"
-    echo "=> Travis environment - using project ${ARQUILLIAN_PROJECT_DIR}"
+    .echo "=> Travis environment - using project ${ARQUILLIAN_PROJECT_DIR}"
 fi
 
 ARQUILLIAN_PROJECT_DIR_NAME=${ARQUILLIAN_PROJECT_DIR##*/}
 
+### if specified then the whole _tmp directory is copied
 if [[ -n "${USE_CACHE}" && -d "${USE_CACHE}" ]]; then
     echo "=> Copying cached _tmp directory ${USE_CACHE} to ${ARQUILLIAN_PROJECT_DIR}/_tmp"
     cp -rf ${USE_CACHE} ${ARQUILLIAN_PROJECT_DIR}/_tmp
+
+### Checks Lanyrd availability, if not available, then _backup/restore_cache.sh is used
 else
     LANYRD_RETURN_CODE=`curl -I http://lanyrd.com/ | head -n 1 | cut -d$' ' -f2`
     if [[ "${LANYRD_RETURN_CODE}" =~ [4,5][0-9][0-9] ]]; then
@@ -59,17 +66,22 @@ else
     fi
 fi
 
+### if specified then the whole .gems directory is copied
 if [[ -n "${GEMS_CACHE}" && -d "${GEMS_CACHE}" ]]; then
     echo "=> Copying cached .gems directory ${GEMS_CACHE} to ${ARQUILLIAN_PROJECT_DIR}/.gems"
     cp -rf ${GEMS_CACHE} ${ARQUILLIAN_PROJECT_DIR}/.gems
 fi
 
+
+### sets .github-auth file (if not available already)
 if [ -z "${GITHUB_AUTH}" ]; then
     GITHUB_AUTH=`cat ${SCRIPT_DIR}/../.github-auth`
 fi
 echo "=> Setting .github-auth file"
 echo ${GITHUB_AUTH} > ${ARQUILLIAN_PROJECT_DIR}/.github-auth
 
+
+### sets logs locations and names - for both standard and docker environments
 DOCKER_LOGS_LOCATION="/home/dev/log"
 LOGS_LOCATION="${WORKING_DIR}/log"
 if [ ! -d "${LOGS_LOCATION}" ]; then
@@ -78,6 +90,11 @@ if [ ! -d "${LOGS_LOCATION}" ]; then
 fi
 chmod o+w ${LOGS_LOCATION}
 
+AWESTRUCT_DEV_LOG="awestruct-d_log"
+AWESTRUCT_PROD_LOG="awestruct-server-production_log"
+
+
+### sets scripts locations - for both standard and docker environments
 DOCKER_SCRIPTS_LOCATION="/home/dev/scripts"
 SCRIPTS_LOCATION="${WORKING_DIR}/scripts"
 if [ ! -d "${SCRIPTS_LOCATION}" ]; then
@@ -85,8 +102,6 @@ if [ ! -d "${SCRIPTS_LOCATION}" ]; then
     mkdir ${SCRIPTS_LOCATION}
 fi
 
-AWESTRUCT_DEV_LOG="awestruct-d_log"
-AWESTRUCT_PROD_LOG="awestruct-server-production_log"
 
 ######################### prepare scripts #########################
 
@@ -160,12 +175,14 @@ chmod +x ${SCRIPTS_LOCATION}/*
 
 ######################### Build & run docker image #########################
 
-#rm -r _tmp _site
 
+### cleans running containers
 echo "=> Killing and removing any already existing arquillian-org containers..."
 docker kill arquillian-org
 docker rm arquillian-org
 
+
+### builds or pulls image
 if [[ "$BUILD_IMAGE" = "true" || "$BUILD_IMAGE" = "yes" ]]; then
     cd ${ARQUILLIAN_PROJECT_DIR}
     echo "=> Building arquillian-org image..."
@@ -181,20 +198,28 @@ else
     docker pull arquillian/arquillian-org
 fi
 
-if [[ ${TRAVIS} = "true" ]]; then
-    sudo chown -R 1000 $ARQUILLIAN_PROJECT_DIR
-fi
 
+### starts container
 echo "=> Launching arquillian-org container... "
 DOCKER_ID=`docker run -d -it --net=host -v ${ARQUILLIAN_PROJECT_DIR}:/home/dev/${ARQUILLIAN_PROJECT_DIR##*/} --name=arquillian-org -v ${LOGS_LOCATION}:${DOCKER_LOGS_LOCATION} -v ${SCRIPTS_LOCATION}:${DOCKER_SCRIPTS_LOCATION} -p 4242:4242 arquillian/arquillian-org`
 echo "=> Running container with id ${DOCKER_ID}"
 
 
+### if running on travis, gets id of the travis group and creates same in the container. Then add the user to this group
+if [[ ${TRAVIS} = "true" ]]; then
+    docker exec -i --user root arquillian-org bash --login <<< "groupadd -g $(id -g) travis"
+    docker exec -i --user root arquillian-org bash --login <<< "usermod -G travis dev"
+fi
+
+
 ######################### Executing scripts inside of docker image - building & running #########################
 
+### installs gems
 echo "=> Installing gems inside of the container..."
 docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/install_bundle.sh
 
+
+### builds pages using dev profile & then stops the process
 echo "=> Building the pages with dev profile..."
 docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/build_dev.sh
 if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_DEV_LOG}; then
@@ -206,6 +231,8 @@ if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_DEV_LOG}; then
     exit 1
 fi
 
+
+### builds pages using prod profile & keeps it running to make it testable
 echo "=> Building & running the pages with prod profile..."
 docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/build_prod_and_run.sh
 if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_PROD_LOG}; then
@@ -217,26 +244,30 @@ if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_PROD_LOG}; then
     exit 1
 fi
 
+
+### if specified, the _tmp directory is copied & stored
 if [[ -n "${STORE_CACHE}" ]]; then
     if [[ -d "${STORE_CACHE}" ]]; then
-        rm -rm ${STORE_CACHE}
+        rm -rf ${STORE_CACHE}
     fi
     echo "=> Copying cached _tmp dir from ${ARQUILLIAN_PROJECT_DIR}/_tmp to ${STORE_CACHE} to store"
     cp -fr ${ARQUILLIAN_PROJECT_DIR}/_tmp ${STORE_CACHE}
 fi
 
+
+### if specified, the .gems directory is copied & stored
 if [[ -n "${GEMS_CACHE}" ]]; then
     if [[ -d "${GEMS_CACHE}" ]]; then
-        rm -rm ${GEMS_CACHE}
+        rm -rf ${GEMS_CACHE}
     fi
     echo "=> Copying cached _tmp dir from ${ARQUILLIAN_PROJECT_DIR}/.gems to ${GEMS_CACHE} to store"
     cp -fr ${ARQUILLIAN_PROJECT_DIR}/.gems ${GEMS_CACHE}
 fi
 
+
+### retrieves PID of the process running awestruct production build
 PROCESS_LINE=`docker exec -i arquillian-org ps aux | grep puma | grep -v grep`
-
 PROCESS_TO_KILL=`echo ${PROCESS_LINE} | awk '{print $2}'`
-
 
 
 ######################### Writing variables into ${WORKING_DIR}/variables #########################
@@ -246,4 +277,7 @@ export PROCESS_TO_KILL=${PROCESS_TO_KILL}
 export ARQUILLIAN_PROJECT_DIR=${ARQUILLIAN_PROJECT_DIR}
 export DOCKER_SCRIPTS_LOCATION=${DOCKER_SCRIPTS_LOCATION}
 export LOGS_LOCATION=${LOGS_LOCATION}
+export ARQUILLIAN_PROJECT_DIR_NAME=${ARQUILLIAN_PROJECT_DIR_NAME}
+export SCRIPTS_LOCATION=${SCRIPTS_LOCATION}
+export SCRIPT_DIR=${SCRIPT_DIR}
 " > ${WORKING_DIR}/variables
