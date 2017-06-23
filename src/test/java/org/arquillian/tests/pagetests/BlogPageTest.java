@@ -9,7 +9,6 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openqa.selenium.WebDriver;
@@ -36,7 +35,6 @@ public class BlogPageTest {
     }
 
     @Test
-    @Ignore("not all blog announcements has to have a release note")
     public void should_have_content_listing_all_blogs_with_title_and_release_notes() throws Exception {
 
         mainPage.menu()
@@ -47,8 +45,6 @@ public class BlogPageTest {
                 .hasTitle()
                 .hasReleaseNotes();
     }
-
-    //fixme bug - missing release notes for blogs
 
     @Test
     public void should_have_sidebar_with_sub_sections() throws Exception {
