@@ -45,6 +45,10 @@ case $i in
     export STORE_CACHE="${i#*=}"
     shift
     ;;
+    -gc=*|--gems-cache=*)
+    export GEMS_CACHE="${i#*=}"
+    shift
+    ;;
     -gp=*|--github-project=*)
     export GIT_PROJECT="${i#*=}"
     shift
@@ -83,6 +87,9 @@ case $i in
     echo ""
     echo -e "  -sc=<path> \t\t  \t Path to a location where the '_tmp' directory should be stored as a cache"
     echo -e "  --store-cache=<path>"
+    echo ""
+    echo -e "  -gc=<path> \t\t  \t Path to a location where the '.gems' directory should be stored and loaded (if already exists)"
+    echo -e "  --gems-cache=<path>"
     echo ""
     echo -e "  -gp=<url> \t\t \t Url to GitHub project to be cloned and used for generating web pages"
     echo -e "  --github-project=<url>  \t Default value is: `git remote get-url origin`"

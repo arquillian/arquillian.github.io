@@ -59,6 +59,11 @@ else
     fi
 fi
 
+if [[ -n "${GEMS_CACHE}" && -d "${GEMS_CACHE}" ]]; then
+    echo "=> Copying cached .gems directory ${GEMS_CACHE} to ${ARQUILLIAN_PROJECT_DIR}/.gems"
+    cp -rf ${GEMS_CACHE} ${ARQUILLIAN_PROJECT_DIR}/.gems
+fi
+
 if [ -z "${GITHUB_AUTH}" ]; then
     GITHUB_AUTH=`cat ${SCRIPT_DIR}/../.github-auth`
 fi
@@ -145,7 +150,8 @@ echo \"=========================================\"
 
 touch ${DOCKER_LOGS_LOCATION}/awestruct-production-deploy_log
 awestruct -P production --deploy 2>&1 | tee ${DOCKER_LOGS_LOCATION}/awestruct-production-deploy_log
-echo 'Deployed'
+
+echo '=> Deployed'
 EOF" > ${SCRIPTS_LOCATION}/deploy.sh
 
 chmod +x ${SCRIPTS_LOCATION}/*
@@ -212,8 +218,19 @@ if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_PROD_LOG}; then
 fi
 
 if [[ -n "${STORE_CACHE}" ]]; then
+    if [[ -d "${STORE_CACHE}" ]]; then
+        rm -rm ${STORE_CACHE}
+    fi
     echo "=> Copying cached _tmp dir from ${ARQUILLIAN_PROJECT_DIR}/_tmp to ${STORE_CACHE} to store"
     cp -fr ${ARQUILLIAN_PROJECT_DIR}/_tmp ${STORE_CACHE}
+fi
+
+if [[ -n "${GEMS_CACHE}" ]]; then
+    if [[ -d "${GEMS_CACHE}" ]]; then
+        rm -rm ${GEMS_CACHE}
+    fi
+    echo "=> Copying cached _tmp dir from ${ARQUILLIAN_PROJECT_DIR}/.gems to ${GEMS_CACHE} to store"
+    cp -fr ${ARQUILLIAN_PROJECT_DIR}/.gems ${GEMS_CACHE}
 fi
 
 PROCESS_LINE=`docker exec -i arquillian-org ps aux | grep puma | grep -v grep`

@@ -44,12 +44,8 @@ git ${VARIABLE_TO_SET_GH_PATH} checkout master
 git ${VARIABLE_TO_SET_GH_PATH} pull -f origin master
 git ${VARIABLE_TO_SET_GH_PATH} checkout ${CURRENT_BRANCH}
 
-    git ${VARIABLE_TO_SET_GH_PATH} log --pretty=oneline -10
-
 echo "=> Running deploy script"
 docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/deploy.sh
-
-    git ${VARIABLE_TO_SET_GH_PATH} log --pretty=oneline -10
 
 echo "=> Killing and removing arquillian-org container..."
 docker kill arquillian-org
@@ -58,12 +54,8 @@ docker rm arquillian-org
 echo "=> creating timestamp"
 TIMESTAMP=`date --rfc-3339=seconds`
 echo ${TIMESTAMP} > ${ARQUILLIAN_PROJECT_DIR}/last_update.txt
-echo "=> adding"
 git ${VARIABLE_TO_SET_GH_PATH} add ${ARQUILLIAN_PROJECT_DIR}/last_update.txt
-echo "=> commiting"
 git ${VARIABLE_TO_SET_GH_PATH} commit -m "Changed last update timestamp"
-
-    git ${VARIABLE_TO_SET_GH_PATH} log --pretty=oneline -10
 
 echo "=> Pushing generated pages to master..."
 git ${VARIABLE_TO_SET_GH_PATH} push ${GH_AUTH_REF} master
