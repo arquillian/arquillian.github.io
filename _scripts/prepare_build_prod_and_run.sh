@@ -4,18 +4,19 @@
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${SCRIPT_DIR}/parse_arguments.sh
+. ${SCRIPT_DIR}/colors
 
 ######################### set variables & clone & create dirs #########################
 
 ### set & clean working directory - the set one or default one: /tmp/arquillian-blog
 WORKING_DIR=`readlink -f ${WORKING_DIR:-/tmp/arquillian-blog}`
-echo "=> Working directory is: ${WORKING_DIR}"
+echo -e "${LIGHT_GREEN}-> Working directory is: ${WORKING_DIR} ${CLEAR}"
 if [ ! -d ${WORKING_DIR} ]; then
-    echo "=> Creating the working directory"
+    echo -e "${LIGHT_GREEN}-> Creating the working directory ${CLEAR}"
     mkdir ${WORKING_DIR}
 
 elif [[ "$CLEAN" = "true" || "$CLEAN" = "yes" ]] ; then
-    echo "=> cleaning working directory"
+    echo -e "${LIGHT_GREEN}-> cleaning working directory ${CLEAR}"
     rm -rf ${WORKING_DIR}/*
 fi
 
@@ -37,38 +38,38 @@ if [[ ${TRAVIS} != "true" ]]; then
             BRANCH_TO_CLONE="develop"
         fi
 
-        echo "=> Cloning branch ${BRANCH_TO_CLONE} from project ${GIT_PROJECT} into ${ARQUILLIAN_PROJECT_DIR}"
+        echo -e "${LIGHT_GREEN}-> Cloning branch ${BRANCH_TO_CLONE} from project ${GIT_PROJECT} into ${ARQUILLIAN_PROJECT_DIR} ${CLEAR}"
         git clone -b ${BRANCH_TO_CLONE} ${GIT_PROJECT} ${ARQUILLIAN_PROJECT_DIR}
 
     else
-        echo "=> The project ${ARQUILLIAN_PROJECT_DIR##*/} will not be cloned because it exist on location: ${ARQUILLIAN_PROJECT_DIR}"
+        echo -e "${LIGHT_GREEN}-> The project ${ARQUILLIAN_PROJECT_DIR##*/} will not be cloned because it exist on location: ${ARQUILLIAN_PROJECT_DIR} ${CLEAR}"
     fi
 
 ### for travis it is expected that I'm located in the project dir to be processed
 else
     ARQUILLIAN_PROJECT_DIR="${PWD}"
-    .echo "=> Travis environment - using project ${ARQUILLIAN_PROJECT_DIR}"
+    .echo -e "${LIGHT_GREEN}-> Travis environment - using project ${ARQUILLIAN_PROJECT_DIR} ${CLEAR}"
 fi
 
 ARQUILLIAN_PROJECT_DIR_NAME=${ARQUILLIAN_PROJECT_DIR##*/}
 
 ### if specified then the whole _tmp directory is copied
 if [[ -n "${USE_CACHE}" && -d "${USE_CACHE}" ]]; then
-    echo "=> Copying cached _tmp directory ${USE_CACHE} to ${ARQUILLIAN_PROJECT_DIR}/_tmp"
+    echo -e "${LIGHT_GREEN}-> Copying cached _tmp directory ${USE_CACHE} to ${ARQUILLIAN_PROJECT_DIR}/_tmp ${CLEAR}"
     cp -rf ${USE_CACHE} ${ARQUILLIAN_PROJECT_DIR}/_tmp
 
 ### Checks Lanyrd availability, if not available, then _backup/restore_cache.sh is used
 else
     LANYRD_RETURN_CODE=`curl -I http://lanyrd.com/ | head -n 1 | cut -d$' ' -f2`
     if [[ "${LANYRD_RETURN_CODE}" =~ [4,5][0-9][0-9] ]]; then
-        echo "=> Lanyrd does not seem to be available - it returns ${LANYRD_RETURN_CODE}. The backup stored in _backup will be used."
+        echo -e "${LIGHT_GREEN}-> Lanyrd does not seem to be available - it returns ${LANYRD_RETURN_CODE}. The backup stored in _backup will be used. ${CLEAR}"
         ${ARQUILLIAN_PROJECT_DIR}/_backup/restore_cache.sh
     fi
 fi
 
 ### if specified then the whole .gems directory is copied
 if [[ -n "${GEMS_CACHE}" && -d "${GEMS_CACHE}" ]]; then
-    echo "=> Copying cached .gems directory ${GEMS_CACHE} to ${ARQUILLIAN_PROJECT_DIR}/.gems"
+    echo -e "${LIGHT_GREEN}-> Copying cached .gems directory ${GEMS_CACHE} to ${ARQUILLIAN_PROJECT_DIR}/.gems ${CLEAR}"
     cp -rf ${GEMS_CACHE} ${ARQUILLIAN_PROJECT_DIR}/.gems
 fi
 
@@ -77,7 +78,7 @@ fi
 if [ -z "${GITHUB_AUTH}" ]; then
     GITHUB_AUTH=`cat ${SCRIPT_DIR}/../.github-auth`
 fi
-echo "=> Setting .github-auth file"
+echo -e "${LIGHT_GREEN}-> Setting .github-auth file ${CLEAR}"
 echo ${GITHUB_AUTH} > ${ARQUILLIAN_PROJECT_DIR}/.github-auth
 
 
@@ -85,7 +86,7 @@ echo ${GITHUB_AUTH} > ${ARQUILLIAN_PROJECT_DIR}/.github-auth
 DOCKER_LOGS_LOCATION="/home/dev/log"
 LOGS_LOCATION="${WORKING_DIR}/log"
 if [ ! -d "${LOGS_LOCATION}" ]; then
-    echo "=> Creating ${LOGS_LOCATION} directory"
+    echo -e "${LIGHT_GREEN}-> Creating ${LOGS_LOCATION} directory ${CLEAR}"
     mkdir ${LOGS_LOCATION}
 fi
 chmod o+w ${LOGS_LOCATION}
@@ -98,7 +99,7 @@ AWESTRUCT_PROD_LOG="awestruct-server-production_log"
 DOCKER_SCRIPTS_LOCATION="/home/dev/scripts"
 SCRIPTS_LOCATION="${WORKING_DIR}/scripts"
 if [ ! -d "${SCRIPTS_LOCATION}" ]; then
-    echo "=> Creating ${SCRIPTS_LOCATION} directory"
+    echo -e "${LIGHT_GREEN}-> Creating ${SCRIPTS_LOCATION} directory ${CLEAR}"
     mkdir ${SCRIPTS_LOCATION}
 fi
 
@@ -108,7 +109,6 @@ fi
 echo "#!/bin/bash
 bash --login <<EOF
 cd ${ARQUILLIAN_PROJECT_DIR_NAME}
-echo 'bundle install -j 10 --path ./.gems'
 bundle install -j 10 --path ./.gems
 EOF" > ${SCRIPTS_LOCATION}/install_bundle.sh
 
@@ -118,9 +118,9 @@ echo "#!/bin/bash
 bash --login <<EOF
 cd ${ARQUILLIAN_PROJECT_DIR_NAME}
 
-echo \"======================\"
-echo 'running awestruct -d'
-echo \"======================\"
+echo -e '${LIGHT_GREEN}======================'
+echo -e 'running awestruct -d'
+echo -e '====================== ${CLEAR}'
 
 touch ${DOCKER_LOGS_LOCATION}/${AWESTRUCT_DEV_LOG}
 awestruct -d 2>&1 | tee ${DOCKER_LOGS_LOCATION}/${AWESTRUCT_DEV_LOG} &
@@ -137,9 +137,9 @@ echo "#!/bin/bash
 bash --login <<EOF
 cd ${ARQUILLIAN_PROJECT_DIR_NAME}
 
-echo \"=========================================\"
-echo  'running awestruct --server -P production'
-echo \"=========================================\"
+echo -e '${LIGHT_GREEN}========================================='
+echo -e 'running awestruct --server -P production'
+echo -e '========================================= ${CLEAR}'
 
 touch ${DOCKER_LOGS_LOCATION}/${AWESTRUCT_PROD_LOG}
 setsid awestruct --server -P production 2>&1 | tee ${DOCKER_LOGS_LOCATION}/${AWESTRUCT_PROD_LOG} &
@@ -159,14 +159,14 @@ git config --global user.name "Alien Ike"
 echo ${GITHUB_AUTH} > ~/.github-auth
 
 cd ${ARQUILLIAN_PROJECT_DIR_NAME}
-echo \"=========================================\"
-echo 'running awestruct -P production --deploy'
-echo \"=========================================\"
+echo -e '${LIGHT_GREEN}========================================='
+echo -e 'running awestruct -P production --deploy'
+echo -e '========================================= ${CLEAR}'
 
 touch ${DOCKER_LOGS_LOCATION}/awestruct-production-deploy_log
 awestruct -P production --deploy 2>&1 | tee ${DOCKER_LOGS_LOCATION}/awestruct-production-deploy_log
 
-echo '=> Deployed'
+echo -e '${LIGHT_GREEN}-> Deployed ${CLEAR}'
 EOF" > ${SCRIPTS_LOCATION}/deploy.sh
 
 chmod +x ${SCRIPTS_LOCATION}/*
@@ -177,7 +177,7 @@ chmod +x ${SCRIPTS_LOCATION}/*
 
 
 ### cleans running containers
-echo "=> Killing and removing any already existing arquillian-org containers..."
+echo -e "${LIGHT_GREEN}-> Killing and removing any already existing arquillian-org containers... ${CLEAR}"
 docker kill arquillian-org
 docker rm arquillian-org
 
@@ -185,24 +185,24 @@ docker rm arquillian-org
 ### builds or pulls image
 if [[ "$BUILD_IMAGE" = "true" || "$BUILD_IMAGE" = "yes" ]]; then
     cd ${ARQUILLIAN_PROJECT_DIR}
-    echo "=> Building arquillian-org image..."
+    echo " Building arquillian-org image..."
     docker build -t arquillian-org .
     cd ${CURRENT_DIR}
 
     if [[ -z "$(docker images -q arquillian/blog 2> /dev/null)" ]]; then
-      echo "=> The docker image arquillian-org has not been built - see the log for more information."
+      echo -e "${LIGHT_GREEN}-> The docker image arquillian-org has not been built - see the log for more information. ${CLEAR}"
       exit 1
     fi
 else
-    echo "=> Pulling arquillian-org image..."
+    echo -e "${LIGHT_GREEN}-> Pulling arquillian-org image... ${CLEAR}"
     docker pull arquillian/arquillian-org
 fi
 
 
 ### starts container
-echo "=> Launching arquillian-org container... "
+echo -e "${LIGHT_GREEN}-> Launching arquillian-org container...  ${CLEAR}"
 DOCKER_ID=`docker run -d -it --net=host -v ${ARQUILLIAN_PROJECT_DIR}:/home/dev/${ARQUILLIAN_PROJECT_DIR##*/} --name=arquillian-org -v ${LOGS_LOCATION}:${DOCKER_LOGS_LOCATION} -v ${SCRIPTS_LOCATION}:${DOCKER_SCRIPTS_LOCATION} -p 4242:4242 arquillian/arquillian-org`
-echo "=> Running container with id ${DOCKER_ID}"
+echo -e "${LIGHT_GREEN}-> Running container with id ${DOCKER_ID} ${CLEAR}"
 
 
 ### if running on travis, gets id of the travis group and creates same in the container. Then add the user to this group
@@ -215,17 +215,17 @@ fi
 ######################### Executing scripts inside of docker image - building & running #########################
 
 ### installs gems
-echo "=> Installing gems inside of the container..."
+echo -e "${LIGHT_GREEN}-> Installing gems inside of the container... ${CLEAR}"
 docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/install_bundle.sh
 
 
 ### builds pages using dev profile & then stops the process
-echo "=> Building the pages with dev profile..."
+echo -e "${LIGHT_GREEN}-> Building the pages with dev profile... ${CLEAR}"
 docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/build_dev.sh
 if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_DEV_LOG}; then
-    >&2 echo "=> There occurred an error when the pages were being generated with the command 'awestruct -d'."
-    >&2 echo "=> Check the output or the log files located in ${LOGS_LOCATION}"
-    >&2 echo "=> Killing and removing arquillian-org container..."
+    echo -e "${RED}-> There occurred an error when the pages were being generated with the command 'awestruct -d'. ${CLEAR}"
+    echo -e "${RED}-> Check the output or the log files located in ${LOGS_LOCATION} ${CLEAR}"
+    echo -e "${RED}-> Killing and removing arquillian-org container... ${CLEAR}"
     docker kill arquillian-org
     docker rm arquillian-org
     exit 1
@@ -233,12 +233,12 @@ fi
 
 
 ### builds pages using prod profile & keeps it running to make it testable
-echo "=> Building & running the pages with prod profile..."
+echo -e "${LIGHT_GREEN}-> Building & running the pages with prod profile... ${CLEAR}"
 docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/build_prod_and_run.sh
 if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_PROD_LOG}; then
-    >&2 echo "=> There occurred an error when the pages were being generated with the command 'running awestruct -P production --deploy'."
-    >&2 echo "=> Check the output or the log files located in ${LOGS_LOCATION}"
-    >&2 echo "=> Killing and removing arquillian-org container..."
+    echo -e "${RED}-> There occurred an error when the pages were being generated with the command 'running awestruct -P production --deploy'. ${CLEAR}"
+    echo -e "${RED}-> Check the output or the log files located in ${LOGS_LOCATION} ${CLEAR}"
+    echo -e "${RED}-> Killing and removing arquillian-org container... ${CLEAR}"
     docker kill arquillian-org
     docker rm arquillian-org
     exit 1
@@ -250,7 +250,7 @@ if [[ -n "${STORE_CACHE}" ]]; then
     if [[ -d "${STORE_CACHE}" ]]; then
         rm -rf ${STORE_CACHE}
     fi
-    echo "=> Copying cached _tmp dir from ${ARQUILLIAN_PROJECT_DIR}/_tmp to ${STORE_CACHE} to store"
+    echo -e "${LIGHT_GREEN}-> Copying cached _tmp dir from ${ARQUILLIAN_PROJECT_DIR}/_tmp to ${STORE_CACHE} to stor ${CLEAR}e"
     cp -fr ${ARQUILLIAN_PROJECT_DIR}/_tmp ${STORE_CACHE}
 fi
 
@@ -260,7 +260,7 @@ if [[ -n "${GEMS_CACHE}" ]]; then
     if [[ -d "${GEMS_CACHE}" ]]; then
         rm -rf ${GEMS_CACHE}
     fi
-    echo "=> Copying cached _tmp dir from ${ARQUILLIAN_PROJECT_DIR}/.gems to ${GEMS_CACHE} to store"
+    echo -e "${LIGHT_GREEN}-> Copying cached _tmp dir from ${ARQUILLIAN_PROJECT_DIR}/.gems to ${GEMS_CACHE} to store ${CLEAR}"
     cp -fr ${ARQUILLIAN_PROJECT_DIR}/.gems ${GEMS_CACHE}
 fi
 
