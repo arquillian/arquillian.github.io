@@ -105,7 +105,7 @@ if [[ ! "${GIT_PROJECT}" =~ .*[\:,\/]arquillian\/arquillian\.github\..* ]]; then
     exit 0;
 fi
 
-limit=30
+limit=60
 while [[ "`curl http://arquillian.org/last_update.txt 2> /dev/null`" != "${TIMESTAMP}" ]]; do
     let "limit--"
     echo -e "${YELLOW} Waiting for the timestamp ${TIMESTAMP} being available on http://arquillian.org/last_update.txt ${CLEAR}"

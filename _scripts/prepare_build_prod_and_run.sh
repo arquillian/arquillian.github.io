@@ -118,9 +118,9 @@ echo "#!/bin/bash
 bash --login <<EOF
 cd ${ARQUILLIAN_PROJECT_DIR_NAME}
 
-echo -e '${LIGHT_GREEN}======================'
-echo -e 'running awestruct -d'
-echo -e '====================== ${CLEAR}'
+echo -e '${LIGHT_GREEN}====================== ${CLEAR}'
+echo -e '${LIGHT_GREEN}running awestruct -d ${CLEAR}'
+echo -e '${LIGHT_GREEN}====================== ${CLEAR}'
 
 touch ${DOCKER_LOGS_LOCATION}/${AWESTRUCT_DEV_LOG}
 awestruct -d 2>&1 | tee ${DOCKER_LOGS_LOCATION}/${AWESTRUCT_DEV_LOG} &
@@ -137,9 +137,9 @@ echo "#!/bin/bash
 bash --login <<EOF
 cd ${ARQUILLIAN_PROJECT_DIR_NAME}
 
-echo -e '${LIGHT_GREEN}========================================='
-echo -e 'running awestruct --server -P production'
-echo -e '========================================= ${CLEAR}'
+echo -e '${LIGHT_GREEN}========================================= ${CLEAR}'
+echo -e '${LIGHT_GREEN}running awestruct --server -P production ${CLEAR}'
+echo -e '${LIGHT_GREEN}========================================= ${CLEAR}'
 
 touch ${DOCKER_LOGS_LOCATION}/${AWESTRUCT_PROD_LOG}
 setsid awestruct --server -P production 2>&1 | tee ${DOCKER_LOGS_LOCATION}/${AWESTRUCT_PROD_LOG} &
@@ -159,9 +159,9 @@ git config --global user.name "Alien Ike"
 echo ${GITHUB_AUTH} > ~/.github-auth
 
 cd ${ARQUILLIAN_PROJECT_DIR_NAME}
-echo -e '${LIGHT_GREEN}========================================='
-echo -e 'running awestruct -P production --deploy'
-echo -e '========================================= ${CLEAR}'
+echo -e '${LIGHT_GREEN}========================================= ${CLEAR}'
+echo -e '${LIGHT_GREEN}running awestruct -P production --deploy ${CLEAR}'
+echo -e '${LIGHT_GREEN}========================================= ${CLEAR}'
 
 touch ${DOCKER_LOGS_LOCATION}/awestruct-production-deploy_log
 awestruct -P production --deploy 2>&1 | tee ${DOCKER_LOGS_LOCATION}/awestruct-production-deploy_log
