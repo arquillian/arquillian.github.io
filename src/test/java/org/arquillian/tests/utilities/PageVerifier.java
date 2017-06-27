@@ -1,5 +1,7 @@
 package org.arquillian.tests.utilities;
 
+import java.util.function.Function;
+import org.jboss.arquillian.graphene.Graphene;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -14,7 +16,9 @@ public class PageVerifier {
     }
 
     public PageVerifier hasTitle(String title) {
-        assertThat(driver.getTitle()).isEqualTo(title);
+        Graphene.waitModel()
+            .withMessage(String.format("The expected title is [%s] but was [%s]", title, driver.getTitle()))
+            .until((Function<WebDriver, Boolean>)webDriver -> title.equals(driver.getTitle()));
         return this;
     }
 
