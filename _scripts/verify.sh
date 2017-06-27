@@ -18,7 +18,9 @@ fi
 
 
 ### clone project containing UI tests
-git clone https://github.com/matousjobanek/arquillian.github.com-tests.git ${TEST_PROJECT_DIRECTORY}
+CLONE_TESTS_COMMAND="git clone https://github.com/hemanik/arquillian.github.com-tests.git ${TEST_PROJECT_DIRECTORY}"
+echo -e "${LIGHT_GREEN}->  cloning tests project using command: ${CLONE_TESTS_COMMAND}"
+$CLONE_TESTS_COMMAND
 
 
 ### execute UI tests
