@@ -75,9 +75,15 @@ fi
 
 
 ### sets .github-auth file (if not available already)
-if [ -z "${GITHUB_AUTH}" ]; then
-    GITHUB_AUTH=`cat ${SCRIPT_DIR}/../.github-auth`
+if [[ -z "${GITHUB_AUTH}" ]]; then
+    if [[ -f ${SCRIPT_DIR}/../.github-auth ]]; then
+        GITHUB_AUTH=`cat ${SCRIPT_DIR}/../.github-auth`
+    else
+        ### sets token with read permissions - no scopes
+        GITHUB_AUTH="c23fbf83c47dd31b546d392b2ba054c356620b3c"
+    fi
 fi
+
 echo -e "${LIGHT_GREEN}-> Setting .github-auth file ${CLEAR}"
 echo ${GITHUB_AUTH} > ${ARQUILLIAN_PROJECT_DIR}/.github-auth
 
