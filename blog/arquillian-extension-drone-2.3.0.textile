@@ -1,0 +1,118 @@
+---
+date: 2017-07-13
+author: matousjobanek
+---
+
+!(graphic pull-right)/images/blog/drone_400.png!
+
+Apart from several fixes and improvements, this release brings one new feature - after quite long time, Drone provides an extension for Appium.
+I'd like to thank "Václav Muzikář":https://github.com/vmuzikar/. He's our hero for this feature, as he implemented the whole extension!
+
+h3. Arquillian Drone Appium extension
+
+This extension enables you to use the Appium project with Drone and Graphene in your functional tests for mobile devices.
+
+p(info). %This extension only provides the integration of Appium WebDrivers with Drone, i.e. it only instantiates an Appium Driver and passes @DesiredCapabilities@ to it.
+For more instructions on how to install and configure Appium server and mobile physical and/or virtual devices please refer to:
+"appium/appium":https://github.com/appium/appium
+"appium/java-client":https://github.com/appium/java-client
+"appium.io":http://appium.io/%
+
+h4. How to use it
+
+*1)* First of all, you need to have this extension on your project's classpath. Eg. as a Maven dependency:
+
+bc(prettify).. <dependency>
+    <groupId>org.jboss.arquillian.extension</groupId>
+    <artifactId>arquillian-drone-appium-extension</artifactId>
+    <version>${version.org.jboss.arquillian.drone}</version>
+</dependency>
+
+p(info). %Please keep in mind that this dependency doesn't serve as a dependency chain - you also need to add the dependencies mentioned in "Drone getting started documentation":http://arquillian.org/arquillian-extension-drone/#_getting_started%
+
+p. *2)* To use an Appium Driver you need to specify @appium@ as a @browser@ property:
+
+bc(prettify).. <extension qualifier="webdriver">
+    <property name="browser">appium</property>
+    ...
+</extension>
+
+p. *3)* You then need to specify the Desired Capabilities for the Appium server. Some of them are required given the specific platform. E.g.:
+
+bc(prettify).. <extension qualifier="webdriver">
+    <property name="browser">appium</property>
+    <property name="platformName">android</property>
+    <property name="deviceName">Some Android emulator</property>
+    <property name="browserName">chrome</property>
+    <property name="avd">nexus</property>
+</extension>
+
+p. For more info please see the complete "list of supported capabilities":https://github.com/appium/appium/blob/master/docs/en/writing-running-appium/caps.md
+
+h4. Using remote Appium server
+
+By default, Appium Driver starts the local Appium server by itself (or if running already), it connects to it.
+To override this, you can also specify a remote address where is Appium server listening:
+
+bc(prettify).. <extension qualifier="webdriver">
+    ...
+    <property name="remoteAddress">http://192.168.1.12:4723/wd/hub</property>
+    ...
+</extension>
+
+h4. ChromeOptions
+
+In case of Android and Google Chrome browser, you can also specify @ChromeOptions@ the same way as with the standard ChromeDriver (using the 'chrome' prefix). E.g.
+
+bc(prettify).. <extension qualifier="webdriver">
+        ...
+        <property name="chromeArguments">--disable-translate</property>
+        ...
+    </extension>
+
+
+h4. Instantiation timeout
+
+Since a mobile virtual device boot is typically performed when instantiating the driver, the @instantiationTimeoutInSeconds@ is set to 240 seconds (instead of the default 60) by this extension.
+To override this you can simply use e.g.
+
+bc(prettify).. <extension qualifier="drone">
+    <property name="instantiationTimeoutInSeconds">120</property>
+</extension>
+
+h4. Appium Driver implementations
+
+Different driver implementations are instantiated by this extension based on the desired platform:
+
+* "AndroidDriver":http://appium.github.io/java-client/io/appium/java_client/android/AndroidDriver.html
+* "IOSDriver":http://appium.github.io/java-client/io/appium/java_client/ios/IOSDriver.html
+* "WindowsDriver":http://appium.github.io/java-client/io/appium/java_client/windows/WindowsDriver.html
+* "Generic AppiumDriver":http://appium.github.io/java-client/io/appium/java_client/AppiumDriver.html
+
+You can then type cast the driver object to a specific one, e.g.:
+
+bc(prettify).. AndroidDriver androidDriver = (AndroidDriver) driver;
+androidDriver.openNotifications();
+
+
+h4. Using different Appium Java Client version
+
+Since the Appium development is much more rapid than this extension, you can of course use a newer @java-client@ version (and therefore newer Appium Driver) in your project.
+You can e.g. just exclude the @java-client@ dependency from this extension and use your desired version:
+
+bc(prettify).. <dependency>
+    <groupId>io.appium</groupId>
+    <artifactId>java-client</artifactId>
+    <version>5.0.0-BETA9</version>
+</dependency>
+<dependency>
+    <groupId>org.jboss.arquillian.extension</groupId>
+    <artifactId>arquillian-drone-appium-extension</artifactId>
+    <version>${version.org.jboss.arquillian.drone}</version>
+    <exclusions>
+        <exclusion>
+            <groupId>io.appium</groupId>
+            <artifactId>java-client</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
