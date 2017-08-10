@@ -49,7 +49,7 @@ ENV AWESTRUCT_VERSION 0.6.0
 # Used for custom build
 ENV AWESTRUCT_REPO https://github.com/awestruct/awestruct.git
 ENV AWESTRUCT_REPO_DIR $HOME/awestruct
-ENV AWESTRUCT_COMMIT a014121
+ENV AWESTRUCT_COMMIT 00a88d44efcfad33cdec8b09f0d8cd9bd4650e06
 
 # Fix encoding
 ENV LANG en_US.UTF-8
