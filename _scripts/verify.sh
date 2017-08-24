@@ -6,7 +6,7 @@ WORKING_DIR=${1}
 . ${WORKING_DIR}/variables
 . ${SCRIPT_DIR}/colors
 
-TEST_PROJECT_DIRECTORY="${WORKING_DIR}/arquillian.github.com-tests"
+TEST_PROJECT_DIRECTORY="${WORKING_DIR}/arquillian.github.io-functional-tests"
 ARQUILLIAN_BLOG_TEST_URL=${ARQUILLIAN_BLOG_TEST_URL:-"http://localhost:4242/"}
 
 ######################### Running tests #########################
@@ -16,12 +16,13 @@ if [ -d ${TEST_PROJECT_DIRECTORY} ]; then
     rm -rf ${TEST_PROJECT_DIRECTORY}
 fi
 
+### get & set git information about the project
+VARIABLE_TO_SET_GH_PATH="--git-dir=${ARQUILLIAN_PROJECT_DIR}/.git --work-tree=${ARQUILLIAN_PROJECT_DIR}"
+git ${VARIABLE_TO_SET_GH_PATH} config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
 
-### clone project containing UI tests
-CLONE_TESTS_COMMAND="git clone https://github.com/hemanik/arquillian.github.com-tests.git ${TEST_PROJECT_DIRECTORY}"
-echo -e "${LIGHT_GREEN}->  cloning tests project using command: ${CLONE_TESTS_COMMAND}"
-$CLONE_TESTS_COMMAND
-
+echo -e "${LIGHT_GREEN}->  fetching functional-tests branch into directory ${TEST_PROJECT_DIRECTORY}"
+git ${VARIABLE_TO_SET_GH_PATH} fetch --unshallow origin functional-tests
+git ${VARIABLE_TO_SET_GH_PATH} worktree add -b functional-tests ${TEST_PROJECT_DIRECTORY} origin/functional-tests;
 
 ### execute UI tests
 #todo use mvnw
