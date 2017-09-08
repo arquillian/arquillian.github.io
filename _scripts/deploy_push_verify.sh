@@ -38,7 +38,7 @@ echo -e "${LIGHT_GREEN}-> retrieving master branch ${CLEAR}"
 if [[ ${TRAVIS} = "true" ]]; then
     CURRENT_BRANCH=`git status | grep HEAD | awk '{print $4}'`
     git ${VARIABLE_TO_SET_GH_PATH} config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
-    git ${VARIABLE_TO_SET_GH_PATH} fetch --unshallow origin master
+    git ${VARIABLE_TO_SET_GH_PATH} fetch origin master
 else
     git ${VARIABLE_TO_SET_GH_PATH} fetch origin
 fi
