@@ -1,0 +1,71 @@
+---
+date: 2017-09-14
+author: bartoszmajsak
+---
+
+h3(highlight). First release of Smart Testing is here!
+
+p. It all started as a "Google Summer of Code":https://developer.jboss.org/wiki/JBossCommunityGoogleSummerOfCode2016Ideas#jive_content_id_Provide_test_scheduling_for_large_test_suites project last year with great ground work of our student "Dimcho Karpachev":https://github.com/dimchoSCR.
+
+Flash forward to this summer, after @222@ commits, @69@ pull requests merged and insane amount of CI builds we are super excited to announce a new addition to Arquillian Universe we've been working so vigorously on.
+
+p. This time it's not a new extension to Arquillian Testing Platform, but a brand new tool which we hope will bring a breath of fresh air into your builds, let it be on your local machine or the CI server.
+
+p. You probably know it best - you write some code and tests, run the build, wait few minutes to only see at the later stage that your changes are breaking it. Of course you can go and grab a coffee, but if you commit early and often that might mean caffeine overdose in a very short time. Running tests before pushing is a good practice, but if it takes too long it simply slows you down. 
+
+p. Moreover having long lasting builds on your CI server makes your CI/CD process not really that continuous and leads to Pull Requests piling up. Bringing new features to production with confidence should be seamless. And for this we need to have faster feedback loops.
+
+p. **Smart Testing** is a tool that speeds up the test running phase by reordering test execution plan to increase a probability of fail-fast execution and thus give you faster feedback about your project’s health.
+
+p. That's why we created this cure for you!
+
+h3. Highlights of this release
+
+p. With this release we provide following strategies which you can use to optimize your build execution:
+
+  * @new@ - gives higher priority to newly added tests
+  * @changed@ - gives higher priority to changed tests (e.g. new test methods or refactorings of components under tests which imply changes in the tests)
+  * @affected@ - based on changes in your business logic, gives higher priority to the tests which are exercising them
+  * @failed@ - gives higher priority to the tests which failed in the previous (local) build
+
+p(info). %In addition you can either decide to run the whole test suite (@ordering@ mode) or only those tests which fall into the selected categories (@selecting@ mode).%
+
+p(important). %@new@, @changed@ and @affected@ rely on SCM information. For this release we only support **Git**.%
+
+h3. How to get started
+
+p. If you are using Maven @3.3.x@ or newer (and you definitely should!) adding **Smart Testing** to your build is very easy. Create a file `.mvn/extensions.xml` in the root of project
+with the following content:
+
+div(filename). extensions.xml
+
+bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
+<extensions>
+  <extension>
+    <groupId>org.arquillian.smart.testing</groupId>
+    <artifactId>maven-lifecycle-extension</artifactId>
+    <version>0.0.1</version>
+  </extension>
+</extensions>
+
+p. and you are all set!
+
+p. Executing the build with Smart Testing enabled is as simple as adding one system property with strategies of your choice:
+
+bc(prettify).. $ mvn clean verify -Dsmart.testing=new,changed,affected
+
+p. This will execute the build running only those tests which are falling into selected categories, based on your local changes.
+
+p(info). %For the CI environment, such as Jenkins, you can pass commit hashes using environment variables. For example: 
+@$ mvn verify -Dsmart.testing=affected -Dscm.range.head=GIT_COMMIT -Dscm.range.tail=GIT_PREVIOUS_COMMIT@%
+
+This will optimize tests based on the changes between the current commit and the one against which the previous build was run.
+
+p(info). %For more details head over to our "documentation":http://arquillian.org/smart-testing/0.0.1/ backed by awesome "Asciidoctor":http://asciidoctor.org/!%
+
+p. We are very excited about **Smart Testing** but we need you to help us make it even more awesome. We spent tremendous amount of effort building it with the developer experience in mind, but without the community feedback we can only get that far. So give it a try today and "tell us what you think":http://discuss.arquillian.org/!
+
+p. Thanks to the "whole team":https://github.com/arquillian/smart-testing/graphs/contributors for making it happen! You are real heroes!
+
+p. Also big kudos to "Infinitest":http://infinitest.github.io/ team for the inspiration! Give it a spin if you are Eclipse or IDEA user.
+
