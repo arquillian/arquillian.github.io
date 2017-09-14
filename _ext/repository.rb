@@ -49,7 +49,7 @@ module Awestruct
               # - not too interesting with high amount of releases (selenium-bom)
               # - deprecated repository (arquillian_deprecated)
               # - non-maven repository (arquillian-container-jruby)
-              unless e['pushed_at'].nil? || e['name'] == "arquillian-selenium-bom" || e['name'] == "arquillian-container-gae" || e['name'] == "arquillian_deprecated" || e['name'] == "arquillian-container-jruby"
+              unless e['pushed_at'].nil? || e['name'] == "arquillian-selenium-bom" || e['name'] == "arquillian-container-gae" || e['name'] == "arquillian_deprecated" || e['name'] == "arquillian-container-jruby" || e['name'] == "smart-testing-dogfood-repo"
                 git_url = e['git_url']
                 repository = OpenStruct.new({
                                                 :path => e['name'],
