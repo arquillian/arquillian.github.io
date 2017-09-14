@@ -490,6 +490,7 @@ module Awestruct::Extensions::Repository::Visitors
             'shrinkwrap_descriptor' => 'ShrinkWrap Descriptors',
             'shrinkwrap_resolver' => 'ShrinkWrap Resolver',
             'shrinkwrap_resolvers' => 'ShrinkWrap Resolver',
+	    'smart_testing' => 'Smart Testing',
             'selenium' => 'Selenium',
             'junit_junit' => 'JUnit',
             'testng_testng' => 'TestNG',
@@ -651,6 +652,11 @@ module Awestruct::Extensions::Repository::Visitors
             lead = OpenStruct.new({
                                       :name => 'David Blevins',
                                       :jboss_username => 'dblevins'
+                                  })
+          elsif repository.path.eql? 'smart-testing'
+            lead = OpenStruct.new({
+                                      :name => 'Bartosz Majsak',
+                                      :jboss_username => 'bartoszmajsak'
                                   })
           end
         end
@@ -1113,6 +1119,33 @@ module Awestruct::Extensions::Repository::Visitors
       site.modules[c.type] << m
     end
   end
+
+
+  module ToolComponent
+    include Base
+
+    def handles(repository)
+      repository.path =~ /^(smart-testing)$/
+    end
+
+    def visit(repository, site)
+      c = site.components[repository.path]
+      c.type = get_type_name(repository, 'tool')
+      c.type_name = c.type.humanize.titleize
+      if site.modules[c.type].nil?
+        site.modules[c.type] = []
+      end
+      m = OpenStruct.new({
+                             :basepath => c.repository.path,
+                             :name => c.name,
+                             :desc => c.desc,
+                             :component => c
+                         })
+      c.modules << m
+      site.modules[c.type] << m
+    end
+  end
+
 
   module ArquillianUniverseComponent
     include Base
