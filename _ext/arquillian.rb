@@ -656,7 +656,7 @@ module Awestruct::Extensions::Repository::Visitors
           elsif repository.path.eql? 'smart-testing'
             lead = OpenStruct.new({
                                       :name => 'Bartosz Majsak',
-                                      :jboss_username => 'bartoszmajsak'
+                                      :jboss_username => 'bmajsak'
                                   })
           end
         end
