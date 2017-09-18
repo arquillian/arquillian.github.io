@@ -26,7 +26,11 @@ if [ -f ${ARQUILLIAN_PROJECT_DIR}/.git/shallow ]; then
 else
     git ${VARIABLE_TO_SET_GH_PATH} fetch origin functional-tests
 fi
-git ${VARIABLE_TO_SET_GH_PATH} worktree add -b functional-tests ${TEST_PROJECT_DIRECTORY} origin/functional-tests;
+
+### check if the branch is already present
+if [ -z "$(git ${VARIABLE_TO_SET_GH_PATH} rev-parse --verify functional-tests)" ]; then
+    git ${VARIABLE_TO_SET_GH_PATH} worktree add -b functional-tests ${TEST_PROJECT_DIRECTORY} origin/functional-tests;
+fi
 
 ### execute UI tests
 #todo use mvnw
