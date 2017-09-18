@@ -229,7 +229,7 @@ docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/install_bundle.sh
 echo -e "${LIGHT_GREEN}-> Building the pages with dev profile... ${CLEAR}"
 docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/build_dev.sh
 if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_DEV_LOG}; then
-    echo -e "${RED}-> There occurred an error when the pages were being generated with the command 'awestruct -d'. ${CLEAR}"
+    echo -e "${RED}-> Generating pages using 'awestruct -d' failed. ${CLEAR}"
     echo -e "${RED}-> Check the output or the log files located in ${LOGS_LOCATION} ${CLEAR}"
     echo -e "${RED}-> Killing and removing arquillian-org container... ${CLEAR}"
     docker kill arquillian-org
@@ -242,7 +242,7 @@ fi
 echo -e "${LIGHT_GREEN}-> Building & running the pages with prod profile... ${CLEAR}"
 docker exec -it arquillian-org ${DOCKER_SCRIPTS_LOCATION}/build_prod_and_run.sh
 if grep -q 'An error occurred' ${LOGS_LOCATION}/${AWESTRUCT_PROD_LOG}; then
-    echo -e "${RED}-> There occurred an error when the pages were being generated with the command 'running awestruct -P production --deploy'. ${CLEAR}"
+    echo -e "${RED}-> Generating pages using 'awestruct -P production --deploy' failed. ${CLEAR}"
     echo -e "${RED}-> Check the output or the log files located in ${LOGS_LOCATION} ${CLEAR}"
     echo -e "${RED}-> Killing and removing arquillian-org container... ${CLEAR}"
     docker kill arquillian-org
