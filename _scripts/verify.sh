@@ -21,7 +21,11 @@ VARIABLE_TO_SET_GH_PATH="--git-dir=${ARQUILLIAN_PROJECT_DIR}/.git --work-tree=${
 git ${VARIABLE_TO_SET_GH_PATH} config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
 
 echo -e "${LIGHT_GREEN}->  fetching functional-tests branch into directory ${TEST_PROJECT_DIRECTORY}"
-git ${VARIABLE_TO_SET_GH_PATH} fetch --unshallow origin functional-tests
+if [ -f ${ARQUILLIAN_PROJECT_DIR}/.git/shallow ]; then
+    git ${VARIABLE_TO_SET_GH_PATH} fetch --unshallow origin functional-tests
+else
+    git ${VARIABLE_TO_SET_GH_PATH} fetch origin functional-tests
+fi
 git ${VARIABLE_TO_SET_GH_PATH} worktree add -b functional-tests ${TEST_PROJECT_DIRECTORY} origin/functional-tests;
 
 ### execute UI tests
