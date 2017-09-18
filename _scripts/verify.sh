@@ -32,7 +32,7 @@ $MAVEN_COMMAND 2>&1 | tee ${LOGS_LOCATION}/maven-ui-tests_log
 
 
 ### get information if the tests have failed
-if grep -q '\[INFO\] BUILD FAILURE' ${LOGS_LOCATION}/maven-ui-tests_log; then
+if grep -q '\[INFO\] BUILD FAILURE\|\[ERROR\]' ${LOGS_LOCATION}/maven-ui-tests_log; then
     if [[ "${IGNORE_TEST_FAILURE}" != "true" && "${IGNORE_TEST_FAILURE}" != "yes" ]] ; then
         echo -e "${RED}-> There was a test failure.${CLEAR}"
         echo -e "${RED}-> Check the output or the log files located in ${LOGS_LOCATION}${CLEAR}"
