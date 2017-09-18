@@ -1,0 +1,404 @@
+---
+layout: guide
+title: Getting Started: Arquillian Scheduling
+authors: [Dimcho Karpachev]
+tags: [arquillian, scheduling, maven, git]
+guide_summary: Learn how to schedule Arquillian tests using different scheduling strategies. 
+guide_group: 1
+guide_order: 10
+---
+[getting_started]http://arquillian.org/guides/getting_started
+[git_info]https://git-scm.com
+
+Getting started: Arquillian Scheduling
+This guide shows you how to start scheduling tests and suites using Arquillian Scheduling. We’ll go through:
+* Scheduling tests with LatestFailedScheduler
+* Scheduling suites with both LatestFailedScheduler and ChangedFilesSuiteScheduler
+* Configuring the Schedulers
+
+h3. Assumptions
+
+First you will need to create and set up an arquillian project. If you don’t know how to do that, refer to the getting stated guide "here":getting_started. We will use the @Greeter@, @PhraseBuilder@ and @GreeterTest@ classes. You will also need to have git installed, you can find more information about git "here":git_info. Now let’s get started.
+
+h3. Writing some Tests
+
+In order to proceed with the scheduling we first need to write some tests. Otherwise we won’t have any tests to schedule.
+
+h4. Add an Arquillian Test
+
+If you already have a bunch of arquillian tests (with several test cases) lying around you can skip this part.
+
+First of all we need something to test. So let’s create a couple of source files. We will use the class files from the "getting started guide":getting_started. For more information on the code you can look there. 
+
+In your IDE create a CDI bean named @PhraseBuilder@ and fill it with the following code:
+
+div(filename). src/main/java/org/arquillian/example/PhraseBuilder.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.PostConstruct;
+
+public class PhraseBuilder { 
+    private Map<String, String> templates;
+	
+    public String buildPhrase(String key, Object... args){
+        return MessageFormat.format(templates.get(key), args);
+    }
+	
+    @PostConstruct
+    public void initialize(){
+        templates = new HashMap<String,String>();
+        templates.put("hello", "Hello, {0}!");
+    }
+}
+
+p. Then add a second source file named @Greeter@ and populate it with:
+
+div(filename). src/main/java/org/arquillian/example/Greeter.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.io.PrintStream;
+import javax.inject.Inject;
+
+public class Greeter {
+    private PhraseBuilder phraseBuilder;
+
+    @Inject
+    Greeter(PhraseBuilder phraseBuilder){
+        this.phraseBuilder = phraseBuilder;
+    }
+	
+    public void greet(PrintStream to, String name){
+        to.println(createGreeting(name));
+    }
+	
+    public String createGreeting(String name){
+        return phraseBuilder.buildPhrase("hello", name);
+    }
+}
+
+p. Finally let’s add the Arquillian test. Create a new JUnit test called @GreeterTest@ and add the following code to it: 
+
+div(filename). src/test/java/org/arquillian/example/GreeterTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import static org.junit.Assert.*;
+import javax.inject.Inject;
+import org.arquillian.example.Greeter;
+import org.arquillian.example.PhraseBuilder;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.scheduling.ArquillianScheduling;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(ArquillianScheduling.class)
+public class GreeterTest {
+
+    @Deployment
+    public static JavaArchive createDeployment(){
+        return ShrinkWrap.create(JavaArchive.class)
+            .addClasses(Greeter.class,PhraseBuilder.class)
+            .addAsManifestResource(EmptyAsset.INSTANCE,"beans.xml");
+    }
+	
+    @Inject
+    Greeter greeter;
+	
+    @Test
+    public void shouldCreateGreeting() {
+        assertEquals("Hello, Earthling!", greeter.createGreeting("Earthling"));
+    }
+}
+
+Now we just need to add a couple of more test methods to the @GreeterTest@ class so we can schedule it later. Add the following code right after the @shouldCreateGreeting()@ method:
+
+bc(prettify).. @Test
+public void shouldFail(){
+    assertEquals("Hello, Earthling!", greeter.createGreeting("Human"));
+}
+
+public void shouldCreateAnotherGreeting(){
+    assertEquals("Hello, Human!", greeter.createGreeting("Human"));
+}
+
+p. You probably noticed that the @shouldFail()@ method is going to fail, but don’t worry about that we need it to fail on purpose. 
+
+h4. Add some Standard JUnit4 Tests
+
+p(warning). We will need to add some standard JUnit4 tests as the Arquillian suite running feature is still in development. So the ArquillianSuiteScheduling runner is based upon JUnit’s Suite class. The  ArquillianSuiteScheduling runner can still schedule suites but with a side effect – it runs the Arquillian tests twice. As soon as the arquillian suite running feature is complete, the suite scheduler will be integrated and will schedule suites correctly.%
+
+Let’s continue by adding some non arquillian tests. 
+
+Create a new class named @Echo@ and populated with: 
+
+div(filename). src/main/java/org/arquillian/example/Echo.java
+
+bc(prettify).. package org.arquillian.example;
+
+import java.io.PrintStream;
+
+public class Echo {
+	
+    public String echo(String text,int times, PrintStream ps){
+        String[] words = text.split(" ");
+        String wordToEcho;
+		
+        if(words.length == 1){
+            wordToEcho = words[0].trim();
+        }else{
+            wordToEcho = words[words.length-1].trim();
+        }
+		
+        StringBuilder echoBuilder = new StringBuilder(words.length + times);
+        echoBuilder.append(text);
+        for (int i = 0; i < times; i++) {
+            echoBuilder.append(" ");
+            echoBuilder.append(wordToEcho);
+        }
+		
+        String echoText = echoBuilder.toString();
+        ps.println(echoText);
+        return echoText;
+    }
+}
+ 
+p. Then add its corresponding test, named @EchoTest@.
+
+div(filename). src/test/java/org/arquillian/example/EchoTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.arquillian.example.Echo;
+
+public class EchoTest {
+
+    Echo echo = new Echo();
+
+    @Test
+    public void shouldEchoTheText() {
+        assertEquals("Arquillian Scheduling Scheduling Scheduling",
+            echo.echo("Arquillian Scheduling", 2,System.out));
+    }
+	
+    @Test
+    public void shouldFail() {
+        assertEquals("Fail", echo.echo("Fail", 1, System.out));
+    }
+}
+
+p. Finally repeat the same steps with the @NumberUtil@ and @WordConcat@ classes and their repective tests.
+
+div(filename). src/main/java/org/arquillian/example/NumberUtil.java
+
+bc(prettify).. package org.arquillian.example;
+
+public class NumberUtil {
+    public int getNextNumber(int num){
+        return num + 1;
+    }
+}
+
+div(filename). src/test/java/org/arquillian/example/NumberUtilTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.arquillian.example.NumberUtil;
+
+public class NumberUtilTest {
+
+    NumberUtil numUtil = new NumberUtil();
+
+    @Test
+    public void shouldGetTheNextNumber() {
+        assertEquals(21,numUtil.getNextNumber(20));
+    }
+	
+    @Test
+    public void shouldFail() {
+        assertEquals(1,numUtil.getNextNumber(2));
+    }
+	
+    @Test
+    public void shouldFailAgain() {
+        assertEquals(2,numUtil.getNextNumber(2));
+    }
+}
+
+div(filename). src/main/java/org/arquillian/example/WordConcat.java
+
+bc(prettify).. package org.arquillian.example;
+
+public class WordConcat {
+    public String concatWords(String w1, String w2){
+        return w1 + w2;
+    }
+	
+    public String concatWordsWithSpace(String w1,String w2){
+        return w1 + ' ' + w2;
+    }
+}
+
+div(filename). src/test/java/org/arquillian/example/WordConcatTest.java
+
+bc(prettify).. package org.arquillian.example;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.arquillian.example.WordConcat;
+
+public class WordConcatTest {
+	
+    WordConcat concater = new WordConcat();
+	
+    @Test
+    public void shouldConactWords() {
+        assertEquals("ArquillianScheduling!",
+            concater.concatWords("Arquillian", "Scheduling!"));
+    }
+
+    @Test
+    public void shouldConactWordsWithSpace() {
+	assertEquals("Arquillian Scheduling!",
+            concater.concatWordsWithSpace("Arquillian","Scheduling!"));
+    }
+}
+
+h3. Schedule the Tests
+
+h4. Single Tests
+
+First lets try out scheduling some single tests. To do that we will need to annotate a test class with the @@RunWith@ annotation and use the @ArquillianScheduling@ runner. For example let’s annotate the @GreeterTest@ class we created earlier:
+
+div(filename). src/test/java/org/arquillian/example/GreeterTest.java
+
+bc(prettify).. @RunWith(ArquillianScheduling.class)
+public class GreeterTest {
+    ...
+}
+
+p. That’s it, you scheduled your first Arquillian test! Now run the test in the container of choosing and let the scheduling happen. But before you see how the tests were scheduled you will need to run the test again. That’s because we didn’t specify the scheduler we wanted to use when scheduling the tests and so the @ArquillianScheduling@ runner chose the default one instead. The default strategy for scheduling tests, reorders them so the most frequently failing ones are run first. This is achieved by storing some statistic data about the test runs. So the first time we ran the test the default scheduler actually stored some statistic information. To see what was stored look at the root of your project for a file named statistics.xml. 
+
+p(info). %Note that you might want to refresh you project folder in order to see the file.%
+
+This scheduling strategy is implemented by the @LatestFailedScheduler@ class. So run the test again and the test method that we wanted to fail on purpose will appear on top.
+
+!/images/guides/single_test_scheduling.png!
+
+h4. So What’s a Scheduler?
+
+The purpose of a scheduler is to filter and/or sort single tests and test classes, inside a test suite, using a specific strategy. The strategy may reorder the tests at hand based on statistical information - just like the @LatestFailedScheduler@, or filter them by other criteria that you could benefit from. So why is a Scheduler useful, well it can save you precious time when dealing with large amount of tests - by executing only the tests of interest and also it can show you the right results at the right time – by running important tests before others.
+
+h4. Suites
+
+The @LatestFailedScheduler@ class can also be used to schedule a test suite. Keep in mind that the suite will not include any Arquillian test as mentioned in the "Add some Standard JUnit4 Tests" section. Let’s make a suite out of these tests: EchoTest, NumberUtilTest and WordConcatTest. In Eclipse go to @File > New > Other...@, then in the menu that appeared scroll down to the @JUnit@ folder and click it, select "JUnit Test Suite" option (without quotes) and click next. Set the name of the suite (for example FirstSuite), its package and source folder then select only the classes from above by ticking them in the list labeled as: "Test classes to include in suite" then click finish. 
+
+!/images/guides/arquillian_tutorial_create_suite_1.png!
+!/images/guides/arquillian_tutorial_create_suite_2.png!
+!/images/guides/arquillian_tutorial_create_suite_3.png!
+
+After you have finished, the suite should look like this:
+
+div(filename). src/test/java/org/arquillian/example/FirstSuite.java
+
+bc(prettify).. @RunWith(Suite.class)
+@SuiteClasses({ EchoTest.class, NumberUtilTest.class, WordConcatTest.class })
+public class FirstSuite{
+}
+
+p. But wait we still need to schedule the test classes in the suite. In order to schedule a suite you will need to add these annotations:
+# A @@RunWith@ annotation specifying the @ArquillianSuiteScheduling@ runner
+# (Optional) A @@ScheduleWith@ annotation specifying the desired @Scheduler@ to use when running the classes
+# A @@SuiteClasses@ annotation specifying all the test classes contained in the suite
+
+Let’s get going then, replace the @@RunWith(Suite.class)@ with @@RunWith(ArquillianSuiteScheduling.class)@. This way the suite will be run with the @ArquillianSuiteScheduling@ runner. Optionally you can specify the strategy to use when scheduling the classes, for example: @@ScheduleWith(LatetsFailedScheduler.class)@ or just skip it as it will be used by default. Then you may have noticed that the @@SuiteClasses@ annotation is already in place, so leave it this way. Now the class should look like this:
+
+bc(prettify).. @RunWith(ArquillianSuiteScheduling.class)
+@SuiteClasses({ EchoTest.class, NumberUtilTest.class, WordConcatTest.class })
+public class FirstSuite{
+}
+
+p. Run the suite twice and you will see that the test classes with more test failures executed first and those with less failures last. 
+
+p(info). %Notice that the test methods within the test classes were scheduled as well.%
+
+!/images/guides/suite_scheduling_latest_failed.png!
+
+h5. Changed Files Suite Scheduler
+
+Up until now we used the default scheduling strategy to schedule tests, but there is another strategy you can use to schedule a suite. This new strategy runs all the tests touched by changed code first and then the rest. The @Scheduler@ that implements this behavior is called the @ChangedFilesSuiteScheduler@.
+
+So let’s modify the @FirstSuite@ class we created earlier to be scheduled by the @ChangedFilesSuiteScheduler@. It seems we have everything in place except the @@ScheduleWith@ annotation so let’s add it by typing: @@ScheduleWith(ChangedFilesSuiteScheduler.class)@.
+
+p(info). %The order of the annotations is not predetermined so you can add them the way you see fit.%
+
+The modified test suite should look like this:
+
+bc(prettify).. @RunWith(ArquillianSuiteScheduling.class)
+@ScheduleWith(ChangedFilesSuiteScheduler.class)
+@SuiteClasses({ EchoTest.class, NumberUtilTest.class, WordConcatTest.class })
+public class FirstSuite{
+}
+
+p(important). %Note that this Scheduler uses your local git client to determine which sources have changed, which implies having git installed on your machine.%
+
+Now we need to initialize an empty git repository in this project’s root directory. To do that open a command shell and type -  @git init@ then press enter. After that you should have initialized an empty local git repository.
+
+Before you run the suite, commit the Echo class. This way the Scheduler won’t view it as changed and its test will be run last. Run the @FirstSuite@ now and see the results for your self. The changed test classes were run first and the test for the committed class will be at the bottom of the run list.
+
+!/images/guides/suite_scheduling_changed_files.png!
+
+h3. Scheduler Configurations
+
+Another useful feature that you can try out is configuring a Scheduler’s behavior. Both the @LatestFailedScheduler@ and the @ChangedFilesSuiteScheduler@ can be configured using their respective  configuration annotation. A configuration annotation can take multiple arguments which are then read by the Scheduler, consequently altering its behavior.
+
+Let’s configure the @LatestFailedScheduler@ for the @GreeterTest@ class. This scheduler’s configuration annotation is called @LatestFailedSchedulerParams@ and can be used like so:
+
+bc(prettify).. @RunWith(ArquillianScheduling.class)
+@LatestFailedSchedulerParams(
+    storeLongTerm=false,
+    storagePath = example/stats.xml
+)
+public class GreeterTest {
+    ...
+}
+
+p. Here the @storeLongTerm@ flag tells the scheduler whether to update the statistics or to reset them on every subsequent run. This way you can schedule the tests based on the statistics information from only the previous run. By default the flag is set to @true@.
+
+The @storagePath@ parameter indicates the directory in which to store the statistics information and the name of the statistics file. By default the file is stored in the root of your project and is named @statistics.xml@. 
+
+p(important). %Keep in mind that if you do not specify a file name or a file extension for the statistics file the text (excluding spaces and tabs) after the last path separator ‘/’ or ‘\’  will be considered as the statistics file’s name. As for the file extension, the characters after the last ‘.’ in the file name will be used.%
+
+The same configuration annotation can be used when scheduling suites with the @LatestFailedScheduler@.
+
+In similar manner you can configure the @ChangedFilesSuiteScheduler@. Its configuration annotation is called @ChangedFilesSuiteSchedulerParams@ and has the following parameters you can set: 
+
+# @workingDir@ - the source file directory of your project. The default value is "src/main/java"
+# @testDit@ - the test file directory of your project. The default value is "src/test/java"
+# @runOnlyChangedFiles@ – this flag controls whether the @ArquillianSuiteScheduling@ runner runs only the tests that are touched by changed code or all of them, but with the touched ones first. The default value is @false@.
+
+Here’s how you can configure the ChangedFilesSuiteScheduler in the FirstSuite class:
+
+bc(prettify).. @RunWith(ArquillianSuiteScheduling.class)
+@ScheduleWith(ChangedFilesSuiteScheduler.class
+@ChangedFilesSuiteSchedulerParams(
+    workingDir = “src”,
+    testDir = “test”,
+    runOnlyChangedFiles = true
+)
+@SuiteClasses({ EchoTest.class, NumberUtilTest.class, WordConcatTest.class })
+public class FirstSuite{
+}
+
+That's all! You've scheduled and configured! At this point you can start scheduling your own tests freely. We hope you find the new scheduling functionality interesting as well as useful. Try not to forget: Have fun scheduling those tests!
