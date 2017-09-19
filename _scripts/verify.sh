@@ -11,14 +11,15 @@ ARQUILLIAN_BLOG_TEST_URL=${ARQUILLIAN_BLOG_TEST_URL:-"http://localhost:4242/"}
 
 ######################### Running tests #########################
 
-### if UI tests project exists, then remove
-if [ -d ${TEST_PROJECT_DIRECTORY} ]; then
-    rm -rf ${TEST_PROJECT_DIRECTORY}
-fi
-
 ### if the branch is already present, then remove
 if [ -n "$(git ${VARIABLE_TO_SET_GH_PATH} rev-parse --verify functional-tests)" ]; then
+    git ${VARIABLE_TO_SET_GH_PATH} worktree prune -v
     git ${VARIABLE_TO_SET_GH_PATH} branch -D functional-tests
+fi
+
+### if the arquillian.github.io-functional-tests directory exists, then remove
+if [ -d ${TEST_PROJECT_DIRECTORY} ]; then
+    rm -rf ${TEST_PROJECT_DIRECTORY}
 fi
 
 ### get & set git information about the project
