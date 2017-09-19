@@ -11,29 +11,22 @@ ARQUILLIAN_BLOG_TEST_URL=${ARQUILLIAN_BLOG_TEST_URL:-"http://localhost:4242/"}
 
 ######################### Running tests #########################
 
-### if the branch is already present, then remove
-if [ -n "$(git ${VARIABLE_TO_SET_GH_PATH} rev-parse --verify functional-tests)" ]; then
-    git ${VARIABLE_TO_SET_GH_PATH} worktree prune -v
-    git ${VARIABLE_TO_SET_GH_PATH} branch -D functional-tests
+### if the arquillian.github.io-functional-tests directory does not exists, then fetch the branch
+if [ ! -d ${TEST_PROJECT_DIRECTORY} ]; then
+
+    ### get & set git information about the project
+    VARIABLE_TO_SET_GH_PATH="--git-dir=${ARQUILLIAN_PROJECT_DIR}/.git --work-tree=${ARQUILLIAN_PROJECT_DIR}"
+    git ${VARIABLE_TO_SET_GH_PATH} config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+
+    echo -e "${LIGHT_GREEN}->  fetching functional-tests branch into directory ${TEST_PROJECT_DIRECTORY}"
+    if [ -f ${ARQUILLIAN_PROJECT_DIR}/.git/shallow ]; then
+        git ${VARIABLE_TO_SET_GH_PATH} fetch --unshallow origin functional-tests
+    else
+        git ${VARIABLE_TO_SET_GH_PATH} fetch origin functional-tests
+    fi
+
+    git ${VARIABLE_TO_SET_GH_PATH} worktree add -b functional-tests ${TEST_PROJECT_DIRECTORY} origin/functional-tests;
 fi
-
-### if the arquillian.github.io-functional-tests directory exists, then remove
-if [ -d ${TEST_PROJECT_DIRECTORY} ]; then
-    rm -rf ${TEST_PROJECT_DIRECTORY}
-fi
-
-### get & set git information about the project
-VARIABLE_TO_SET_GH_PATH="--git-dir=${ARQUILLIAN_PROJECT_DIR}/.git --work-tree=${ARQUILLIAN_PROJECT_DIR}"
-git ${VARIABLE_TO_SET_GH_PATH} config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
-
-echo -e "${LIGHT_GREEN}->  fetching functional-tests branch into directory ${TEST_PROJECT_DIRECTORY}"
-if [ -f ${ARQUILLIAN_PROJECT_DIR}/.git/shallow ]; then
-    git ${VARIABLE_TO_SET_GH_PATH} fetch --unshallow origin functional-tests
-else
-    git ${VARIABLE_TO_SET_GH_PATH} fetch origin functional-tests
-fi
-
-git ${VARIABLE_TO_SET_GH_PATH} worktree add -b functional-tests ${TEST_PROJECT_DIRECTORY} origin/functional-tests;
 
 ### execute UI tests
 #todo use mvnw
