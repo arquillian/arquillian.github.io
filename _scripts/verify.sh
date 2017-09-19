@@ -16,6 +16,11 @@ if [ -d ${TEST_PROJECT_DIRECTORY} ]; then
     rm -rf ${TEST_PROJECT_DIRECTORY}
 fi
 
+### if the branch is already present, then remove
+if [ -n "$(git ${VARIABLE_TO_SET_GH_PATH} rev-parse --verify functional-tests)" ]; then
+    git ${VARIABLE_TO_SET_GH_PATH} branch -D functional-tests
+fi
+
 ### get & set git information about the project
 VARIABLE_TO_SET_GH_PATH="--git-dir=${ARQUILLIAN_PROJECT_DIR}/.git --work-tree=${ARQUILLIAN_PROJECT_DIR}"
 git ${VARIABLE_TO_SET_GH_PATH} config remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
@@ -27,10 +32,7 @@ else
     git ${VARIABLE_TO_SET_GH_PATH} fetch origin functional-tests
 fi
 
-### check if the branch is already present
-if [ -z "$(git ${VARIABLE_TO_SET_GH_PATH} rev-parse --verify functional-tests)" ]; then
-    git ${VARIABLE_TO_SET_GH_PATH} worktree add -b functional-tests ${TEST_PROJECT_DIRECTORY} origin/functional-tests;
-fi
+git ${VARIABLE_TO_SET_GH_PATH} worktree add -b functional-tests ${TEST_PROJECT_DIRECTORY} origin/functional-tests;
 
 ### execute UI tests
 #todo use mvnw
