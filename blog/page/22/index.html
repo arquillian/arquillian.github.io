@@ -6,7 +6,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="An innovative testing platform for the Java Virtual Machine (JVM). Open source. Highly extensible." name="description">
     <link href="/blog/atom.xml" rel="alternate" title="Arquillian blog Atom feed" type="application/atom+xml">
-    <link href="/stylesheets/screen.css?7981306814a7d8d24b1652e5a07eb402db103abd" rel="stylesheet">
+    <link href="/stylesheets/screen.css?d40924ed157521d1563b9e63c968e78f7b5dace5" rel="stylesheet">
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.js"></script>
@@ -53,6 +53,191 @@
       </div>
       <div class="container">
         <div id="content">
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
+                <a href="/blog/2016/08/30/arquillian-cube-q-1-0-0-Alpha1/">Arquillian Cube Q Extension 1.0.0.Alpha1 Released</a>
+              </h2>
+              <div class="byline">
+                <a href="/community/lordofthejars">
+                  <img class="avatar" height="44" src="https://avatars.githubusercontent.com/u/1517153?s=44" width="44" />
+                </a>
+                <span class="author">Posted by
+                <a href="/community/lordofthejars">Alex Soto</a></span>
+                <span class="dateinline">on Aug 30, 2016</span>
+                <div class="date"><abbr>Aug</abbr> 30</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2016/08/30/arquillian-cube-q-1-0-0-Alpha1/#disqus_thread" data-disqus-identifier="d68e5f6e472cb1cc27347e5ef2cb5894c2e822b7">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p>The Arquillian team is proud to announce the <em>1.0.0.Alpha1</em> release of the <em>Arquillian Cube Q Extension</em> component!</p>
+              <p><img src="https://camo.githubusercontent.com/852af994863792f63a53297b5ef98df5d3e39424/687474703a2f2f7777772e73746172736869706e6976616e2e636f6d2f626c6f672f77702d636f6e74656e742f75706c6f6164732f323031302f31302f44652d4c616e6369652d63726f702e6a7067" alt="" /></p>
+              <p>This is the first release of Arquillian Cube Q. Q is an extension of Arquillian Cube that allows you to write chaos tests. As in Cube, it relies on Docker to execute these kind of tests.</p>
+              <p>There are several level of chaos that you might introduce in order to verify how your services are behaving when unexpected happens. Starting from network chaos (latency, bandwidth limitation, …​) to operative system chaos (cpu burn, io burn, dill disk, …​). Arquillian Q as all the Arquillian projects, reuses existing chaos frameworks by integrating them into Arquillian universe.</p>
+              <h3>Supported Chaos</h3>
+              <dl>
+              	<dt><i class="icon-star"></i> Network Chaos</dt>
+              	<dd><p>Arquillian Cube Q implements network chaos leveraging <a href="https://github.com/Shopify/toxiproxy">Toxiproxy project</a>.</p>
+              <p>You can use following toxics:</p>
+              <ul>
+              	<li><a href="https://github.com/Shopify/toxiproxy#latency">latency</a></li>
+              	<li><a href="https://github.com/Shopify/toxiproxy#down">down</a></li>
+              	<li><a href="https://github.com/Shopify/toxiproxy#bandwidth">bandwidth</a></li>
+              	<li><a href="https://github.com/Shopify/toxiproxy#slow_close">slow close</a></li>
+              	<li><a href="https://github.com/Shopify/toxiproxy#timeout">timeout</a></li>
+              	<li><a href="https://github.com/Shopify/toxiproxy#slicer">slicer</a></li>
+              </ul>
+              <p>A test with network chaos with Arquillian Cube Q looks like:</p>
+              <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;public class ToxicFuntionalTestCase {</code>&#x000A;&#x000A;<code class="prettify">  @ArquillianResource&#x000A;  private NetworkChaos networkChaos;</code>&#x000A;&#x000A;<code class="prettify">  @HostIp&#x000A;  private String ip;</code>&#x000A;&#x000A;<code class="prettify">  @Test&#x000A;  public void shouldAddLatency() throws Exception {&#x000A;    networkChaos.on("pingpong", 8080).latency(latencyInMillis(4000))&#x000A;      .exec(() -&gt; {</code>&#x000A;&#x000A;<code class="prettify">        URL url = new URL("http://" + ip + ":" + 8081 + "/hw/HelloWorld");&#x000A;        final long l = System.currentTimeMillis();&#x000A;        String response = IOUtil.asString(url.openStream());&#x000A;        System.out.println(response);&#x000A;        System.out.println("Time:" + (System.currentTimeMillis() - l));&#x000A;        // assertions&#x000A;    });&#x000A;  }&#x000A;}</code></pre>
+              <p>In this example, the communication with <code>pingpong</code> container on exposed port <code>8080</code> is toxified with a latency of 4 seconds.</p>
+              <p>You can read more about network chaos at <a href="https://github.com/arquillian/arquillian-cube-q#network-chaos">https://github.com/arquillian/arquillian-cube-q#network-chaos</a> and an example at <a href="https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-toxic">https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-toxic</a></p></dd>
+              </dl>
+              <dl>
+              	<dt><i class="icon-star"></i> Container Chaos</dt>
+              	<dd><p>In order to introduce chaos to the container, Arquillian Q integrates with <a href="https://github.com/gaia-adm/pumba">Pumba project</a>.</p>
+              <p>It supports following toxics:</p>
+              <ul>
+              	<li>stopping a container</li>
+              	<li>removing a container</li>
+              	<li>killing a container process with a signal.</li>
+              </ul>
+              <p>A test with container chaos with Arquillian Cube Q looks as simple as:</p>
+              <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;public class PumbaFunctionalTestCase {</code>&#x000A;&#x000A;<code class="prettify">  @ArquillianResource&#x000A;  ContainerChaos containerChaos;</code>&#x000A;&#x000A;<code class="prettify">  @ArquillianResource&#x000A;  DockerClient dockerClient;</code>&#x000A;&#x000A;<code class="prettify">  @Test&#x000A;  public void shouldKillContainers() throws Exception {&#x000A;    containerChaos&#x000A;            .onCubeDockerHost()&#x000A;                .killRandomly(&#x000A;                        ContainerChaos.ContainersType.regularExpression("^pingpong"),&#x000A;                        ContainerChaos.IntervalType.intervalInSeconds(4),&#x000A;                        ContainerChaos.KillSignal.SIGTERM&#x000A;                )&#x000A;            .exec();</code>&#x000A;&#x000A;<code class="prettify">        final List&lt;Container&gt; containers = dockerClient.listContainersCmd().exec();&#x000A;        // Pumba container is not killed by itself&#x000A;        assertThat(containers).hasSize(1);</code>&#x000A;&#x000A;<code class="prettify">    }</code>&#x000A;&#x000A;<code class="prettify">}</code></pre>
+              <p>In this example, containers called <code>pingpong</code> are killed every 4 seconds.</p>
+              <p>You can read more about container chaos at <a href="https://github.com/arquillian/arquillian-cube-q#container-chaos">https://github.com/arquillian/arquillian-cube-q#container-chaos</a> and an example at <a href="https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-pumba">https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-pumba</a></p></dd>
+              </dl>
+              <dl>
+              	<dt><i class="icon-star"></i> Operative System Chaos</dt>
+              	<dd><p>To do operative system chaos Arquillian Q uses some modified version of <a href="https://github.com/Netflix/SimianArmy">Netflix Simian Army</a> project scripts.</p>
+              <p>At this moment we provide:</p>
+              <ul>
+              	<li>blocking a port</li>
+              	<li>burning CPU or IO</li>
+              	<li>filling the disk</li>
+              	<li>killing the process</li>
+              	<li>null route</li>
+              </ul>
+              <p>Here&#8217;s the example of the test with operative system chaos using Arquillian Cube Q:</p>
+              <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)&#x000A;public class SimianArmyFunctionalTestCase {</code>&#x000A;&#x000A;<code class="prettify">    @ArquillianResource&#x000A;    OperativeSystemChaos operativeSystemChaos;</code>&#x000A;&#x000A;<code class="prettify">    @HostIp&#x000A;    String dockerHost;</code>&#x000A;&#x000A;<code class="prettify">    @HostPort(containerName = "pingpong ", value = 8080)&#x000A;    int port;</code>&#x000A;&#x000A;<code class="prettify">    @Test(expected = Exception.class)&#x000A;    public void shouldExecuteBurnCpuChaos() throws Exception {&#x000A;        operativeSystemChaos.on("pingpong")&#x000A;            .burnCpu(singleCpu())&#x000A;            .exec();&#x000A;        //.....&#x000A;    }&#x000A;}</code>&#x000A;&#x000A;<code class="prettify">p.This test burns one of the CPU</code></pre>
+              <p>You can read more about operative system chaos at <a href="https://github.com/arquillian/arquillian-cube-q#operative-system-chaos">https://github.com/arquillian/arquillian-cube-q#operative-system-chaos</a> and an example at <a href="https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-simianarmy">https://github.com/arquillian/arquillian-cube-q/tree/master/ftest-simianarmy</a></p></dd>
+              </dl>
+              <h3>What&#8217;s Next</h3>
+              <p>As it is an <code>Alpha1</code> release, you might expect some changes in the API as we move towards the final version, although we will try hard to not break anything.</p>
+              <p>Currently the toxics are explicitly defined in the code, for example you statically define latency of 4 seconds. Next step is creating a random method using which you can randomize the parameters of the toxics. Similarly you would be able to randomize the order of applying toxics.</p>
+              <h3>What is Arquillian?</h3>
+              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
+              <h3>Release details</h3>
+              <table class="table table-bordered table-striped">
+                <tbody>
+                  <tr>
+                    <th>Component</th>
+                    <td>
+                      <a href="/modules/q-extension/">Arquillian Cube Q Extension</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Version</th>
+                    <td>
+                      1.0.0.Alpha1
+                      <span class="label tag">
+                        <a href="https://github.com/arquillian/arquillian-cube-q/commit/08c217f016dfa3e54bcbd787a10904de1bb7e900.html">view tag</a>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Release date</th>
+                    <td>2016-08-29</td>
+                  </tr>
+                  <tr>
+                    <th>Released by</th>
+                    <td>Alex Soto</td>
+                  </tr>
+                  <tr>
+                    <th>Compiled against</th>
+                    <td>
+                      <ul class="unstyled">
+                        <li>
+                          <a href="/modules/core-platform/">Arquillian Core</a>
+                          &#8211;
+                          <a href="/blog/2016/01/28/arquillian-core-1-1-11-Final/">1.1.11.Final</a>
+                        </li>
+                        <li>
+                          <a href="/modules/cube-extension/">Arquillian Cube Extension</a>
+                          &#8211;
+                          <a href="/blog/2016/08/18/arquillian-cube-1-0-0-Alpha14/">1.0.0.Alpha14</a>
+                        </li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <h3>
+                Published artifacts
+                <small>org.arquillian.cube.q</small>
+              </h3>
+              <ul>
+                <li>
+                  org.arquillian.cube.q
+                  &raquo;
+                  arquillian-cube-q-api
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-api/1.0.0.Alpha1/arquillian-cube-q-api-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/cube/q/arquillian-cube-q-api/1.0.0.Alpha1/arquillian-cube-q-api-1.0.0.Alpha1-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-api/1.0.0.Alpha1/arquillian-cube-q-api-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.cube.q
+                  &raquo;
+                  arquillian-cube-q-spi
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-spi/1.0.0.Alpha1/arquillian-cube-q-spi-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/cube/q/arquillian-cube-q-spi/1.0.0.Alpha1/arquillian-cube-q-spi-1.0.0.Alpha1-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-spi/1.0.0.Alpha1/arquillian-cube-q-spi-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.cube.q
+                  &raquo;
+                  arquillian-cube-q-core
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-core/1.0.0.Alpha1/arquillian-cube-q-core-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/cube/q/arquillian-cube-q-core/1.0.0.Alpha1/arquillian-cube-q-core-1.0.0.Alpha1-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-core/1.0.0.Alpha1/arquillian-cube-q-core-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.cube.q
+                  &raquo;
+                  arquillian-cube-q-toxic
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-toxic/1.0.0.Alpha1/arquillian-cube-q-toxic-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/cube/q/arquillian-cube-q-toxic/1.0.0.Alpha1/arquillian-cube-q-toxic-1.0.0.Alpha1-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-toxic/1.0.0.Alpha1/arquillian-cube-q-toxic-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.cube.q
+                  &raquo;
+                  arquillian-cube-q-pumba
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-pumba/1.0.0.Alpha1/arquillian-cube-q-pumba-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/cube/q/arquillian-cube-q-pumba/1.0.0.Alpha1/arquillian-cube-q-pumba-1.0.0.Alpha1-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-pumba/1.0.0.Alpha1/arquillian-cube-q-pumba-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+                <li>
+                  org.arquillian.cube.q
+                  &raquo;
+                  arquillian-cube-q-simianarmy
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-simianarmy/1.0.0.Alpha1/arquillian-cube-q-simianarmy-1.0.0.Alpha1.jar" target="_blank">jar</a>
+                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/cube/q/arquillian-cube-q-simianarmy/1.0.0.Alpha1/arquillian-cube-q-simianarmy-1.0.0.Alpha1-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
+                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/cube/q/arquillian-cube-q-simianarmy/1.0.0.Alpha1/arquillian-cube-q-simianarmy-1.0.0.Alpha1.pom" target="_blank">pom</a>
+                </li>
+              </ul>
+              <p>
+                Thanks to the following list of contributors:
+                <a href="/community/lordofthejars">Alex Soto</a>, <a href="/community/aslakknutsen">Aslak Knutsen</a>, <a href="/community/smiklosovic">Stefan Miklosovic</a>
+              </p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2016/08/30/arquillian-cube-q-1-0-0-Alpha1/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/q/">q</a>
+            </div>
+          </article>
           <article class="post">
             <header class="header">
               <h2 class="title">
@@ -926,203 +1111,6 @@
               tagged as
               <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/cube/">cube</a>
             </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2016/08/16/arquillian-recorder-1-1-2-Final/">Arquillian Recorder 1.1.2.Final Released</a>
-              </h2>
-              <div class="byline">
-                <a href="/community/lordofthejars">
-                  <img class="avatar" height="44" src="https://avatars.githubusercontent.com/u/1517153?s=44" width="44" />
-                </a>
-                <span class="author">Posted by
-                <a href="/community/lordofthejars">Alex Soto</a></span>
-                <span class="dateinline">on Aug 16, 2016</span>
-                <div class="date"><abbr>Aug</abbr> 16</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2016/08/16/arquillian-recorder-1-1-2-Final/#disqus_thread" data-disqus-identifier="cc6d447e21ab76a01d25e9ff3127c1091692aa40">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>The Arquillian team is proud to announce the <em>1.1.2.Final</em> release of the <em>Arquillian Recorder</em> component!</p>
-              
-              <h3>What is Arquillian?</h3>
-              <p>Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.</p>
-              <h3>Release details</h3>
-              <table class="table table-bordered table-striped">
-                <tbody>
-                  <tr>
-                    <th>Component</th>
-                    <td>
-                      <a href="/modules/recorder-extension/">Arquillian Recorder</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Version</th>
-                    <td>
-                      1.1.2.Final
-                      <span class="label tag">
-                        <a href="https://github.com/arquillian/arquillian-recorder/commit/7181260d12a1c8f1035ff9e7a7287085494c3017.html">view tag</a>
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Release date</th>
-                    <td>2016-08-16</td>
-                  </tr>
-                  <tr>
-                    <th>Released by</th>
-                    <td>Alex Soto</td>
-                  </tr>
-                  <tr>
-                    <th>Compiled against</th>
-                    <td>
-                      <ul class="unstyled">
-                        <li>
-                          <a href="/modules/core-platform/">Arquillian Core</a>
-                          &#8211;
-                          <a href="/blog/2016/01/28/arquillian-core-1-1-11-Final/">1.1.11.Final</a>
-                        </li>
-                      </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <h3>
-                Published artifacts
-                <small>org.arquillian.extension</small>
-              </h3>
-              <ul>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-api-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-api-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-api-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-spi-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-spi-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-spi-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-reporter-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-reporter-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-reporter-api-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-reporter-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-reporter-api-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-reporter-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-reporter-api-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-reporter-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-reporter-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-reporter-spi-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-reporter-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-reporter-spi-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-reporter-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-reporter-spi-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-reporter-impl
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-reporter-impl/1.1.3.Final-SNAPSHOT/arquillian-recorder-reporter-impl-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-reporter-impl/1.1.3.Final-SNAPSHOT/arquillian-recorder-reporter-impl-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-reporter-impl/1.1.3.Final-SNAPSHOT/arquillian-recorder-reporter-impl-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-screenshooter-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-screenshooter-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-screenshooter-api-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-screenshooter-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-screenshooter-api-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-screenshooter-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-screenshooter-api-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-screenshooter-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-screenshooter-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-screenshooter-spi-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-screenshooter-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-screenshooter-spi-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-screenshooter-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-screenshooter-spi-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-screenshooter-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-screenshooter-impl-base/1.1.3.Final-SNAPSHOT/arquillian-recorder-screenshooter-impl-base-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-screenshooter-impl-base/1.1.3.Final-SNAPSHOT/arquillian-recorder-screenshooter-impl-base-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-screenshooter-impl-base/1.1.3.Final-SNAPSHOT/arquillian-recorder-screenshooter-impl-base-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-video-api
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-video-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-video-api-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-video-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-video-api-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-video-api/1.1.3.Final-SNAPSHOT/arquillian-recorder-video-api-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-video-spi
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-video-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-video-spi-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-video-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-video-spi-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-video-spi/1.1.3.Final-SNAPSHOT/arquillian-recorder-video-spi-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-recorder-video-impl-base
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-video-impl-base/1.1.3.Final-SNAPSHOT/arquillian-recorder-video-impl-base-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-recorder-video-impl-base/1.1.3.Final-SNAPSHOT/arquillian-recorder-video-impl-base-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-recorder-video-impl-base/1.1.3.Final-SNAPSHOT/arquillian-recorder-video-impl-base-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-                <li>
-                  org.arquillian.extension
-                  &raquo;
-                  arquillian-desktop-video-recorder
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-desktop-video-recorder/1.1.3.Final-SNAPSHOT/arquillian-desktop-video-recorder-1.1.3.Final-SNAPSHOT.jar" target="_blank">jar</a>
-                  <a class="artifact" href="https://repository.jboss.org/nexus/content/repositories/unzip/org/arquillian/extension/arquillian-desktop-video-recorder/1.1.3.Final-SNAPSHOT/arquillian-desktop-video-recorder-1.1.3.Final-SNAPSHOT-javadoc.jar-unzip/index.html" target="_blank">javadoc</a>
-                  <a class="artifact" href="http://repo1.maven.org/maven2/org/arquillian/extension/arquillian-desktop-video-recorder/1.1.3.Final-SNAPSHOT/arquillian-desktop-video-recorder-1.1.3.Final-SNAPSHOT.pom" target="_blank">pom</a>
-                </li>
-              </ul>
-              <h3>
-                Release notes and resolved issues
-                <small>2</small>
-              </h3>
-              <p></p>
-              <dl>
-                <dt>Enhancement</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://github.com/arquillian/arquillian-recorder/pull/56">#56 Updates to render logs as links in reports.</a></li>
-                  </ul>
-                </dd>
-              </dl>
-              <dl>
-                <dt>Other</dt>
-                <dd>
-                  <ul class="unstyled">
-                    <li><a href="https://github.com/arquillian/arquillian-recorder/pull/54">#54 Issue #53 Adds rowspan & colspan support for thead cell.</a></li>
-                  </ul>
-                </dd>
-              </dl>
-              <p>
-                Thanks to the following list of contributors:
-                <a href="/community/lordofthejars">Alex Soto</a>, <a href="/community/bartoszmajsak">Bartosz Majsak</a>
-              </p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2016/08/16/arquillian-recorder-1-1-2-Final/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/release/">release</a> <a class="tag" href="/blog/tags/extension/">extension</a> <a class="tag" href="/blog/tags/recorder/">recorder</a> <a class="tag" href="/blog/tags/jbosscentral/">jbosscentral</a>
-            </div>
             
                         <script type="text/javascript">
                         var disqus_shortname = 'arquillian';
@@ -1137,7 +1125,7 @@
             <li class="previous">
               <a href="/blog/page/23/">&laquo; Older</a>
             </li>
-            <li class="pages">Page 22 of 110</li>
+            <li class="pages">Page 22 of 111</li>
             <li class="next">
               <a href="/blog/page/21/">Newer &raquo;</a>
             </li>
@@ -1153,6 +1141,14 @@
           <nav class="latest">
             <h2>Latest Posts</h2>
             <ul>
+              <li>
+                <div class="title">
+                  <a href="/blog/2017/09/19/arquillian-cube-1-9-0/">Arquillian Cube Extension 1.9.0 Released</a>
+                </div>
+                <div class="meta">
+                  Sep 19, 2017
+                </div>
+              </li>
               <li>
                 <div class="title">
                   <a href="/blog/2017/09/14/smart-testing-0-0-1/">Smart Testing 0.0.1 Released</a>
@@ -1183,14 +1179,6 @@
                 </div>
                 <div class="meta">
                   Aug 29, 2017
-                </div>
-              </li>
-              <li>
-                <div class="title">
-                  <a href="/blog/2017/08/24/arquillian-extension-drone-2-4-1/">Arquillian Drone Extension 2.4.1 Released</a>
-                </div>
-                <div class="meta">
-                  Aug 24, 2017
                 </div>
               </li>
             </ul>
@@ -1647,7 +1635,7 @@
     </script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.2/bootstrap.min.js"></script>
     <script src="/javascripts/prettify.js"></script>
-    <script src="/javascripts/site.js?7981306814a7d8d24b1652e5a07eb402db103abd"></script>
+    <script src="/javascripts/site.js?d40924ed157521d1563b9e63c968e78f7b5dace5"></script>
     <script>
       (function() {
         var po = document.createElement('script'); po.async = true; po.src = 'https://apis.google.com/js/plusone.js';
