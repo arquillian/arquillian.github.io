@@ -27,9 +27,10 @@ module Awestruct::Extensions::Releases
       site.components.each do |repo_path, component|
         # only announce our own releases
         next if not @for_repo_owners.empty? and not @for_repo_owners.include? component.owner
+        component.releases.sort! { |a, b| b['date'] <=> a['date'] }
+
         component.releases.each do |release|
           next if !@since.nil? and release.date < @since
-          inner_release_page = nil
           post_author = nil
           post_tags = nil
           post_title = nil
@@ -81,6 +82,8 @@ module Awestruct::Extensions::Releases
           else
             release_page.date ||= release.date
           end
+
+
           # FIXME why do we need to do Time.utc?
           release_page.date = Time.utc(release_page.date.year, release_page.date.month, release_page.date.day)
           #release_page.layout ||= 'release'
@@ -109,6 +112,10 @@ module Awestruct::Extensions::Releases
 
           # Workaround for non inherited dynamic front matter. Manually inherit until fixed upstream #125
           inner_release_page.inherit_front_matter_from(release_page)
+
+          release.latest = component.releases[0] == release
+          release.latest_index = "#{release_page.component.name}_#{component.releases[0].version}"
+
           site.pages << release_page
 
           site.release_index["#{release_page.component.name}_#{release_page.release.version}"] = release_page
@@ -150,7 +157,6 @@ module Awestruct::Extensions::Releases
       end
     end
   end
-
 
   class FutureRelease
 
