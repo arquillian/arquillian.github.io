@@ -105,13 +105,13 @@ if [[ ! "${GIT_PROJECT}" =~ .*[\:,\/]arquillian\/arquillian\.github\..* ]]; then
     exit 0;
 fi
 
-limit=60
+limit=120
 while [[ "`curl http://arquillian.org/last_update.txt 2> /dev/null`" != "${TIMESTAMP}" ]]; do
     let "limit--"
     echo -e "${YELLOW} Waiting for the timestamp ${TIMESTAMP} being available on http://arquillian.org/last_update.txt ${CLEAR}"
     echo -e "${YELLOW} timeout: ${limit} ${CLEAR}"
     if [[ ${limit} == "0" ]]; then
-        echo -e "${RED}-> the webpages hasn't been updated in last 30 seconds ${CLEAR}"
+        echo -e "${RED}-> the webpages hasn't been updated in last 120 seconds ${CLEAR}"
         exit 1
     fi
     sleep 1
