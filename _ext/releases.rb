@@ -27,7 +27,7 @@ module Awestruct::Extensions::Releases
       site.components.each do |repo_path, component|
         # only announce our own releases
         next if not @for_repo_owners.empty? and not @for_repo_owners.include? component.owner
-        component.releases.sort! { |a, b| b['date'] <=> a['date'] }
+        component.releases.sort! { |a, b| a['date'] <=> b['date'] }
 
         component.releases.each do |release|
           next if !@since.nil? and release.date < @since
@@ -113,8 +113,8 @@ module Awestruct::Extensions::Releases
           # Workaround for non inherited dynamic front matter. Manually inherit until fixed upstream #125
           inner_release_page.inherit_front_matter_from(release_page)
 
-          release.latest = component.releases[0] == release
-          release.latest_index = "#{release_page.component.name}_#{component.releases[0].version}"
+          release.latest = component.releases.last == release
+          release.latest_index = "#{release_page.component.name}_#{component.releases.last.version}"
 
           site.pages << release_page
 
