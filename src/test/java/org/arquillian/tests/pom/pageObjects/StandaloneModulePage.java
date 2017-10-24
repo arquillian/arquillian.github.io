@@ -1,5 +1,6 @@
 package org.arquillian.tests.pom.pageObjects;
 
+import org.arquillian.tests.utilities.GitHubProjectVersionExtractor;
 import org.arquillian.tests.utilities.PageNavigator;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.Graphene;
@@ -63,6 +64,16 @@ public class StandaloneModulePage {
             if (value) {
                 assertThat(contentRoot.findElement(By.linkText("Documentation")).isDisplayed()).isTrue();
             }
+            return this;
+        }
+
+        public IndividualModulePageVerifier hasLatestRelease() {
+            String latestRelease = contentRoot.findElement(By.className("label")).getText();
+            String project = contentRoot.findElement(By.cssSelector("div div.span3 div dl dd:nth-child(8) a")).getText();
+
+            assertThat(latestRelease)
+                .isEqualTo(new GitHubProjectVersionExtractor(project).getLatestReleaseFromGitHub());
+
             return this;
         }
     }

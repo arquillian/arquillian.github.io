@@ -100,4 +100,16 @@ public class ModulesPageTest {
             .hasTitle("Arquillian - So you can rule your code. Not the bugs.")
             .hasContent();*/
     }
+
+    @Test
+    public void should_verify_module_page_lists_the_latest_project_version() throws Exception {
+        mainPage.menu()
+            .navigate().to("Modules");
+
+        modulesPage.navigationList()
+            .navigate().to("Core");
+
+        fetchedModulePage.verify().hasLatestRelease();
+    }
+
 }
