@@ -37,4 +37,8 @@ public class BlogPage {
     public PageVerifier verify() {
         return new PageVerifier(driver);
     }
+
+    public BlogFragment newAnnouncementBanner() {
+        return blogContent;
+    }
 }

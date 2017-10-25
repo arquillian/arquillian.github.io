@@ -1,6 +1,7 @@
 package org.arquillian.tests.pom.fragmentObjects;
 
 import java.util.List;
+import org.arquillian.tests.utilities.PageNavigator;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -50,5 +51,9 @@ public class BlogFragment {
         private WebElement getBlogTitle(WebElement blog) {
             return blog.findElement(By.cssSelector("[class='title'] a"));
         }
+    }
+
+    public PageNavigator navigate() {
+        return new PageNavigator(contentRoot);
     }
 }
