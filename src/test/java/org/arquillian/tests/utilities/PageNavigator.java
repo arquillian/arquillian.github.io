@@ -4,8 +4,6 @@ import org.jboss.arquillian.graphene.Graphene;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
-import static org.jboss.arquillian.graphene.Graphene.waitGui;
-
 public class PageNavigator {
 
     private WebElement fragmentRoot;

@@ -69,7 +69,8 @@ public class StandaloneModulePage {
 
         public IndividualModulePageVerifier hasLatestRelease() {
             String latestRelease = contentRoot.findElement(By.className("label")).getText();
-            String project = contentRoot.findElement(By.cssSelector("div div.span3 div dl dd:nth-child(8) a")).getText();
+            String project = contentRoot
+                .findElement(By.xpath(".//dt[contains(text(),'Web URL')]/following-sibling::dd[1]")).getText();
 
             assertThat(latestRelease)
                 .isEqualTo(new GitHubProjectVersionExtractor(project).getLatestReleaseFromGitHub());

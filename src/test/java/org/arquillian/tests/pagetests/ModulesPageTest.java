@@ -102,7 +102,7 @@ public class ModulesPageTest {
     }
 
     @Test
-    public void should_verify_module_page_lists_the_latest_project_version() throws Exception {
+    public void should_verify_individual_module_page_lists_the_latest_project_version() throws Exception {
         mainPage.menu()
             .navigate().to("Modules");
 
@@ -112,4 +112,13 @@ public class ModulesPageTest {
         fetchedModulePage.verify().hasLatestRelease();
     }
 
+    @Test
+    public void should_verify_modules_page_lists_modules_with_latest_project_version() throws Exception {
+        mainPage.menu()
+            .navigate().to("Modules");
+
+        modulesPage.navigationList()
+            .verify()
+            .containsEntriesWithLatestVersion("Core", "Smart Testing");
+    }
 }
