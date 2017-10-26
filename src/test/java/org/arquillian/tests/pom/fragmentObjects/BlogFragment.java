@@ -48,6 +48,18 @@ public class BlogFragment {
             return this;
         }
 
+        public BlogVerifier hasAnnouncementBanner(boolean status) {
+            try {
+                WebElement announcementBanner = contentRoot.findElement(By.partialLinkText("Check our latest announcement"));
+                assertThat(announcementBanner.isDisplayed()).isEqualTo(status);
+            } catch (NoSuchElementException e) {
+                if(status) {
+                    throw new NoSuchElementException("Missing announcement banner for the blog post.", e);
+                }
+            }
+            return this;
+        }
+
         private WebElement getBlogTitle(WebElement blog) {
             return blog.findElement(By.cssSelector("[class='title'] a"));
         }

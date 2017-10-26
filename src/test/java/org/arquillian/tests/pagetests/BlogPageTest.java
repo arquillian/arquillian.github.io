@@ -75,14 +75,18 @@ public class BlogPageTest {
 
     @Test
     public void should_redirect_to_new_announcement_if_banner_is_present() throws Exception {
-
         mainPage.menu()
             .navigate().to("Blog");
+
+        blogPage.blogContent()
+            .verify()
+            .hasAnnouncementBanner(true);
 
         blogPage.newAnnouncementBanner()
             .navigate().to("Check our latest announcement");
 
-        fetchedBlogPage.verify().hasContent();
-
+        blogPage.blogContent()
+            .verify()
+            .hasAnnouncementBanner(false);
     }
 }
