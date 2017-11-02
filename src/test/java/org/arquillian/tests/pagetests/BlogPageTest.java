@@ -78,6 +78,9 @@ public class BlogPageTest {
         mainPage.menu()
             .navigate().to("Blog");
 
+        blogPage.cloudTag()
+            .navigate().to("drone");
+
         blogPage.blogContent()
             .verify()
             .hasAnnouncementBanner(true);
