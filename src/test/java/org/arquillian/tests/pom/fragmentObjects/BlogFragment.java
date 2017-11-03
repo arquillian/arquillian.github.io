@@ -1,6 +1,7 @@
 package org.arquillian.tests.pom.fragmentObjects;
 
 import java.util.List;
+import org.arquillian.tests.utilities.PageNavigator;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -47,8 +48,24 @@ public class BlogFragment {
             return this;
         }
 
+        public BlogVerifier hasAnnouncementBanner(boolean status) {
+            try {
+                WebElement announcementBanner = contentRoot.findElement(By.partialLinkText("Check our latest announcement"));
+                assertThat(announcementBanner.isDisplayed()).isEqualTo(status);
+            } catch (NoSuchElementException e) {
+                if(status) {
+                    throw new NoSuchElementException("Missing announcement banner for the blog post.", e);
+                }
+            }
+            return this;
+        }
+
         private WebElement getBlogTitle(WebElement blog) {
             return blog.findElement(By.cssSelector("[class='title'] a"));
         }
+    }
+
+    public PageNavigator navigate() {
+        return new PageNavigator(contentRoot);
     }
 }
