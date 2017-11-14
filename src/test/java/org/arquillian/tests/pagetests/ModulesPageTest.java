@@ -46,7 +46,7 @@ public class ModulesPageTest {
         modulesPage.navigationList()
             .verify()
             .containsEntries("Universe", "Core", "Daemon", "GlassFish Embedded 3.1 Container Adapter",
-                "arquillian-gradle-plugin", "ShrinkWrap Resolver" );
+                "Maven Plugin", "ShrinkWrap Resolver" );
     }
 
     @Test
