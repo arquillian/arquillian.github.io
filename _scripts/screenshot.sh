@@ -27,5 +27,5 @@ if [ ! -z "${TRAVIS_PULL_REQUEST// }" ] && [ "${TRAVIS_PULL_REQUEST}" != "false"
     -F "image=@${filepath}" \
     | jq '.data.link' | sed -e 's/^"//' -e 's/"$//')
 
-    curl https://api.github.com/repos/${TRAVIS_REPO_SLUG}/issues/${TRAVIS_PULL_REQUEST}/comments -H "Authorization:token ${GH_TOKEN}" -X POST -d "{ \"body\": \"### Blog Preview\n![blog-preview](${imgur})\"}" -v
+    curl https://api.github.com/repos/${TRAVIS_REPO_SLUG}/issues/${TRAVIS_PULL_REQUEST}/comments -H "Authorization:token ${GH_TOKEN}" -X POST -d "{ \"body\": \"### Blog Preview\n![blog-preview](${imgur})\"}"
 fi;
