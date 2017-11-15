@@ -1,5 +1,7 @@
 #!/bin/bash
 
+WORKING_DIR=${1}
+
 BLOG=$(git --no-pager show --pretty="" --name-only ${TRAVIS_COMMIT_RANGE} | grep 'blog/')
 
 if [ -z $BLOG ]; then
