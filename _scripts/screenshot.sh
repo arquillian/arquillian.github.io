@@ -2,16 +2,18 @@
 
 WORKING_DIR=${1}
 
-BLOG=$(git --no-pager show --pretty="" --name-only ${TRAVIS_COMMIT_RANGE} | grep 'blog/')
+mapfile -t FILES < <( curl https://api.github.com/repos/${TRAVIS_REPO_SLUG}/pulls/${TRAVIS_PULL_REQUEST}/files -H "Authorization:token ${GH_TOKEN}" | jq '.[].filename' | sed -e 's/^"//' -e 's/"$//' )
+BLOG=$(printf '%s\n' "${FILES[@]}" | grep 'blog/')
 
 if [ -z $BLOG ]; then
     echo -e "No blogs found in this PR. Skipping publishing screenshot"
     exit 0
 fi;
+
 DATE=$(cat $BLOG | grep 'date' | cut -d':' -f 2 | tr "-" "/" | tr -d '[:space:]')
 NAME=$(basename $BLOG .textile | tr -s '.' '-')
 
-SCREENSHOT_DIR="${WORKDIR:-/tmp/screenshots}" 
+SCREENSHOT_DIR="${WORKDIR:-/tmp/screenshots}"
 
 BLOG_URL="http://localhost:4242/blog/${DATE}/${NAME}/"
 
