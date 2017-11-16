@@ -3,6 +3,7 @@ package org.arquillian.tests.pom.fragmentObjects;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.arquillian.tests.utilities.ArquillianBlogInstance;
 import org.arquillian.tests.utilities.GitHubProjectVersionExtractor;
 import org.arquillian.tests.utilities.PageNavigator;
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -59,7 +60,7 @@ public class NavigationListFragment {
             list.click();
             Graphene.waitModel().until().element(xpath).is().visible();
             String project = driver.findElement(xpath).getText();
-            driver.navigate().to("http://arquillian.org/modules/");
+            driver.navigate().to(ArquillianBlogInstance.getUrl() + "/modules/");
             return project;
         }
 
