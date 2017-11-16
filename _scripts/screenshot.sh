@@ -9,13 +9,15 @@ if [ -z $BLOG ]; then
     exit 0
 fi;
 DATE=$(cat $BLOG | grep 'date' | cut -d':' -f 2 | tr "-" "/" | tr -d '[:space:]')
-
 NAME=$(basename $BLOG .textile | tr -s '.' '-')
 
 SCREENSHOT_DIR="${WORKDIR:-/tmp/screenshots}" 
 
+BLOG_URL="http://localhost:4242/blog/${DATE}/${NAME}/"
+
 if [ ! -z "${TRAVIS_PULL_REQUEST// }" ] && [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
-    docker run --net=host --shm-size 1G --rm -v ${SCREENSHOT_DIR}:/screenshots alekzonder/puppeteer:latest full_screenshot "http://localhost:4242/blog/${DATE}/${NAME}/" 1366x768
+    echo -e "${LIGHT_GREEN} Taking screenshot of ${BLOG_URL}"
+    docker run --net=host --shm-size 1G --rm -v ${SCREENSHOT_DIR}:/screenshots alekzonder/puppeteer:latest full_screenshot ${BLOG_URL} 1366x768
     content_type="image/png"
     filename="full_screenshot_1366_768.png"
     filepath="${SCREENSHOT_DIR}/${filename}"
@@ -30,5 +32,5 @@ if [ ! -z "${TRAVIS_PULL_REQUEST// }" ] && [ "${TRAVIS_PULL_REQUEST}" != "false"
     curl https://api.github.com/repos/${TRAVIS_REPO_SLUG}/issues/${TRAVIS_PULL_REQUEST}/comments \
       -H "Authorization:token ${GH_TOKEN}" \
       -X POST \
-      -d  "{ \"body\": \"### Blog Preview\n[Build ${TRAVIS_BUILD_NUMBER}](https://travis-ci.org/${TRAVIS_REPO_SLUG}/builds/${TRAVIS_BUILD_ID}\n\n![blog-preview](${imgur})\"}"
+      -d  "{ \"body\": \"### Blog Preview\n[Build ${TRAVIS_BUILD_NUMBER}](https://travis-ci.org/${TRAVIS_REPO_SLUG}/builds/${TRAVIS_BUILD_ID})\n\n![blog-preview](${imgur})\"}"
 fi;
