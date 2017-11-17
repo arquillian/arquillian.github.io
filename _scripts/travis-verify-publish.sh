@@ -8,6 +8,9 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${SCRIPT_DIR}/colors
 
 
+# Takes screenshot of the blog post and publishes as comment to the PR
+${SCRIPT_DIR}/screenshot.sh ${WORKING_DIR}
+
 ######################### Verify & deploy & push #########################
 
 ### runs tests against localhost
