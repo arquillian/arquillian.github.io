@@ -1,11 +1,12 @@
 package org.arquillian.tests.pom.fragmentObjects;
 
-import java.util.List;
 import org.arquillian.tests.utilities.PageNavigator;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,7 +43,10 @@ public class BlogFragment {
 
                 } catch (NoSuchElementException e) {
                     throw new NoSuchElementException(
-                        "Missing release notes for blog post titled: " + getBlogTitle(item).getText());
+                        "Missing release notes for blog post titled: " + getBlogTitle(item).getText() + ".\n" +
+                                "If the release was performed manually, this happen because we forgot to: \n" +
+                                "- close the milestone on GitHub or release version on JIRA\n" +
+                                "- push tag to the upstream repo after releasing to Maven Central (git push origin --tags)");
                 }
             }
             return this;
