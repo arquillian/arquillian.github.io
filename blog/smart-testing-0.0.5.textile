@@ -1,0 +1,53 @@
+---
+date: 2017-11-28
+author: matousjobanek
+---
+
+h3. Highlights of this release
+
+p. In this release we didn't ship any new cool feature, it mainly contains improvements on the level of Smart Testing API.
+
+h3. Smart Testing API
+
+p. The Smart Testing tool consists of three parts:
+* Core
+* Maven extension
+* Surefire provider integration
+
+p. Both the Surefire provider integration and the Maven extension are implemented only for the usage in Maven builds. They take care of the integration and invoke Smart Testing API provided by core.
+
+p. The Core contains the main logic that is responsible for selecting/ordering and applying corresponding strategies. This logic is exposed by Smart Testing API. If you want to use the logic in your environment or as an integration with some third-party library, you need to have the dependency of Smart Testing Core on your classpath:
+
+bc(prettify).. <dependency>
+    <groupId>org.arquillian.smart.testing</groupId>
+    <artifactId>core</artifactId>
+    <version>${smart.testing.version}</version>
+</dependency>
+
+p. plus all dependencies of strategies you want to use for the prioritization:
+
+bc(prettify).. <dependency>
+    <groupId>org.arquillian.smart.testing</groupId>
+    <artifactId>strategy-${strategy.name}</artifactId>
+    <version>${smart.testing.version}</version>
+</dependency>
+
+p. Having these dependencies specified, you can start using the API. The starting point is @SmartTesting@ class that provides you a fluent API:
+
+bc(prettify).. SmartTesting
+.with(className -> isTest(className), configuration)
+.in("path/to/my/project")
+.applyOnClasses(suite);
+
+p. The first method @with@ takes as the first parameter a function that says which class is a test and which not. The second parameter is a configuration that should be used. The configuration file can be loaded using:
+
+bc(prettify).. ConfigurationLoader.load(projectDir)
+
+p. The second method @in@ sets path to the project where the tests will be executed in.
+Last method is either @applyOnClasses@ or @applyOnNames@. It invokes the prioritization process and returns a prioritized set of @TestSelection@ classes. This class contains class name and list of strategies that are applied to it. If you want to get only the names or classes then use the method @SmartTesting.getNames(selection)@ or @SmartTesting.getClasses(selection)@ respectively.
+
+p. With it, you should be able to use the Smart Testing logic in your test suites without being limited to the Maven builds.
+
+h3. What's next
+
+We continue improving the tool so watch out for more!
