@@ -1,0 +1,66 @@
+---
+date: 2017-11-29
+author: bartoszmajsak
+---
+
+h3(highlights). What's new in this release
+
+- <i class="icon-star"></i> Support for WildFly 11 := 
+
+With this release we bring support for latest version of WildFly container. We would like to take this opportunity to highlight how easy it is to get support for a custom container if it's not defined by Chameleon itself.
+
+Prior to this release, if you needed support for WildFly 11, there were just two things you had to do in order to use it with Chameleon: 
+
+  * create a @containers.yml@ file (like the snippet below)
+  * point Chameleon to load it, instead of the https://github.com/arquillian/arquillian-container-chameleon/blob/ae8eae2c3c7abe8eca390eeb048e433849b81035/arquillian-chameleon-container-model/src/main/resources/chameleon/default/containers.yaml:"default one"
+
+bc(prettify).. - name: WildFly
+  versionExpression: 11.*
+  adapters:
+    - type: remote
+      coordinates: org.wildfly.arquillian:wildfly-arquillian-container-remote:2.1.0.Final
+      adapterClass: org.jboss.as.arquillian.container.remote.RemoteDeployableContainer
+    - type: managed
+      coordinates: org.wildfly.arquillian:wildfly-arquillian-container-managed:2.1.0.Final
+      adapterClass: org.jboss.as.arquillian.container.managed.ManagedDeployableContainer
+      configuration:
+        jbossHome: ${dist}
+    - type: embedded
+      coordinates: org.wildfly.arquillian:wildfly-arquillian-container-embedded:2.1.0.Final
+      adapterClass: org.jboss.as.arquillian.container.embedded.EmbeddedDeployableContainer
+      configuration: 
+         jbossHome: ${dist}
+         modulePath: ${dist}/modules
+  defaultType: managed
+  dist:
+    coordinates: org.wildfly:wildfly-dist:zip:${version}
+  exclude: &WF10_EXCLUDE
+    - org.jboss.arquillian.test:*
+    - org.jboss.arquillian.testenricher:*
+    - org.jboss.arquillian.container:*
+    - org.jboss.arquillian.core:*
+    - org.jboss.arquillian.config:*
+    - org.jboss.arquillian.protocol:*
+    - org.jboss.shrinkwrap.api:*
+    - org.jboss.shrinkwrap:*
+    - org.jboss.shrinkwrap.descriptors:*
+    - org.jboss.shrinkwrap.resolver:*
+    - "*:wildfly-arquillian-testenricher-msc"
+
+
+And then run the build using command such as:
+
+bc(prettify).. mvn clean install -Darq.container.chameleon.configuration.chameleonContainerConfigurationFile=${PWD}/containers.yml -Darq.container.chameleon.configuration.chameleonTarget=wildfly:11.0.0.Final:managed
+
+This way you can also easily contribute support for your favorite container and become Arquillian Hero forever!
+
+- <i class="icon-star"></i> GlassFish containers := 
+
+We brought support for latest @GlassFish@ 5 server, you can use it as follows:
+
+* glassfish:5.0:managed
+* glassfish:5.0:remote
+
+In addition we depracated support for GlassFish 4.0 in favor of GlassFish 4.1.
+
+=:
