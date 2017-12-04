@@ -69,6 +69,7 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-universe-bom', 'bom')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-extension-liferay', 'liferay')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-container-wls', 'wls')
+  extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-container-se', 'se')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/smart-testing', 'testing')
 
   extension Awestruct::Extensions::Repository::Collector.new(:observers => [github_collector])
