@@ -1,0 +1,267 @@
+---
+layout: blog
+title: End-To-End Integration Testing For Kubernetes/OpenShift
+author: hemanik
+tags: [ kube, fabric8-maven-plugin, examples ]
+---
+
+*Does the title leave you wondering, why you need integration tests for your deployments ?*
+
+If so, let me give you a few examples, consider you decide to upgrade Kubernetes, deploy a new Zapier
+integration or add some authentication capability, in order to ensure your platform works every single
+time, all of the above scenarios need to be tested with robust integration tests.
+
+But, with the advent of micro services and container native applications, adding integration and/or
+end-to-end tests to your Kubernetes/OpenShift projects is all the more challenging and cumbersome,
+considering the huge overhead involved in terms of time, cost and resources required in setting up
+the infrastructure.
+
+We at Arquillian community understand this pain, and continuously strive to provide users, a seamless
+experience for writing integration tests with ease by bringing their tests to the real environment and
+deploy new features and projects to production with confidence like never before.
+
+With this blog post, we aim at guiding you in writing integration tests for your deployments done on
+Kubernetes or OpenShift clusters using just "Arquillian Kube":https://github.com/arquillian/arquillian-kube for applications supported with resource
+descriptors in the form of Kubernetes/OpenShift manifest or template files.
+
+Moving a step further, we also demonstrate building and deploying from scratch, applications with no
+deployment configuration, leveraging the power of "Fabric8 Maven Plugin":https://maven.fabric8.io/ along with the Arquillian Kube
+Extension.
+
+*If, you wish to read no more and see it all in action, head straight to our specially curated
+examples to help you get started with ease.*
+
+h3. Example 1
+
+Deploying a sample PHP Guestbook application with Redis on Kubernetes from the resource descriptor
+manifest file and testing it using Arquillian Kube Extension for Kubernetes and Kubernetes custom assertions.
+
+Source: "arquillian-testing-microservices/kubernetes-deployment-testing":https://github.com/arquillian-testing-microservices/kubernetes-deployment-testing
+
+h3. Example 2
+
+Deploying a Wordpress and My SQL application to OpenShift from a Template file and testing it using Arquillian
+Kube Extension for OpenShift and  Fabric8 OpenShift Client.
+
+Source: "arquillian-testing-microservices/openshift-deployment-testing":https://github.com/arquillian-testing-microservices/openshift-deployment-testing
+
+h3. Example 3
+
+Building and deploying a sample SpringBoot GuestBook application with zero deployment configuration using
+"Fabric8 Maven Plugin":https://maven.fabric8.io/ and "Arquillian Kube Extension":https://github.com/arquillian/arquillian-kube .
+
+Fabric8 Maven Plugin aids in building Docker images and creating Kubernetes and OpenShift resource
+descriptors for the application that allows for a quick ramp-up with some opinionated defaults and Arquillian
+Kube Extension deploys the application from the generated resource descriptors and then executes deployment tests.
+
+Source: "arquillian-testing-microservices/zero-config-deployment-test":https://github.com/arquillian-testing-microservices/zero-config-deployment-test
+
+*For a more in-depth step by step coverage of deployment testing, continue reading below.*
+
+*Step 1: Building Docker Images and creating Resource Descriptors.*
+
+Just have a java application that you wish you to bring to Kubernetes or OpenShift, use Fabric8 Maven Plugin
+to create docker images and resource descriptors for you.
+
+bq. Fabric8 Maven Plugin makes Kubernetes/OpenShift look and feel like an application server to a Java
+developer by letting you build and deploy your application from maven just like you would with other
+maven plugins.
+
+To enable fabric8 on your existing maven project just type *fabric8:setup* command which adds the
+fabric8-maven-plugin to your pom.xml.
+
+Alternatively, you can manually add the following plugin definition to your pom.xml file:
+
+bc(prettify).. <plugin>
+    <groupId>io.fabric8</groupId>
+    <artifactId>fabric8-maven-plugin</artifactId>
+    <version>3.5.32</version>
+
+    <!-- Connect fabric8:resource and fabric8:build to lifecycle phases -->
+    <executions>
+        <execution>
+            <id>fmp</id>
+            <phase>package</phase>
+               <goals>
+                    <goal>resource</goal>
+                    <goal>build</goal>
+                </goals>
+        </execution>
+    </executions>
+</plugin>
+
+p. For more and complete configuration details check out "fabric8 maven plugin documentation":https://maven.fabric8.io/.
+
+If you are an advanced user and already have Kubernetes/OpenShift resources descriptors handy, skip this step.
+
+*Step 2: Setting Up Kubernetes/OpenShift Cluster*
+
+One of the pre-requisites for Arquillian Kube Extension, is to have Kubernetes/OpenShift cluster running on
+your host machine.
+
+An easy way to setup Kubernetes or OpenShift cluster locally is using "Minikube":https://github.com/kubernetes/minikube and "Minishift":https://github.com/minishift/minishift respectively.
+
+*Step 3: Adding Arquillian Kube Dependencies to your project*
+
+bq.. Arquillian Kube Extension provides a black box approach to testing your deployment that neither
+mutates the containers (by deploying, reconfiguring etc) nor the Kubernetes/OpenShift resources.
+
+It is used for immutable infrastructure and integration testing, wherein the test cases are meant to,
+consume and test the provided services and assert that the environment is in the expected state,
+providing you with the confidence that your application will work correctly when deployed on
+Kubernetes/OpenShift cluster.
+
+p. Before we can start to write our tests, we need to define a few dependencies as shown below:
+
+h4. Arquillian Cube BOM - Unified Dependencies
+
+bc(prettify).. <properties>
+    <version.arquillian_cube>${latest_released_version}</version.arquillian_cube>
+</properties>
+
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.arquillian.cube</groupId>
+            <artifactId>arquillian-cube-bom</artifactId>
+            <version>${version.arquillian_cube}</version>
+            <scope>import</scope>
+            <type>pom</type>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+h4. Arquillian Cube Requirement
+
+bc(prettify).. <dependency>
+    <groupId>org.arquillian.cube</groupId>
+    <artifactId>arquillian-cube-requirement</artifactId>
+    <scope>test</scope>
+</dependency>
+
+h4. Arquillian Cube Kubernetes (For Kubernetes Deployment)
+
+bc(prettify).. <dependency>
+    <groupId>org.arquillian.cube</groupId>
+    <artifactId>arquillian-cube-kubernetes</artifactId>
+    <scope>test</scope>
+</dependency>
+
+h4. Arquillian Cube OpenShift (For OpenShift Deployment)
+
+bc(prettify).. <dependency>
+    <groupId>org.arquillian.cube</groupId>
+    <artifactId>arquillian-cube-openshift</artifactId>
+    <scope>test</scope>
+</dependency>
+
+h4. Arquillian Junit
+
+bc(prettify).. <dependency>
+    <groupId>org.jboss.arquillian.junit</groupId>
+    <artifactId>arquillian-junit-standalone</artifactId>
+    <version>${latest_released_version}</version>
+    <scope>test</scope>
+</dependency>
+
+h4. Fabric8 OpenShift Client
+
+bc(prettify).. <dependency>
+    <groupId>io.fabric8</groupId>
+    <artifactId>openshift-client</artifactId>
+    <version>${latest_released_version}</version>
+</dependency>
+
+p. For Fabric8 OpenShift Client, include the above dependency in the pom.xml
+
+*Step 4: Writing Deployment Tests*
+
+Arquillian Kube extension provides out of the box functionality to create and manage a temporary namespace
+per test suite for your tests and then applies all the required kubernetes/openshift resources as defined
+in the resource descriptors generated by fabric8 maven plugin for your environment.
+
+Kubernetes/OpenShift resources can then be made accessible within the Test Cases by injecting them using
+Arquillian’s *@ArquillianResources* annotation (see example test below).
+
+bc(prettify).. @RunWith(Arquillian.class)    (1)
+public class ExampleTest {
+
+    @ArquillianResource       (2)
+    OpenShiftClient client;
+
+    @Named("dummy")           (3)
+    @PortForward
+    @ArquillianResource
+    Service dummyService;
+
+    @RouteURL("application")  (4)
+    @AwaitRoute
+    private URL route;
+
+    @Test
+    public void service_instance_should_not_be_null() throws Exception {
+        assertThat(service).isNotNull();
+    }
+
+    @Test
+    public void test_at_least_one_pod() throws Exception {
+       assertThat(client).pods().runningStatus().filterNamespace(session.getNamespace()).hasSize(1); (5)
+    }
+
+    @Test
+    public void verify_route_is_configured_and_service_is_accessible() throws IOException {
+        assertThat(route).isNotNull();
+        OkHttpClient okHttpClient = new OkHttpClient();
+        Request request = new Request.Builder().get().url(route).build();
+        Response response = okHttpClient.newCall(request).execute();
+
+        assertThat(response).isNotNull();
+        assertThat(response.code()).isEqualTo(200);
+    }
+}
+
+p. Explained below are the steps for the above snippet of a sample deployment test.
+
+# *Configuring Arquillian Test Runner*
+To setup our test environment, we need to tell junit that this test shall be executed as a arquillian junit
+test. This is done by @@RunWith(Arquillian.class)@.
+# *Injecting Deployment Resources within Test Cases*
+Kubernetes/OpenShift resources can then be made accessible within the Test Cases by injecting them
+using Arquillian’s @@ArquillianResources@ annotation.
+The resource providers available, can be used to inject to your test cases the following resources:
+** A kubernetes client as an instance of KubernetesClient.
+** Session object that contains information (e.g. the namespace) or the uuid of the test session.
+** Services (by id or as a list of all services created during the session, optionally filtered by label)
+** Deployments (by id or as a list of all deployments created during the session, optionally filtered by label)
+** Pods (by id or as a list of all pods created during the session, optionally filtered by label)
+** Replication Controllers (by id or as a list of all replication controllers created during the session,
+optionally filtered by label)
+** Replica Sets (by id or as a list of all replica sets created during the session, optionally filtered by label)
+# *The OpenShift extension also provides:*
+** An openshift client as an instance of OpenShiftClient.
+** Deployment Configs (by id or as a list of all deployment configs created during the session)
+** Resources can be injected into test cases by id or as a list of all deployments created during the
+session, optionally filtered by label.
+# *Injecting Container Resources to access the deployed service*
+Test Enrichers like @RouteURL further aid in injection of container resources like route to the deployed service.
+For farbric8 maven plugin to identify the route, @RouteURL should be set to artifactId of the project by
+default, or explicity configured otherwise.
+# *Adding Test Cases that assert environment is in the expected state*.
+
+*Step 5: Using Assertion Libraries*
+Optionally, using "Fabric8 Kubernetes Assertions":https://github.com/fabric8io/fabric8/tree/master/components/kubernetes-assertions , a nice library based on assert4j, aids in performing
+meaningful and expressive assertions on top of the Kubernetes/OpenShift model.
+
+To enable Fabric8 Kubernetes Assertions in your test, include the following dependency in the pom.xml
+
+bc(prettify).. <dependency>
+    <groupId>io.fabric8</groupId>
+    <artifactId>kubernetes-assertions</artifactId>
+    <version>${latest_released_version}</version>
+    <scope>test</scope>
+</dependency>
+
+p. Once everything is ready, Arquillian Kube runs your tests, enriched with resources required to access service
+and finally cleaning up everything after the testing is over.
+
+For more details and available configuration options check "arquillian kube documentation":http://arquillian.org/arquillian-cube/#_kubernetes.
