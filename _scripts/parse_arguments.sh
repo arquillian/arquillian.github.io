@@ -37,6 +37,10 @@ case $i in
     export BROWSER_TEST="${i#*=}"
     shift
     ;;
+    -cv=*|--chrome-driver-version=*)
+    export CHROME_DRIVER_VERSION="${i#*=}"
+    shift
+    ;;
     -uc=*|--use-cache=*)
     export USE_CACHE="${i#*=}"
     shift
