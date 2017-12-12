@@ -30,7 +30,7 @@ fi
 
 ### execute UI tests
 #todo use mvnw
-MAVEN_COMMAND="mvn clean verify -f ${TEST_PROJECT_DIRECTORY}/pom.xml -Darquillian.blog.url=${ARQUILLIAN_BLOG_TEST_URL} -Dbrowser=${BROWSER_TEST}"
+MAVEN_COMMAND="mvn clean verify -f ${TEST_PROJECT_DIRECTORY}/pom.xml -Darquillian.blog.url=${ARQUILLIAN_BLOG_TEST_URL} -Dbrowser=${BROWSER_TEST} -Darq.extension.webdriver.chromeDriverVersion=${CHROME_DRIVER_VERSION}"
 echo -e "${LIGHT_GREEN}->  Running tests using command: ${MAVEN_COMMAND}${CLEAR}"
 $MAVEN_COMMAND 2>&1 | tee ${LOGS_LOCATION}/maven-ui-tests_log
 
