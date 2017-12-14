@@ -33,8 +33,7 @@ public class BlogFragment {
 
         public BlogVerifier hasReleaseNotes() {
             for (WebElement item : fragmentItems) {
-                try {
-                    WebElement releaseTag = item.findElement(By.linkText("release"));
+                if (hasTypeRelease(item)) {
                     try {
                         WebElement releaseNoteTitle =
                                 item.findElement(By.xpath(".//h3[contains(text(),'Release notes and resolved issues')]"));
@@ -50,11 +49,18 @@ public class BlogFragment {
                                         "- close the milestone on GitHub or release version on JIRA\n" +
                                         "- push tag to the upstream repo after releasing to Maven Central (git push origin --tags)");
                     }
-                } catch (NoSuchElementException e) {
-                    // Ignore if non-release blog post
                 }
             }
             return this;
+        }
+
+        private boolean hasTypeRelease(WebElement item) {
+            try {
+                item.findElement(By.linkText("release"));
+                return true;
+            } catch (NoSuchElementException e) {
+                return false;
+            }
         }
 
         public BlogVerifier hasAnnouncementBanner(boolean status) {
