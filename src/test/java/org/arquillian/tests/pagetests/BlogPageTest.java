@@ -92,4 +92,17 @@ public class BlogPageTest {
             .verify()
             .hasAnnouncementBanner(false);
     }
+
+    @Test
+    public void should_ignore_release_notes_for_non_release_blog_posts() throws Exception {
+        mainPage.menu()
+                .navigate().to("Blog");
+
+        blogPage.cloudTag()
+                .navigate().to("nonrelease");
+
+        blogPage.blogContent()
+                .verify()
+                .hasReleaseNotes();
+    }
 }

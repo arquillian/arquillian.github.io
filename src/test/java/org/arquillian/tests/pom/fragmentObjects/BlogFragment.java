@@ -34,19 +34,24 @@ public class BlogFragment {
         public BlogVerifier hasReleaseNotes() {
             for (WebElement item : fragmentItems) {
                 try {
-                    WebElement releaseNoteTitle =
-                        item.findElement(By.xpath(".//h3[contains(text(),'Release notes and resolved issues')]"));
-                    List<WebElement> releaseNoteContents = item.findElements(By.xpath(".//dl"));
+                    WebElement releaseTag = item.findElement(By.linkText("release"));
+                    try {
+                        WebElement releaseNoteTitle =
+                                item.findElement(By.xpath(".//h3[contains(text(),'Release notes and resolved issues')]"));
+                        List<WebElement> releaseNoteContents = item.findElements(By.xpath(".//dl"));
 
-                    assertThat(releaseNoteTitle.isDisplayed() && releaseNoteContents.stream()
-                        .allMatch(WebElement::isDisplayed)).isTrue();
+                        assertThat(releaseNoteTitle.isDisplayed() && releaseNoteContents.stream()
+                                .allMatch(WebElement::isDisplayed)).isTrue();
 
+                    } catch (NoSuchElementException e) {
+                        throw new NoSuchElementException(
+                                "Missing release notes for blog post titled: " + getBlogTitle(item).getText() + ".\n" +
+                                        "If the release was performed manually, this happen because we forgot to: \n" +
+                                        "- close the milestone on GitHub or release version on JIRA\n" +
+                                        "- push tag to the upstream repo after releasing to Maven Central (git push origin --tags)");
+                    }
                 } catch (NoSuchElementException e) {
-                    throw new NoSuchElementException(
-                        "Missing release notes for blog post titled: " + getBlogTitle(item).getText() + ".\n" +
-                                "If the release was performed manually, this happen because we forgot to: \n" +
-                                "- close the milestone on GitHub or release version on JIRA\n" +
-                                "- push tag to the upstream repo after releasing to Maven Central (git push origin --tags)");
+                    // Ignore if non-release blog post
                 }
             }
             return this;
