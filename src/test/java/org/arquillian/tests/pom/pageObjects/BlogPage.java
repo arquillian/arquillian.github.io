@@ -22,7 +22,11 @@ public class BlogPage {
     @FindBy(css = "[class = 'tag-cloud']")
     private CloudTagFragment cloudTag;
 
-    public BlogFragment blogContent() {
+    public BlogFragment releaseBlog() {
+        return blogContent;
+    }
+
+    public BlogFragment nonReleaseBlog() {
         return blogContent;
     }
 

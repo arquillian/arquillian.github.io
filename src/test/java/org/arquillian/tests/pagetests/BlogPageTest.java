@@ -35,12 +35,12 @@ public class BlogPageTest {
     }
 
     @Test
-    public void should_have_content_listing_all_blogs_with_title_and_release_notes() throws Exception {
+    public void should_have_content_listing_all_release_blogs_with_title_and_release_notes() throws Exception {
 
         mainPage.menu()
             .navigate().to("Blog");
 
-        blogPage.blogContent()
+        blogPage.releaseBlog()
             .verify()
                 .hasTitle()
                 .hasReleaseNotes();
@@ -53,7 +53,7 @@ public class BlogPageTest {
 
         blogPage.sidebar()
             .verify()
-            .hasSubSectionHeaders("Subscribe to the Arquillian Blog", "Latest Posts", "Popular Posts", "Tags");
+                .hasSubSectionHeaders("Subscribe to the Arquillian Blog", "Latest Posts", "Popular Posts", "Tags");
     }
 
     @Test
@@ -67,7 +67,7 @@ public class BlogPageTest {
         fetchedBlogPage.verify().hasTitle("Arquillian Blog · Arquillian")
             .hasContent();
 
-        blogPage.blogContent()
+        blogPage.releaseBlog()
             .verify()
                 .hasTitle()
                 .hasReleaseNotes();
@@ -81,16 +81,16 @@ public class BlogPageTest {
         blogPage.cloudTag()
             .navigate().to("drone");
 
-        blogPage.blogContent()
+        blogPage.releaseBlog()
             .verify()
-            .hasAnnouncementBanner(true);
+                .hasAnnouncementBanner(true);
 
         blogPage.newAnnouncementBanner()
             .navigate().to("Check our latest announcement");
 
-        blogPage.blogContent()
+        blogPage.releaseBlog()
             .verify()
-            .hasAnnouncementBanner(false);
+                .hasAnnouncementBanner(false);
     }
 
     @Test
@@ -101,8 +101,8 @@ public class BlogPageTest {
         blogPage.cloudTag()
                 .navigate().to("nonrelease");
 
-        blogPage.blogContent()
+        blogPage.nonReleaseBlog()
                 .verify()
-                .hasReleaseNotes();
+                    .hasTitle();
     }
 }
