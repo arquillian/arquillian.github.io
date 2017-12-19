@@ -1,5 +1,6 @@
 package org.arquillian.tests.pagetests;
 
+import org.arquillian.tests.utilities.BlogVerifier;
 import org.arquillian.tests.pom.pageObjects.BlogPage;
 import org.arquillian.tests.pom.pageObjects.MainPage;
 import org.arquillian.tests.pom.pageObjects.StandalonePage;
@@ -12,6 +13,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Arquillian.class)
 @RunAsClient
@@ -40,10 +46,11 @@ public class BlogPageTest {
         mainPage.menu()
             .navigate().to("Blog");
 
-        blogPage.releaseBlog()
-            .verify()
-                .hasTitle()
-                .hasReleaseNotes();
+        List<WebElement> releaseBlogs = blogPage.releaseBlogs();
+
+        assertThat(releaseBlogs)
+                .allSatisfy(BlogVerifier::hasTitle)
+                .allSatisfy(BlogVerifier::hasReleaseNotes);
     }
 
     @Test
@@ -67,10 +74,11 @@ public class BlogPageTest {
         fetchedBlogPage.verify().hasTitle("Arquillian Blog · Arquillian")
             .hasContent();
 
-        blogPage.releaseBlog()
-            .verify()
-                .hasTitle()
-                .hasReleaseNotes();
+        List<WebElement> releaseBlogs = blogPage.releaseBlogs();
+
+        assertThat(releaseBlogs)
+                .allSatisfy(BlogVerifier::hasTitle)
+                .allSatisfy(BlogVerifier::hasReleaseNotes);
     }
 
     @Test
@@ -81,16 +89,16 @@ public class BlogPageTest {
         blogPage.cloudTag()
             .navigate().to("drone");
 
-        blogPage.releaseBlog()
-            .verify()
-                .hasAnnouncementBanner(true);
+        List<WebElement> releaseBlogs = blogPage.releaseBlogs();
+
+        assertThat(releaseBlogs).anySatisfy(BlogVerifier::haveAnnouncementBanner);
 
         blogPage.newAnnouncementBanner()
             .navigate().to("Check our latest announcement");
 
-        blogPage.releaseBlog()
-            .verify()
-                .hasAnnouncementBanner(false);
+        WebElement newReleaseBlog = blogPage.releaseBlogs().get(0);
+
+        assertThat(newReleaseBlog).satisfies(BlogVerifier::doesNotHaveAnnouncementBanner);
     }
 
     @Test
@@ -101,8 +109,9 @@ public class BlogPageTest {
         blogPage.cloudTag()
                 .navigate().to("nonrelease");
 
-        blogPage.nonReleaseBlog()
-                .verify()
-                    .hasTitle();
+        List<WebElement> nonReleaseBlogs = blogPage.nonReleaseBlogs();
+
+        assertThat(nonReleaseBlogs)
+                .allSatisfy(BlogVerifier::hasTitle);
     }
 }
