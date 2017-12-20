@@ -11,14 +11,18 @@ integration or add some authentication capability. In order to ensure your platf
 time, all of the above scenarios need to be tested with robust integration tests.
 
 With the advent of microservices and cloud native applications, adding integration or
-end-to-end tests to your Kubernetes/OpenShift projects might be challenging and cumbersome especially when 
-you want to set up the test infrastructure to be as close as possible to production.
+end-to-end tests to your Kubernetes or OpenShift projects might be challenging and cumbersome especially
+when you want to set up the test infrastructure to be as close as possible to production.
 
-Arquillian Community understand this pain, and continuously strive to provide users a seamless
+Arquillian Community understands this pain, and continuously strive to provide users a seamless
 experience for writing integration tests with ease by bringing their tests to the real environment and
 deploy with confidence like never before.
 
-With this blog post, we aim at showcasing integration tests for your Kubernetes or OpenShift clusters using just "Arquillian Cube":https://github.com/arquillian/arquillian-kube. Moving a step further, we also demonstrate building and deploying from scratch, applications with no deployment configuration, leveraging the power of "Fabric8 Maven Plugin":https://maven.fabric8.io/ along with the Arquillian Kube Extension.
+With this blog post, we aim at showcasing integration tests for your Kubernetes or OpenShift clusters using just "Arquillian Cube":https://github.com/arquillian/arquillian-cube. Moving a step further, we also demonstrate building and deploying from scratch, applications with no deployment configuration, leveraging the power of "Fabric8 Maven Plugin":https://maven.fabric8.io/ along with the Arquillian Cube Extension.
+
+The key point here is that if OpenShift or Kubernetes is used as deployable platform in production, your tests are executed in a the same environment as it will be in production, so your tests are even more real than before.
+
+Further, the test cases are meant to consume and test the provided services and assert that the environment is in the expected state.
 
 h2. Deployment Testing Recipes
 
@@ -28,25 +32,25 @@ examples to help you get started with ease.*
 h3. Example 1
 
 Deploying a sample PHP Guestbook application with Redis on Kubernetes from the resource descriptor
-manifest file and testing it using Arquillian Kube Extension for Kubernetes and Kubernetes custom assertions.
+manifest file and testing it using Arquillian Cube Extension for Kubernetes and Kubernetes custom assertions.
 
 Source: "arquillian-testing-microservices/kubernetes-deployment-testing":https://github.com/arquillian-testing-microservices/kubernetes-deployment-testing
 
 h3. Example 2
 
 Deploying a Wordpress and My SQL application to OpenShift from a Template file and testing it using Arquillian
-Kube Extension for OpenShift and  Fabric8 OpenShift Client.
+Cube Extension for OpenShift and  Fabric8 OpenShift Client.
 
 Source: "arquillian-testing-microservices/openshift-deployment-testing":https://github.com/arquillian-testing-microservices/openshift-deployment-testing
 
 h3. Example 3
 
 Building and deploying a sample SpringBoot GuestBook application with zero deployment configuration using
-"Fabric8 Maven Plugin":https://maven.fabric8.io/ and "Arquillian Kube Extension":https://github.com/arquillian/arquillian-kube .
+"Fabric8 Maven Plugin":https://maven.fabric8.io/ and "Arquillian Cube Extension":https://github.com/arquillian/arquillian-cube .
 
 Fabric8 Maven Plugin aids in building Docker images and creating Kubernetes and OpenShift resource
 descriptors for the application that allows for a quick ramp-up with some opinionated defaults and Arquillian
-Kube Extension deploys the application from the generated resource descriptors and then executes deployment tests.
+Cube Extension deploys the application from the generated resource descriptors and then executes deployment tests.
 
 Source: "arquillian-testing-microservices/zero-config-deployment-test":https://github.com/arquillian-testing-microservices/zero-config-deployment-test
 
@@ -93,6 +97,11 @@ bc(prettify).. <properties>
 
 h4. Arquillian Cube Requirement
 
+p. Arquillian optionally provides an `ArquillianConditionalRunner` to control situations under which your tests should be executed by letting you specify the requirements using annotations.
+For example, you can use annotations like `@RequiresOpenshift` to skip test when the environment is not prepared to run the tests.
+
+To configure these requirements for your tests, enable the dependency to the following module for your project.
+
 bc(prettify).. <dependency>
     <groupId>org.arquillian.cube</groupId>
     <artifactId>arquillian-cube-requirement</artifactId>
@@ -136,7 +145,7 @@ p. For Fabric8 OpenShift Client, include the above dependency in the pom.xml
 
 h3. Step 3: Writing Deployment Tests
 
-Arquillian Kube extension provides out of the box functionality to create and manage a temporary namespace
+Arquillian Cube extension provides out of the box functionality to create and manage a temporary namespace
 per test suite for your tests and then applies all the required kubernetes/openshift resources as defined
 in the resource descriptors generated by fabric8 maven plugin for your environment.
 
@@ -165,7 +174,7 @@ public class ExampleTest {
 
     @Test
     public void test_at_least_one_pod() throws Exception {
-       assertThat(client).pods().runningStatus().filterNamespace(session.getNamespace()).hasSize(1);
+       assertThat(client).pods().runningStatus().filterNamespace(session.getNamespace()).hasSize(1); (5)
     }
 
     @Test
@@ -261,3 +270,6 @@ bc(prettify).. <plugin>
 
 p. For more and complete configuration details check out "fabric8 maven plugin documentation":https://maven.fabric8.io/.
 
+h2. Summary
+
+With some basic features, simple steps and specially crafted examples as highlighted above, you can easily get started with Arquillian Cube extension to test your applications in real production environments, be it Kubernetes or OpenShift clusters, without worrying about setting up the infrastructure and only focusing on the core test logic.
