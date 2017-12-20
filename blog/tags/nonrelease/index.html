@@ -56,6 +56,157 @@
           <article class="post">
             <header class="header">
               <h2 class="title">
+                <a href="/blog/2017/12/11/end-to-end-testing-kubernetes-openshift/">End-To-End Integration Testing For Kubernetes and OpenShift</a>
+              </h2>
+              <div class="byline">
+                <a href="/community/hemanik">
+                  <img class="avatar" height="44" src="https://avatars.githubusercontent.com/u/8680543?s=44" width="44" />
+                </a>
+                <span class="author">Posted by
+                <a href="/community/hemanik">Hemanik</a></span>
+                <span class="dateinline">on Dec 11, 2017</span>
+                <div class="date"><abbr>Dec</abbr> 11</div>
+                <span class="comments">| <a href="http://arquillian.org/blog/2017/12/11/end-to-end-testing-kubernetes-openshift/#disqus_thread" data-disqus-identifier="d6a32d395784b4ee188696f9135292de3fc8748b">Comments</a></span>
+              </div>
+            </header>
+            <div class="body">
+              <p><strong>Does the title leave you wondering, why you need integration tests for your deployments ?</strong></p>
+              <p>If so, let me give you a few examples. Consider you decide to upgrade Kubernetes, deploy a new Zapier<br />
+              integration or add some authentication capability. In order to ensure your platform works every single<br />
+              time, all of the above scenarios need to be tested with robust integration tests.</p>
+              <p>With the advent of microservices and cloud native applications, adding integration or<br />
+              end-to-end tests to your Kubernetes or OpenShift projects might be challenging and cumbersome especially<br />
+              when you want to set up the test infrastructure to be as close as possible to production.</p>
+              <p>Arquillian Community understands this pain, and continuously strive to provide users a seamless<br />
+              experience for writing integration tests with ease by bringing their tests to the real environment and<br />
+              deploy with confidence like never before.</p>
+              <p>With this blog post, we aim at showcasing integration tests for your Kubernetes or OpenShift clusters using just <a href="https://github.com/arquillian/arquillian-cube">Arquillian Cube</a>. Moving a step further, we also demonstrate building and deploying from scratch, applications with no deployment configuration, leveraging the power of <a href="https://maven.fabric8.io/">Fabric8 Maven Plugin</a> along with the Arquillian Cube Extension.</p>
+              <p>The key point here is that if OpenShift or Kubernetes is used as deployable platform in production, your tests are executed in a the same environment as it will be in production, so your tests are even more real than before.</p>
+              <p>Further, the test cases are meant to consume and test the provided services and assert that the environment is in the expected state.</p>
+              <h2>Deployment Testing Recipes</h2>
+              <p><strong>If, you wish to read no more and see it all in action, head straight to our specially curated<br />
+              examples to help you get started with ease.</strong></p>
+              <h3>Example 1</h3>
+              <p>Deploying a sample PHP Guestbook application with Redis on Kubernetes from the resource descriptor<br />
+              manifest file and testing it using Arquillian Cube Extension for Kubernetes and Kubernetes custom assertions.</p>
+              <p>Source: <a href="https://github.com/arquillian-testing-microservices/kubernetes-deployment-testing">arquillian-testing-microservices/kubernetes-deployment-testing</a></p>
+              <h3>Example 2</h3>
+              <p>Deploying a Wordpress and My SQL application to OpenShift from a Template file and testing it using Arquillian<br />
+              Cube Extension for OpenShift and  Fabric8 OpenShift Client.</p>
+              <p>Source: <a href="https://github.com/arquillian-testing-microservices/openshift-deployment-testing">arquillian-testing-microservices/openshift-deployment-testing</a></p>
+              <h3>Example 3</h3>
+              <p>Building and deploying a sample SpringBoot GuestBook application with zero deployment configuration using<br />
+              <a href="https://maven.fabric8.io/">Fabric8 Maven Plugin</a> and <a href="https://github.com/arquillian/arquillian-cube">Arquillian Cube Extension</a> .</p>
+              <p>Fabric8 Maven Plugin aids in building Docker images and creating Kubernetes and OpenShift resource<br />
+              descriptors for the application that allows for a quick ramp-up with some opinionated defaults and Arquillian<br />
+              Cube Extension deploys the application from the generated resource descriptors and then executes deployment tests.</p>
+              <p>Source: <a href="https://github.com/arquillian-testing-microservices/zero-config-deployment-test">arquillian-testing-microservices/zero-config-deployment-test</a></p>
+              <h2>Step By Step Guide To Writing Deployment Tests</h2>
+              <p><strong>For a more in-depth step by step coverage of deployment testing, continue reading below.</strong></p>
+              <h3>Step 1: Setting Up Kubernetes/OpenShift Cluster</h3>
+              <p>One of the pre-requisites for Arquillian Kube Extension, is to have Kubernetes or OpenShift cluster running on<br />
+              your host machine.</p>
+              <p>An easy way to setup Kubernetes or OpenShift cluster locally is using <a href="https://github.com/kubernetes/minikube">Minikube</a> and <a href="https://github.com/minishift/minishift">Minishift</a> respectively.</p>
+              <h3>Step 2: Adding Arquillian Kube Dependencies to your project</h3>
+              <blockquote>
+              <p>Arquillian Kube Extension provides a black box approach to testing your deployment that neither<br />
+              mutates the containers (by deploying, reconfiguring etc) nor the Kubernetes/OpenShift resources.</p>
+              <p>It is used for immutable infrastructure and integration testing, wherein the test cases are meant to,<br />
+              consume and test the provided services and assert that the environment is in the expected state,<br />
+              providing you with the confidence that your application will work correctly when deployed on<br />
+              Kubernetes/OpenShift cluster.</p>
+              </blockquote>
+              <p>Before we can start writing our tests, we need to define a few dependencies as shown below:</p>
+              <h4>Arquillian Cube BOM &#8211; Unified Dependencies</h4>
+              <pre class="prettify"><code class="prettify">&lt;properties&gt;&#x000A;    &lt;version.arquillian_cube&gt;${latest_released_version}&lt;/version.arquillian_cube&gt;&#x000A;&lt;/properties&gt;</code>&#x000A;&#x000A;<code class="prettify">&lt;dependencyManagement&gt;&#x000A;    &lt;dependencies&gt;&#x000A;        &lt;dependency&gt;&#x000A;            &lt;groupId&gt;org.arquillian.cube&lt;/groupId&gt;&#x000A;            &lt;artifactId&gt;arquillian-cube-bom&lt;/artifactId&gt;&#x000A;            &lt;version&gt;${version.arquillian_cube}&lt;/version&gt;&#x000A;            &lt;scope&gt;import&lt;/scope&gt;&#x000A;            &lt;type&gt;pom&lt;/type&gt;&#x000A;        &lt;/dependency&gt;&#x000A;    &lt;/dependencies&gt;&#x000A;&lt;/dependencyManagement&gt;</code></pre>
+              <h4>Arquillian Cube Requirement</h4>
+              <p>Arquillian optionally provides an `ArquillianConditionalRunner` to control situations under which your tests should be executed by letting you specify the requirements using annotations.<br />
+              For example, you can use annotations like `@RequiresOpenshift` to skip test when the environment is not prepared to run the tests.</p>
+              <p>To configure these requirements for your tests, enable the dependency to the following module for your project.</p>
+              <pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.arquillian.cube&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-cube-requirement&lt;/artifactId&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
+              <h4>Arquillian Cube Kubernetes (For Kubernetes Deployment)</h4>
+              <pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.arquillian.cube&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-cube-kubernetes&lt;/artifactId&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
+              <h4>Arquillian Cube OpenShift (For OpenShift Deployment)</h4>
+              <pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.arquillian.cube&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-cube-openshift&lt;/artifactId&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
+              <h4>Arquillian JUnit</h4>
+              <pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;org.jboss.arquillian.junit&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;arquillian-junit-standalone&lt;/artifactId&gt;&#x000A;    &lt;version&gt;${latest_released_version}&lt;/version&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
+              <h4>Fabric8 OpenShift Client</h4>
+              <pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;io.fabric8&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;openshift-client&lt;/artifactId&gt;&#x000A;    &lt;version&gt;${latest_released_version}&lt;/version&gt;&#x000A;&lt;/dependency&gt;</code></pre>
+              <p>For Fabric8 OpenShift Client, include the above dependency in the pom.xml</p>
+              <h3>Step 3: Writing Deployment Tests</h3>
+              <p>Arquillian Cube extension provides out of the box functionality to create and manage a temporary namespace<br />
+              per test suite for your tests and then applies all the required kubernetes/openshift resources as defined<br />
+              in the resource descriptors generated by fabric8 maven plugin for your environment.</p>
+              <p>Kubernetes/OpenShift resources can then be made accessible within the Test Cases by injecting them using<br />
+              Arquillian’s <strong>@ArquillianResources</strong> annotation (see example test below).</p>
+              <pre class="prettify"><code class="prettify">@RunWith(Arquillian.class)    (1)&#x000A;public class ExampleTest {</code>&#x000A;&#x000A;<code class="prettify">    @Named("dummy")           (2)&#x000A;    @PortForward&#x000A;    @ArquillianResource&#x000A;    Service dummyService;</code>&#x000A;&#x000A;<code class="prettify">    @ArquillianResource       (3)&#x000A;    OpenShiftClient client;</code>&#x000A;&#x000A;<code class="prettify">    @RouteURL("application")  (4)&#x000A;    @AwaitRoute&#x000A;    private URL route;</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void service_instance_should_not_be_null() throws Exception {&#x000A;        assertThat(service).isNotNull();&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void test_at_least_one_pod() throws Exception {&#x000A;       assertThat(client).pods().runningStatus().filterNamespace(session.getNamespace()).hasSize(1); (5)&#x000A;    }</code>&#x000A;&#x000A;<code class="prettify">    @Test&#x000A;    public void verify_route_is_configured_and_service_is_accessible() throws IOException {&#x000A;        assertThat(route).isNotNull();&#x000A;        OkHttpClient okHttpClient = new OkHttpClient();&#x000A;        Request request = new Request.Builder().get().url(route).build();&#x000A;        Response response = okHttpClient.newCall(request).execute();</code>&#x000A;&#x000A;<code class="prettify">        assertThat(response).isNotNull();&#x000A;        assertThat(response.code()).isEqualTo(200);&#x000A;    }&#x000A;}</code></pre>
+              <p>Explained below are the steps for the above snippet of a sample deployment test.</p>
+              <ol>
+              	<li><strong>Configuring Arquillian Test Runner</strong><br />
+              To setup our test environment, we need to tell junit that this test shall be executed as a arquillian junit<br />
+              test. This is done by <code>@RunWith(Arquillian.class)</code>.</li>
+              	<li><strong>Injecting Deployment Resources within Test Cases</strong><br />
+              Kubernetes/OpenShift resources can then be made accessible within the Test Cases by injecting them<br />
+              using Arquillian’s <code>@ArquillianResources</code> annotation.<br />
+              The resource providers available, can be used to inject to your test cases the following resources:
+              	<ul>
+              		<li>A kubernetes client as an instance of KubernetesClient.</li>
+              		<li>Session object that contains information (e.g. the namespace) or the uuid of the test session.</li>
+              		<li>Services (by id or as a list of all services created during the session, optionally filtered by label)</li>
+              		<li>Deployments (by id or as a list of all deployments created during the session, optionally filtered by label)</li>
+              		<li>Pods (by id or as a list of all pods created during the session, optionally filtered by label)</li>
+              		<li>Replication Controllers (by id or as a list of all replication controllers created during the session,<br />
+              optionally filtered by label)</li>
+              		<li>Replica Sets (by id or as a list of all replica sets created during the session, optionally filtered by label)</li>
+              	</ul></li>
+              	<li><strong>The OpenShift extension also provides:</strong>
+              	<ul>
+              		<li>An openshift client as an instance of OpenShiftClient.</li>
+              		<li>Deployment Configs (by id or as a list of all deployment configs created during the session)</li>
+              		<li>Resources can be injected into test cases by id or as a list of all deployments created during the<br />
+              session, optionally filtered by label.</li>
+              	</ul></li>
+              	<li><strong>Injecting Container Resources to access the deployed service</strong><br />
+              Test Enrichers like @RouteURL further aid in injection of container resources like route to the deployed service.<br />
+              For farbric8 maven plugin to identify the route, @RouteURL should be set to artifactId of the project by<br />
+              default, or explicity configured otherwise.</li>
+              	<li><strong>Adding Test Cases that assert environment is in the expected state</strong>.</li>
+              </ol>
+              <h3>Step 4: Using Assertion Libraries</h3>
+              <p>Optionally, using <a href="https://github.com/fabric8io/fabric8/tree/master/components/kubernetes-assertions">Fabric8 Kubernetes Assertions</a> , a nice library based on assert4j, aids in performing<br />
+              meaningful and expressive assertions on top of the Kubernetes/OpenShift model.</p>
+              <p>To enable Fabric8 Kubernetes Assertions in your test, include the following dependency in the pom.xml</p>
+              <pre class="prettify"><code class="prettify">&lt;dependency&gt;&#x000A;    &lt;groupId&gt;io.fabric8&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;kubernetes-assertions&lt;/artifactId&gt;&#x000A;    &lt;version&gt;${latest_released_version}&lt;/version&gt;&#x000A;    &lt;scope&gt;test&lt;/scope&gt;&#x000A;&lt;/dependency&gt;</code></pre>
+              <p>Once everything is ready, Arquillian Kube runs your tests, enriched with resources required to access service<br />
+              and finally cleaning up everything after the testing is over.</p>
+              <p>For more details and available configuration options check <a href="http://arquillian.org/arquillian-cube/#_kubernetes">arquillian kube documentation</a>.</p>
+              <h3>Building Docker Images and creating Resource Descriptors.</h3>
+              <p>Optionally, if you just have a Java application that you wish you to bring to Kubernetes or OpenShift,<br />
+              use Fabric8 Maven Plugin to create docker images and resource descriptors for you.</p>
+              <blockquote>
+              <p>Fabric8 Maven Plugin makes Kubernetes/OpenShift look and feel like an application server to a Java<br />
+              developer by letting you build and deploy your application from maven just like you would with other<br />
+              maven plugins.</p>
+              </blockquote>
+              <p>To enable fabric8 on your existing maven project just type <strong>fabric8:setup</strong> command which adds the<br />
+              fabric8-maven-plugin to your pom.xml.</p>
+              <p>Alternatively, you can manually add the following plugin definition to your pom.xml file:</p>
+              <pre class="prettify"><code class="prettify">&lt;plugin&gt;&#x000A;    &lt;groupId&gt;io.fabric8&lt;/groupId&gt;&#x000A;    &lt;artifactId&gt;fabric8-maven-plugin&lt;/artifactId&gt;&#x000A;    &lt;version&gt;3.5.32&lt;/version&gt;</code>&#x000A;&#x000A;<code class="prettify">    &lt;!-- Connect fabric8:resource and fabric8:build to lifecycle phases --&gt;&#x000A;    &lt;executions&gt;&#x000A;        &lt;execution&gt;&#x000A;            &lt;id&gt;fmp&lt;/id&gt;&#x000A;            &lt;phase&gt;package&lt;/phase&gt;&#x000A;               &lt;goals&gt;&#x000A;                    &lt;goal&gt;resource&lt;/goal&gt;&#x000A;                    &lt;goal&gt;build&lt;/goal&gt;&#x000A;                &lt;/goals&gt;&#x000A;        &lt;/execution&gt;&#x000A;    &lt;/executions&gt;&#x000A;&lt;/plugin&gt;</code></pre>
+              <p>For more and complete configuration details check out <a href="https://maven.fabric8.io/">fabric8 maven plugin documentation</a>.</p>
+              <h2>Summary</h2>
+              <p>With some basic features, simple steps and specially crafted examples as highlighted above, you can easily get started with Arquillian Cube extension to test your applications in real production environments, be it Kubernetes or OpenShift clusters, without worrying about setting up the infrastructure and only focusing on the core test logic.</p>
+            </div>
+            <div class="footer">
+              <a href="/blog/2017/12/11/end-to-end-testing-kubernetes-openshift/">permalink</a>
+              |
+              <i class="icon-tags"></i>
+              tagged as
+              <a class="tag" href="/blog/tags/kubernetes/">kubernetes</a> <a class="tag" href="/blog/tags/k8s/">k8s</a> <a class="tag" href="/blog/tags/openshift/">openshift</a> <a class="tag" href="/blog/tags/testing/">testing</a> <a class="tag" href="/blog/tags/guide/">guide</a> <a class="tag" href="/blog/tags/cube/">cube</a> <a class="tag" href="/blog/tags/fabric8-maven-plugin/">fabric8-maven-plugin</a> <a class="tag" href="/blog/tags/examples/">examples</a> <a class="tag" href="/blog/tags/2017/">2017</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
+            </div>
+          </article>
+          <article class="post">
+            <header class="header">
+              <h2 class="title">
                 <a href="/blog/2014/06/11/Testing-with-Aliens-How-to-use-Arquillian-to-test-your-JPA-type-converter/">Testing with Aliens; How to test a JPA type converter with Arquillian</a>
               </h2>
               <div class="byline">
@@ -472,87 +623,6 @@
               tagged as
               <a class="tag" href="/blog/tags/event/">event</a> <a class="tag" href="/blog/tags/testing/">testing</a> <a class="tag" href="/blog/tags/community/">community</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
             </div>
-          </article>
-          <article class="post">
-            <header class="header">
-              <h2 class="title">
-                <a href="/blog/2012/11/08/get_test_infected_at_devoxx_2012/">Get Test-Infected at Devoxx 2012</a>
-              </h2>
-              <div class="byline">
-                <a href="/community/graphitefriction">
-                  <img class="avatar" height="44" src="https://avatars.githubusercontent.com/u/1124042?s=44" width="44" />
-                </a>
-                <span class="author">Posted by
-                <a href="/community/graphitefriction">Sarah White</a></span>
-                <span class="dateinline">on Nov 08, 2012</span>
-                <div class="date"><abbr>Nov</abbr> 08</div>
-                <span class="comments">| <a href="http://arquillian.org/blog/2012/11/08/get_test_infected_at_devoxx_2012/#disqus_thread" data-disqus-identifier="b0992f1672916cf70f98be7b9cd42bf3a46119f3">Comments</a></span>
-              </div>
-            </header>
-            <div class="body">
-              <p>It&#8217;s no suprise we&#8217;re obsessed with testing here in the Arquillian Galaxy. We&#8217;re eternally interested in sharpening our testing weapons, learning about tools that advance the frontline against the bugs, and discovering all the deep, dark code caves where bugs try to hide from testers.</p>
-              <p>This year, <a href="http://www.devoxx.com/display/DV12/Home">Devoxx</a>, one of the premier Java developer conferences, is bringing together a large group of testing experts. Listed below are just some of the labs, workshops, and BOFs being presented at Devoxx that will enhance your bug hunting skills.</p>
-              <p><strong>Monday, November 12, 2012</strong></p>
-              <div class="abstracts">
-              <h3>NoSQLUnit. Testing Your NoSQL Databases.</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Alex+Soto">Alex Soto</a>, Tools in Action</p>
-              <p>Unit tests should follow the FIRST rules (Fast, Isolated, Repeatable, Self-Validated and Timely). When persistence layer is under test, fast and isolated rules are the most violated. For relational database management systems, embedded databases and DbUnit framework exist to help us to not break them, but there is no like DBUnit framework for heterogeneous NoSQL systems. <a href="http://www.devoxx.com/display/DV12/NoSQLUnit.+Testing+your+NoSQL+databases">More &raquo;</a></p>
-              <h3>Blast Your WebApp with Galting</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV11/Stephane+Landelle">Stephane Landelle</a> and <a href="http://www.devoxx.com/display/DV12/Romain+Sertelon">Romain Sertelon</a>, Tools in Action</p>
-              <p>Your application is going live tomorrow, the new marketing campaign is about to start, you enjoy a margarita, life is good. Yet something keeps bugging you, are you sure your webapp won&#8217;t crash down? &#8220;Damn, forgot about the stress tests!&#8221; Traffic grows, data grows, our applications have to withstand increasing loads, so stress tests are more and more of a critical issue. <a href="http://www.devoxx.com/display/DV12/Blast+your+webapp+with+Gatling">More &raquo;</a></p>
-              <h3>The Bugs Are Building Another Death Star</h3>
-              <p class="speakers"><a href="http://lanyrd.com/2012/devoxx/szpdf/">Multi-framework, battle hardened testers including members of Ike&#8217;s Crew</a>, BOF</p>
-              <p>The bugs are building another Death Star. What&#8217;s our invasion plan?</p>
-              <p>Bugs don&#8217;t rest when you go to sleep. In fact, you should worry most when they are left alone. They are tireless creatures, hard at work to destroy your home. In software, it&#8217;s no different. We are at constant war with bugs. News flash, the bugs are building another Death Star and we&#8217;re just standing by! Let&#8217;s plot an invasion plan during this moderated discussion on the topic of enterprise testing. <a href="http://www.devoxx.com/display/DV12/The+bugs+are+building+another+Death+Star">More &raquo;</a></p>
-              </div>
-              <p><strong>Tuesday, November 13, 2012</strong></p>
-              <div class="abstracts">
-              <h3>To ATDD and Beyond! Better Automated Acceptance Testing on the JVM</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/John+Smart">John Smart</a>, University</p>
-              <p>Test Driven Development is a game changer for developers, but Automated Acceptance Testing (ATDD) is a game changer for the whole team! More than just a testing technique, Automated Acceptance Testing is both a collaboration tool and a vital step on the road to Continuous Delivery. In this talk, you will see a real-world demo applying practical ATDD techniques to real-world projects using JBehave, Selenium 2 and Thucydides. <a href="http://www.devoxx.com/display/DV12/To+ATDD+and+beyond%21+Better+Automated+Acceptance+Testing+on+the+JVM">More &raquo;</a></p>
-              <h3>Testacular &#8211; Spectacular Test Runner for JavaScript</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Vojta+Jina">Vojta Jina</a>, Tools in Action</p>
-              <p>Introduction to Testacular &#8211; test runner that makes makes testing JavaScript applications in real browsers frictionless and enjoyable. <a href="http://www.devoxx.com/display/DV12/Testacular+-+Spectacular+Test+Runner+for+JavaScript">More &raquo;</a></p>
-              <h3>JUnit Rules</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Jens+Schauder">Jens Schauder</a>, Tools in Action</p>
-              <p>We all know JUnit rulez. But do you know JUnit Rules? Rules are a not so well known feature of JUnit. They allow us to encapsulate setup and teardown in a reusable package. You can manipulate the way tests get executed as well. <a href="http://www.devoxx.com/display/DV12/JUnit+Rules">More &raquo;</a></p>
-              </div>
-              <p><strong>Wednesday, November 14, 2012</strong></p>
-              <div class="abstracts">
-              <h3>Testing Java Persistence Layer Done Right with Arquillian</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Bartosz+Majsak">Bartosz Majsak</a>, Quickie</p>
-              <p>The Persistence Layer is one of the most crucial parts of enterprise applications, and we use many different frameworks and patterns to keep it clean. We write sophisticated queries and use optimization techniques to give our end users the greatest possible experience. So why is Persistence very often skipped in testing efforts? Is it really that complex and painful to setup? The Arquillian Persistence Extension removes that burden and boilerplate to make you a happy and productive programmer again. <a href="http://www.devoxx.com/display/DV12/Testing+Java+Persistence+Layer+Done+Right+with+Arquillian">More &raquo;</a></p>
-              <h3>Behaviour Driven Development on the JVM &#8211; A State of the Union</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/John+Smart">John Smart</a>, Conference</p>
-              <p>Behavior Driven Development (BDD) is an increasingly popular variation on Test Driven Development, which helps developers think more about what they are testing, in terms of &#8220;executable specifications&#8221; rather than conventional tests. But there are dozens of BDD tools for the JVM out there: how do you know what to use, and when? <a href="http://www.devoxx.com/display/DV12/Behaviour+Driven+Development+on+the+JVM+-+a+State+of+the+Union">More &raquo;</a></p>
-              </div>
-              <p><strong>Thursday, November 15, 2012</strong></p>
-              <div class="abstracts">
-              <h3>Unitils: Full Stack Testing Solution for Enterprise Applications</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Thomas+De+rycke">Thomas De Rycke</a> and <a href="http://www.devoxx.com/display/DV12/Jeroen+Horemans">Jeroen Horemans</a>, Conference</p>
-              <p>Automated testing is the key to developing high quality software and maintainable codebases. How can we automate testing when data and database schemes are constantly evolving? How can we test infrastructure related components like automated e-mails without actually sending them? <a href="http://www.devoxx.com/display/DV12/Unitils+++Full+stack+testing+solution+for+enterpise+applications">More &raquo;</a></p>
-              <h3>Do You REST Assured?</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Johan+Haleby">Johan Haleby</a>, Quickie</p>
-              <p>Today it&#8217;s easy to expose services as REST/HTTP with frameworks like Jersey and Spring but validating that the server actually behaves as expected can be cumbersome in Java. REST Assured is an open source Java DSL that allows you to avoid boiler-plate code to make requests and validate even complex responses in a simple manner. <a href="http://www.devoxx.com/display/DV12/Do+you+REST+Assured">More &raquo;</a></p>
-              <h3>JavaScript Unit Testing and Build Integration</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Wouter+Groeneveld">Wouter Groeneveld</a>, Conference</p>
-              <p>Unit testing has become very popular with the rise of test-first software development. Most enterprise applications contain only a small portion of javascript code, almost always completely untested. We have seen a steady increase of javascript code and frameworks lately, but for most people it&#8217;s still unclear how to (unit) test javascript, and most of all how to properly integrate these within your build environment next to other JUnit test cases. <a href="http://www.devoxx.com/pages/viewpage.action?pageId=6391754">More &raquo;</a></p>
-              <h3>Apache TomEE, Java EE 6 Web Profile on Tomcat</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/David+Blevins">David Blevins</a>, Conference</p>
-              <p>Apache TomEE is the Java EE 6 Web Profile certified version of Apache Tomcat and combines the simplicity of Tomcat with the power of Java EE. The first half of this session introduces TomEE and shows how Tomcat applications leveraging Java EE technologies can become simpler and lighter with a Java EE 6 certified solution built right on Tomcat. <a href="http://www.devoxx.com/display/DV12/Apache+TomEE%2C+Java+EE+6+Web+Profile+on+Tomcat">More &raquo;</a></p>
-              <h3>Spock: Boldly Go Where No Test Has Gone Before</h3>
-              <p class="speakers"><a href="http://www.devoxx.com/display/DV12/Andres+Almiray">Andres Almiray</a>, Quickie</p>
-              <p>Testing, testing, testing. We all know it has to be done but no one likes to do it. Enter Spock, a revolutionary way to writing (and thinking about) test code, that promises to wash away the pain and bring back the fun. <a href="http://www.devoxx.com/display/DV12/Spock++boldly+go+where+no+test+has+gone+before">More &raquo;</a></p>
-              </div>
-              <p>We look forword to hearing what testing tools, techniques and strategies you discover at Devoxx 2012.</p>
-            </div>
-            <div class="footer">
-              <a href="/blog/2012/11/08/get_test_infected_at_devoxx_2012/">permalink</a>
-              |
-              <i class="icon-tags"></i>
-              tagged as
-              <a class="tag" href="/blog/tags/event/">event</a> <a class="tag" href="/blog/tags/testing/">testing</a> <a class="tag" href="/blog/tags/community/">community</a> <a class="tag" href="/blog/tags/2012/">2012</a> <a class="tag" href="/blog/tags/nonrelease/">nonrelease</a>
-            </div>
             
                         <script type="text/javascript">
                         var disqus_shortname = 'arquillian';
@@ -660,6 +730,9 @@
               <span class="tag tag-0">
                 <a href="http://arquillian.org/blog/tags/2014/">2014</a>
               </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/2017/">2017</a>
+              </span>
               <span class="tag tag-1">
                 <a href="http://arquillian.org/blog/tags/ajocado/">ajocado</a>
               </span>
@@ -748,6 +821,9 @@
                 <a href="http://arquillian.org/blog/tags/extension/">extension</a>
               </span>
               <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/fabric8-maven-plugin/">fabric8-maven-plugin</a>
+              </span>
+              <span class="tag tag-0">
                 <a href="http://arquillian.org/blog/tags/forge/">forge</a>
               </span>
               <span class="tag tag-1">
@@ -767,6 +843,9 @@
               </span>
               <span class="tag tag-1">
                 <a href="http://arquillian.org/blog/tags/guice/">guice</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/guide/">guide</a>
               </span>
               <span class="tag tag-0">
                 <a href="http://arquillian.org/blog/tags/guides/">guides</a>
@@ -812,6 +891,12 @@
               </span>
               <span class="tag tag-0">
                 <a href="http://arquillian.org/blog/tags/judcon/">judcon</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/k8s/">k8s</a>
+              </span>
+              <span class="tag tag-0">
+                <a href="http://arquillian.org/blog/tags/kubernetes/">kubernetes</a>
               </span>
               <span class="tag tag-1">
                 <a href="http://arquillian.org/blog/tags/liferay/">liferay</a>
@@ -1077,7 +1162,7 @@
     </script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.2/bootstrap.min.js"></script>
     <script src="/javascripts/prettify.js"></script>
-    <script src="/javascripts/site.js?ae8d4f18ee6265099779f83617f2635f3ce59bc8"></script>
+    <script src="/javascripts/site.js?afec3e3b15966b6fbfb417dc67e0515b67242ff8"></script>
     <script>
       (function() {
         var po = document.createElement('script'); po.async = true; po.src = 'https://apis.google.com/js/plusone.js';
