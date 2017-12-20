@@ -1,5 +1,6 @@
 package org.arquillian.tests.pagetests;
 
+import org.arquillian.tests.utilities.BlogVerifier;
 import org.arquillian.tests.pom.pageObjects.BlogPage;
 import org.arquillian.tests.pom.pageObjects.MainPage;
 import org.arquillian.tests.pom.pageObjects.StandalonePage;
@@ -12,6 +13,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Arquillian.class)
 @RunAsClient
@@ -35,15 +41,16 @@ public class BlogPageTest {
     }
 
     @Test
-    public void should_have_content_listing_all_blogs_with_title_and_release_notes() throws Exception {
+    public void should_have_content_listing_all_release_blogs_with_title_and_release_notes() throws Exception {
 
         mainPage.menu()
             .navigate().to("Blog");
 
-        blogPage.blogContent()
-            .verify()
-                .hasTitle()
-                .hasReleaseNotes();
+        List<WebElement> releaseBlogs = blogPage.releaseBlogs();
+
+        assertThat(releaseBlogs)
+                .allSatisfy(BlogVerifier::hasTitle)
+                .allSatisfy(BlogVerifier::hasReleaseNotes);
     }
 
     @Test
@@ -53,7 +60,7 @@ public class BlogPageTest {
 
         blogPage.sidebar()
             .verify()
-            .hasSubSectionHeaders("Subscribe to the Arquillian Blog", "Latest Posts", "Popular Posts", "Tags");
+                .hasSubSectionHeaders("Subscribe to the Arquillian Blog", "Latest Posts", "Popular Posts", "Tags");
     }
 
     @Test
@@ -67,10 +74,11 @@ public class BlogPageTest {
         fetchedBlogPage.verify().hasTitle("Arquillian Blog · Arquillian")
             .hasContent();
 
-        blogPage.blogContent()
-            .verify()
-                .hasTitle()
-                .hasReleaseNotes();
+        List<WebElement> releaseBlogs = blogPage.releaseBlogs();
+
+        assertThat(releaseBlogs)
+                .allSatisfy(BlogVerifier::hasTitle)
+                .allSatisfy(BlogVerifier::hasReleaseNotes);
     }
 
     @Test
@@ -81,15 +89,29 @@ public class BlogPageTest {
         blogPage.cloudTag()
             .navigate().to("drone");
 
-        blogPage.blogContent()
-            .verify()
-            .hasAnnouncementBanner(true);
+        List<WebElement> releaseBlogs = blogPage.releaseBlogs();
+
+        assertThat(releaseBlogs).anySatisfy(BlogVerifier::haveAnnouncementBanner);
 
         blogPage.newAnnouncementBanner()
             .navigate().to("Check our latest announcement");
 
-        blogPage.blogContent()
-            .verify()
-            .hasAnnouncementBanner(false);
+        WebElement newReleaseBlog = blogPage.releaseBlogs().get(0);
+
+        assertThat(newReleaseBlog).satisfies(BlogVerifier::doesNotHaveAnnouncementBanner);
+    }
+
+    @Test
+    public void should_ignore_release_notes_for_non_release_blog_posts() throws Exception {
+        mainPage.menu()
+                .navigate().to("Blog");
+
+        blogPage.cloudTag()
+                .navigate().to("nonrelease");
+
+        List<WebElement> nonReleaseBlogs = blogPage.nonReleaseBlogs();
+
+        assertThat(nonReleaseBlogs)
+                .allSatisfy(BlogVerifier::hasTitle);
     }
 }
