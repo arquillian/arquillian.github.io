@@ -1,0 +1,53 @@
+---
+layout: post
+date: 2017-12-20
+author: dipak-pawar
+title: Welcome JUnit Rules for Arquillian
+---
+
+We have released yet another version of Arquillian Core. This time with one new feature.
+
+h3. What's new?
+
+p. <i class="icon-star"></i> **JUnit Rules For Arquillian**
+
+p. If you want to use Arquillian Testing Platform with other JUnit Runner, you can now use JUnit Rules - @ArquillianTestClass@ and @ArquillianTest@ - and happily let Arquillian do the heavy lifting for your tests.
+
+p. To get the similar functionality what the @@RunWith(Arquillian.class)@ is offering you should require both rules i.e. @ArquillianTestClass@ and @ArquillianTest@.
+
+bc(prettify).. @ClassRule
+ public static ArquillianTestClass arquillianTestClass = new ArquillianTestClass();
+
+ @Rule
+ public ArquillianTest arquillianTest = new ArquillianTest();
+
+ @Deployment
+ public static JavaArchive createDeployment() {
+     return ShrinkWrap.create(JavaArchive.class)
+         .addClass(Greeter.class)
+         .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+ }
+
+ @Inject
+ Greeter greeter;
+
+ @Test
+ public void should_greet_earthlings() throws Exception {
+     String name = "Earthlings";
+     Assert.assertEquals("Hello, " + name, greeter.greet(name));
+ }
+
+p. In order to use any other JUnit Class or Method Rule with @ArquillianClassTest@ or @ArquillianTest@ rule, you have to use it with @RuleChain@ having new methods defined as outer rules. e.g.
+  
+bc(prettify).. @Rule
+public MethodRule testWatchman = MethodRuleChain.outer(new ArquillianTest().around(new TestWatchman());
+
+p. Arquillian is not enforcing user to define both rules as implementations of @MethodRuleChain@ is different for different users. JUnit doesn't provide @MethodRuleChain@ similar to the @RuleChain@, as we don't know your implementation of @MethodRuleChain@, we can't check if your MethodRuleChain has @ArquillianTest@ rule defined.
+
+p. Arquillian is providing @MethodRuleChain@ which is RuleChain for method rules. Feel free to use it.
+
+p. Do you want to play around with it?
+
+Take a look into following examples:
+* https://github.com/arquillian/arquillian-cube/pull/913/files
+* https://github.com/arquillian/arquillian-graphene/pull/176/files
