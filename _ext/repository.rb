@@ -185,11 +185,9 @@ module Awestruct
                   r.commits_url = repo_data.first['commits_url']
                 end
               }
-              if org_repos_data.headers[:link] =~ /<(.*)>.+rel="next",/
-                org_url = $1
-              else
-                more_pages = false
-              end
+              links = parse_link_headers(org_repos_data)
+              org_url = links[:next]
+              more_pages = (links.has_key?(:next) and links.has_key?(:last) and (links[:next] != links[:last]))
             end
 
           }
@@ -276,6 +274,22 @@ module Awestruct
             o.add_match_filter(rekeyed_index) if o.respond_to? 'add_match_filter'
           end
 
+        end
+
+        def parse_link_headers(response)
+          links = Hash.new
+          if response.headers[:link].nil?
+            return links
+          end
+          parts = response.headers[:link].split(', ')
+
+          parts.each do |part, index|
+            section = part.split(';')
+            url = section[0][/<(.*)>/,1]
+            name = section[1][/rel="(.*)"/,1].to_sym
+            links[name] = url
+          end
+          return links
         end
 
         def find_author_email(git_author_index, github_mapping)
