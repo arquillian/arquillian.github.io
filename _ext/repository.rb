@@ -187,7 +187,7 @@ module Awestruct
               }
               links = parse_link_headers(org_repos_data)
               org_url = links[:next]
-              more_pages = (links.has_key?(:next) and links.has_key?(:last) and (links[:next] != links[:last]))
+              more_pages = links.has_key?(:next)
             end
 
           }
