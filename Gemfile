@@ -53,7 +53,7 @@ gem 'jruby-openssl', '0.7.7', :platforms => :jruby
 gem 'rb-inotify', :platforms => [:ruby, :jruby]
 gem 'versionomy'
 gem 'rspec', '>= 2.9'
-gem 'nokogiri', '1.6.8'
+gem 'nokogiri', '1.8.1'
 gem 'ruby-progressbar'
 gem 'parallel'
 gem 'rmagick'
