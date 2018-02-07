@@ -1,0 +1,39 @@
+---
+date: 2018-02-05
+---
+
+p. <i class="icon-star"></i> **Deployment Archives using Java SPI**
+
+p. Usually, you deploy into a container using @@Deployment@ annotation. But now you can implement your own method to generate the archive to be deployed using a Java SPI @org.jboss.arquillian.container.test.spi.client.deployment.AutomaticDeployment@.
+
+p. The service must conform next signature:
+
+bc(prettify).. /**
+* Method called for generating the deployment configuration.
+* @param testClass of current running test.
+* @return Model object that contains all the information related to deployment configuration.
+*/
+DeploymentConfiguration generateDeploymentScenario(TestClass testClass);
+
+p. Moreover, you can use @@BeforeDeployment@ method annotation which allows you to modify the archive before it is deployed. The method must be public static and receive as a parameter an @org.jboss.shrinkwrap.api.Archive@ which is the archive created by @AutomaticDeployment@ implementation and return a modified @org.jboss.shrinkwrap.api.Archive@.
+
+bc(prettify).. @BeforeDeployment
+public static Archive addDeploymentContent(Archive archive) {
+    // Modify Archive
+    return archive;
+}
+
+
+p. <i class="icon-star"></i> **Test Observer**
+
+The inner communication between Arquillian core and other Arquillian extensions is based on firing and observing events. To get information about the event flow you can run your test using the property @-Darquillian.debug=true@.
+So, in case you need to add an additional logic to the whole test suite, you can use Arquillian SPI and create your own Arquillian extension and observe any event that you need. But this extension is applied to all test classes.
+In this release, we introduce a new annotation @@Observer@ where you can specify an additional observer that will be applied only to one specific test class (without any need of using SPI). Arquillian will take the specified class(es) as Arquillian observer(s) and observe any Arquillian event in the context of the related test class that you need (starting with @BeforeClass@ and ending with @AfterClass@):
+
+bc(prettify).. @RunWith(Arquillian.class)
+@Observer(MyObserver.class)
+public class MyTestCase {
+
+p. The Arquillian observer class has to have a non-parametric constructor and the observer method should be defined by @@Observes@ annotation:
+
+bc(prettify).. public void observeBeforeClass(@Observes BeforeClass event) {
