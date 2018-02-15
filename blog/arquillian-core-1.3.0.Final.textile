@@ -4,9 +4,9 @@ date: 2018-02-05
 
 p. <i class="icon-star"></i> **Deployment Archives using Java SPI**
 
-p. Usually, you deploy into a container using @@Deployment@ annotation. But now you can implement your own method to generate the archive to be deployed using a Java SPI @org.jboss.arquillian.container.test.spi.client.deployment.AutomaticDeployment@.
+p. Usually, you deploy into a container using @@Deployment@ annotation. But now you can implement your own strategy to generate deployable archive. For this purpose we created simplified Java SPI @org.jboss.arquillian.container.test.spi.client.deployment.AutomaticDeployment@.
 
-p. The service must conform next signature:
+p. The service must conform following signature:
 
 bc(prettify).. /**
 * Method called for generating the deployment configuration.
@@ -15,7 +15,7 @@ bc(prettify).. /**
 */
 DeploymentConfiguration generateDeploymentScenario(TestClass testClass);
 
-p. Moreover, you can use @@BeforeDeployment@ method annotation which allows you to modify the archive before it is deployed. The method must be public static and receive as a parameter an @org.jboss.shrinkwrap.api.Archive@ which is the archive created by @AutomaticDeployment@ implementation and return a modified @org.jboss.shrinkwrap.api.Archive@.
+p. Moreover, you can use @@BeforeDeployment@ method annotation which allows you to modify the archive before it is deployed. The method must be @public static@ and receive as a parameter an @org.jboss.shrinkwrap.api.Archive@ which is the archive created by @AutomaticDeployment@ implementation. The method returns enriched @org.jboss.shrinkwrap.api.Archive@ based on your needs.
 
 bc(prettify).. @BeforeDeployment
 public static Archive addDeploymentContent(Archive archive) {
@@ -26,9 +26,11 @@ public static Archive addDeploymentContent(Archive archive) {
 
 p. <i class="icon-star"></i> **Test Observer**
 
-The inner communication between Arquillian core and other Arquillian extensions is based on firing and observing events. To get information about the event flow you can run your test using the property @-Darquillian.debug=true@.
-So, in case you need to add an additional logic to the whole test suite, you can use Arquillian SPI and create your own Arquillian extension and observe any event that you need. But this extension is applied to all test classes.
-In this release, we introduce a new annotation @@Observer@ where you can specify an additional observer that will be applied only to one specific test class (without any need of using SPI). Arquillian will take the specified class(es) as Arquillian observer(s) and observe any Arquillian event in the context of the related test class that you need (starting with @BeforeClass@ and ending with @AfterClass@):
+p. The inner communication between Arquillian Core and other Arquillian extensions is based on the event machine. To get information about the event flow you can run your tests using the property @-Darquillian.debug=true@.
+
+p. In case you need to add an additional logic to the whole test suite, you can use Arquillian SPI and create your own Arquillian extension to observe any event that you need. The downside of this approach is that this extension is applied to all test classes.
+
+p. In this release, we introduce a new annotation @@Observer@. Adding it to the test class you can specify additional observers that will be applied only to  this specific test class (without any need of using SPI). You can observe any Arquillian event in the context of the related test class that you need (starting with @BeforeClass@ and ending with @AfterClass@):
 
 bc(prettify).. @RunWith(Arquillian.class)
 @Observer(MyObserver.class)
