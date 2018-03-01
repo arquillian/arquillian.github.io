@@ -1,0 +1,29 @@
+---
+date: 2018-02-27
+---
+
+p. <i class="icon-star"></i> **Extended expression language in Arquillian configuration**
+
+p. In @arquillian.xml@ file, properties are always defined explicitly, as a system property @${myproperty}@ or as an environment variable @${env.myenvironment}@. But in both cases values are set before test execution.
+
+p. With this release, you can implement your own way of resolving values, not just system properties or environment variables.
+
+p. You need to register a new Arquillian service in @ExtensionBuilder@ and it must conform following signature:
+
+bc(prettify).. interface PropertyResolver {
+    String getValue(String key);
+}
+
+p. @key@ attribute is the expression set in @arquillian.xml@ file as property value and it returns the resolved value.
+
+p. You can see how we implement at Arquillian Core the system property/environment variable resolution using this SPI at "registration of PropertyResolver":https://github.com/arquillian/arquillian-core/blob/master/config/impl-base/src/main/java/org/jboss/arquillian/config/impl/extension/ConfigExtension.java#L34 and "implementing PropertyResolver":https://github.com/arquillian/arquillian-core/blob/master/config/impl-base/src/main/java/org/jboss/arquillian/config/impl/extension/SystemPropertiesConfigurationPlaceholderResolver.java.
+
+p. Currently apart from resolving properties from system properties and environment variables, we added a resolution of locations from classpath. For example:
+
+bc(prettify).. <container qualifier="${arquillian.container:default}">
+  <configuration>
+    <property name="javaVmArguments">-Djavax.net.ssl.trustStore=${classpath(store.jks)}</property>
+  </configuration>
+</container>
+
+p. In this example, property @javax.net.ssl.trustStore@ is going to be set to the absolute location of file @store.jks@ which is relative to root classpath.
