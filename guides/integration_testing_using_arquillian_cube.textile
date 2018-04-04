@@ -1,18 +1,37 @@
-In this guide, we'll walk you through sample Spring Boot application to demonstrate how to write an integration test for Openshift using Arquillian Cube.
+---
+layout: guide
+title: Integration Testing using Arquillian Cube
+authors: [dipak-pawar]
+tags: [openshift]
+description: Learn How to write integration tests for openshift using Arquillian Cube.
+guide_group: 2
+guide_order: 4
+---
+[maven_download]http://maven.apache.org/download.html
+[jdk_download]http://www.oracle.com/technetwork/java/javase/downloads
 
-h4. Prerequisites
+This guide introduces you to Arquillian Cube. After reading this guide, you’ll be able to:
 
-Take a clone of sample "spring boot application":https://github.com/dipak-pawar/arquillian-cube-openshift-ftest used in this guide.
+* Write an Arquillian test which deploys your application on openshift cluster and verify your application.
+* Execute an Integration Test in both Maven and IDE using arquillian configuration.
 
-bc(bash).. git clone https://github.com/dipak-pawar/arquillian-cube-openshift-ftest
+You'll learn how to write an integration test for Openshift using Arquillian Cube and it's configuration.
+
+h3. Assumptions
+
+This guide assumes you have openshift cluster up and running. If you don't please download and install "minishift":https://docs.openshift.org/latest/minishift/getting-started/installing.html. Also make sure you have Maven available, either in your command shell or your IDE(Integrated Development Environment). If you don't, please "download and install Maven now":maven_download. You'll also need "JDK(Java Development Kit) 1.8":jdk_download installed on your machine.
+
+h3. Application Under Testing
+
+In order to write an Arquillian Cube Integration Test, you need to have a application for it. Let's take a clone of sample "spring boot application":https://github.com/dipak-pawar/arquillian-cube-openshift-ftest which we are going to use in this guide.
+
+bc(command).. git clone https://github.com/dipak-pawar/arquillian-cube-openshift-ftest
 
 h3. Setting Dependencies and Plugin Configurations
 
-* Ensure that @version.arquillian.cube@ >= @1.15.3@
-* Ensure following dependencies are added in pom.xml
+Go ahead and open up the @pom.xml@ in your editor. Add following dependencies in pom.xml inside @<dependencies>@ section.
 
-
-bc(xml).. <dependency>
+bc(prettify). <dependency>
   <groupId>org.arquillian.cube</groupId>
   <artifactId>arquillian-cube-openshift-starter</artifactId>   # <1>
   <version>${version.arquillian.cube}</version>
@@ -31,15 +50,14 @@ bc(xml).. <dependency>
   <scope>test</scope>
 </dependency>
 
-
-bc. <1> Cube openshift dependency for standalone mode.
+<1> Cube openshift dependency for standalone mode.
 <2> Validate interesting things from response.
 <3> Unit Testing Framework.
 
 
-* Ensure Maven profile with "fabric8-maven-plugin":https://maven.fabric8.io/ configuration is included as follows:
+Add @Maven@ profile with "fabric8-maven-plugin":https://maven.fabric8.io/ configuration as follows:
 
-bc(xml). <profiles>
+bc(prettify). <profiles>
 <profile>
   <id>openshift</id>
   <build>
@@ -62,9 +80,9 @@ bc(xml). <profiles>
 </profile>
 </profiles>
 
-* Make sure to include "Failsafe Plugin":http://maven.apache.org/surefire/maven-failsafe-plugin and it's configuration to run integration tests.
+Add "Failsafe Plugin":http://maven.apache.org/surefire/maven-failsafe-plugin and it's configuration to run integration tests.
 
-bc(xml). <plugin>
+bc(prettify). <plugin>
   <groupId>org.apache.maven.plugins</groupId>
   <artifactId>maven-failsafe-plugin</artifactId>
   <version>${version.failsafe.plugin}</version>
@@ -79,13 +97,11 @@ bc(xml). <plugin>
 </plugin>
 
 
-You can find entire @pom.xml@ "here":https://raw.githubusercontent.com/dipak-pawar/arquillian-cube-openshift-ftest/integration_test/pom.xml
+You can find entire @pom.xml@ "here":https://raw.githubusercontent.com/dipak-pawar/arquillian-cube-openshift-ftest/integration_test/pom.xml.
 
-h3. Integration Test Example
+h3. Write Integration Test
 
-Once all dependency and plugin configuration is set, you are ready to write Integration Test.
-
-The following example illustrates how to write integration test using Arquillian Cube for Openshift.
+Once all dependency and plugin configuration is set, you are ready to write Integration Test. In your IDE, create a new Java class named @OpenshiftIT@ in the @org.arquillian.cube@ package. Add following code in it.
 
 div(filename). src/test/java/org/arquillian/cube/OpenshiftIT.java
 
@@ -125,16 +141,15 @@ public class OpenshiftIT {
     }
 }
 
-p.
-<1> To Resolve @${app.name}@, you have to set @app.name@ either using @system property@ or @environment variable@ or @arquillian.xml properties@
+p. <1> To Resolve @${app.name}@, you have to set @app.name@ either using system property or environment variable or arquillian.xml properties.
 
-h3. Setting Arquillian Configuration for Integration Test
+h3. Creating Arquillian Configuration for Integration Test
 
 Below snippet shows how to set Arquillian configuration for your integration test.
 
 div(filename). src/test/resources/arquillian.xml
 
-bc(xml). <arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jboss.org/schema/arquillian"
+bc(prettify). <arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jboss.org/schema/arquillian"
  xsi:schemaLocation="http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
   <extension qualifier="openshift">
     <property name="namespace.use.current">true</property> #<1>
@@ -155,12 +170,14 @@ bc(xml). <arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns
 
 h3. Run Integration Test
 
-* To Run integration test from Maven
+1. To Run integration test from Maven
 
-bc(bash).  mvn clean install -Popenshift
+bc(command).  mvn clean install -Popenshift
 
-* To run the same test from @IDE@ simply select @Run as JUnit Test@ option.
+2. To run the same test from @IDE@ simply select @Run as JUnit Test@ option.
 
-You can find full source code with application and integration test "here":https://github.com/dipak-pawar/arquillian-cube-openshift-ftest/tree/integration_test.
+h3. What's Next
 
-Similarly, you can write integration tests for @Vert.x@, @Wildfly Swarm@ applications.
+You can find full source code with application and integration test "here":https://github.com/dipak-pawar/arquillian-cube-openshift-ftest/tree/integration_test. Similarly, you can write integration tests for @Vert.x@, @Wildfly Swarm@ applications.
+
+You can find more examples "here":https://github.com/arquillian/arquillian-cube/tree/master/openshift.
