@@ -1,7 +1,37 @@
 language: java
-
 jdk:
   - oraclejdk8
 
+sudo: required
+
+addons:
+   apt:
+     sources:
+       - git-core
+     packages:
+       - git
+       - jq
+
+cache:
+  directories:
+    - $HOME/.m2
+    - $HOME/cache/
+
+branches:
+    except:
+        - /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+
+before_install:
+  - chmod +x ./_scripts/prepare_build.sh
+
+install:
+  - TRAVIS_WORK_DIR="${PWD}/.."
+  - ./_scripts/prepare_build.sh --working-dir=${TRAVIS_WORK_DIR}
+
 script:
   - mvn clean install -Darquillian.blog.url=http://arquillian.org/ -Dbrowser=chromeHeadless -Darq.extension.webdriver.chromeDriverVersion=2.33
+
+notifications:
+  email:
+    recipients:
+      secure: ZYuQRQkZAzs3VDBD15tbIAlA+HJn0btzoRCSAVdF81fzgyFG6e8ba5HapLot9KRdFh4BYrvBD6kAbvzxewNEDAm9HVP/JugOx9KR1TsMUKOYoNl81UzhnlgJWakutiQJd5yAreWrlWUEtlj3BWOzUQVMiskMi0gOSUxue1h2Lx8=
