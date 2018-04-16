@@ -5,7 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +22,6 @@ public class GitHubProjectVersionExtractor {
 
     private String TAGS_URL = "/tags";
     private String TAG_NAME = "name";
-    private String DEFAULT_TOKEN = "";
     private String project;
 
     public GitHubProjectVersionExtractor(String project) {
@@ -54,25 +52,13 @@ public class GitHubProjectVersionExtractor {
 
     private Map<String, String> getAuthorizationHeader() throws IOException {
         Map<String, String> headers = new HashMap<>();
-        String token = getGithubAuthToken();
+        String token = new String(Files.readAllBytes(Paths.get(".github-auth"))).trim();
         if (Validate.nonEmpty(token)) {
             headers.put(AUTHORIZATION_HEADER_KEY, OAUTH_AUTHORIZATION_HEADER_VALUE_PREFIX + token);
         } else {
             logger.warning("Missing GitHub authentication configuration. Making an unauthenticated request to the GitHub API.");
         }
         return headers;
-    }
-
-    private String getGithubAuthToken() throws IOException {
-        final String githubToken = System.getenv("GITHUB_AUTH");
-        final Path path = Paths.get(".github-auth");
-
-        if (githubToken != null) {
-            return githubToken;
-        } else if (Files.exists(path)) {
-            return new String(Files.readAllBytes(path)).trim();
-        }
-        return DEFAULT_TOKEN;
     }
 }
 
