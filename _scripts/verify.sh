@@ -26,6 +26,7 @@ if [ ! -d ${TEST_PROJECT_DIRECTORY} ]; then
     fi
 
     git ${VARIABLE_TO_SET_GH_PATH} worktree add -b functional-tests ${TEST_PROJECT_DIRECTORY} origin/functional-tests;
+    cp ${ARQUILLIAN_PROJECT_DIR}/.github-auth ${TEST_PROJECT_DIRECTORY}
 fi
 
 ### execute UI tests
