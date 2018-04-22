@@ -76,7 +76,14 @@ module Awestruct::Extensions::Releases
           else
             release_page.title ||= "#{component.name} #{release.version} Released"
           end
-          release_page.author ||= !post_author.nil? ? post_author : site.identities.lookup_by_contributor(release.released_by).username
+          if post_author
+            release_page.author ||= post_author
+          else
+            contributor = site.identities.lookup_by_contributor(release.released_by)
+            if contributor
+              release_page.author ||= contributor.username
+            end
+          end
           if post_date
             release_page.date ||= post_date
           else
