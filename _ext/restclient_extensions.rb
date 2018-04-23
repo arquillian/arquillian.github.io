@@ -47,14 +47,23 @@ module RestClient
 
       if response.nil?
         # puts 'Fetching ' + self.url
-        response = _execute &block
+        begin
+          response = _execute &block
+        rescue => e
+          STDERR.puts "!!!!!!!!!!!!!!!"
+          STDERR.puts "!!! WARNING !!!"
+          STDERR.puts "!!!!!!!!!!!!!!!"
+          STDERR.puts "The request to the url #{self.url} has failed with an error:\n #{e.response}"
+        end
         instances.each do |instance|
           instance.cache_miss(response) if instance.respond_to? 'cache_miss'
         end
       end
 
-      instances.each do |instance|
-        response = instance.post_process(response) if instance.respond_to? 'post_process'
+      if !response.nil?
+        instances.each do |instance|
+          response = instance.post_process(response) if instance.respond_to? 'post_process'
+        end
       end
       response
     end
@@ -148,7 +157,7 @@ class RestGetCache
   end
 
   def cache_miss(response)
-    if response.code == 200 and @cache and @request.method.eql? 'get' and
+    if !response.nil? and response.code == 200 and @cache and @request.method.eql? 'get' and
         @redirects.eql? @request.headers[:redirects] and !response.body.empty?
       # puts "Cache miss because #{@cache_file} is missing or expired"
       FileUtils.mkdir_p(File.dirname @cache_file)
