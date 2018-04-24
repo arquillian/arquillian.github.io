@@ -168,6 +168,17 @@ module Awestruct
               :clone_url => 'git://github.com/forge/plugin-arquillian.git'
           )
 
+          @repositories << OpenStruct.new(
+              :path => 'liberty-arquillian',
+              :desc => nil,
+              :relative_path => '',
+              :owner => 'OpenLiberty',
+              :host => 'github.com',
+              :type => 'git',
+              :html_url => 'https://github.com/OpenLiberty/liberty-arquillian',
+              :clone_url => 'git://github.com/OpenLiberty/liberty-arquillian.git'
+          )
+
           @repositories.sort! { |a, b| a.path <=> b.path }
           # get the description for each github repository
           # TODO this may need review for efficiency

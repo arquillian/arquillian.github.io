@@ -658,6 +658,11 @@ module Awestruct::Extensions::Repository::Visitors
                                       :name => 'David Blevins',
                                       :jboss_username => 'dblevins'
                                   })
+          elsif repository.path.eql? 'liberty-arquillian'
+            lead = OpenStruct.new({
+                                      :name => 'Gerhard Poul',
+                                      :jboss_username => 'gpoul'
+                                  })
           end
         end
         # update the global index (why not?)
@@ -858,7 +863,7 @@ module Awestruct::Extensions::Repository::Visitors
 
     def handles(repository)
       repository.path != 'arquillian-container-reloaded' and
-          (repository.path =~ /^arquillian-container-.+/ or ['jboss-as', 'wildfly-arquillian', 'tomee'].include? repository.path)
+          (repository.path =~ /^arquillian-container-.+/ or ['jboss-as', 'wildfly-arquillian', 'tomee', 'liberty-arquillian'].include? repository.path)
     end
 
     def visit(repository, site)
@@ -884,6 +889,7 @@ module Awestruct::Extensions::Repository::Visitors
     def resolve_container_adapters(repository, component)
       vendor = (repository.path == 'jboss-as' ? 'jbossas7' : repository.path.match(/([^-]+)$/)[1])
       vendor = 'wildfly' if repository.path == 'wildfly-arquillian'
+      vendor = 'liberty' if repository.path == 'liberty-arquillian'
       adapters = []
       rev = component.latest_tag
       rev = "HEAD" unless rev
