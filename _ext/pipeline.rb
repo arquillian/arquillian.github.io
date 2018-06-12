@@ -71,6 +71,7 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-container-wls', 'wls')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/arquillian-container-se', 'se')
   extension Awestruct::Extensions::Github::ReleaseNotes.new('arquillian/smart-testing', 'testing')
+  extension Awestruct::Extensions::Github::ReleaseNotes.new('OpenLiberty/liberty-arquillian', 'liberty')
 
   extension Awestruct::Extensions::Repository::Collector.new(:observers => [github_collector])
 

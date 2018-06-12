@@ -424,7 +424,7 @@ module Awestruct::Extensions::Repository::Visitors
       prev_sha = nil
       rc.tags.select { |t|
         # supports formats: 1.0.0.Alpha1 or 1.0.0-alpha-1 or with prefix- or 1.0.0 or 1.0.0.0 or 0.1
-        t.name =~ /^([a-z]+-?)?[0-9]\d*\.\d+\.\d+(\.\d+)?([.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
+        t.name =~ /^(arquillian-liberty-)?([a-z]+-?)?[0-9]\d*\.\d+\.\d+(\.\d+)?([.-]((alpha|beta|cr)-?[1-9]\d*|final))?$/i
       }.sort_by { |t| rc.gcommit(t).author_date }.each do |t|
         # skip tag if arquillian has nothing to do with it
         next if repository.relative_path and rc.log(1).object(t.name).path(repository.relative_path).size.zero?
@@ -434,7 +434,7 @@ module Awestruct::Extensions::Repository::Visitors
         committer = commit.committer
         release = OpenStruct.new({
                                      :tag => t.name,
-                                     :version => t.name.gsub(/^([a-z]+-?)/, ''),
+                                     :version => t.name.gsub(/^([a-z]+-?)+/, ''),
                                      :key => (c.key.eql?('core') ? '' : c.key + '_') + t.name, # jira release version key, should we add owner?
                                      #:license => 'track?',
                                      :sha => sha,
@@ -934,6 +934,15 @@ module Awestruct::Extensions::Repository::Visitors
                                          :basepath => mod,
                                          :vendor => vendor,
                                          :management => 'any'
+                                     })
+        elsif mod =~ /arquillian-liberty-(remote|managed)$/
+          puts "Adding adapter now"
+          module_cnt += 1
+          adapters << OpenStruct.new({
+                                         :relative_path => MavenHelpers.to_relative_sub_path(pathrev, repository.relative_path),
+                                         :basepath => mod,
+                                         :vendor => vendor,
+                                         :management => $1
                                      })
         end
       end
