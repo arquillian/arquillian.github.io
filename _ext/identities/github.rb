@@ -4,6 +4,7 @@ require 'digest/md5'
 require 'parallel'
 require 'rmagick'
 require 'ostruct'
+require 'cgi'
 
 require_relative '../common.rb'
 
@@ -121,7 +122,7 @@ module Identities
           filter.values.select{|author| !author.github_id.nil? and !visited.include? author.github_id}.each do |author|
             github_id = author.github_id
             puts "Manually adding #{author.name} (#{github_id}) as a contributor"
-            url = USER_URL_TEMPLATE % [ github_id ]
+            url = USER_URL_TEMPLATE % [ CGI.escape(github_id) ]
             user = RestClient.get(url, :accept => 'application/json').content
             identity = identities.lookup_by_github_id(github_id, true)
             github_acct_to_identity(user, author, identity)
