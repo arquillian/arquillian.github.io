@@ -116,7 +116,7 @@ Awestruct::Extensions::Pipeline.new do
   extension Awestruct::Extensions::Identities::Cache.new
 
   # Transformers
-  transformer Awestruct::Extensions::Minify.new([:js])
+  #transformer Awestruct::Extensions::Minify.new([:js])
   transformer Awestruct::Extensions::Guide::WrapHeaderAndAssignHeadingIds.new
 
   # Helpers
