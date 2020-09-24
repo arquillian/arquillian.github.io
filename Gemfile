@@ -29,7 +29,7 @@
 
 source 'https://rubygems.org'
 
-gem 'awestruct', '0.6.0'
+gem 'awestruct', '0.6.1'
 gem 'git', '1.2.9.1' # newer version incorrectly reads UTF-8 enconded commits (authors for example)
 gem 'asciidoctor'
 gem 'haml-contrib'
