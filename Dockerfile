@@ -59,6 +59,10 @@ RUN bash -l -c "rvm use $RUBY_VERSION"
 RUN bash -l -c "rvm cleanup all"
 # Install Rake and Bundler for driving the Awestruct build & site
 RUN bash -l -c "gem install -N bundler rake"
+
+RUN echo 'alias install-gems="bundle install -j 10 --path ./.gems"' >> $HOME/.bashrc
+RUN source $HOME/.bashrc
+
 # Install Awestruct
 RUN bash -l -c "gem install awestruct -v $AWESTRUCT_VERSION"
 
