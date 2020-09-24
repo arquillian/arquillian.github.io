@@ -60,7 +60,8 @@ RUN bash -l -c "rvm cleanup all"
 # Install Rake and Bundler for driving the Awestruct build & site
 RUN bash -l -c "gem install -N bundler rake"
 
-RUN echo 'alias install-gems="bundle install -j 10 --path ./.gems"' >> $HOME/.bashrc
+RUN bundle config set path './.gems'
+RUN echo 'alias install-gems="bundle install -j 10"' >> $HOME/.bashrc
 RUN source $HOME/.bashrc
 
 # Install Awestruct
