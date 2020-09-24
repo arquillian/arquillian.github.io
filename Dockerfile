@@ -60,7 +60,7 @@ RUN bash -l -c "rvm cleanup all"
 # Install Rake and Bundler for driving the Awestruct build & site
 RUN bash -l -c "gem install -N bundler rake"
 # Install Awestruct
-# RUN bash -l -c "gem install awestruct -v $AWESTRUCT_VERSION --no-rdoc --no-ri"
+RUN bash -l -c "gem install awestruct -v $AWESTRUCT_VERSION"
 
 EXPOSE 4242
 
