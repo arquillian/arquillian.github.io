@@ -1,7 +1,7 @@
 ---
 title: Arquillian documentation now in Confluence
 date: 2011-04-16
-author: aslakknutsen
+authors: aslakknutsen
 tags: docs, announcement
 layout: post
 ---

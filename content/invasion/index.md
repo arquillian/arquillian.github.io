@@ -2,6 +2,7 @@
 title: Invasion!
 description: Arquillian's mission to rid the Java universe of bugs
 layout: invasion
+authors: ike
 ---
 
 # The Arquillian Invasion

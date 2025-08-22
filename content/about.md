@@ -1,7 +1,7 @@
 ---
 title: About Arquillian
 description: Learn more about the Arquillian project
-layout: :theme/page
+layout: index
 ---
 
 # About Arquillian

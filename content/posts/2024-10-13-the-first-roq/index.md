@@ -3,7 +3,7 @@ title: "The First Roq!"
 description: This is my first article ever made with Quarkus Roq
 image: blog.avif
 tags: blogging
-author: roqqy
+authors: roqqy
 cool: this is cool :)
 fun: and fun!
 ---

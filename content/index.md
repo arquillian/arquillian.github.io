@@ -6,7 +6,7 @@ simple-name: Arquillian
 image: arquillian_logo_200px.png
 social-twitter: arquillian
 social-github: arquillian/arquillian-core
-layout: :theme/index
+layout: index
 ---
 
 ## What is Arquillian?
