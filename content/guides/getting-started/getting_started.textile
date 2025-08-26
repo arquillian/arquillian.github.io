@@ -7,13 +7,11 @@ description: Learn how to add Arquillian to the test suite of your project and w
 guide_group: 1
 guide_order: 10
 ---
-[forge_home]http://jboss.org/forge
-[forge_download]http://downloads.jboss.org/forge/releases/3.4.0.Final/forge-distribution-3.4.0.Final-offline.zip
 [maven_home]http://maven.apache.org
 [maven_download]http://maven.apache.org/download.html
 [maven_search]http://search.maven.org
-[jdk_download]http://www.oracle.com/technetwork/java/javase/downloads
-[as7_download]http://jboss.org/jbossas/downloads
+[jdk_download]https://adoptium.net/temurin/releases
+[wildfly_download]https://www.wildfly.org/downloads/
 [tools_home]http://jboss.org/tools
 [shrinkwrap_home]http://jboss.org/shrinkwrap
 [m2e_home]http://eclipse.org/m2e
@@ -36,12 +34,7 @@ This guide assumes you have Maven available, either in your command shell or you
 
 h3. Create a New Project
 
-There are two ways we recommend you create a new Maven project:
-
-# "Generate a project from a Maven archetype":#generate_project_from_archetype
-# "Create and customize a project using JBoss Forge":#create_project_using_forge
-
-By far, "JBoss Forge":forge_home is the simpler approach, but this guide will offer both options in the event you aren't ready to adopt JBoss Forge. Select from one of the two options above to jump to the instructions.
+The main way to create a new Maven project is to use the "archetype" plugin. This plugin provides a set of templates that can be used to create a new project.from a Maven archetype. The details are provided in #generate_project_from_archetype
 
 p(info). %If you already have a Maven project, you can use this section as review to ensure you have the proper dependencies before moving on.%
 
@@ -49,8 +42,7 @@ h4(#generate_project_from_archetype). Generate a Project from a Maven Archetype
 
 First, create a Maven-based Java project using the following command:
 
-bc(command).. $ mvn archetype:generate -DarchetypeGroupId=net.avh4.mvn.archetype \
--DarchetypeArtifactId=java-1.6-archetype
+bc(command).. $ mvn archetype:generate -DarchetypeGroupId=com.dominikcebula.archetypes \ -DarchetypeArtifactId=java17-basic-archetype
 
 p. _Copy the text after the @$@ and paste it into your command shell_. Respond to the prompts by entering the value shown after each double colon in the pane below. Hit the Enter key after each entry (as indicated by @<ENTER>@).
 
@@ -156,136 +148,6 @@ bc(prettify).. <!-- clip -->
 
 p. The foundation of your project is now ready! Skip to the next section, "Open the Project in Eclipse":#open_the_project_in_eclipse, so we can start writing some code!
 
-h4(#create_project_using_forge). Create a Project Using Forge
-
-"JBoss Forge":forge_home is a command shell for rapid-application development in a standards-based environment. Another way to think of it is that it's like Maven Archetypes on steroids.
-
-Installing Forge is a relatively short process, and this guide will take you through the fundamentals. Follow these simple steps to get Forge installed:
-
-# "Download Forge":forge_download
-# Unzip the distribution into a folder on your harddrive, which we'll call @$FORGE_HOME@
-  We'll assume you extracted the distribution to a folder named @forge@ in your home directory
-# Add @$FORGE_HOME/bin@ to your path (Windows, Linux or Mac OSX)
-
-On Unix based operating systems, adding Forge to your path typically means editing your $HOME/.bashrc or $HOME/.profile; you will need to set the following environment variables:
-
-bc(command). $ export FORGE_HOME=$HOME/forge/
-$ export PATH=$PATH:$FORGE_HOME/bin
-
-p(info). %On Windows, you'll need to right-click on open the "Control Panel", then click "System Properties", open the "Advanced" tab, then click "Environment Variables" and add these two entries visually. We recommended setting User variables for Forge, unless you have placed the unzipped distribution in a folder where all users can access it.%
-
-Now that Forge is installed (i.e., extracted), open a command prompt (a shell) and run the @forge@ command:
-
-bc(command).. $ forge
-   _____
-  |  ___|__  _ __ __ _  ___
-  | |_ / _ \| `__/ _` |/ _ \  \\
-  |  _| (_) | | | (_| |  __/  //
-  |_|  \___/|_|  \__, |\___|
-                  |___/
-
-[no project] ~ $
-
-p. That's it! You've got Forge up and running. Now it's time to create the project.
-
-Inside the Forge shell, execute the following command to create a blank project, much like we created a project using the Maven Archetype above:
-
-bc(command). $ project-new --named arquillian-tutorial --topLevelPackage org.arquillian.example
-
-p. This command generates a Maven-based Java project inside a new folder named @arquillian-tutorial@ under the current directory.
-
-The file structure of the project Forge generates is shown below:
-
-(filetree)* src/
-** main/
-*** java/ - Place all application Java source files here (under Java package)
-*** resources/ - Place all application configuration files here
-**** META-INF/
-***** forge.xml - An empty Forge settings file
-** test/
-*** java/ - Place all test Java source files heres (under Java package)
-*** resources/ - Place all test configuration files here (e.g., arquillian.xml)
-* pom.xml - The Maven build file. Tells Maven how your project should be built.
-
-Forge also makes the project folder your current directory within the Forge shell.
-
-bc(command). [arquillian-tutorial] arquillian-tutorial $
-
-
-What we need to add now is the Java EE APIs. That's done using the @project add-dependency@ command below:
-
-bc(command). $ project-add-dependencies org.jboss.spec:jboss-javaee-7.0:1.0.3.Final:pom:provided
-
-You'll also need to add JUnit 4.12, the minimum required version of JUnit to use Arquillian, as a test-scoped dependency:
-
-bc(command). $ project-add-dependencies junit:junit:4.12:test
-
-Forge adds the JBoss Community repository to the pom.xml file. This repository is not required to use Arquillian. (However, you can keep it if you are using other libraries only available in the JBoss Community repository). If you do decide to remove the repository, you can easily do so using the following Forge command:
-
-bc(command). $ project-remove-repository --url http://repository.jboss.org/nexus/content/groups/public
-
-The result of the pom.xml that Forge generates is shown below:
-
-div(filename). pom.xml
-
-bc(prettify).. <?xml version="1.0" encoding="UTF-8"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>org.arquillian.tutorial</groupId>
-    <artifactId>arquillian-tutorial</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <packaging>war</packaging>
-    <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-    <dependencyManagement>
-      <dependencies>
-        <dependency>
-          <groupId>org.jboss.spec</groupId>
-          <artifactId>jboss-javaee-7.0</artifactId>
-          <version>1.0.3.Final</version>
-          <type>pom</type>
-          <scope>provided</scope>
-        </dependency>
-        <dependency>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-          <version>4.12</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>org.jboss.spec</groupId>
-        <artifactId>jboss-javaee-7.0</artifactId>
-        <type>pom</type>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <scope>test</scope>
-      </dependency>
-    </dependencies>
-    <build>
-      <finalName>arquillian-tutorial</finalName>
-      <plugins>
-        <plugin>
-          <artifactId>maven-war-plugin</artifactId>
-          <version>2.4</version>
-          <configuration>
-            <failOnMissingWebXml>false</failOnMissingWebXml>
-          </configuration>
-        </plugin>
-      </plugins>
-    </build>
-</project>
-
-p. The foundation of your project is now ready! Let's now open the project in Eclipse so we can start writing some code!
 
 h3. Open the Project in Eclipse
 
@@ -568,7 +430,7 @@ h3. Add a Container Adapter
 
 We've been talking a lot about testing in a container, but so far we haven't discussed which one we'll be using. That's because it's a runtime decision.
 
-Arquillian selects the target container based on which container adapter is available on the test classpath. A _container adapter_ controls and communicates with a container (e.g., Weld Embedded, JBoss AS, GlassFish, etc). That means we'll need to add additional libraries to the project.
+Arquillian selects the target container based on which container adapter is available on the test classpath. A _container adapter_ controls and communicates with a container (e.g., Weld Embedded, WildFly, GlassFish, etc). That means we'll need to add additional libraries to the project.
 
 An Arquillian test can be executed in any container that's compatible with the programming model used in the test (as long as that container has an Arquillian adapter, of course). Our test is using the CDI programming model, so we need to use any container to supports CDI. We want fast turnaround during development, so we'll start with the Weld EE embedded container (i.e., an embedded CDI runtime).
 
@@ -851,7 +713,7 @@ bc(prettify).. <!-- clip -->
 </profile>
 <!-- clip -->
 
-p. and the other for JBoss AS managed:
+p. and the other for WildFly managed:
 
 div(filename). pom.xml
 
@@ -881,7 +743,7 @@ bc(prettify).. <!-- clip -->
 </profile>
 <!-- clip -->
 
-p(info). %By default, JBoss AS 7 deploys test archives to the server using the JMX protocol. We've gone ahead and added the dependency for the Servlet protocol in the @arquillian-jbossas-managed@ profile just so it's there if you need to use it in the future. See "this FAQ":https://community.jboss.org/wiki/WhyDoIGetNoActiveContextsForScopeTypeWhenTestingOnJBossAS7 for instructions on how to switch to it.%
+p(info). %By default, WildFly deploys test archives to the server using the JMX protocol. We've gone ahead and added the dependency for the Servlet protocol in the @arquillian-jbossas-managed@ profile just so it's there if you need to use it in the future. See "this FAQ":https://community.jboss.org/wiki/WhyDoIGetNoActiveContextsForScopeTypeWhenTestingOnJBossAS7 for instructions on how to switch to it.%
 
 p. You now have the choice of running the tests in one of three containers.
 
@@ -950,20 +812,20 @@ p(info). %If you set the Weld EE Embedded profile to be active by default, you h
 
 Run the test again. You should see GlassFish start in the console...and another *(greenbar)green bar*!
 
-You've now run the same test on two different embedded containers, a CDI container (Weld) and a Java EE container (GlassFish). Both of these executions are in process. To really be sure the component works in a pure environment, we need to use a standalone container. Let's switch to using JBoss AS.
+You've now run the same test on two different embedded containers, a CDI container (Weld) and a Java EE container (GlassFish). Both of these executions are in process. To really be sure the component works in a pure environment, we need to use a standalone container. Let's switch to using WildFly.
 
-To run the test on a standalone instance of JBoss AS, you first need to set it up. You can either:
+To run the test on a standalone instance of WildFly, you first need to set it up. You can either:
 
 # Download and unpack it in a location outside the project
 # Use Maven to download and unpack it during a build
 
-Follow these steps to setup JBoss AS 7 outside the project:
+Follow these steps to setup WildFly outside the project:
 
-# "Download JBoss AS 7":as7_download (make sure the version you download matches the version of the @jboss-as-arquillian-container-managed@ dependency in your @pom.xml@)
+# "Download WildFly":wildfly_download (make sure the version you download matches the version of the @jboss-as-arquillian-container-managed@ dependency in your @pom.xml@)
 # Extract the archive
 # (optional) Set the @JBOSS_HOME@ environment variable to the path of the extracted directory
 
-If you have JBoss AS installed (i.e., extracted) and your @JBOSS_HOME@ environment variable set to that location, you can activate the @arquillian-jbossas-managed@ profile and run the test. You should see JBoss AS start in the console...and another *(greenbar)green bar*!
+If you have WildFly installed (i.e., extracted) and your @JBOSS_HOME@ environment variable set to that location, you can activate the @arquillian-jbossas-managed@ profile and run the test. You should see WildFly start in the console...and another *(greenbar)green bar*!
 
 p(info). %The message printed to System.out gets written to the server log instead of the console, so look over there.%
 
@@ -985,6 +847,7 @@ bc(prettify).. <!-- clip -->
                     </goals>
                     <configuration>
                         <artifactItems>
+                        <!-- needs update for wildfly -->
                             <artifactItem>
                                 <groupId>org.jboss.as</groupId>
                                 <artifactId>jboss-as-dist</artifactId>
@@ -1002,7 +865,7 @@ bc(prettify).. <!-- clip -->
 </build>
 <!-- clip -->
 
-p. To target a managed JBoss AS 7 instance downloaded by Maven, you also need a small bit of Arquillian configuration. Create the following configuration file and assign the value of the @jbossHome@ property to the location where JBoss AS 7 is installed. If you're using the Maven dependency plugin, the location is @target/jboss-as-7.1.1.Final@.
+p. To target a managed WildFly instance downloaded by Maven, you also need a small bit of Arquillian configuration. Create the following configuration file and assign the value of the @jbossHome@ property to the location where WildFly is installed. If you're using the Maven dependency plugin, the location is @target/jboss-as-7.1.1.Final@.
 
 div(filename). src/test/resources/arquillian.xml
 
@@ -1018,7 +881,7 @@ bc(prettify).. <arquillian xmlns="http://jboss.org/schema/arquillian"
     </container>
 </arquillian>
 
-p. Now change the active Maven profile to @arquillian-jbossas-managed@, then run the test again. You should see JBoss AS starting in the console...and yet another *(greenbar)green bar*!
+p. Now change the active Maven profile to @arquillian-jbossas-managed@, then run the test again. You should see WildFly starting in the console...and yet another *(greenbar)green bar*!
 
 That's the _same_ test, this time running in a full Java EE container. Arquillian packages the test, deploys to the container as a Java EE archive, executes the tests remotely, captures the results and feeds them back to the Eclipse JUnit result view (or in the Maven surefire results).
 

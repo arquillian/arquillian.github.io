@@ -5,7 +5,6 @@ import io.quarkus.qute.EvalContext;
 import io.quarkus.qute.NamespaceResolver;
 import jakarta.inject.Singleton;
 import java.time.LocalDate;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 @Singleton
