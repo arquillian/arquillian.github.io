@@ -2,6 +2,7 @@
 title: Guides
 description: Step-by-step guides to help you get started with Arquillian
 layout: page
+link: guides
 ---
 
 # Arquillian Guides
