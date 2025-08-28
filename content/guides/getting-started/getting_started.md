@@ -41,7 +41,7 @@ The recommended way you create a new Maven project is to Generate a project from
 
 > [INFO] If you already have a Maven project, you can use this section as review to ensure you have the proper dependencies before moving on.
 
-#### Generate a Project from a Maven Archetype {#generate_project_from_archetype}
+#### Generate a Project from a Maven Archetype
 
 First, create a Maven-based Java project using the following command:
 
@@ -241,7 +241,7 @@ Once again open up the `pom.xml` file at the root of the project in your editor.
         <dependency>
             <groupId>org.jboss.arquillian</groupId>
             <artifactId>arquillian-bom</artifactId>
-            <version>#{site.components['arquillian-core'].latest_version}</version>
+            
             <scope>import</scope>
             <type>pom</type>
         </dependency>
