@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -94,15 +95,21 @@ public class TextileToAsciidocConverter {
                     inCodeBlock = true;
                     codeBlockLanguage = extractCodeBlockLanguage(line);
                     codeBlock = new StringBuilder();
+                    // Look for code in the bc... line
+                    int spaceIndex = line.indexOf(' ');
+                    if (spaceIndex != -1) {
+                        codeBlock.append(line.substring(spaceIndex+1)).append("\n");
+                    }
                     continue;
                 }
             }
 
             if (inCodeBlock) {
                 // End of code block
-                if (trimedLine.equals("p.") || trimedLine.equals("p. ") || 
-                    (trimedLine.isEmpty() && i < lines.length - 1 && 
-                    (lines[i+1].startsWith("h.") || lines[i+1].startsWith("p.")))) {
+                final String regexs = "^(p|(h[1-6]))(\\([^)]+\\))?\\..*";
+                boolean paragrphOrHeading = trimedLine.matches(regexs);
+                if (paragrphOrHeading ||
+                    (trimedLine.isEmpty() && i < lines.length - 1 && lines[i+1].trim().matches(regexs))) {
                     asciidoc.append("[source").append(codeBlockLanguage.isEmpty() ? "" : "," + codeBlockLanguage).append("]\n");
                     asciidoc.append("----\n");
                     asciidoc.append(codeBlock.toString());
@@ -239,7 +246,7 @@ public class TextileToAsciidocConverter {
 
             // Add the processed line
             if (!line.isBlank()) {
-                asciidoc.append(line).append("\n\n");
+                asciidoc.append(line).append("\n");
             } else {
                 asciidoc.append("\n");
             }
@@ -313,7 +320,16 @@ public class TextileToAsciidocConverter {
             if (referenceLinks.containsKey(url)) {
                 inlineMatcher.appendReplacement(sb, referenceLinks.get(url) + "[" + text + "]");
             } else {
-                inlineMatcher.appendReplacement(sb, url + "[" + text + "]");
+                sb.append("// url="+url+" text="+text+"\n");
+                URI linkUri = URI.create(url);
+                String replacement;
+                String scheme = linkUri.getScheme();
+                if(scheme == null || !scheme.startsWith("http")) {
+                    replacement = "link:{site.page('" + url + "').url}[" + text + "]\n";
+                } else {
+                    replacement = url + "[" + text + "]";
+                }
+                inlineMatcher.appendReplacement(sb, replacement);
             }
         }
         inlineMatcher.appendTail(sb);
@@ -340,9 +356,45 @@ public class TextileToAsciidocConverter {
         return line;
     }
 
-    private String convertInlineCode(String line) {
-        line = line.replaceAll("@?@(.*)@", "`$1`"); // @ -> ` in asciidoc
-        return line;
+    /**
+     * Converts inline code blocks from Textile format (@code@ or @@code@) to AsciiDoc format (`code`)
+     * 
+     * @param line The line containing inline code blocks
+     * @return The line with converted inline code blocks
+     */
+    public static String convertInlineCode(String line) {
+        // For all other cases, use a more general approach
+        StringBuilder result = new StringBuilder();
+        int i = 0;
+        while (i < line.length()) {
+            // Check for @@code@ pattern
+            if (i + 2 < line.length() && line.charAt(i) == '@' && line.charAt(i + 1) == '@') {
+                int endIndex = line.indexOf('@', i + 2);
+                if (endIndex != -1) {
+                    result.append("`@").append(line, i + 2, endIndex).append("`");
+                    i = endIndex + 1;
+                    continue;
+                }
+            }
+            
+            // Check for @code@ pattern
+            if (i < line.length() && line.charAt(i) == '@') {
+                int endIndex = line.indexOf('@', i + 1);
+                if (endIndex != -1) {
+                    result.append("`").append(line, i + 1, endIndex).append("`");
+                    i = endIndex + 1;
+                    continue;
+                }
+            }
+            
+            // Regular character
+            if (i < line.length()) {
+                result.append(line.charAt(i));
+            }
+            i++;
+        }
+        
+        return result.toString();
     }
 
     /**

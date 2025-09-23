@@ -43,6 +43,10 @@ public class Example {
 
 p. An example of a code block.
 
+bc(prettify).. .addClass(Greeter.class)
+
+p. that is a sinle line codeblock
+
 p. Now, about that flair. An Arquillian test case must have three things:
 
 # A @@RunWith(Arquillian.class)@ annotation on the class
@@ -57,6 +61,14 @@ First line in h4 header block. This is a reference to the ID: #generate_project_
 
 p. looks for a public static method annotated with the @@Deployment@ annotation in the class.
 
+bc(prettify).. <!-- clip -->
+<dependencies>
+...
+</dependencies>
+<!-- clip -->
+
+p(info). %The Java EE API dependency has been moved to the profile since some containers, like Embedded GlassFish, already provide these libraries. Having both on the classpath at the same time results in conflicts. Therefore, we have to play this classpath dance.%
+
 p. This is another paragraph.
 
 p. A paragraph with an id reference: #generate_project_from_archetype.
@@ -69,6 +81,8 @@ p. A paragraph with an id reference with alt title "Archetype": #generate_projec
 A reference to an image: !/images/example.png!
 
 p. A paragraph with an exclamations that are not an image reference! This is just another exciting sentence!
+
+p. See "Getting Started: Rinse and Repeat":/guides/getting_started_rinse_and_repeat guide
 """;
 
         
@@ -87,8 +101,8 @@ p. A paragraph with an exclamations that are not an image reference! This is jus
         System.out.println("\nTesting conversion with real file...");
         
         // Check if the Arquillian textile file exists
-        String inputPath = "content/guides/getting-started/getting_started.textile";
-        String outputPath = "/tmp/getting_started_asciidoc.adoc";
+        String inputPath = "content/guides/getting_started_rinse_and_repeat.textile";
+        String outputPath = "/tmp/getting_started_rinse_and_repeat.adoc";
         
         File inputFile = new File(inputPath);
         if (inputFile.exists()) {

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.arquillian.site.TextileToAsciidocConverter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -91,6 +92,49 @@ public class PatternsTest {
             System.out.println("pass: line2 does not match");
         } else {
             fail("Should not match");
+        }
+    }
+
+    @Test
+    public void testInlineCodeMatch() {
+        String line1 = "# A @@RunWith(Arquillian.class)@ annotation on the @class@";
+        String line = TextileToAsciidocConverter.convertInlineCode(line1);
+        Assertions.assertEquals("# A `@RunWith(Arquillian.class)` annotation on the `class`", line);
+    }
+
+    @Test
+    public void isParagraphOrHeader() {
+        final String regexs = "^(p|(h[1-6]))(\\([^)]+\\))?\\..*";
+        Pattern regex = Pattern.compile(regexs);
+        Matcher porh = regex.matcher("p. x");
+        Assertions.assertTrue(porh.matches(), "p. matches");
+        porh = regex.matcher("p(info). x");
+        Assertions.assertTrue(porh.matches(), "p(info). matches");
+        porh = regex.matcher("h1. x");
+        Assertions.assertTrue(porh.matches(), "h1. matches");
+        porh = regex.matcher("h4. x");
+        Assertions.assertTrue(porh.matches(), "h4. matches");
+        porh = regex.matcher("h. x");
+        Assertions.assertFalse(porh.matches(), "h. doex not matches");
+
+    }
+    @Test
+    public void test1() {
+        final String regex = "^(p|(h[1-6]))(\\([^)]+\\))?\\.";
+        final String string = "p(info). x\n"
+                + "p. x\n"
+                + "h. y\n"
+                + "h1. x";
+
+        final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+        final Matcher matcher = pattern.matcher(string);
+
+        while (matcher.find()) {
+            System.out.println("Full match: " + matcher.group(0));
+
+            for (int i = 1; i <= matcher.groupCount(); i++) {
+                System.out.println("Group " + i + ": " + matcher.group(i));
+            }
         }
     }
 }
