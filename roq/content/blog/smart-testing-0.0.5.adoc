@@ -1,0 +1,80 @@
+---
+title: "Smart Testing 0.0.5 Released"
+link: "/blog/2017/11/28/smart-testing-0-0-5/"
+date: "2017-11-28"
+author: "matousjobanek"
+tags: ["release", "tool", "testing"]
+disqus_identifier: "6bc886db7d5a11e738a3a605d0448cf206d41260"
+layout: "release"
+source_path: "blog/smart-testing-0.0.5.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/smart-testing-0.0.5.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/smart-testing-0.0.5.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/smart-testing-0.0.5.textile"
+---
+= Smart Testing 0.0.5 Released
+:sectids!:
+
+[discrete]
+=== Highlights of this release
+
+In this release we ship several API improvements making integration with 3rd party tools much easier.
+
+[discrete]
+=== Smart Testing API
+
+The Smart Testing tool consists of three parts:
+
+* Core
+* Maven extension
+* Surefire provider integration
+
+Both the Surefire provider integration and the Maven extension are implemented only for the usage in Maven builds. They take care of the integration and invoke Smart Testing API provided by Core.
+
+The Core contains the main logic that is responsible for selecting/ordering and applying corresponding strategies. This logic is exposed by Smart Testing API. If you want to use the logic in your environment or as an integration with some third-party library, you need to have the dependency of Smart Testing Core on your classpath:
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+    <groupId>org.arquillian.smart.testing</groupId>
+    <artifactId>core</artifactId>
+    <version>${smart.testing.version}</version>
+</dependency>
+----
+
+plus all dependencies of strategies you want to use for the prioritization:
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+    <groupId>org.arquillian.smart.testing</groupId>
+    <artifactId>strategy-${strategy.name}</artifactId>
+    <version>${smart.testing.version}</version>
+</dependency>
+----
+
+Having these dependencies specified, you can start using the API. The starting point is pass:[<code>SmartTesting</code>] class that provides you a fluent API:
+
+[listing,role="prettify",subs=verbatim]
+----
+SmartTesting
+    .with(className -> isTest(className), configuration)
+    .in("path/to/my/project")
+    .applyOnClasses(suite);
+----
+
+The first method pass:[<code>with</code>] takes as the first parameter a function that says which class is a test and which not. The second parameter is a configuration that should be used. The configuration file can be loaded using:
+
+[listing,role="prettify",subs=verbatim]
+----
+ConfigurationLoader.load(projectDir)
+----
+
+The second method pass:[<code>in</code>] sets path to the project where the tests will be executed in. +
+Last method is either pass:[<code>applyOnClasses</code>] or pass:[<code>applyOnNames</code>]. It invokes the prioritization process and returns a prioritized set of pass:[<code>TestSelection</code>] classes. This class contains class name and list of strategies that are applied to it. If you want to get only the names or classes then use the method pass:[<code>SmartTesting.getNames(selection)</code>] or pass:[<code>SmartTesting.getClasses(selection)</code>] respectively.
+
+With it, you should be able to use the Smart Testing logic in your test suites without being limited to the Maven builds.
+
+[discrete]
+=== What’s next
+
+We continue improving the tool so watch out for more!

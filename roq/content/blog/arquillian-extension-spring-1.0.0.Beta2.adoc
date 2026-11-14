@@ -1,0 +1,104 @@
+---
+title: "Arquillian Spring Framework Extension 1.0.0.Beta2 Released"
+link: "/blog/2013/06/18/arquillian-extension-spring-1-0-0-Beta2/"
+date: "2013-06-18"
+author: "matousjobanek"
+tags: ["release", "extension", "spring"]
+disqus_identifier: "431a4687fa11529383278b3d26dde883186a162d"
+layout: "release"
+source_path: "blog/arquillian-extension-spring-1.0.0.Beta2.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-spring-1.0.0.Beta2.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-spring-1.0.0.Beta2.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-spring-1.0.0.Beta2.textile"
+---
+= Arquillian Spring Framework Extension 1.0.0.Beta2 Released
+:sectids!:
+
+// Historical interpolation #{site.project_space} = http://community.jboss.org/en/arquillian from https://arquillian.org/blog/2013/06/18/arquillian-extension-spring-1-0-0-Beta2/ (captured 2026-11-13).
+
+It has been a while since that last Arquillian Spring extension release, but it’s finally here. This release focus more on improving existing features rather then introducing completely new ones.
+
+I would like to thank Jakub Kurlenda and John Ament for helping with this release.
+
+[discrete,role="highlights"]
+=== Some of the highlights in this release
+
+pass:[<i class="icon-star">]pass:[</i>] Managing the Spring’s ApplicationContext lifecycle
+
+pass:[<i class="icon-star">]pass:[</i>] New ways of configuring Spring’s context
+
+pass:[<i class="icon-star">]pass:[</i>] Warp Spring extension
+
+pass:[<i class="icon-star">]pass:[</i>] Deployer new functionality
+
+[discrete]
+=== Managing the Spring’s ApplicationContext lifecycle
+
+Previous versions had one common drawback, each test were running using a separate instance of Spring’s pass:[<code>ApplicationContext</code>]. Although the pass:[<code>ApplicationContext</code>] were destroyed and all of its resources were freed after the test execution, this brought additional overhead for each test. From now on the developer has the control whether he want to create only a single context per test case or to have each test run with a new "`clean`" context, which in some situation might be handy. By default the context will be created only once, but it can easly be changed by adding the pass:[<code>@ContextLifeCycle</code>] annotation to the test case.
+
+[discrete]
+=== New ways of configuring Spring’s context
+
+This release also bring a couple of new features to ease the test configuration. First are smart defaults used for configuration. Each pass:[<code>@SpringConfiguration</code>] annotated test do not need to explicitly define the location of the XML file anymore. If no file has been defined, by default the extension will look for file in classpath with exactly the same name as the class located in the class package. The same goes for pass:[<code>@SpringAnnotationConfiguration</code>], which now allow to add a static non final internal class which needs to be marked with pass:[<code>@Configuration</code>]. The extension will use that class by default when configuring Spring.
+
+Example:
+
+[listing,role="prettify",subs=verbatim]
+----
+@SpringClientAnnotationConfiguration
+public class TestCase {
+
+    @Configuration
+    public static class ContextConfiguration {
+
+        @Bean
+        public EmployeeService employeeService() {
+            return new EmployeeServiceImpl();
+        }
+    }
+}
+----
+
+The last new feature is programmatic creation of the ApplicationContext from within a test. From now on it is possible to create the instance of the Spring pass:[<code>ApplicationContext</code>] for each test via code. This is done by adding a static factory method to the test which needs to be annotated with pass:[<code>@SpringContextConfiguration</code>]. The extension will invoke this method prior to test execution (all context lifecycle rules mentioned above also apply here) and use it’s result afterwards.
+
+Example:
+
+[listing,role="prettify",subs=verbatim]
+----
+@SpringContextConfiguration
+public static ApplicationContext contextConfiguration() {
+
+   return new ClassPathXmlApplicationContext(
+       new String[]{"classpath:service.xml", "classpath:repository.xml"});
+}
+----
+
+Why would this be needed? In some cases you needs to have greater control over the context; for instance at the moment this is the only way to pragmatically set the Spring profiles to use for the test. The other possibility could be integration with other frameworks in which the context should not be managed by the test itself.
+
+[discrete]
+=== Warp Spring extension
+
+The Warp Spring extension has been updated to the latest Alpha 2 release. For consistency with other Warp extensions the pass:[<code>SpringMvcResult</code>] can be now injected using pass:[<code>@ArquillianResource</code>] annotation. The custom pass:[<code>@SpringResource</code>] has been deprecated and might be remove in next releases.
+
+[discrete]
+=== Deployer new functionality
+
+The Spring deployer, which is used for automatic packaging the Spring artifacts and enriching the test deployment, has received some updates. It now allows for importing the dependencies directly from the Maven POM file, and could aid with setting up the deployment. The deployer can be configured in the arquillian.xml file through the pass:[<code>spring-deployer</code>] section. Additional properties like pass:[<code>pomFile</code>] allow you to specify the location of the pom file to load; pass:[<code>useMavenOffline</code>] controls the offline mode of the maven resolver in use, and pass:[<code>enableCache</code>] controls whether the deployer should cache the artifacts in memory. Finally the pass:[<code>excludedArtifacts</code>] allow you to exclude artifacts that are unwanted from the deployment
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="spring-deployer">
+
+        <property name="importPomDependencies">true</property>
+
+        <property name="pomFile">src/main/resources/test_pom.xml</property>
+
+        <property name="useMavenOffline">false</property>
+
+        <property name="excludedArtifacts">org.jboss.arquillian:*</property>
+
+        <property name="enableCache">true</property>
+</extension>
+----
+
+We look forward to your feedback on this new release on the http://community.jboss.org/en/arquillian[community forums]!

@@ -1,0 +1,152 @@
+---
+title: "Graphene 2.0.0.Alpha3 Released"
+link: "/blog/2013/01/15/arquillian-graphene-2-0-0-Alpha3/"
+date: "2013-01-15"
+author: "lfryc"
+tags: ["release", "extension", "graphene"]
+disqus_identifier: "01a2e4664131f1f8928c5c100d94e518fd563195"
+layout: "release"
+source_path: "blog/arquillian-graphene-2.0.0.Alpha3.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-graphene-2.0.0.Alpha3.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-graphene-2.0.0.Alpha3.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-graphene-2.0.0.Alpha3.textile"
+---
+= Graphene 2.0.0.Alpha3 Released
+:sectids!:
+
+[discrete]
+=== Highlighted Features
+
+pass:[<i class="icon-star">]pass:[</i>] jQuery Selectors::
++
+--
+Graphene gets its own pass:[<code>@FindBy</code>] annotation and pass:[<code>ByJQuery</code>] selector in order to fully support _jQuery_ selectors. (link:#jquery-selectors[read more])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Injecting Selenium Resources::
++
+--
+The interesting Selenium APIs (HTML5, Mobile, etc.) can be injected to the test or page fragments directly. (link:#injecting-selenium-resources[read more])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Fluent API for Waiting::
++
+--
+Waiting conditions can now be defined in a nice fluent API. (link:#waiting-fluent-api[read more])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Injecting List of Page Fragments::
++
+--
+It’s possible to inject a list of page fragments with pass:[<code>@FindBy List&lt;PageFragment&gt;</code>].
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Page Fragment Enrichment::
++
+--
+Any Arquillian resource available through pass:[<code>@ArquillianResource</code>] can be injected into page fragments.
+--
+
+[discrete]
+=== Important Bug Fixes
+
+pass:[<i class="icon-star">]pass:[</i>] XHR Request Guards::
++
+--
+pass:[<code>guardXhr</code>] wasn’t waiting for the XHR request to fully complete. So we have improved it and now it not only waits for AJAX callback to completely finish, but it will wait for any asynchronous processing caused by that callback to finish.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Protecting against Stale Elementspass:[</tt>]::
++
+--
+You are now completely protected against pass:[<code>StaleElementReferenceException</code>] when using page fragments and elements injected by pass:[<code>@FindBy</code>], because operations on those elements are evaluated lazily (at the time of usage) and they are re-evaluated when they get stale.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Refined Page Fragments::
++
+--
+Page Fragments have received a lot of bug fixes and improvements.
+--
+
+[discrete,id="jquery-selectors"]
+=== jQuery Selectors
+
+This feature injects a pass:[<tt><a href="http://jquery.com/">jQuery</a></tt>] script to a tested page and allows Graphene to find elements using the http://api.jquery.com/category/selectors/?rdfrom=http%3A%2F%2Fdocs.jquery.com%2Fmw%2Findex.php%3Ftitle%3DSelectors%26redirect%3Dno[jQuery Selectors syntax]:
+
+[listing,role="prettify",subs=verbatim]
+----
+@FindBy(jquery = ":button:visible")
+WebElement firstVisibleButton;
+----
+
+[.info]
+Note that Graphene injects jQuery in http://api.jquery.com/jQuery.noConflict/[non-conflict way], so it does not affect your tested application.
+
+[discrete,id="injecting-selenium-resources"]
+=== Injecting Selenium Resources
+
+Graphene leverages a long list of advanced Selenium features and their APIs to take full control of your browser:
+
+* *HTML5*
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/WebStorage.html[pass:[<code>WebStorage</code>]]
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/DatabaseStorage.html[pass:[<code>DatabaseStorage</code>]]
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/ApplicationCache.html[pass:[<code>ApplicationCache</code>]]
+* *Mobile-specific*
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/TouchScreen.html[pass:[<code>TouchScreen</code>]]
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Rotatable.html[pass:[<code>Rotatable</code>]]
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/BrowserConnection.html[pass:[<code>BrowserConnection</code>]]
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/LocationContext.html[pass:[<code>LocationContext</code>]]
+* *Advanced Browser Control*
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/interactions/Actions.html[pass:[<code>Actions</code>]]
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Keyboard.html[pass:[<code>Keyboard</code>]]
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Mouse.html[pass:[<code>Mouse</code>]]
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/JavascriptExecutor.html[pass:[<code>JavascriptExecutor</code>]]
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/TakesScreenshot.html[pass:[<code>TakesScreenshot</code>]]
+** http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Capabilities.html[pass:[<code>Capabilities</code>]]
+
+You can inject those using pass:[<code>@ArquillianResource</code>] annotation:
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+BrowserConnection connection;
+
+@Test
+public void test() {
+    connection.setOnline(false);
+}
+----
+
+[discrete,id="waiting-fluent-api"]
+=== Fluent API for Waiting
+
+The Alpha2 API allowed you to define a wait like this:
+
+[listing,role="prettify",subs=verbatim]
+----
+waitAjax().until(element(button).isVisible());
+----
+
+In order to fully support code-completion, we have decided to deprecate this API in favor of a fluent API:
+
+[listing,role="prettify",subs=verbatim]
+----
+waitAjax().until().element(button).is().visible();
+----
+
+[discrete]
+=== Roadmap
+
+This release is a significant milestone https://community.jboss.org/message/777443#777443[on the way to Beta1].

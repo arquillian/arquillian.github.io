@@ -1,0 +1,104 @@
+---
+title: "Arquillian Cube Extension 1.0.0.Alpha17 Released"
+link: "/blog/2017/02/02/arquillian-cube-1-0-0-Alpha17/"
+date: "2017-02-02"
+author: "lordofthejars"
+tags: ["release", "extension", "cube"]
+disqus_identifier: "284ce67d0c711a571d5bade4f9e2e0ee1939add7"
+layout: "release"
+source_path: "blog/arquillian-cube-1.0.0.Alpha17.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-cube-1.0.0.Alpha17.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-cube-1.0.0.Alpha17.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-cube-1.0.0.Alpha17.textile"
+---
+= Arquillian Cube Extension 1.0.0.Alpha17 Released
+:sectids!:
+
+New version of Arquillian Cube 1.0.0.Alpha17 has been released!
+
+[discrete]
+=== What’s new
+
+pass:[<i class="icon-star">]pass:[</i>] *Graphene URL auto resolution*
+
+In previous versions, Graphene URL auto resolution was based on rather complex algorithm with absolute or relative URLs to detect which was the real URL in Docker space (https://github.com/arquillian/arquillian-cube/blob/1.0.0.Alpha16/docs/drone.adoc#graphene[Old auto resolution]). This has been simplified so now only full URLs are permitted.
+
+In this version if URL contains pass:[<code>dockerHost</code>], it’s resolved to docker host IP. If it contains an IP then this IP is used. If a string is provided, this is considered as the container name and Arquillian Cube resolves it to the internal container IP.
+
+pass:[<i class="icon-star">]pass:[</i>] *Support for pass:[<code>@CubeIp</code>] in Container Objects*
+
+Now a Container Object can also be enriched with internal IP of the given container.
+
+Thanks https://github.com/rivasdiaz[Ramon Rivas] for providing this feature!
+
+pass:[<i class="icon-star">]pass:[</i>] *Provide URL enrichment for standalone mode*
+
+New enrichment is provided to construct an URL for black-box tests pointing to a given docker host and resolved exposed port.
+
+[listing,role="prettify",subs=verbatim]
+----
+@DockerUrl(protocol="http", containerName = "helloworld", exposedPort = "8080", context = "/hello")
+@ArquillianResource
+URL url;
+----
+
+In the example above URL is the docker host IP pointing to binding port of exposed port pass:[<code>8080</code>] of the container pass:[<code>helloworld</code>] and using pass:[<code>/hello</code>] as context.
+
+pass:[<i class="icon-star">]pass:[</i>] *Set Environment variables for Container Objects*
+
+Now you can set environment variables to defined container objects.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Cube(“tomee”)
+@Image("tomee:8-jre-1.7.2-webprofile")
+@Environment(key = "A", value = "a")
+@Environment(key = "B", value = "b")
+public static class ImageContainerObject {
+}
+----
+
+Annotation can also be used on the field definition.
+
+pass:[<i class="icon-star">]pass:[</i>] *Create Volumes for Container Objects*
+
+[listing,role="prettify",subs=verbatim]
+----
+@Cube(“tomee”)
+@Image("tomee:8-jre-1.7.2-webprofile")
+@Volume(hostPath = "/mypath", containerPath = "/containerPath")
+@Volume(hostPath = "/mypath2", containerPath = "/containerPath2")
+public static class ImageContainerObject {
+}
+----
+
+Annotation can also be used on the field definition.
+
+pass:[<i class="icon-star">]pass:[</i>] *Add pass:[<code>@DockerUrl</code>] support for RestAssured enricher*
+
+Now you can configure URL for REST-Assured integration using pass:[<code>@DockerUrl</code>] annotation.
+
+[listing,role="prettify",subs=verbatim]
+----
+@DockerUrl(containerName = "pingpong", exposedPort = 8080)
+@ArquillianResource
+RequestSpecBuilder requestSpecBuilder;
+----
+
+pass:[<code>RequestSpecBuilder</code>] is configured with docker host IP, and resolving port binding from container pass:[<code>pingpong</code>] and exposed port pass:[<code>8080</code>].
+
+pass:[<i class="icon-star">]pass:[</i>] *Provide a new URL pass:[<code>ResourceProvider</code>] for Kubernetes and Openshift*
+
+Now you can get URL to connect to a Kubernetes/OpenShift service with ease.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Named("hello-world-service")
+@PortForward
+@ArquillianResource
+URL url;
+----
+
+In this case the URL is provided pointing directly to the service pass:[<code>hello-world</code>] so you can easily query it.
+
+Kudos to https://github.com/iocanel[Ioannis Canellos] for providing this feature.

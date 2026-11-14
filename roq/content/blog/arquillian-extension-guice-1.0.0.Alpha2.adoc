@@ -1,0 +1,89 @@
+---
+title: "Arquillian Google Guice Extension 1.0.0.Alpha2 Released"
+link: "/blog/2013/08/01/arquillian-extension-guice-1-0-0-Alpha2/"
+date: "2013-08-01"
+author: "matousjobanek"
+tags: ["release", "obsolete-extension", "guice"]
+disqus_identifier: "aff0289f16613a053f822c55a1178e2d455e407b"
+layout: "release"
+source_path: "blog/arquillian-extension-guice-1.0.0.Alpha2.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-guice-1.0.0.Alpha2.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-guice-1.0.0.Alpha2.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-guice-1.0.0.Alpha2.textile"
+---
+= Arquillian Google Guice Extension 1.0.0.Alpha2 Released
+:sectids!:
+
+// Historical interpolation #{site.project_space} = http://community.jboss.org/en/arquillian from https://arquillian.org/blog/2013/08/01/arquillian-extension-guice-1-0-0-Alpha2/ (captured 2026-11-13).
+
+[discrete,role="highlights"]
+=== Some of the highlights in this release
+
+pass:[<i class="icon-star">]pass:[</i>] Servlet integration::
++
+--
+This release bring one new cool feature, integration with the https://code.google.com/p/google-guice/wiki/Servlets[Guice Servlet] extension
+--
+
+The whole integration requires only two simple steps to make the test use the web configured Guice injector.
+
+The first step is to replace the pass:[<code>GuiceFilter</code>] with the pass:[<code>ArquillianGuiceFilter</code>]:
+
+[.filename]
+web.xml
+
+[listing,role="prettify",subs=verbatim]
+----
+<filter>
+   <filter-name>guiceFilter</filter-name>
+   <filter-class>org.jboss.arquillian.guice.api.servlet.ArquillianGuiceFilter</filter-class>
+</filter>
+
+<filter-mapping>
+   <filter-name>guiceFilter</filter-name>
+   <url-pattern>/*</url-pattern>
+</filter-mapping> 
+----
+
+This can also be done at runtime; by doing a simple string replacement in the web descriptor when creating the deployment or by using pass:[<code>ShrinkWrap Descriptors</code>].
+
+The second step is to annotate your test with pass:[<code>@GuiceWebConfiguration</code>]. This will instruct the extension to retrieve the injector from the servlet context.
+
+Example test:
+
+[.filename]
+WebInjectorTestCase.java
+
+[listing,role="prettify",subs=verbatim]
+----
+@GuiceWebConfiguration
+@RunWith(Arquillian.class)
+public class WebInjectorTestCase {
+
+   @Deployment
+   public static Archive createTestArchive() {
+       return ShrinkWrap.create(WebArchive.class, "guice-test.war")
+               .addClasses(Employee.class,
+                       EmployeeService.class, DefaultEmployeeService.class,
+                       EmployeeRepository.class, DefaultEmployeeRepository.class,
+                       EmployeeModule.class, EmployeeModuleContextListener.class)
+               .addAsWebInfResource("WEB-INF/web.xml", "web.xml");
+   }
+
+   @Inject
+   private EmployeeService employeeService;
+
+   @Test
+   public void testGetEmployees() {
+
+       List<Employee> result = employeeService.getEmployees();
+
+       assertNotNull("Method returned null list as result.", result);
+       assertEquals("Two employees were expected.", 2, result.size());
+   }
+}
+----
+
+The test can go beyond a simple example like this and allow for injection of other resources like Guice configured servlets, filters and listeners.
+
+We look forward to hearing your feedback about this release in the http://community.jboss.org/en/arquillian[community forums]!

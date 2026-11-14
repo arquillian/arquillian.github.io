@@ -1,0 +1,118 @@
+---
+title: "Arquillian Portal Extension 1.1.0.Alpha1 Released"
+link: "/blog/2013/11/06/arquillian-extension-portal-1-1-0-Alpha1/"
+date: "2013-11-06"
+author: "kenfinnigan"
+tags: ["release", "obsolete-extension", "portal"]
+disqus_identifier: "f8e7b110cd667db4a5242c96ccae175c84034e7d"
+layout: "release"
+source_path: "blog/arquillian-extension-portal-1.1.0.Alpha1.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-portal-1.1.0.Alpha1.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-portal-1.1.0.Alpha1.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-portal-1.1.0.Alpha1.textile"
+---
+= Arquillian Portal Extension 1.1.0.Alpha1 Released
+:sectids!:
+
+// Historical interpolation #{site.project_space} = http://community.jboss.org/en/arquillian from https://arquillian.org/blog/2013/11/06/arquillian-extension-portal-1-1-0-Alpha1/ (captured 2026-11-13).
+
+You may have noticed that we jumped from 1.0.0.CR1 to 1.1.0.Alpha1! No, we’re not going crazy, but given the stability inherit within 1.0.0.CR1 and the changes we were +
+looking to introduce into the extension, it made sense to bump the version to 1.1.0.
+
+This release contained quite a large amount of changes, compared to previously.
+
+[discrete]
+=== Some of the highlights in this release
+
+pass:[<i class="icon-star">]pass:[</i>] GateIn and Pluto portlet container implementations are now included as implementations of the portal extension instead of being in separate repositories.
+
+pass:[<i class="icon-star">]pass:[</i>] Add the ability to run integration testing against the portlet containers, and different servlet containers.
+
+pass:[<i class="icon-star">]pass:[</i>] Extend link:/modules/warp-extension/[Warp] to cater for regular and JSF Portlets.
+
+[discrete]
+=== Warp extensions for portlets
+
+For non JSF portlets we can specify an Inspection method with either pass:[<code>@BeforePortletPhase</code>] or pass:[<code>@AfterPortletPhase</code>] to specify whether we want to the method executed before or after the particular pass:[<code>PortletRequest</code>] specified by the value on the annotation. An example of executing an inspection after a pass:[<code>RenderRequest</code>] would be:
+
+[listing,role="prettify",subs=verbatim]
+----
+@AfterPortletPhase(Phase.RENDER)
+public void afterRender() {
+    assertTrue(true);
+}
+----
+
+It’s also possible to inject the request and response objects into the Inspection. You can choose to either use a generic pass:[<code>PortletRequest</code>] or more specific request types based on the portlet lifecycle phase, such as pass:[<code>ActionRequest</code>]. Here’s an example:
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+ActionResponse actionResponse;
+
+@BeforePortletPhase(Phase.ACTION)
+public void beforeActionRequest() {
+    String[] values = actionResponse.getRenderParameterMap().get("data");
+    assertNull("Render parameter for data should not be set.", values);
+}
+
+@AfterPortletPhase(Phase.ACTION)
+public void afterActionRequest() {
+    String[] values = actionResponse.getRenderParameterMap().get("data");
+    assertTrue("Render parameter for data should be set.", values.length == 1);
+    assertEquals("Render parameter set to incorrect value.", BasicPortlet.ACTION, values[0]);
+}
+----
+
+For JSF portlets we can still use pass:[<code>@BeforePortletPhase</code>] and pass:[<code>@AfterPortletPhase</code>], but these don’t allow us to inspect the JSF lifecycle. To perform inspection on the JSF lifecycle, we need to use pass:[<code>@PortletPhase</code>] in combination with the JSF lifecycle annotations from Warp. To inspect when JSF changes the value of a bean on form submission for a portlet:
+
+[listing,role="prettify",subs=verbatim]
+----
+@ManagedProperty("#{bean}")
+Bean bean;
+
+@PortletPhase(ACTION) @BeforePhase(Phase.UPDATE_MODEL_VALUES)
+public void testBeanValueBeforeUpdate() {
+    assertEquals("Bean value should not be updated yet.", "originalValue", bean.getText());
+}
+
+@PortletPhase(ACTION) @AfterPhase(Phase.UPDATE_MODEL_VALUES)
+public void testBeanValueAfterUpdate() {
+    assertEquals("Bean value should now be updated.", "newValue", bean.getText());
+}
+----
+
+One point of note when writing Warp tests for portlets is that most portlet containers perform a redirect after an Action or Event request, but before the portlet is rendered. To be able to inspect on both an Action and Render request, we need to use Warp request groups:
+
+[listing,role="prettify",subs=verbatim]
+----
+Warp
+    .initiate(new Activity() {
+        public void perform() {
+            // Do something
+        }
+    })
+    .group()
+        .observe(request().index(1))
+        .inspect(new Inspection() {
+            private static final long serialVersionUID = 1L;
+
+            @PortletPhase(ACTION) @BeforePhase(Phase.UPDATE_MODEL_VALUES)
+            public void testBeanValueBeforeUpdate() {
+                // Asserts
+            }
+        })
+    .group()
+        .observe(request().index(2))
+        .inspect(new Inspection() {
+            private static final long serialVersionUID = 1L;
+
+            @PortletPhase(RENDER) @BeforePhase(Phase.RENDER_RESPONSE)
+            public void testBeanValueBeforeRenderResponse() {
+                // Asserts
+            }
+        })
+    .execute();
+----
+
+We look forward to hearing your feedback about this release in the http://community.jboss.org/en/arquillian[community forums]!

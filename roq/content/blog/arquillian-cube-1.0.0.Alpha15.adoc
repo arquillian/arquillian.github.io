@@ -1,0 +1,88 @@
+---
+title: "Arquillian Cube Extension 1.0.0.Alpha15 Released"
+link: "/blog/2016/09/01/arquillian-cube-1-0-0-Alpha15/"
+date: "2016-09-01"
+author: "lordofthejars"
+tags: ["release", "extension", "cube"]
+disqus_identifier: "9d75b4b1868f77672e9326d22e94b264fbaf1fb4"
+layout: "release"
+source_path: "blog/arquillian-cube-1.0.0.Alpha15.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-cube-1.0.0.Alpha15.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-cube-1.0.0.Alpha15.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-cube-1.0.0.Alpha15.textile"
+---
+= Arquillian Cube Extension 1.0.0.Alpha15 Released
+:sectids!:
+
+Apart from bug fixes in the openshift module, we brought very anticipated new feature – support for Kubernetes. This was a joint effort with the amazing https://fabric8.io/[pass:[<code>fabric-8</code>] team].
+
+[discrete]
+=== New Features
+
+pass:[<i class="icon-star">]pass:[</i>] Kubernetes Support::
++
+--
+The kubernetes extension helps you write and run integration tests for your Kubernetes/Openshift application.
+
+This extension will run tests in a black-box fashion, creating and managing a temporary namespace for your tests, apply all Kubernetes resources required to create your environment and once everything is ready it will run your tests. The tests will be enriched with resources required to access services. Finally when testing is over it will cleanup everything.
+
+The test cases are meant to interact with the provided services and assert that the environment is in the expected state.
+
+[listing,role="prettify",subs=verbatim]
+----
+@RunWith(Arquillian.class)
+public class HelloWorldTest {
+
+    @Named("hello-world-service")
+    @ArquillianResource
+    Service helloWorld;
+
+    @Test
+    public void shouldShowHelloWorld() throws IOException {
+        assertNotNull(helloWorld);
+        assertNotNull(helloWorld.getSpec());
+        assertNotNull(helloWorld.getSpec().getPorts());
+        assertFalse(helloWorld.getSpec().getPorts().isEmpty());
+    }
+}
+----
+
+In this example, test reads for pass:[<code>kubernetes.json</code>] file form the root of the classpath, deploys everything and injects Kubernetes components into the test. Notice that you can assert that elements are correctly configured as well as getting information for connecting to the services and validate they have been deployed correctly.
+
+You can also import https://github.com/fabric8io/fabric8/tree/master/components/kubernetes-assertions[pass:[<code>io.fabric8:kubernetes-assertions</code>]], which is built on top of excellent http://joel-costigliola.github.io/assertj/[pass:[<code>assertj</code>]] project, you’ll be able to write assertions like:
+
+[listing,role="prettify",subs=verbatim]
+----
+@RunWith(Arquillian.class)
+public class ExampleTest {
+
+  @ArquillianResource
+  KubernetesClient client;
+
+  @ArquillianResource
+  Session session;
+
+  @Test
+  public void testAtLeastOnePod() throws Exception {
+    assertThat(client).pods()
+                      .runningStatus()
+                      .filterNamespace(session.getNamespace())
+                      .hasSize(1);
+  }
+}
+----
+
+You can read more about Kubernetes integration at http://arquillian.org/arquillian-cube/#_kubernetes[pass:[http://arquillian.org/arquillian-cube/#_kubernetes]] and full example at https://github.com/arquillian/arquillian-cube/tree/master/kubernetes/ftest-kubernetes[pass:[https://github.com/arquillian/arquillian-cube/tree/master/kubernetes/ftest-kubernetes]]
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Fabric8 Support::
++
+--
+The Fabric8 extension can be used along with the Kubernetes extension to provide a tighter integration with the Fabric8 Microservices Platform.
+
+It provides pass:[<code>Fabric8Label</code>] provider and pass:[<code>Fabric8Annotation</code>] provider.
+
+You can read more about Fabric 8 integration at http://arquillian.org/arquillian-cube/#_fabric8[pass:[http://arquillian.org/arquillian-cube/#_fabric8]]
+--

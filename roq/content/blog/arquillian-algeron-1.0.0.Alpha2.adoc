@@ -1,0 +1,111 @@
+---
+title: "Arquillian Algeron Extension 1.0.0.Alpha2 Released"
+link: "/blog/2016/09/29/arquillian-algeron-1-0-0-Alpha2/"
+date: "2016-09-29"
+author: "lordofthejars"
+tags: ["release", "extension", "algeron"]
+disqus_identifier: "bec8fd424fa50d1f2ac78c3a017340b1d857a88d"
+layout: "release"
+source_path: "blog/arquillian-algeron-1.0.0.Alpha2.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-algeron-1.0.0.Alpha2.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-algeron-1.0.0.Alpha2.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-algeron-1.0.0.Alpha2.textile"
+---
+= Arquillian Algeron Extension 1.0.0.Alpha2 Released
+:sectids!:
+
+[.important]
+*_Important note_*: This extension was called *Arquillian Pact* before version pass:[<code>1.0.0.Alpha5</code>], so you should use this name when pulling dependencies from Maven Central.
+
+Arquillian Pact is an extension that provides an integration between Arquillian and https://docs.pact.io/[Pact].
+
+[discrete]
+=== What’s new
+
+pass:[<i class="icon-star">]pass:[</i>] Maven Loader
+
+Now you can use your own Maven artifact to store contracts (pacts files). Then provider will resolve the artifact and use the files included there.
+
+To use it simply import following dependency:
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+  <groupId>org.arquillian.pact</groupId>
+  <artifactId>arquillian-pact-provider-maven-loader</artifactId>
+</dependency>
+----
+
+For example, this is how you can get contracts from a jar file stored in Maven repository. It is important to note that Arquillian Pact always takes the latest version of jar in case of not specifying one concrete version.
+
+[listing,role="prettify",subs=verbatim]
+----
+@PactMavenDependency(value = "org.superbiz:contract:[1.0,]")
+public class MavenLoaderTest {}
+----
+
+pass:[<i class="icon-star">]pass:[</i>] Git Loader
+
+You can also fetch your contracts from Git repository. The provider will clone/pull the repo and execute the contracts found there.
+
+To use it simply import following dependency:
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+  <groupId>org.arquillian.pact</groupId>
+  <artifactId>arquillian-pact-provider-git-loader</artifactId>
+</dependency>
+----
+
+For example, this is how you can get contracts form a public Git repository:
+
+[listing,role="prettify",subs=verbatim]
+----
+@PactGit("https://github.com/lordofthejars/starwarspact.git")
+public class GitLoaderTest {}
+----
+
+Check https://github.com/arquillian/arquillian-algeron/blob/1.0.0.Alpha2/provider/git-loader/src/main/java/org/arquillian/pact/provider/loader/git/PactGit.java[pass:[<code>@PactGit</code>] annotation] to see the options for configuring authentication or set a concrete directory inside Git repository.
+
+pass:[<i class="icon-star">]pass:[</i>] Output Directory
+
+When writing consumer tests you can now use pass:[<code>pactReportDir</code>] configuration property to set where contracts are stored.
+
+For example, this is how you can generate contracts into target/contracts directory.
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="pact-consumer">
+  <property name="pactReportDir">target/contracts</property>
+</extension>
+----
+
+pass:[<i class="icon-star">]pass:[</i>] Enrichments
+
+You can use two new Target methods for executing provider tests:
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+Target target;
+
+target.testInteraction();
+----
+
+Or setting the URL directly instead of configuring it.
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+Target target;
+
+@ArquillianResource
+URL webapp;
+
+target.testInteraction(webapp);
+----
+
+In _Alpha1_, you need to pass as arguments to pass:[<code>testInteraction</code>] method the current consumer and the current interaction. These values were injected in test using pass:[<code>@CurrentConsumer</code>] and pass:[<code>@CurrentInteraction</code>] annotations.
+
+With these two new methods it is not necessary you enrich the test anymore. Of course these enrichments still work and you can still use methods where consumer and interaction are required if you want more control on the execution.

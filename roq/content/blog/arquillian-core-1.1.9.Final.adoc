@@ -1,0 +1,103 @@
+---
+title: "Arquillian Core 1.1.9.Final Released"
+link: "/blog/2015/09/02/arquillian-core-1-1-9-Final/"
+date: "2015-09-02"
+author: "aslakknutsen"
+tags: ["release", "platform", "core", "jbosscentral"]
+disqus_identifier: "6fce17385db82a77be40a316a3ffa897baad8d8e"
+layout: "release"
+source_path: "blog/arquillian-core-1.1.9.Final.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-core-1.1.9.Final.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-core-1.1.9.Final.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-core-1.1.9.Final.textile"
+---
+= Arquillian Core 1.1.9.Final Released
+:sectids!:
+
+[discrete]
+=== Highlights in this release
+
+pass:[<i class="icon-star">]pass:[</i>] pass:[<code>@ArquillianResource</code>] URL for in-container tests::
++
+--
+You can now inject the base URL for any deployment by using the pass:[<code>@ArquillianResource</code>] injection point even in in-container tests.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Deployment
+public static WebArchive test() {
+   return ShrinkWrap.create(WebArchive.class);
+}
+
+@Deployment(name = "X")
+public static WebArchive test2() {
+   return ShrinkWrap.create(WebArchive.class);
+}
+
+@ArquillianResource
+private URL url;
+
+@Test
+public void should() {
+   // ... inject the url to the default deployment
+}
+
+@Test
+public void shouldX(@ArquillianResource @OperatesOnDeployment("X") URL url) {
+   // .. inject the url from the other deployment
+}
+----
+
+When in-container URL injection happen a callback to the client is done to lookup the URL. A clalback has a little performance hit so it’s only recommended to do this if really needed.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] pass:[@]ArquillianResource ServletContext for in-container tests::
++
+--
+The Servlet Protocol now expose the current pass:[<code>ServletContext</code>] for a in-container test execution via the pass:[<code>@ArquillianResource</code>] injection point.
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+private ServletContext context;
+----
+
+When running Arquillian with the Tomcat or Jetty embedded container adapters, then pass:[<code>ServletContext</code>] injection is supported on the client side as well in the next release.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Support ENV variables to configure Arquillian::
++
+--
+We’ve opened up to allow to configure Arquillian via ENV variables following the same schema as for System Properties. The new configuration override order is as following:
+
+. arquillian.xml
+. arquillian.properties
+. System properties
+. ENV
+
+Higher the number, higher the power.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Use secure communication when invoking in-container tests::
++
+--
+Have you ever seen invoking Arquillian tests over a public network as a risk? Then this is your lucky day! The ServletProtocolConfiguration has been changed to allow for pass:[<code>https</code>] based communication with the target container.
+
+[listing,role="prettify",subs=verbatim]
+----
+<container>
+   <protocol qualifier="Servlet 3.0">
+      <property name="scheme">https</property>
+      <property name="port">8443</property>
+   </protocol>
+</container>
+----
+
+Currently no container adapter support automatic lookup of pass:[<code>https</code>] context metadata so you need to manually configure the https port. The host should be auto resolved tho.
+--

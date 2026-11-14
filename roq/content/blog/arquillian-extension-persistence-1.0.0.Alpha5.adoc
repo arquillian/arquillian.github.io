@@ -1,0 +1,65 @@
+---
+title: "Arquillian Persistence Extension 1.0.0.Alpha5 Released"
+link: "/blog/2012/08/31/arquillian-extension-persistence-1-0-0-Alpha5/"
+date: "2012-08-31"
+author: "matousjobanek"
+tags: ["release", "extension", "persistence"]
+disqus_identifier: "6d379deb14a78e7812acd3de82c79c628961c9d3"
+layout: "release"
+source_path: "blog/arquillian-extension-persistence-1.0.0.Alpha5.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-persistence-1.0.0.Alpha5.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-persistence-1.0.0.Alpha5.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-persistence-1.0.0.Alpha5.textile"
+---
+= Arquillian Persistence Extension 1.0.0.Alpha5 Released
+:sectids!:
+
+// Historical interpolation #{site.project_space} = http://community.jboss.org/en/arquillian from https://arquillian.org/blog/2012/08/31/arquillian-extension-persistence-1-0-0-Alpha5/ (captured 2026-11-13).
+
+We are back with a bunch of handy new additions and some bug fixes, so keep on reading..
+
+Big kudos goes to https://github.com/thradec[Tomas Hradec] for his great contribution on the "`JPA Cache Eviction`" support. You can now control your second level cache directly from the Arquillian tests. I would also like to thank Adrian Gonzalez, Alex Holmansky, Anton Shaykin and Christoph Rohr for their feedback which led us to fix some minor annoyances and shortcomings of APE. We are proud of the vibrant and active community around Arquillian!
+
+[discrete,role="highlights"]
+=== Some of the highlights in this release
+
+pass:[<i class="icon-star">]pass:[</i>] Instead of relying on the JPA provider you can now use your custom scripts to create the schema and populate data for each test. The only thing you have to do is decorate your test class with the following annotation:
+
+[listing,role="prettify",subs=verbatim]
+----
+@CreateSchema({"create-schema.sql", "populate-data.sql"})
+----
+
+pass:[<i class="icon-star">]pass:[</i>] Thanks to Tomas Hradec we have taken control over the Second Level JPA cache eviction. This initial implementation gives you a possibility to evict the cache before or after your test. Just specify which persistence unit(s) should be used by APE:
+
+[listing,role="prettify",subs=verbatim]
+----
+@JpaCacheEviction(entityManager = { "java:comp/env/MyPersistenceUnit" })
+----
+
+pass:[<i class="icon-star">]pass:[</i>] One of the shortcomings of the previous versions was the fact that you were always forced to provide the data source name explicitly. Either through pass:[<code>arquillian.xml</code>] or by using the pass:[<code>@DataSource</code>] annotation. With Alpha 5 you won’t have to. If you only use one data source in the test case, it will be inferred automatically from the pass:[<code>persistence.xml</code>] used by your test.
+
+pass:[<i class="icon-star">]pass:[</i>] You can also tell DBUnit which schema needs to be used for seeding the database. Just add the pass:[<code>schema</code>] property to your pass:[<code>arquillian.xml</code>] configuration as illustrated in the snippet below:
+
+[.filename]
+arquillian.xml
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="persistence-dbunit">
+    <property name="schema">ape</property>
+</extension>
+----
+
+We’ve also extended our test suite by adding the following databases to our continuous integration pipeline
+
+* MySQL 5.5.24
+* PostgreSQL 9.1.4
+
+[.important]
+*_Important change_*: We renamed two properties used in pass:[<code>arquillian.xml</code>] giving them more appropriate names: +
+_initStatement_ became _scriptsToExecuteBeforeTest_ +
+_cleanupStatement_ became _scriptsToExecuteAfterTest_ +
+Moreover you can now specify list of scripts (or files) seperated by comma.
+
+We look forward to hearing your feedback about this release in the http://community.jboss.org/en/arquillian[community forums]!

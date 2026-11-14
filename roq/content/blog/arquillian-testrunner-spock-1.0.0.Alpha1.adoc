@@ -1,0 +1,57 @@
+---
+title: "Arquillian TestRunner Spock 1.0.0.Alpha1 Released"
+link: "/blog/2012/01/13/arquillian-testrunner-spock-1-0-0-Alpha1/"
+date: "2012-01-13"
+author: "matousjobanek"
+tags: ["release", "test-runner", "spock"]
+disqus_identifier: "9e00ed78008810ffbdc75a394bd9b6b8ae343571"
+layout: "release"
+source_path: "blog/arquillian-testrunner-spock-1.0.0.Alpha1.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-testrunner-spock-1.0.0.Alpha1.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-testrunner-spock-1.0.0.Alpha1.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-testrunner-spock-1.0.0.Alpha1.textile"
+---
+= Arquillian TestRunner Spock 1.0.0.Alpha1 Released
+:sectids!:
+
+[discrete]
+=== Some of the highlights in this release
+
+This is the very first release of Arquillian Spock Test Runner. To quote creators of this great framework "`Spock is a testing and specification framework for Java and Groovy applications. What makes it stand out from the crowd is its beautiful and highly expressive specification language.`" And we totally agree with them! Writing tests in behavior-driven development manner help developers to focus on features which they need to deliver instead of diving into technical details while writing tests. Those details might change over the time anyway.
+
+Now you can run your spock tests powered by Arquillian (both embedded and remote containers are supported)!
+
+Here’s a tiny little piece of code where you can see yourself how cool Spock and Arquillian are!
+
+[listing,role="prettify",subs=verbatim]
+----
+class AccountServiceSpecification extends Specification {
+  
+  @Deployment
+  def static JavaArchive "create deployment"() {
+    return ShrinkWrap.create(JavaArchive.class)
+             .addClasses(AccountService.class, Account.class, SecureAccountService.class)
+             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+  }
+ 
+  @Inject 
+  AccountService service
+        
+  def "Transferring between accounts should result in account withdrawal and deposit"() {
+      
+    when: "Money has been transfered from one account to another"
+      service.transfer(from, to, amount)
+        
+    then: "Balance must be updated"
+      from.balance == fromBalance
+      to.balance == toBalance
+        
+    where:
+      from <<         [new Account(100),  new Account(10)]
+      to <<           [new Account(50),   new Account(90)]
+      amount <<       [50,                10]
+      fromBalance <<  [50,                0]
+      toBalance <<    [100,               100]
+  }
+}
+----

@@ -1,0 +1,82 @@
+---
+title: "Arquillian Persistence Extension 1.0.0.Alpha3 Released"
+link: "/blog/2011/12/30/arquillian-extension-persistence-1-0-0-Alpha3/"
+date: "2011-12-30"
+author: "matousjobanek"
+tags: ["release", "extension", "persistence"]
+disqus_identifier: "d5cda43ebf9a984f7f73522786d9e9075f2806b3"
+layout: "release"
+source_path: "blog/arquillian-extension-persistence-1.0.0.Alpha3.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-persistence-1.0.0.Alpha3.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-persistence-1.0.0.Alpha3.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-persistence-1.0.0.Alpha3.textile"
+---
+= Arquillian Persistence Extension 1.0.0.Alpha3 Released
+:sectids!:
+
+[discrete]
+=== Some of the highlights in this release
+
+Support for JSON. If you prefer this well known format over YAML/EXCEL/XML, you can now define your data sets in JSON too!
+
+[.filename]
+users.json
+
+[listing,role="prettify",subs=verbatim]
+----
+{
+    "useraccount":
+    [
+        {
+            "id" : 1,
+            "firstname" : "John",
+            "lastname" : "Smith",
+            "username" : "doovde",
+            "password" : "password"
+        },
+        {
+            "id" : 2,
+            "firstname" : "Clark",
+            "lastname" : "Kent",
+            "username" : "superman",
+            "password" : "kryptonite"
+        }
+    ]
+}
+----
+
+Introduced ability to seed database using plain SQL scripts.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Test
+@UsingScript("users.sql")
+@ShouldMatchDataSet("expected-users.yml")
+public void shouldChangeUserPassword() throws Exception {
+    // given
+    String expectedPassword = "LexLuthor";
+    UserAccount user = em.find(UserAccount.class, 2L);
+
+    // when
+    user.setPassword("LexLuthor");
+    em.merge(user);
+
+    // then
+    assertThat(user.getPassword()).isEqualTo(expectedPassword);
+}
+----
+
+New feature – Apache POI exclusion. If you are not using excel based data sets you can exclude +
+Apache POI archive in arquillian.xml file. This will reduce deployment size quite significantly.
+
+[.filename]
+arquillian.xml
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="persistence">
+    <property name="excludePoi">true</property>
+</extension>
+----
+
+Fixed WAR and EAR packaging.

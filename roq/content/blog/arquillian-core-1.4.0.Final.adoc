@@ -1,0 +1,47 @@
+---
+title: "Arquillian Core 1.4.0.Final Released"
+link: "/blog/2018/02/27/arquillian-core-1-4-0-Final/"
+date: "2018-02-27"
+author: "lordofthejars"
+tags: ["release", "platform", "core", "jbosscentral"]
+disqus_identifier: "fe332abcc3c054f02346fbbccf723db95c28466c"
+layout: "release"
+source_path: "blog/arquillian-core-1.4.0.Final.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-core-1.4.0.Final.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-core-1.4.0.Final.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-core-1.4.0.Final.textile"
+---
+= Arquillian Core 1.4.0.Final Released
+:sectids!:
+
+pass:[<i class="icon-star">]pass:[</i>] *Extended expression language in Arquillian configuration*
+
+In pass:[<code>arquillian.xml</code>] file, properties are always defined explicitly, as a system property pass:[<code>${myproperty}</code>] or as an environment variable pass:[<code>${env.myenvironment}</code>]. But in both cases values are set before test execution.
+
+With this release, you can implement your own way of resolving values, not just system properties or environment variables.
+
+You need to register a new Arquillian service in pass:[<code>ExtensionBuilder</code>] and it must conform following signature:
+
+[listing,role="prettify",subs=verbatim]
+----
+interface PropertyResolver {
+    String getValue(String key);
+}
+----
+
+pass:[<code>key</code>] attribute is the expression set in pass:[<code>arquillian.xml</code>] file as property value and it returns the resolved value.
+
+You can see how we implement at Arquillian Core the system property/environment variable resolution using this SPI at https://github.com/arquillian/arquillian-core/blob/master/config/impl-base/src/main/java/org/jboss/arquillian/config/impl/extension/ConfigExtension.java#L34[registration of PropertyResolver] and https://github.com/arquillian/arquillian-core/blob/master/config/impl-base/src/main/java/org/jboss/arquillian/config/impl/extension/SystemPropertiesConfigurationPlaceholderResolver.java[implementing PropertyResolver].
+
+Currently apart from resolving properties from system properties and environment variables, we added a resolution of locations from classpath. For example:
+
+[listing,role="prettify",subs=verbatim]
+----
+<container qualifier="${arquillian.container:default}">
+  <configuration>
+    <property name="javaVmArguments">-Djavax.net.ssl.trustStore=${classpath(store.jks)}</property>
+  </configuration>
+</container>
+----
+
+In this example, property pass:[<code>javax.net.ssl.trustStore</code>] is going to be set to the absolute location of file pass:[<code>store.jks</code>] which is relative to root classpath.

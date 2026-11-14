@@ -1,0 +1,129 @@
+---
+title: "Arquillian Algeron Extension 1.0.0.Alpha5 Released"
+link: "/blog/2017/01/05/arquillian-algeron-1-0-0-Alpha5/"
+date: "2017-01-05"
+author: "lordofthejars"
+tags: ["release", "extension", "algeron"]
+disqus_identifier: "73233120cf7c0c20be7b3b0311816ad24888b5ae"
+layout: "release"
+source_path: "blog/arquillian-algeron-1.0.0.Alpha5.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-algeron-1.0.0.Alpha5.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-algeron-1.0.0.Alpha5.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-algeron-1.0.0.Alpha5.textile"
+---
+= Arquillian Algeron Extension 1.0.0.Alpha5 Released
+:sectids!:
+
+Arquillian Pact has been rebranded to Arquillian Algeron. This is an extension for writing contract-driven tests.
+
+Currently we are providing you seamless integration with well known https://docs.pact.io/[Pact] framework but more integrations will come in next releases.
+
+[discrete]
+=== What’s new
+
+pass:[<i class="icon-star">]pass:[</i>] *Arquillian Pact has been rebranded to Arquillian Algeron*
+
+Now Arquillian Pact is under the umbrella of Consumer Driven Contract project called Arquillian Algeron.
+
+This rebranding has influenced the structure of Arquillian Pact. To migrate from Arquillian Pact to Arquillian Algeron Pact, you need will have to:
+
+* Artifact Id has changed from pass:[<code>arquillian-pact-consumer-core</code>] and pass:[<code>arquillian-pact-provider-core</code>] to pass:[<code>arquillian-algeron-pact-consumer-core</code>] and pass:[<code>arquillian-algeron-pact-provider-core</code>].
+* Contract loaders has been renamed and relocated to a common place, so instead of pass:[<code>@PactFolder</code>] now it is pass:[<code>@ContractsFolder</code>]. In general all loaders annotations has been renamed by replacing the *Pact* element to *Contracts*.
+* Pact publisher is not configured anymore in pass:[<code>pact-consumer</code>] extension but in pass:[<code>algeron-consumer</code>]. You can read about it at https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha5#4-arquillian-algeron-consumer-publisher[Consumer Publisher section]
+* Pact Loader has been renamed to *Contracts Retriever*.
+* Base package is not pass:[<code>org.arquillian.pact</code>] anymore but pass:[<code>org.arquillian.algeron.pact</code>] – this might be relevant if you have already started exploring SPIs.
+
+pass:[<i class="icon-star">]pass:[</i>] *Allow user to define states like Cucumber expressions*
+
+You can pass as state expressions following Cucumber approach, so for example you can pass next state in consumer:
+
+[listing,role="prettify",subs=verbatim]
+----
+public PactFragment createFragment(PactDslWithProvider builder) {
+  builder.given("I have 36 cukes in my belly")
+         ...
+}
+----
+
+And you can get it on provider side using:
+
+[listing,role="prettify",subs=verbatim]
+----
+@State("I have (\\d+) cukes in my belly")
+public void stateMethod(int numberOfCukes) {
+  this.numberOfCukes = numberOfCukes;
+}
+----
+
+You can read more about this feature at https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha5#pact-states[Pact States section]
+
+pass:[<i class="icon-star">]pass:[</i>] *AssertJ integration*
+
+A custom pass:[<code>assertj</code>] assertion has been created so asserting contracts using pass:[<code>Target</code>] in provider side could be done in a readable way instead of calling a method.
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+URL webapp;
+
+@ArquillianResource
+Target target;
+
+@Test
+public void should_provide_valid_answers() {
+  assertThat(target).withUrl(webapp).satisfiesContract();
+}
+----
+
+You can read more about this feature at https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha5#assertj-integration[AssertJ Integration section]
+
+pass:[<i class="icon-star">]pass:[</i>] *Retrieving/Loading contracts can be configured using annotations and in pass:[<code>arquillian.xml</code>]*
+
+Consumer can publish contracts when the contract is generated. Its configuration parameters are set in pass:[<code>arquillian.xml</code>]. But on the provider side, contracts used for verification were configured using annotations.
+
+To make things more standard, now retrievers can be configured using annotations or as publishers in pass:[<code>arquillian.xml</code>] too. For example:
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="algeron-provider">
+  <property name="retrieverConfiguration">
+          provider: folder
+          contractsFolder: <folder where contracts are stored>
+    </property>
+</extension>
+----
+
+You can read more about this feature at https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha5#52-retrievers-as-configuration[Retrievers as Configuration section]
+
+pass:[<i class="icon-star">]pass:[</i>] *Integration between Pact Provider and Arquillian Reporter*
+
+Now if you have Arquillian Recorder dependency on your classpath and you set pass:[<code>@VerificationReports</code>] to use pass:[<code>recorder</code>] as reporting format, the result of the verification of the provider is reported in Arquillian Recorder too.
+
+You can read more about this feature at https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha5#547-arquillian-recorder-reporter-integration[Arquillian Recorder Reporter integration]
+
+pass:[<i class="icon-star">]pass:[</i>] *PactVerification value is not mandatory*
+
+When you want to write a consumer test you need to specify that the method tests a consumer contract by using pass:[<code>@PactVerification</code>] annotation and setting which provider you are verifying. In case of using pass:[<code>@Pact</code>] annotation on the class level, this information can be redundant (the value of the annotation). For example you can do:
+
+[listing,role="prettify",subs=verbatim]
+----
+@RunWith(Arquillian.class)
+@Pact(provider="test_provider", consumer="test_consumer")
+public class ClientGatewayTest {
+
+  @Test
+  @PactVerification
+  public void should_return_message() throws IOException {
+    assertThat(clientGateway.getMessage(), is("{\"responsetest\": true, \"name\": \"harry\"}"));
+  }
+}
+----
+
+Notice that now you don’t need to set the provider in pass:[<code>@PactVerification</code>] annotation since it is retrieved from class level.
+
+[discrete]
+=== Bug fixing
+
+pass:[<i class="icon-star">]pass:[</i>] *Test does not fail when contract is not verified*
+
+If multiple interactions are validated in provider side within same test, Arquillian takes only in consideration the first interaction result as final test result. To fix this a new Arquillian Core has been released (1.1.12). We encourage all users to use pass:[<code>Arquillian Core 1.1.12</code>] as the minimum version to avoid this problem. Notice that this also applies to previous versions of Arquillian Pact/Algeron.

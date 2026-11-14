@@ -1,0 +1,64 @@
+---
+title: "Arquillian GWT Testing extension 1.0.0.Alpha2 Released"
+link: "/blog/2013/04/16/arquillian-extension-gwt-1-0-0-Alpha2/"
+date: "2013-04-16"
+author: "csadilek"
+tags: ["release", "obsolete-extension", "gwt"]
+disqus_identifier: "29b509eaaca95aeae44c37f46b3f884968732041"
+layout: "release"
+source_path: "blog/arquillian-extension-gwt-1.0.0.Alpha2.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-gwt-1.0.0.Alpha2.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-gwt-1.0.0.Alpha2.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-gwt-1.0.0.Alpha2.textile"
+---
+= Arquillian GWT Testing extension 1.0.0.Alpha2 Released
+:sectids!:
+
+// Historical interpolation #{site.project_space} = http://community.jboss.org/en/arquillian from https://arquillian.org/blog/2013/04/16/arquillian-extension-gwt-1-0-0-Alpha2/ (captured 2026-11-13).
+
+This is an update of the Arquillian GWT extension to remove the need for the custom pass:[<code>GwtArchive</code>] class. Arquillian GWT tests can now leverage the standard ShrinkWrap API for specifiying their deployments. The pass:[<code>WebArchive</code>] is automatically enhanced to include all dependencies and configurations relevant to the GWT deployment.
+
+Here’s an updated example of a complete test class:
+
+[.filename]
+GreeterRpcTest.java
+
+[listing,role="prettify",subs=verbatim]
+----
+
+@RunWith(Arquillian.class)
+public class GreeterRpcTest extends ArquillianGwtTestCase {
+
+  @Deployment
+  public static WebArchive createDeployment() {
+    return ShrinkWrap.create(WebArchive.class, "test.war")
+      .addClass(Greeter.class)
+      .addClass(GreetingService.class)
+      .addClass(GreetingServiceImpl.class)
+      .addAsWebInfResource(new File("src/main/webapp/WEB-INF/web.xml"));
+  }
+
+  @Test
+  @RunAsGwtClient(moduleName = "org.myapp.MyGwtModule")
+  public void testGreetingService() {
+    GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
+    greetingService.greetServer("Hello!", new AsyncCallback<String>() {
+      @Override
+      public void onFailure(Throwable caught) {
+        Assert.fail("Request failure: " + caught.getMessage());
+      }
+
+      @Override
+      public void onSuccess(String result) {
+        assertEquals("Received invalid response from Server", "Welcome!", result);
+        finishTest();
+      }
+    });
+    delayTestFinish(5000);
+  }
+}
+----
+
+Note that you will only need to extend pass:[<code>ArquillianGwtTestCase</code>] if you want to inherit GWT’s asynchronous testing methods (pass:[<code>finishTest</code>] and pass:[<code>delayTestFinish</code>]).
+
+We look forward to your feedback on this release in the http://community.jboss.org/en/arquillian[community forums]!

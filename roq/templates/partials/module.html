@@ -1,0 +1,129 @@
+<div id="content">
+  <div class="row">
+    <div class="span9">
+      <div class="hero-unit">
+        <h2>{=module.name} <small style="white-space: nowrap">{=module.type}</small></h2>
+        {#for block in module.hero_blocks}
+        {#if block.tag == 'h3'}<h3>{=block.html.raw}</h3>{#else}<p>{=block.html.raw}</p>{/if}
+        {/for}
+        {#if module.metadata_html}
+        <ul class="breadcrumb" style="padding-top: 1em; padding-bottom: 1em; margin-top: 2em;font-size:90%">{=module.metadata_html.raw}</ul>
+        {/if}
+      </div>
+      <div class="row">
+        <div class="span3">
+          <h3><i class="icon-star"></i> Lead</h3>
+          {#if module.lead.link??}
+          <p></p>
+          {#if module.lead.avatar_url??}
+          <div class="thumbnail" style="margin-top: -5px; margin-bottom: 3px; width: 48px;">
+            <a href="{=module.lead.link}"><img src="{=module.lead.avatar_url}" height="48" width="48" alt="{=module.lead.name}"></a>
+          </div>
+          {/if}
+          <a href="{=module.lead.link}">{=module.lead.name}</a>
+          {#else}
+          <p>{=module.lead.name}</p>
+          {/if}
+        </div>
+        <div class="span3">
+          <h3><i class="icon-barcode"></i> Type</h3>
+          <p>{=module.type}</p>
+        </div>
+        {#if module.family??}
+        <div class="span3">
+          <h3><i class="icon-heart"></i> Family</h3>
+          <p>{=module.family}</p>
+        </div>
+        {/if}
+      </div>
+    </div>
+    <div class="span3" id="source-repo">
+      <div class="well">
+        <h3><i class="icon-github"></i> Source repository</h3>
+        <dl class="unstyled">
+          {#for fact in module.repository_facts}
+          <dt>{#if fact.label == 'VCS'}<abbr title="Version Control System">VCS</abbr>{#else}{=fact.label}{/if}</dt>
+          <dd>{=fact.html.raw}</dd>
+          {/for}
+        </dl>
+        {#for badge in module.repository_badges}
+        <iframe src="{=badge.src}" allowtransparency="{=badge.allowtransparency}" frameborder="{=badge.frameborder}" scrolling="{=badge.scrolling}" width="{=badge.width}" height="{=badge.height}"></iframe>
+        {/for}
+      </div>
+    </div>
+    {#if module.documentation??}
+    <div class="span3" id="documentation">
+      <div class="well"><i class="icon-book"></i> <a style="margin-left: 8px" href="{=module.documentation.href}">{=module.documentation.title}</a></div>
+    </div>
+    {/if}
+  </div>
+  <section id="activity">
+    <div class="page-header"><h1>Latest activity</h1></div>
+    <p><strong>{=module.activity.unreleased_commits}</strong> {#if module.activity.unreleased_commits == 1}commit{#else}commits{/if} since the last release.</p>
+    <p>Last commit to the master branch:</p>
+    <table class="table table-bordered">
+      <thead><tr><th><a href="{=module.activity.link}">{=module.activity.message}</a></th></tr></thead>
+      <tbody><tr><td><i class="icon-user"></i> Authored by {=module.activity.author}, committed on {=module.activity.date}</td></tr></tbody>
+    </table>
+  </section>
+  <section id="artifacts">
+    <div class="page-header"><h1 id="artifacts">Artifacts</h1></div>
+    {#for block in module.artifact_blocks}
+    {#if block.kind == 'h2'}
+    <h2 {#if block.id}id="{=block.id}"{/if}>{=block.text}</h2>
+    {#else if block.kind == 'h3'}
+    <h3 {#if block.id}id="{=block.id}"{/if}>{=block.text}</h3>
+    {#else if block.kind == 'paragraph'}
+    <p>{=block.html.raw}</p>
+    {#else if block.kind == 'coordinates'}
+    <pre class="prettify">{=block.text}</pre>
+    {#else if block.kind == 'warning'}
+    <div class="{=block.getString('class')}">{=block.html.raw}</div>
+    {#else if block.kind == 'published'}
+    <ul>
+      {#for artifact in block.items}
+      <li>{=artifact.coordinates} {#for link in artifact.links}<a class="{=link.getString('class')}" href="{=link.href}" target="{=link.target}">{=link.title}</a> {/for}</li>
+      {/for}
+    </ul>
+    {/if}
+    {/for}
+  </section>
+  <section id="releases">
+    <div class="page-header"><h1>Releases <small>{=module.release_history.size}</small></h1></div>
+    <div class="alert alert-info"><strong>Note:</strong> Most released artifacts are published to the <a href="http://repo1.maven.org/maven2">Maven Central repository</a>. Those that cannot are published to the <a href="http://repository.jboss.org/nexus">JBoss Community repository</a>.</div>
+    <table class="table table-bordered table-striped">
+      <thead><tr><th>#</th><th>Version</th><th>Release date</th><th>Released by</th><th>Compiled against</th></tr></thead>
+      <tbody>
+        {#for release in module.release_history}
+        <tr>
+          <td>{=release.legacy_id}</td>
+          <td>
+            {=release.version}
+            {#if release.link??}<span class="label tag"><a href="{=release.link}">view blog</a></span> &nbsp; {/if}
+            {#if release.tag_url}<span class="label tag"><a href="{=release.tag_url}">view tag</a></span>{/if}
+          </td>
+          <td>{=release.date}</td>
+          <td>{=release.released_by}</td>
+          <td>{=release.compiled_against_html.or('').raw}</td>
+        </tr>
+        {/for}
+      </tbody>
+    </table>
+  </section>
+  <section id="contributors">
+    <div class="page-header"><h1>Contributors <small>{=module.contributors.size}</small></h1></div>
+    <table class="table table-striped">
+      <tbody>
+        {#for contributor in module.contributors}
+        <tr><td>
+          {#if contributor.link??}
+          <a href="{=contributor.link}">{#if contributor.avatar_url??}<img class="thumbnail" src="{=contributor.avatar_url}" height="20" width="20" alt="{=contributor.name}" style="float:left;margin-right:5px;">{/if} {=contributor.name}</a>
+          {#else}
+          <i class="icon-user"></i> {=contributor.name}
+          {/if}
+        </td></tr>
+        {/for}
+      </tbody>
+    </table>
+  </section>
+</div>

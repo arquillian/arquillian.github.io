@@ -1,0 +1,110 @@
+---
+title: "Arquillian Cube Extension 1.10.0 Released"
+link: "/blog/2017/12/08/arquillian-cube-1-10-0/"
+date: "2017-12-08"
+author: "lordofthejars"
+tags: ["release", "extension", "cube"]
+disqus_identifier: "db5105eb4155fd4733c76b88008617fc930bfcd2"
+layout: "release"
+source_path: "blog/arquillian-cube-1.10.0.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-cube-1.10.0.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-cube-1.10.0.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-cube-1.10.0.textile"
+---
+= Arquillian Cube Extension 1.10.0 Released
+:sectids!:
+
+We are deligthed to announce a new version of Arquillian Cube 1.10.0 with new features and bug fixes.
+
+In this new version of Arquillian Cube there has been major improvements in pass:[OpenShift:“https://www.openshift.com/”] integration.
+
+[discrete]
+=== What’s new
+
+pass:[<i class="icon-star">]pass:[</i>] *++[++OpenShift++]++ Add support for role binding and add roles to service accounts*
+
+If you are using pass:[OpenShift:“https://www.openshift.com/”] you can use pass:[<code>@AddRoleToServiceAccount</code>] and pass:[<code>@RoleBinding</code>] annotations to bind roles for a test.
+
+pass:[<i class="icon-star">]pass:[</i>] *++[++OpenShift++]++ Add support for setting templates with annotation*
+
+If you are using pass:[OpenShift:“https://www.openshift.com/”,] you can set OpenShift templates location using an annotation (pass:[<code>@Template</code>]) instead of a configuration parameter.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Template(url = "https://gist.githubusercontent.com/lordofthejars/8781cacd4000a516695ad6c55b5815b3/raw/5151aeef0f5dd8823e2c581c3b7452f04a76af59/hello-template.yaml",
+          parameters = @TemplateParameter(name = "RESPONSE", value = "Hello from Arquillian Template"))
+public class HelloWorldTemplateTest {}
+----
+
+pass:[<code>@Template</code>] accepts only any location in pass:[<code>URL</code>] form. It is important to note that pass:[<code>URL</code>] can contain references to system properties or environment variables by using pass:[<code>${systemproperty}</code>] in case of a system property or pass:[<code>${env.environmentvariable}</code>] in case of an environment variable. +
+You can add pass:[<code>:</code>] after attribute name to provide a default value.
+
+You can see full example at https://github.com/arquillian/arquillian-cube/tree/master/openshift/ftest-template-standalone[template project]
+
+pass:[<i class="icon-star">]pass:[</i>] *++[++OpenShift++]++ Add support for creating OpenShift Resources with annotation*
+
+If you are using pass:[OpenShift:“https://www.openshift.com/”,] you can set any OpenShift resource to be executed either before test class or before test method. Notice that after test class/test method execution these resources are going to be deleted.
+
+To set OpenShift resources you need to use pass:[<code>@OpenShiftResource</code>] at class or method level.
+
+[listing,role="prettify",subs=verbatim]
+----
+@OpenShiftResource("classpath:hello-route.yaml")
+public class HelloWorldOpenShiftResourcesTest {}
+----
+
+pass:[<code>@OpenShiftResource</code>] value attribute can either be:
+
+* a link pass:[(https://www.github.com/alesj/template-testing/some.json)]
+* a test classpath resource (pass:[<code>classpath:some.json</code>])
+* or plain content (pass:[<code>{&quot;kind&quot; : &quot;Secret&quot;, ...}</code>])
+
+You can see full example at https://github.com/arquillian/arquillian-cube/tree/master/openshift/ftest-openshift-resources-standalone[openshift resources project]
+
+pass:[<i class="icon-star">]pass:[</i>] *++[++Docker/Kubernetes/OpenShift++]++ Provides abstraction for executing CLI operations*
+
+You can instantiate pass:[<code>CommandExecutor</code>] class to execute CLI operations directly from your test. +
+Usually, you use this class to execute commands directly from pass:[<code>kubectl</code>] or pass:[<code>oc</code>] tool.
+
+[listing,role="prettify",subs=verbatim]
+----
+private static CommandExecutor commandExecutor = new CommandExecutor();
+final List<String> namespaces = commandExecutor.execCommand("kubectl get ns -o=name");
+----
+
+You can see full example at https://github.com/arquillian/arquillian-cube/tree/master/openshift/ftest-oc-proxy[command executor project]
+
+pass:[<i class="icon-star">]pass:[</i>] *++[++OpenShift++]++ Provides a way to skip readiness await*
+
+Able to turn off readiness await to workaround Fabric8 Kubernetes Client issues such as pass:[https://github.com/fabric8io/kubernetes-client/issues/921]
+
+By default readiness await is always performed, but you can skip it by setting configuration parameter pass:[<code>wait.enabled</code>] to false in pass:[<code>arquillian.xml</code>].
+
+pass:[<i class="icon-star">]pass:[</i>] *++[++Kubernetes/OpenShift++]++ Namespace in annotation name*
+
+Now you can enrich a test with an element of another namespace different fromfa +
+the current one.
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+@Named(value = "my-service", namespace = "my-predefined-namespace")
+Service service;
+----
+
+pass:[<i class="icon-star">]pass:[</i>] *++[++OpenShift++]++ Provides an OpenShift assistant to deploy resources programmatically*
+
+Sometimes you need to decide when and what to deploy in pass:[OpenShift:“https://www.openshift.com/”] cluster. Maybe you want to deploy something in one specific part of the test method and delete it in another part. For this reason a test can be enriched with pass:[<code>OpenShiftAssistant</code>] to execute operations in current OpenShift cluster namespace in any part of the test.
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+OpenShiftAssistant openShiftAssistant;
+
+openShiftAssistant.deployApplication("hello-world", "hello-route.json");
+
+final Optional<URL> route = openShiftAssistant.getRoute();
+openShiftAssistant.awaitUrl(route.get());
+----
+
+You can see full example at https://github.com/arquillian/arquillian-cube/tree/master/openshift/ftest-openshift-assistant[OpenShift assistant project]

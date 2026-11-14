@@ -1,0 +1,101 @@
+---
+title: "Arquillian Governor 1.0.4.Final Released"
+link: "/blog/2016/09/20/arquillian-governor-1-0-4-Final/"
+date: "2016-09-20"
+author: "dipak-pawar"
+tags: ["release", "extension", "governor", "jbosscentral"]
+disqus_identifier: "cea7574355093836f0502627bc7d1eeaf1f2db85"
+layout: "release"
+source_path: "blog/arquillian-governor-1.0.4.Final.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-governor-1.0.4.Final.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-governor-1.0.4.Final.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-governor-1.0.4.Final.textile"
+---
+= Arquillian Governor 1.0.4.Final Released
+:sectids!:
+
+[discrete]
+=== *Arquillian Recorder* integration with *Arquillian Governor*
+
+In this release we are providing Arquillian Recorder integration with JIRA, GitHub and Redmine Governor.
+
+Arquillian Recorder project brings neat reports for your Arquillian tests. Arquillian Governor Extension gives you the possibility to programmatically choose what test methods of your Arquillian tests are going to be executed and what are going to be skipped by putting your custom annotations on the test methods.
+
+We are providing an integration of Recorder with Governor so that generated tests reports contains all relevant information used by Governor.
+
+Let’s see it in action for Arquillian JIRA Governor:
+
+[listing,role="prettify",subs=verbatim]
+----
+@RunWith(Arquillian.class)
+public class TestCase {
+    
+    @Test
+    @Jira("ARQ-5000", force = true)
+    public void run_test_without_relying_on_the_issue_status() {
+        // ...
+    }
+
+    @Test
+    @Jira(value = "ARQ-1000", detector = @Detector(Windows.class))
+    public void run_only_if_issue_is_closed_and_windows_is_used() {
+        // ...
+    }
+}
+----
+
+Let’s break this test down to see what is going on under the hood.
+
+* First test will run disregard of the issue status. This is useful when you work on a particular task and don’t want Governor to skip its execution. Using pass:[<code>force = true</code>] will make it happen.
+* Second test will only be executed if issue pass:[<code>ARQ-1000</code>] is closed and the test is executed in Windows environment. Second aspect is handled by the pass:[<code>@Detector</code>] mechanism.
+* At the end Reporter will generate a report with all relevant information including links between tests and issues, environment specific tests etc.
+
+To decide what tests should be executed using JIRA issues, include following dependency:
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+    <groupId>org.arquillian.extension</groupId>
+    <artifactId>arquillian-governor-jira</artifactId>
+    <version>${version.jira.governor}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+In the same way, if you want to use GitHub issues:
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+    <groupId>org.arquillian.extension</groupId>
+    <artifactId>arquillian-governor-github</artifactId>
+    <version>${version.github.governor}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+And last but not least, to use Redmine governor:
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+    <groupId>org.arquillian.extension</groupId>
+    <artifactId>arquillian-governor-redmine</artifactId>
+    <version>${version.redmine.governor}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+And to have it all covered with reports, add this dependency:
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+  <groupId>org.arquillian.extension</groupId>
+  <artifactId>arquillian-recorder-reporter-impl</artifactId>
+  <version>${version.arquillian.recorder}</version>
+  <scope>test</scope>
+</dependency>
+----
+
+You can read more about Arquillian Recorder integration with Jira Governor in the https://github.com/arquillian/arquillian-governor#arquillian-recorder-integration-with-arquillian-jira-governor-extension[Arquillian Recorder Integration Section with Jira], GitHub Governor in the https://github.com/arquillian/arquillian-governor#arquillian-recorder-integration-with-arquillian-github-governor-extension[Arquillian Recorder Integration section with GitHub], Redmine Governor in the https://github.com/arquillian/arquillian-governor#arquillian-recorder-integration-with-arquillian-redmine-governor-extension[Arquillian Recorder Integration section with Redmine].

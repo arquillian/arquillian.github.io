@@ -1,0 +1,314 @@
+---
+title: "Arquillian Warp 1.0.0.Alpha2 Released"
+link: "/blog/2013/01/15/arquillian-extension-warp-1-0-0-Alpha2/"
+date: "2013-01-15"
+author: "lfryc"
+tags: ["release", "extension", "warp"]
+disqus_identifier: "a4c1eba3027f804c93f29250780079c9a93fbda4"
+layout: "release"
+source_path: "blog/arquillian-extension-warp-1.0.0.Alpha2.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-warp-1.0.0.Alpha2.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-warp-1.0.0.Alpha2.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-warp-1.0.0.Alpha2.textile"
+---
+= Arquillian Warp 1.0.0.Alpha2 Released
+:sectids!:
+
+It has been a pretty long road from Alpha1 to this release, focused primarily on polishing the user experience.
+
+So without any further ado, let’s look at the new shiny features!
+
+[discrete]
+=== Highlighted Features
+
+pass:[<i class="icon-star">]pass:[</i>] Renaming Warp API methods::
++
+--
+The API methods were renamed according to the results of our public survey. (link:#renaming-warp-api[read more])
+--
+
+In the simplest scenario you want to inspect the first request after performing a given client activity. For this purpose, you can use a basic Warp API known from Alpha1:
+
+[listing,role="prettify",subs=verbatim]
+----
+Warp
+    .initiate(Activity)
+    .inspect(Inspection);
+----
+
+This will intercept the first request coming from the client and ignore the rest of the potential requests.
+
+Additionally, Warp will ignore requests for pass:[<tt>favicon.ico</tt>] which could fail your test unexpectadly.
+
+You can find more samples for this https://github.com/arquillian/arquillian-extension-warp/blob/1.0.0.Alpha2/api/src/test/java/org/jboss/arquillian/warp/TestExecutionAPI.java#L62[API in a source] .
+
+pass:[<i class="icon-star">]pass:[</i>] Anonymous and Inner Classes::
++
+--
+It’s now much easier to define a verification code, which is also more readable.
+--
+
+In _Alpha1_, you had to use a _top-level_ or a _static inner classes_ to define inspections.
+
+In _Alpha2_, you can provide _non-static inner class_ or even _anonymous class_.
+
+[.filename]
+HelloWarp.java
+
+[listing,role="prettify",subs=verbatim]
+----
+Warp
+    // first you need to initiate activity which triggers HTTP request
+    .initiate(new Activity() {
+        public void perform() {
+            ajaxButton.click();
+        }
+    })
+
+    // and then specify what behavior should be inspected on the server
+    .inspect(new Inspection() {
+
+        // don't forget to specify serialVerionUID to allow serialization
+        private static final long serialVersionUID = 1L;
+        
+        // bring JSF context via dependency injection
+        @ArquillianResource
+        FacesContext facesContext;
+
+        // verify expected behavior in given request phase
+        @AfterPhase(RESTORE_VIEW)
+        public void beforeServlet() {
+            assertTrue(facesContext.isPostback());
+        }
+    });
+----
+
+This example showed how to use the new API together with anonymous inspections
+
+pass:[<i class="icon-star">]pass:[</i>] Multiple Requests / Request Groups::
++
+--
+It is possible to intercept several requests during one Warp execution.
+--
+
+Warp allows you to verify more than one request triggered by a single client activity. This allows you to verify e.g. a request for HTML page and all its resources (JS, CSS, images) separately. This feature is called _Request Groups_.
+
+[.filename]
+TestRequestGroups.java
+
+[listing,role="prettify",subs=verbatim]
+----
+// Request Group execution will return WarpResult
+WarpResult result = Warp
+    .initiate(Activity)
+    // a group specification without name - the name will be generated
+    .group()
+        .observe(HttpRequestFilter)
+        .inspect(Inspection1)
+    // a named group specification - the result can be easily accessed
+    .group("second")
+        .observe(HttpRequestFilter)
+        .inspect(Inspection2)
+    // you need to execute whole Request Group once it is completely specified
+    .execute();
+    
+    // you can access details of finished execution
+    result.getGroup("second").getInspection();
+----
+
+The _Request Groups_ execution returns a pass:[<code>WarpResult</code>] which contains details about the finished execution. In order to access the results related to a specific group, you can give the group a name
+
+pass:[<i class="icon-star">]pass:[</i>] Request Observers & Fluent API::
++
+--
+The new API for observing the correct request allows you to select which request should be verified on a server.
+--
+
+When using _Request Groups_, all of the requests will be inspected by the inspections defined in that group. There might be one or more requests verified by each group.
+
+Since multiple request can be triggered, you might want to choose the correct request to observe. For this purpose, we have the pass:[<code>HttpRequestFilter</code>] interface, where you specify which pass:[<code>HttpRequest</code>] should matches the current group.
+
+[listing,role="prettify",subs=verbatim]
+----
+import static org.jboss.arquillian.warp.client.filter.http.HttpFilters.request;
+
+// will accept only requests for HTML
+...group()
+    .observe(request().uri().contains(".html"))
+
+// will accept only REST requests for JSON
+...group()
+    .observe(request().header().containsValue("Accept", "application/json"))
+
+// will accept only POST requests
+...group()
+   .observe(request().method().equal(POST))
+----
+
+In order to simplify writing the Warp specifications, you can define the observer using a fluent API and static factory methods.
+
+pass:[<i class="icon-star">]pass:[</i>] Dependency Injection for Servlets and JSF::
++
+--
+Test enrichers now allow the the injection of Servlet and JSF resources. (link:#servlet-jsf-enrichments[read more])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Renaming Phaser to Warp JSF::
++
+--
+The JSF specific extension was renamed from Phaser to Warp JSF. (link:#renaming-phaser-to-warp-jsf[read more])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Introduction of Dependency Chain::
++
+--
+The dependency chain was introduced to bring in all necessary dependencies by specifying just one dependency. (link:#warp-dependency-chain[read more])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Warp Extensions for REST and Spring MVC::
++
+--
+Thanks to link:/community/contributors/[Jakub Narloch], we have two new additions to Arquillian Galaxy. (link:#warp-extensions-rest-spring[read more])
+--
+
+[discrete]
+=== Under the Hood
+
+pass:[<i class="icon-star">]pass:[</i>] Usability and Debugging Improvements::
++
+--
+A focus of Alpha2 was to polishing the way Warp behave in case of failures and on debuggability of Warp execution.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Validation of Warp Specification::
++
+--
+Warp now validates that the number of observed requests match a number of expected requests. It also makes sure that all of defined lifecycle callbacks are executed on the server, to avoid any false positives.
+--
+
+As you can see there are many of new features, so let’s look at them separately:
+
+[discrete,id="renaming-warp-api"]
+=== Renaming Warp API
+
+After Alpha1 we https://community.jboss.org/message/777404#777404[got several requests] for clarifying the Warp high-level API:
+
+[listing,role="prettify",subs=verbatim]
+----
+Warp.execute(ClientAction).verify(ServerAssertion)
+----
+
+The https://docs.google.com/spreadsheet/viewform?formkey=dFlZeGI3ZklOUVlDX2M2V2owUkFmYVE6MQ[announced survey] helped us choose the new API. As a result, https://issues.jboss.org/secure/attachment/12358992/warp-api-method-naming-survey-responses.pdf[88% of participants reported] they found this new API more natural:
+
+[listing,role="prettify",subs=verbatim]
+----
+Warp.initiate(Activity).inspect(Inspection)
+----
+
+Big thanks to everyone who participated in the survey! This type of collaboration makes me really proud to be part of the team.
+
+[discrete,id="warp-extensions-rest-spring"]
+=== Warp Extensions: REST and Spring MVC
+
+Warp was from the beginning built as a project that focused on any framework/technology that is based on top of the Servlet API.
+
+Thus it’s not surprising that there are already two extensions shaping out thanks to link:/community/contributors/[Jakub Narloch]:
+
+* link:/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/[Spring MVC]
+* https://github.com/jmnarloch/arquillian-extension-warp-rest[REST]
+
+[discrete,id="warp-dependency-chain"]
+=== Introduction of Dependency Chain
+
+Putting Warp to work in your Maven project is now as easy as defining a single dependency:
+
+[.filename]
+pom.xml
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+    <groupId>org.jboss.arquillian.extension</groupId>
+    <artifactId>arquillian-warp</artifactId>
+    <version>1.0.0.Alpha2</version>
+    <type>pom</type>
+</dependency>
+----
+
+This declaration will bring Warp core, which supports Servlet API lifecycle callbacks.
+
+[discrete,id="renaming-phaser-to-warp-jsf"]
+=== Renaming Phaser to Warp JSF
+
+Initially we had created Phaser as the next generation of the successful http://www.jboss.org/jsfunit/[JSFUnit]. It occured to use that Phaser is an unfortunate name and it just makes it harded to understand the Arquillian eco-system.
+
+That’s why we have come up with a simpler variant – so let me introduce the Warp JSF extension.
+
+You can bring Warp JSF to your project just by adding the following declaration:
+
+[.filename]
+pom.xml
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+    <groupId>org.jboss.arquillian.extension</groupId>
+    <artifactId>arquillian-warp-jsf</artifactId>
+    <version>1.0.0.Alpha2</version>
+</dependency>
+----
+
+[discrete,id="servlet-jsf-enrichments"]
+=== Dependency Injection for Servlets and JSF
+
+After the announcement of the Alpha1 release, we focused on improving Warp to come closer to the Arquillian goal: bring all necessary dependencies to the test (in our case to inspection).
+
+Now, you can not only inject all CDI managed beans (pass:[<code>@Inject</code>]), EJB beans (pass:[<code>@EJB</code>]) or container managed resources pass:[<code>@Resource</code>], but you can also inject the following resources:
+
+* *Servlet resources*
+** pass:[<code>ServletRequest</code>] or pass:[<code>HttpServletRequest</code>]
+** pass:[<code>ServletResponse</code>] or pass:[<code>HttpServletResponse</code>]
+
+* *JSF resources*
+** pass:[<code>FacesContext</code>]
+** pass:[<code>Application</code>]
+** pass:[<code>ELContext</code>], pass:[<code>ELResolver</code>], pass:[<code>ExpressionFactory</code>]
+** pass:[<code>ExceptionHandler</code>]
+** pass:[<code>Flash</code>]
+** pass:[<code>NavigationHandler</code>]
+** pass:[<code>PartialViewContext</code>]
+** pass:[<code>RenderKit</code>]
+** pass:[<code>ResourceHandler</code>]
+** pass:[<code>StateManager</code>]
+** pass:[<code>UIViewRoot</code>]
+** pass:[<code>ViewHandler</code>]
+
+[discrete]
+=== Migration from Alpha1
+
+We’ve create a little https://gist.github.com/4275537[bash script] to convert the java source from Alpha1 API to Alpha2 that might help you with the upgrade.
+
+[discrete]
+=== How to Learn Warp?
+
+The best way now is to look at functional tests for https://github.com/arquillian/arquillian-extension-warp/tree/master/ftest/src/test/java/org/jboss/arquillian/warp/ftest[Warp] or https://github.com/arquillian/arquillian-extension-warp/tree/master/extension/jsf-ftest/src/test/java/org/jboss/arquillian/warp/jsf/ftest[Warp JSF].
+
+[discrete]
+=== Roadmap
+
+The roadmap to _Beta1_ is pretty clear:
+
+* documentation and guides
+* adding features known from http://docs.jboss.org/seam/2.0.1.GA/reference/en/html/testing.html[SeamTest] and http://www.jboss.org/jsfunit/[JSFUnit]
+* new injections and event hooks (e.g. improved CDI integration)
+* hardering and usability enhancements (here we rely on your issue reports!)
+
+Along the way we will welcome *every idea for integrating Warp with your favorite web framework* – so don’t be a stranger and come to us!

@@ -1,0 +1,105 @@
+---
+title: "Arquillian Spring Framework Extension 1.0.0.Beta3 Released"
+link: "/blog/2014/06/26/arquillian-extension-spring-1-0-0-Beta3/"
+date: "2014-06-26"
+author: "aslakknutsen"
+tags: ["release", "extension", "spring"]
+disqus_identifier: "9477ca0616652c0d717f8de86a1447978a6d28f2"
+layout: "release"
+source_path: "blog/arquillian-extension-spring-1.0.0.Beta3.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-spring-1.0.0.Beta3.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-spring-1.0.0.Beta3.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-spring-1.0.0.Beta3.textile"
+---
+= Arquillian Spring Framework Extension 1.0.0.Beta3 Released
+:sectids!:
+
+It has _again_ been a while since that last Arquillian Spring extension release, but it’s finally here. This release focus mainly on further integration and compatibility with the Arquillian Universe
+
+pass:[<i class="icon-star">]pass:[</i>] Upgraded to Arquillian Core 1.1.x::
++
+--
+With Arquillian Core 1.1.0.Final came the new ShrinkWrap Resolver 2.0 APIs.
+
+The Arquillian Spring Deployers have been updated to support the new ShrinkWrap Resolver 2.0 APIs and should now work with the latest and greatest from the Arquillian Universe.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Arquillian Persistence Extension support::
++
+--
+In this release we’ve added a new module, pass:[<code>arquillian-persistence-spring</code>], which integrates Spring with the Arquillian Persistence Extension.
+
+More specifically, it’s an implementation of the Persistence Extension pass:[<code>DataSourceProvider</code>] SPI.
+
+This integration allow you to configure the Persistence Extension to operate on a DataSource configured in your Spring pass:[<code>applicationContext</code>].
+
+Configure your pass:[<code>DataSource</code>] and pass:[<code>TransactionManager</code>] in the pass:[<code>applicationContext.xml</code>] file. For example;
+
+[listing,role="prettify",subs=verbatim]
+----
+<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+   ...
+</bean>
+
+<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+  <property name="dataSource" ref="dataSource"/>
+</bean>
+----
+
+Then setup your Test case using the Spring, Transaction and Persistence Extension annotations:
+
+[listing,role="prettify",subs=verbatim]
+----
+@RunWith(Arquillian.class)
+@Transactional(manager = "txManager")
+@SpringConfiguration("applicationContext.xml")
+@DataSource("dataSource")
+public class JpaEmployeeRepositoryTestCase {
+
+...
+
+    @Test
+    @ShouldMatchDataSet(value = "employee.yml", excludeColumns = "id")
+    public void testSave() {
+
+        Employee employee = new Employee();
+        employee.setName("Test employee");
+
+        employeeRepository.save(employee);
+
+        employee = new Employee();
+        employee.setName("New employee");
+
+        employeeRepository.save(employee);
+    }
+
+    @UsingDataSet("employee.yml")
+    @Cleanup(strategy = CleanupStrategy.USED_TABLES_ONLY)
+    public void testGetEmployees() throws Exception {
+
+        List<Employee> result = employeeRepository.getEmployees();
+
+        assertNotNull("Method returned null list as result.", result);
+        assertEquals("Two employees were expected.", 2, result.size());
+    }
+}
+----
+
+Optionally you can configure the transaction manager reference and data source reference globally for the whole test suite via pass:[<code>arquillian.xml</code>]
+
+[listing,role="prettify",subs=verbatim]
+----
+<arquillian>
+   <extension qualifier="transaction">
+      <property name="manager">txManager</property>
+   </extension>
+   <extension qualifier="persistence">
+      <property name="defaultDataSource">dataSource</property>
+   </extension>
+</arquillian>
+----
+
+See the https://docs.jboss.org/author/display/ARQ/Persistence[Persistence Extension Reference Docs] for more ingo
+--

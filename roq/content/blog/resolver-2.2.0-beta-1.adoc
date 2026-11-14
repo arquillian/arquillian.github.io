@@ -1,0 +1,88 @@
+---
+title: "ShrinkWrap Resolver 2.2.0-beta-1 Released"
+link: "/blog/2014/09/30/resolver-2-2-0-beta-1/"
+date: "2014-09-30"
+author: "kpiwko"
+tags: ["release", "shrinkwrap", "resolver"]
+disqus_identifier: "b2aaa940940c3b3a98e6eeb4ab7eae8f71336669"
+layout: "release"
+source_path: "blog/resolver-2.2.0-beta-1.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/resolver-2.2.0-beta-1.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/resolver-2.2.0-beta-1.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/resolver-2.2.0-beta-1.textile"
+---
+= ShrinkWrap Resolver 2.2.0-beta-1 Released
+:sectids!:
+
+// Historical interpolation #{site.project_space} = http://community.jboss.org/en/arquillian from https://arquillian.org/blog/2014/09/30/resolver-2-2-0-beta-1/ (captured 2026-11-13).
+
+The ShrinkWrap Resolver 2.2.0-beta-1 release brings you better support for Gradle, JDK 8 usability improvemens, plenty of bugfixes and feature requests you’ve asked for. It is a major step towards 2.2.0 stable release.
+
+[discrete]
+=== Significant additions in ShrinkWrap Resolver 2.2.0-beta-1
+
+pass:[<i class="icon-star">]pass:[</i>] Gradle importer::
++
+--
+Gradle importer was already included in the alpha releases, but it is time to promote it. Gradle Importer expose functions similar to Maven Importer but instead for Gradle using the Gradle Tooling API. It includes support for multi-module projects. Kudos to Michał Matłoka for the Gradle support.
+
+[listing,role="prettify",subs=verbatim]
+----
+
+
+ShrinkWrap.create(EmbeddedGradleImporter.class)
+  .forThisProjectDirectory().importBuildOutput().as(WebArchive.class);
+
+ShrinkWrap.create(EmbeddedGradleImporter.class)
+  .forProjectDirectory("/path/to/dir").importBuildOutput("/path/to/result/war").as(WebArchive.class);
+
+ShrinkWrap.create(EmbeddedGradleImporter.class)
+  .forProjectDirectory("/path/to/dir").forTasks("task1","task2").withArguments("arg1","arg2")
+  .importBuildOutput().as(WebArchive.class);
+----
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] List resolution::
++
+--
+Finally, you can resolve artifacts as lists, not only arrays. This is handy especially with JDK8 features. Kudos to John Ament for providing this enhancement.
+
+[listing,role="prettify",subs=verbatim]
+----
+Maven.resolver().
+    .resolve("G:A:V").withTransitivity().asList(File.class);
+----
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] MavenCoordinates as output::
++
+--
+In some cases, you might be interested in just the Maven coordinates, so you can for instance compare two dependency sets. ShrinkWrap Resolver now allows you to to do that easier then before.
+
+[listing,role="prettify",subs=verbatim]
+----
+Maven.resolver().
+    .resolve("G:A:V).withTransitivity().as(MavenCoordinate.class);
+----
+
+You can obviously return coordinates as pass:[<code>List</code>]
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] MavenImporter and IDEs are now friends::
++
+--
+pass:[<code>MavenImporter</code>], a tool that is able to compile and package project from a _pom.xml_ file, is now able to fork compiler process if you are not running on JDK but JRE. This change makes it even easier to run the tests from IDE.
+--
+
+[discrete]
+=== Deprecation warning
+
+Few configuration methods were deprecated since 2.0.0. If you are configuring resolution sources (repositories, class path resolution), offline mode and you are not using pass:[<code>Maven.configureResolver()</code>] to get configuration API, you should update your tests. Deprecated methods *will be dropped* with the next release of 2.2.x stream.
+
+We hope that you’ll enjoy our new stuff and look forward to hear your feedback in the http://community.jboss.org/en/arquillian[community forums].

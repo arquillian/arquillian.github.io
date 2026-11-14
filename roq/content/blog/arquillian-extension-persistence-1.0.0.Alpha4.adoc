@@ -1,0 +1,106 @@
+---
+title: "Arquillian Persistence Extension 1.0.0.Alpha4 Released"
+link: "/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/"
+date: "2012-04-12"
+author: "matousjobanek"
+tags: ["release", "extension", "persistence"]
+disqus_identifier: "680ef2b7cd34bee7c733594a4645aa493b47045c"
+layout: "release"
+source_path: "blog/arquillian-extension-persistence-1.0.0.Alpha4.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-persistence-1.0.0.Alpha4.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-persistence-1.0.0.Alpha4.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-persistence-1.0.0.Alpha4.textile"
+---
+= Arquillian Persistence Extension 1.0.0.Alpha4 Released
+:sectids!:
+
+// Historical interpolation #{site.project_space} = http://community.jboss.org/en/arquillian from https://arquillian.org/blog/2012/04/12/arquillian-extension-persistence-1-0-0-Alpha4/ (captured 2026-11-13).
+
+It’s been a while since the link:/2011/12/30/arquillian-extension-persistence-1-0-0-Alpha3[Alpha3 release]. After three long months, we’re excited to announce Alpha 4 with *a lot* of improvements and enhancements suggested by our great community. Best of all, we finally have https://docs.jboss.org/author/display/ARQ/Persistence[complete documentation in the reference guide]!
+
+I would especially like to thank https://github.com/shogz[Michael Brill] for nailing down DBUnit clean up strategies, https://github.com/twistah[Pål Oliver Kristiansen] and https://github.com/jagin[Jarek Gilewski] for suggesting customization of DBUnit behaviour and https://community.jboss.org/people/Juergen.Zimmermann[Juergen Zimmermann] for spotting a bug with transactional support. Last, but not least, many thanks to all who actively discussed the roadmap for next releases. There is plenty of great stuff on the way! Thank you very much for your feedback!
+
+[discrete,role="highlights"]
+=== Some of the highlights in this release
+
+pass:[<i class="icon-star">]pass:[</i>] Custom SQL scripts for cleanup::
++
+--
+You can now use custom SQL scripts to clean your database before or after the test. For this purpose use the pass:[<code>@CleanupUsingScript</code>] annotation and specify SQL files which have to be executed.
+--
+
+pass:[<i class="icon-star">]pass:[</i>] More flexible custom SQL scripts execution::
++
+--
+We’ve removed the pass:[<code>@UsingScript</code>] annotation and replaced it with the pass:[<code>@ApplyScriptBefore</code>] and pass:[<code>@ApplyScriptAfter</code>] annotations.
+--
+
+pass:[<i class="icon-star">]pass:[</i>] DBUnit insert strategies::
++
+--
+You can tell DBUnit how it should insert your data. The following strategies are available:
+
+* pass:[<code>INSERT</code>] – Performs insert of the data defined in provided data sets. _This is the default strategy_.
+* pass:[<code>CLEAN_INSERT</code>] – Performs insert of the data defined in provided data sets, after removal of all data present in the tables referred in provided files.
+* pass:[<code>REFRESH</code>] – During this operation, existing rows are updated and new ones are inserted. Entries already existing in the database which are not defined in the provided data set are not affected.
+* pass:[<code>UPDATE</code>] – This strategy updates existing rows using data provided in the datasets. If the dataset contains a row which is not present in the database (identified by its primary key) then an exception is thrown.
+--
+
+pass:[<i class="icon-star">]pass:[</i>] DBUnit cleanup modes::
++
+--
+You can specify when and how you would like your database to be cleaned. By default, your database is *erased entirely* before each test. If you want to control this behavior, use the pass:[<code>@Cleanup</code>] annotation for this purpose. The following modes are currently supported:
+
+* pass:[<code>STRICT</code>] – Cleans the entire database. This strategy might require turning off database constraints (e.g. referential integrity).
+* pass:[<code>USED_ROWS_ONLY</code>] – Deletes only those entries that are defined in the datasets used for seeding.
+* pass:[<code>USED_TABLES_ONLY</code>] – Deletes only those tables that are referenced in datasets.
+
+You can also specify when you would like to invoke the cleanup procedure. For instance:
+
+[listing,role="prettify",subs=verbatim]
+----
+@Cleanup(phase = TestExecutionPhase.AFTER, strategy = CleanupStrategy.USED_ROWS_ONLY)
+----
+
+You can invoke cleanup pass:[<code>BEFORE</code>] or pass:[<code>AFTER</code>] the test. You can also disable cleanup by using pass:[<code>TestExecutionPhase.NONE</code>].
+--
+
+pass:[<i class="icon-star">]pass:[</i>] Column filtering for data set matching::
++
+--
+pass:[<code>@ShouldMatchDatSet</code>] has been enhanced with pass:[<code>columnsToExclude</code>] list, where you can specify which columns shouldn’t be used for database content verification.
+--
+
+pass:[<i class="icon-star">]pass:[</i>] Nullable columns::
++
+--
+For XML, JSON and YAML you can now set arbitary columns to pass:[<code>null</code>] using pass:[<code>[null&#93;</code>] placeholder.
+--
+
+pass:[<i class="icon-star">]pass:[</i>] Separated configuration for core and (enhanced) DBUnit specific features::
++
+--
+*We provide configuration for all DBUnit properties and features as of Alpha 4!* Moreover there is a split for core properties (such as default data source or JNDI of UserTransaction) and DBUnit related settings, as the example below illustrates:
+
+[.filename]
+arquillian.xml
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="persistence">
+    <property name="defaultDataSource">java:app/datasources/mssql_ds</property>
+    <property name="userTransactionJndi">java:jboss/UserTransaction</property>
+    <property name="initStatement">scripts/mssql-identity-insert-on.sql</property>
+    <property name="cleanupStatement">scripts/mssql-identity-insert-off.sql</property>
+</extension>
+
+<extension qualifier="persistence-dbunit">
+    <property name="datatypeFactory">org.dbunit.ext.mssql.MsSqlDataTypeFactory</property>
+    <property name="useIdentityInsert">true</property>
+</extension>
+----
+--
+
+For complete list, please refer to the https://docs.jboss.org/author/display/ARQ/Persistence[reference guide].
+
+We look forward to hearing your feedback about this release in the http://community.jboss.org/en/arquillian[community forums]!

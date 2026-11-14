@@ -1,0 +1,56 @@
+---
+title: "Arquillian Warp 1.0.0.Alpha7 Released"
+link: "/blog/2014/03/12/arquillian-extension-warp-1-0-0-Alpha7/"
+date: "2014-03-12"
+author: "lfryc"
+tags: ["release", "extension", "warp"]
+disqus_identifier: "13e221278de278ee99bd18ddde3b39de0e7c1c70"
+layout: "release"
+source_path: "blog/arquillian-extension-warp-1.0.0.Alpha7.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-warp-1.0.0.Alpha7.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-warp-1.0.0.Alpha7.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-warp-1.0.0.Alpha7.textile"
+---
+= Arquillian Warp 1.0.0.Alpha7 Released
+:sectids!:
+
+This is a yet another bug fixing release. Since Warp is a young extension, there are many pain points and gaps. But these are successfully being filled with the help of our awesome community.
+
+So what’s in Alpha7 for you?
+
+[discrete]
+=== Request and response objects mixed up
+
+Thanks to Aslak, we have identified and fixed one of the most annoying bugs in Warp’s history:
+
+Objects in pass:[<code>RequestContext</code>] (such as pass:[<code>HttpServletRequest</code>], pass:[<code>HttpServletResponse</code>] and pass:[<code>FilterChain</code>]) were previously identified by requests pass:[<code>#hashCode()</code>]. But it turns up that requests’ hash code is actually far from being unique across multiple requests. Now we have Warp requests identified by UUID as a request’s attribute.
+
+The issue was especially perceptible with Warp on the WildFly / Undertow container.
+
+[discrete]
+=== Filter chain fixed
+
+We have identified integration issues between pass:[<code>WarpFilter</code>] and frameworks that use custom filters such as http://ocpsoft.org/rewrite/[OCPSoft Rewrite].
+
+Warp is now the first filter in the chain of filters – it is configured to be prepended to other filters (still it may theoretically compete with other filters configured the same way).
+
+It is also serving just pass:[<code>REQUEST</code>] and pass:[<code>ASYNC</code>] dispatchers (no pass:[<code>FORWARD</code>] as it would mean warping one request multiple times).
+
+[discrete]
+=== Improved interoperability
+
+Besides full compatibility with WildFly / EAP / JBoss AS, Warp now works just fine with TomEE 1.6 and Glassfish 4.0.
+
+[discrete]
+=== What’s next?
+
+I think we have stabilized a fair amount of integration issues and we are close to fully passing the https://arquillian.ci.cloudbees.com/view/Extensions/job/Arquillian-Extension-Warp-Containers/[interoperability tests].
+
+But still there are some features that are missing, such as:
+
+* verification of asynchronous requests
+* support for Java EE 5 servers
+** at this point I’m reluctant to add the support (it’s just matter of manual configuration of pass:[<code>WarpFilter</code>] in pass:[<code>web.xml</code>] anyway)
+* guide / documentation
+
+Let us know in the discussion bellow what are the "`must have`" features and what are you struggling with that we should include before Beta release.

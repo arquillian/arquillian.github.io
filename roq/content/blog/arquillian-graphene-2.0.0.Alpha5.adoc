@@ -1,0 +1,232 @@
+---
+title: "Graphene 2.0.0.Alpha5 Released"
+link: "/blog/2013/09/04/arquillian-graphene-2-0-0-Alpha5/"
+date: "2013-09-04"
+author: "jhuska"
+tags: ["release", "extension", "graphene"]
+disqus_identifier: "c5075c38774edaffa09732c98407eff881fefacd"
+layout: "release"
+source_path: "blog/arquillian-graphene-2.0.0.Alpha5.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-graphene-2.0.0.Alpha5.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-graphene-2.0.0.Alpha5.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-graphene-2.0.0.Alpha5.textile"
+---
+= Graphene 2.0.0.Alpha5 Released
+:sectids!:
+
+The last step before Beta release brings you a lot of new features.
+
+pass:[<br/>]
+
+[discrete,role="highlights"]
+=== Highlighted Changes
+
+pass:[<i class="icon-star">]pass:[</i>] Deprecations in this release::
++
+--
+With the support of the community, we have recognized that some parts of the API needs to be enhanced to achieve better clarity, readability and consistency. The old parts are deprecated in this release, and will be removed in the upcoming Beta1 release. (link:#deprecations[list of deprecations here])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Guard Improvements and Fixes::
++
+--
+https://github.com/arquillian/arquillian-graphene/blob/2.0.0.Alpha5/graphene-webdriver/graphene-webdriver-api/src/main/java/org/jboss/arquillian/graphene/request/RequestGuard.java[RequestGuard] interface is now exposed as an API and brings new methods for filtering the requests that should be intercepted. This is especially useful in cases where your page does asynchronously communicate with a server (using Comet/Push method) which can make your tests undeterministic – the asynchronously invoked request can interfere with a request invoked synchronously (e.g. by clicking on a button) and Graphene can’t guess which request should be observed. With the pass:[<code>RequestGuard</code>] API you can ignore the request which you’re not interested in guarding. (https://github.com/arquillian/arquillian-graphene/blob/2.0.0.Alpha5/graphene-webdriver/graphene-webdriver-api/src/main/java/org/jboss/arquillian/graphene/request/RequestGuard.java#L57[JavaDoc])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Support for parallel browser sessions::
++
+--
+The Graphene context is no longer thread-local which enables parallel browser sessions. In other words; you can control two different browsers in one test. (link:#parallel-browsers[an example here])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Page Objects can encapsulate their location::
++
+--
+You can easily denote the Page Objects location via the pass:[<code>@Location</code>] annotation. When used with pass:[<code>@InitialPage</code>] annotation as a test parameter, Graphene will load that location as a first action for the test, and will also give you the initialized page object. (link:#page-objects-location[an example here])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Injecting elements from HTML frames/iframes::
++
+--
+To facilitate the tedious process of switching to and from a particular frame/iframe; you can now just use the pass:[<code>@InFrame</code>] annotation to specify in which frame the element should be located. The details are handled by Graphene. (link:#elements-from-frames[an example here])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Page Fragments can implement the pass:[<code>WebElement</code>] interface::
++
+--
+If you want to give your Page Fragments all the capabilities of the pass:[<code>WebElement</code>] interface, without implementing them youself; you can simply add pass:[<code>implements WebElement</code>] and make your fragment pass:[<code>abstract</code>]. Graphene will provide you with a proxy that delegates all the pass:[<code>WebElement</code>] method invocations to your page fragment’s pass:[<code>@Root</code>] element.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Drone enrichers for Page Fragments and Page Objects::
++
+--
+It is now possible to inject objects into your Page Fragments and Page Objects via the standard Arquillian enrcihment annotations: e.g. pass:[<code>@Drone</code>] to get the browser instance, pass:[<code>@ArquillianResource</code>] to get resources like pass:[<code>URL</code>], pass:[<code>JavascriptExecutor</code>], pass:[<code>LocalStorage</code>] or others.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Introduction of the pass:[<code>GrapheneElement</code>]::
++
+--
+pass:[<code>GrapheneElement</code>] is our way of providing you with the missing methods of the pass:[<code>WebElement</code>] interface. pass:[<code>GrapheneElement</code>] can be used anywhere the pass:[<code>WebElement</code>] is used. Currently the only addition is the pass:[<code>isPresent</code>] method, but we plan to add far more in the upcoming releases.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Introduction of the pass:[<code>@FindByJQuery</code>] annotation::
++
+--
+This is the replacement for the deprecated pass:[<code>@FindBy</code>] annotation. Read more about it in the link:#deprecations[deprecations section].
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Drone upgraded to 1.2.0.Beta1::
++
+--
+For more info, please see the Drone release annoucement link:/blog/2013/09/04/arquillian-extension-drone-1-2-0-Beta1/[here.]
+--
+
+[discrete]
+==== Removed
+
+pass:[<i class="icon-star">]pass:[</i>] pass:[<code>Graphene.guardXhr()</code>]::
++
+--
+pass:[<code>Graphene.guardXhr()</code>] was replaced by pass:[<code>Graphene.guardAjax()</code>].
+--
+
+[discrete,id="deprecations"]
+==== Deprecations (will be removed in Beta1)
+
+pass:[<i class="icon-star">]pass:[</i>] Our implementation of the pass:[<code>@FindBy</code>] annotation::
++
+--
+To achieve better extendability and to avoid errors caused by mistyped package name, we decided to deprecate our implementation of the pass:[<code>@FindBy</code>] annotation (https://community.jboss.org/thread/232112[read more]). Its purpose was solely to add support for JQuery locating strategy. This is now replaced by the pass:[<code>@FindByJQuery</code>] annotation. The main advantage of the new approach is its extensibility. Support for our own location strategies are guaranteed via https://github.com/arquillian/arquillian-graphene/blob/2.0.0.Alpha5/graphene-webdriver/graphene-webdriver-spi/src/main/java/org/jboss/arquillian/graphene/spi/findby/LocationStrategy.java[LocationStrategy] interface.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Package name changes for pass:[<code>@Page</code>] and pass:[<code>@Root</code>] annotations::
++
+--
+* pass:[<code>org.jboss.arquillian.graphene.spi.annotations.Root</code>] replaced by pass:[<code>org.jboss.arquillian.graphene.fragment.Root</code>]
+* pass:[<code>org.jboss.arquillian.graphene.spi.annotations.Page</code>] replaced by pass:[<code>org.jboss.arquillian.graphene.fragment.Page</code>]
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Selenium 1 support::
++
+--
+Selenium 1 support will be removed in the upcoming Beta1 release, but you can still use Graphene 1, which is built on top of Selenium 1. (https://docs.jboss.org/author/display/ARQGRA/Home[Graphene 1 docs])
+--
+
+[discrete,id="parallel-browsers"]
+=== Parallel browser sessions
+
+Your test can now use more than one browser session. It might be handy for testing e.g. server push functionality. Consider the following scenario:
+
+[listing,role="prettify",subs=verbatim]
+----
+@Browser1 
+@Drone
+private WebDriver browser1;
+
+@Browser2
+@Drone
+private WebDriver browser2;
+
+public void testServerPushFromFirefoxToChromeAfterRegistration() {
+    browser1.get(“http://localhost:8080/myApp”);
+    browser2.get(“http://localhost:8080/myApp”);
+
+    formFragment.registerUser(new User(“John”), browser1);
+    registeredUsers.assertContains(“John”, browser2);
+}
+----
+
+The pass:[<code>@Browser1</code>] and pass:[<code>@Browser2</code>] annotations are qualifiers, similar concept as in CDI. The settings for these browsers can be set e.g. in the pass:[<code>arquillian.xml</code>]:
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="webdriver-browser1">
+  <property name="browserCapabilities">firefox</property>
+</extension>
+<extension qualifier="webdriver-browser2">
+  <property name="browserCapabilities">chrome</property>
+</extension>
+----
+
+[discrete,id="page-objects-location"]
+=== Page Objects location encapsulated
+
+First thing you have to keep in mind before interacting with the page is that its loading in the browser. Once the URL of the particular page changes, you will have to change it on several places in your tests.
+
+Graphene, therefore, encapsulates the page’s location, and provide you with a way to load the page automatically on a correct context root, before the test execution.
+
+Consider following snippet:
+
+[listing,role="prettify",subs=verbatim]
+----
+@Location("register-page.html")
+public class RegisterPage {
+    //implementation of the page object goes here
+}
+
+@Test
+public void testRegisterPage(@InitialPage RegisterPage page) {
+   //Graphene automatically load MyPageObject location in the browser
+   page.getInput().sendKeys(“Blah foo”);
+   page.submit();
+   assertFalse(page.isSubmitted());
+}
+----
+
+You can also leverage pass:[<code>Graphene.goTo(RegisterPage.class)</code>] method, which will use the pass:[<code>@Location</code>] annotation value to load the correct page in the browser.
+
+[discrete,id="elements-from-frames"]
+=== Elements from frames/iframes
+
+If you find working with frames/iframes tedious using the pass:[<code>WebDriver</code>] API, we have some good news for you. Graphene is now able to specify in which frame/iframe an element reside. Consider the following snippet:
+
+[listing,role="prettify",subs=verbatim]
+----
+@Page
+@InFrame(index = 0)
+private PageObject page;
+
+@FindBy(id = "foo-bar")
+@InFrame(nameOrId = "second")
+private PageFragment myFragment;
+----
+
+You can specify the frame either by its index or its pass:[<code>nameOrId</code>] strategy. Graphene will automatically switche to the coresponding frame when interacting with the page object and switches back after the interaction.
+
+[discrete]
+==== Roadmap
+
+We have introduced all the features for the upcoming Graphene 2.0 release.
+
+The Beta1 release will be pushed in a few days which will bring you some more goodies:
+
+* Arquillian guide
+* finished reference documentation
+* online JavaDoc documentation for Graphene API
+* removal of deprecated APIs
+* stabilization
+* usual portion of bug fixes
+
+Be sure to remove deprecated APIs in order to stay compatible with upcoming Graphene 2.0 releases.

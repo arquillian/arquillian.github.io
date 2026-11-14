@@ -1,0 +1,89 @@
+---
+title: "Arquillian Seam 2 Extension 1.0.0.Alpha1 Released"
+link: "/blog/2012/02/12/arquillian-extension-seam2-1-0-0-Alpha1/"
+date: "2012-02-12"
+author: "matousjobanek"
+tags: ["release", "obsolete-extension", "seam2"]
+disqus_identifier: "a3130a5929f5ecface09a0780a22ab53941c6909"
+layout: "release"
+source_path: "blog/arquillian-extension-seam2-1.0.0.Alpha1.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-seam2-1.0.0.Alpha1.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-seam2-1.0.0.Alpha1.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-seam2-1.0.0.Alpha1.textile"
+---
+= Arquillian Seam 2 Extension 1.0.0.Alpha1 Released
+:sectids!:
+
+[discrete]
+=== Some of the highlights in this release
+
+Test enrichment for pass:[<code>@In</code>] injection points from the Seam 2 Context.
+
+Packaging support for adding the Seam 2 framework.
+
+Ability to override Seam and JBoss EL versions defined in POM (so you can easily check if you app works with different Seam versions). Default are JBoss Seam 2.2.2.Final and JBoss EL 1.0++_++02.CR5.
+
+[.filename]
+arquillian.xml
+
+[listing,role="prettify",subs=verbatim]
+----
+<arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://jboss.org/schema/arquillian"
+  xsi:schemaLocation="
+      http://jboss.org/schema/arquillian
+      http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+  <extension qualifier="seam2">
+    <property name="seamVersion">2.2.1.Final</property>
+    <property name="jbossElVersion">1.0_02.CR6</property>
+  </extension>
+
+</arquillian>
+----
+
+Tests were verified on JBoss AS 4.2.3.GA and 5.1.0.Final (both managed and remote).
+
+Example below shows simple Seam component and the way how to write Arquillian test using this extension.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Name("fluidOuncesConverter")
+public class FluidOuncesConverter {
+    public Double convertToMillilitres(Double ounces) {
+        return ounces * 29.5735296;
+    }
+}
+
+@RunWith(Arquillian.class)
+public class ComponentInjectionTestCase {
+    @Deployment
+    public static Archive<?> createDeployment() {
+        return ShrinkWrap.create(WebArchive.class, "test.war")
+                .addClass(FluidOuncesConverter.class)
+                .addAsResource(EmptyAsset.INSTANCE, "seam.properties")
+                .setWebXML("web.xml");
+    }
+
+    @In
+    FluidOuncesConverter fluidOuncesConverter;
+
+    @Test
+    public void shouldInjectSeamComponent() throws Exception {
+        assertThat(fluidOuncesConverter).isNotNull();
+    }
+
+    @Test
+    public void shouldConvertFluidOuncesToMillilitres() throws Exception {
+        // given
+        Double ouncesToConver = Double.valueOf(8.0d);
+        Double expectedMillilitres = Double.valueOf(236.5882368d);
+
+        // when
+        Double millilitres = fluidOuncesConverter.convertToMillilitres(ouncesToConver);
+
+        // then
+        assertThat(millilitres).isEqualTo(expectedMillilitres);
+    }
+}
+----

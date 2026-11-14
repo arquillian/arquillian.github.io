@@ -1,0 +1,71 @@
+---
+title: "Arquillian Core 1.0.0.CR7 Released"
+link: "/blog/2011/12/15/arquillian-core-1-0-0-CR7/"
+date: "2011-12-15"
+author: "matousjobanek"
+tags: ["release", "platform", "core"]
+disqus_identifier: "19affbde5a273211fe5347596b80c63357bc0bb7"
+layout: "release"
+source_path: "blog/arquillian-core-1.0.0.CR7.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-core-1.0.0.CR7.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-core-1.0.0.CR7.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-core-1.0.0.CR7.textile"
+---
+= Arquillian Core 1.0.0.CR7 Released
+:sectids!:
+
+[discrete]
+=== Some of the highlights in this release
+
+* *Configure* pass:[<code>Arquillian</code>] using *properties* – Adding pass:[<code>-Dproperty.name=value</code>] to the command line can now add or override values defined in pass:[<code>arquillian.xml</code>].
+
+[listing,role="prettify",subs=verbatim]
+----
+arq.container.[qualifier].mode
+arq.container.[qualifier].default
+arq.container.[qualifier].configuration.[property_name]
+arq.container.[qualifier].protocol.[type].[property_name]
+
+arq.group.[qualifier].default
+arq.group.[qualifier].container.[qualifier].configuration.[property_name]
+arq.group.[qualifier].container.[qualifier].protocol.[type].[property_name]
+
+arq.extension.[qualifier].[property_name]
+
+arq.defaultprotocol.[type]
+arq.defaultprotocol.[type].[property_name]
+
+arq.engine.[property_name]
+----
+
+Example:
+
+[listing,role="prettify",subs=verbatim]
+----
+-Darq.container.production.configuration.jbossHome=/opt/jbossas/
+----
+
+You can add these in a properties file as well. Default pass:[<code>Arquillian</code>] will look for a file called pass:[<code>arquillian.properties</code>] on classpath or on disk, same with pass:[<code>arquillian.xml</code>]. If you want to configure a different filename, you can use either pass:[<code>-Darquillian.properties=name</code>] or pass:[<code>-Darquillian.xml=name</code>]
+
+Since the xml file is read first, the properties will add / override the xml values. In the case where you have a container defined as default in xml, but want to override the default in properties, you can add -Darquillian.launch to specify which container/group configuration to use.
+
+* *pass:[@]OperateOnDeployment* on pass:[<code>@ArquillianResource</code>] injection points
+
+URL, InitialContext and Context on the client side can be qualified with the @OperateOnDeployment annotation.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Deployment(name = "X")
+public WebArchive appX() { ... }
+
+@Deployment(name = "Y")
+public WebArchive appX() { ... }
+
+@Test @OperateOnDeployment("X")
+public void shouldBeInjected(
+      @ArquillianResource URL appXUrl,
+      @ArquillianResource @OperateOnDeployment("Y") URL appYUrl)
+{
+  // ...
+}
+----

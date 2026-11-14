@@ -1,0 +1,174 @@
+---
+title: "Arquillian Spring Framework Extension 1.0.0.Alpha2 Released"
+link: "/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/"
+date: "2012-07-24"
+author: "matousjobanek"
+tags: ["gsoc", "gsoc", "release", "extension", "spring"]
+disqus_identifier: "7559a727726beea6f0de6f3aab0ce87ed8a5abfe"
+layout: "release"
+source_path: "blog/arquillian-extension-spring-1.0.0.Alpha2.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-spring-1.0.0.Alpha2.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-spring-1.0.0.Alpha2.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-spring-1.0.0.Alpha2.textile"
+---
+= Arquillian Spring Framework Extension 1.0.0.Alpha2 Released
+:sectids!:
+
+// Historical interpolation #{site.project_space} = http://community.jboss.org/en/arquillian from https://arquillian.org/blog/2012/07/24/arquillian-extension-spring-1-0-0-Alpha2/ (captured 2026-11-13).
+
+This release contain many improvements on the existing extension, but also some new features.
+
+[discrete,role="highlights"]
+=== Some of the highlights in this release
+
+pass:[<i class="icon-star">]pass:[</i>] Warp Spring MVC Extension +
+pass:[<i class="icon-star">]pass:[</i>] Spring Embedded Container +
+pass:[<i class="icon-star">]pass:[</i>] Separated the integration capabilities
+
+[discrete]
+=== Testing Spring MVC with Warp
+
+link:/modules/warp-extension/[Arquillian Warp] is a powerful tool that let you run the functional tests against your web front end and at the same time verify the internal state of your application. With this release we are introducing the Warp extension for testing Spring MVC applications that run in a real servlet container.
+
+Let’s dive into an example of how to test a Spring MVC application using Arquillian Warp. First we need to prepare the application descriptor.
+
+[.filename]
+web.xml
+
+[listing,role="prettify",subs=verbatim]
+----
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+
+    <servlet>
+        <servlet-name>welcome</servlet-name>
+        <servlet-class>org.jboss.arquillian.warp.extension.spring.servlet.WarpDispatcherServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>welcome</servlet-name>
+        <url-pattern>*.do</url-pattern>
+    </servlet-mapping>
+
+</web-app>
+----
+
+You’ll notice that instead of using Spring’s DispatcherServlet we instead use the WarpDispatcherServlet.
+
+And the testing code:
+
+[.filename]
+LoginControllerTestCase.java
+
+[listing,role="prettify",subs=verbatim]
+----
+@WarpTest
+@RunWith(Arquillian.class)
+public class LoginControllerTestCase {
+
+    @Drone
+    WebDriver browser;
+
+    @ArquillianResource
+    URL contextPath;
+
+    @Test
+    @RunAsClient
+    public void testLoginValidationErrors() {
+        browser.navigate().to(contextPath + "login.do");
+
+        Warp.execute(new ClientAction() {
+
+            @Override
+            public void action() {
+
+                browser.findElement(By.id("loginForm")).submit();
+            }
+        }).verify(new LoginControllerValidationErrorsVerification());
+    }
+
+    @Test
+    @RunAsClient
+    public void testLoginSuccess() {
+        browser.navigate().to(contextPath + "login.do");
+        browser.findElement(By.id("login")).sendKeys("warp");
+        browser.findElement(By.id("password")).sendKeys("warp");
+
+        Warp.execute(new ClientAction() {
+
+            @Override
+            public void action() {
+
+                browser.findElement(By.id("loginForm")).submit();
+            }
+        }).verify(new LoginSuccessVerification());
+    }
+
+    public static class LoginControllerValidationErrorsVerification extends ServerAssertion {
+
+            private static final long serialVersionUID = 1L;
+
+            @SpringMvcResource
+            private ModelAndView modelAndView;
+
+            @SpringMvcResource
+            private Errors errors;
+
+            @AfterServlet
+            public void testGetLogin() {
+
+                assertEquals("login", modelAndView.getViewName());
+                assertNotNull(modelAndView.getModel().get("userCredentials"));
+                assertEquals("Two errors were expected.", 2, errors.getAllErrors().size());
+                assertTrue("The login hasn't been validated.", errors.hasFieldErrors("login"));
+                assertTrue("The password hasn't been validated.", errors.hasFieldErrors("password"));
+            }
+        }
+
+    public static class LoginSuccessVerification extends ServerAssertion {
+
+        private static final long serialVersionUID = 1L;
+
+        @SpringMvcResource
+        private ModelAndView modelAndView;
+
+        @SpringMvcResource
+        private Errors errors;
+
+        @AfterServlet
+        public void testGetLogin() {
+
+            assertEquals("welcome", modelAndView.getViewName());
+            assertFalse(errors.hasErrors());
+        }
+    }
+}
+----
+
+In the above example we are using link:/modules/drone-extension/[Arquillian Drone] to navigate to the login page of our application and then filling in the login form with our user credentials.
+
+The internal state of the DispatcherServlet is caught in a SpringMvcResult object which can be injected into the ServerAssertion. We can also inject other required objects like the ModelAndView.
+
+[discrete]
+=== Spring Embedded Container
+
+Each development cycle may end in repeatedly re-running the integration tests, each time taking significant amount of time. The embedded container was thought to aid this situation. Running the tests embedded will decrease the execution time from seconds to milliseconds. It will help testing business objects, but since it’s not a full servlet container you won’t be able to use it for testing servlet requests in a web application.
+
+[discrete]
+=== Migrating from 1.0.0.Alpha1
+
+1.0.0.Alpha2 comes with a couple significant changes from the previous version.
+
+* The Spring integration functionality has been separated out to its own module and is now part of the arquillian-service-integration-spring-inject module, and additional the arquillian-service-integration-spring-inject and the arquillian-service-integration-spring-javaconfig that does not target any specific Spring version, but rather provide functionality like XML or Java-based configuration.
+* The arquillian-service-deployer-spring module’s can still be used for autopackging the Spring artifacts.
+* The @SpringAnnotatedConfiguration has been renamed to @SpringAnnotationConfiguration.
+
+[discrete]
+=== Roadmap
+
+The next release is planned to include Spring transaction support and will introduce even better Warp integration on the client side in order make REST testing even simpler.
+
+We look forward to hearing your feedback about this release in the http://community.jboss.org/en/arquillian[community forums]!

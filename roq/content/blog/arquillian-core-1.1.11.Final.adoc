@@ -1,0 +1,84 @@
+---
+title: "Arquillian Core 1.1.11.Final Released"
+link: "/blog/2016/01/28/arquillian-core-1-1-11-Final/"
+date: "2016-01-28"
+author: "matousjobanek"
+tags: ["release", "platform", "core", "jbosscentral"]
+disqus_identifier: "81ed3bc4af631bf90d99dbe0adc2e89587a919b3"
+layout: "release"
+source_path: "blog/arquillian-core-1.1.11.Final.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-core-1.1.11.Final.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-core-1.1.11.Final.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-core-1.1.11.Final.textile"
+---
+= Arquillian Core 1.1.11.Final Released
+:sectids!:
+
+[discrete]
+=== Highlights in this release
+
+pass:[<i class="icon-star">]pass:[</i>] Support for injection in pass:[<code>JUnit @Rules</code>]::
++
+--
+Arquillian will now enrich pass:[<code>JUnit Rules</code>] as well as pass:[<code>JUnit Test</code>] classes. This allow you to inject any Arquillian controlled resource into a reusable rule, e.g:
+
+[listing,role="prettify",subs=verbatim]
+----
+public class MyTestCase {
+
+    @Rule
+    TestRule login = new TestRule() {
+       @ArquillianResource
+       private URL baseURL;
+
+       public Statement apply(final Statement base, Description description) {
+          return new Statement() {
+
+             @Drone
+             private WebDriver driver;
+
+             public void evaluate() throws Throwable {
+                driver.get(new URL(baseURL, "login"));
+                ...
+
+                base.evaluate();
+             }
+          }
+       }
+    }
+
+
+    @Drone
+    private WebDriver driver;
+   
+    @ArquillianResource
+    private URL baseURL;
+
+    @Test
+    public void shouldInvokeSecuredURL() throws Exception {
+       driver.get(new URL(baseURL, "secured"));
+       ...
+    }    
+}
+----
+
+In the example above we’ve extracted the login to a web page into a pass:[<code>Junit Rule</code>] which we can apply before the pass:[<code>@Test</code>] run.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Report the first caught exception from incontainer execution::
++
+--
+In previous versions we’ve caught and reported the last caught exception. This has had the side effect of potentially hiding the root cause of an exception in cases where '`other things have failed due to the original exception`'. The only thing you could see then was the '`other failed thing`'.
+
+Now we’ve changed that around and you will be able to see the first Exception that happened. This makes it easier to debug some of the more complex in container exception cases.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] SPI pass:[<code>Before|AfterEnrichment</code>] events now contain more information::
++
+--
+On the SPI level, pass:[<code>BeforeEnrichment</code>] and pass:[<code>AfterEnrichment</code>] events now contain the Object instance and Method that the event is being triggered for. Keep in mind that not all Enrichment events are related to a Method, so a null Method value is allowed.
+--

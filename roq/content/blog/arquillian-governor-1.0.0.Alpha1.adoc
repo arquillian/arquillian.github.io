@@ -1,0 +1,88 @@
+---
+title: "Arquillian Governor 1.0.0.Alpha1 Released"
+link: "/blog/2015/05/05/arquillian-governor-1-0-0-Alpha1/"
+date: "2015-05-05"
+author: "smiklosovic"
+tags: ["release", "extension", "governor"]
+disqus_identifier: "c5deca18fe7d919afac9a3c2c6b4610af0497d51"
+layout: "release"
+source_path: "blog/arquillian-governor-1.0.0.Alpha1.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-governor-1.0.0.Alpha1.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-governor-1.0.0.Alpha1.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-governor-1.0.0.Alpha1.textile"
+---
+= Arquillian Governor 1.0.0.Alpha1 Released
+:sectids!:
+
+Arquillian Governor Extension gives you the possibility to programmatically choose what test methods of your Arquillian tests are going to be executed and what are going to be skipped by putting your custom annotations on the test methods. The resolution of the test method execution is done during the test class execution in BeforeClass phase.
+
+Currenly, there are two implementations which use API of the Arquillian Governor extension – Arquillian JIRA Governor extension and Arquillian Skipper extension.
+
+[discrete]
+=== Arquillian Governor JIRA
+
+JIRA extension enables you to skip some test mehods which are in pass:[<code>Unresolved</code>] or pass:[<code>Open</code>] state in your JIRA instance, because you assume that if you run that test it would fail. Once that JIRA is resolved as pass:[<code>Done</code>], that test method will not be skipped.
+
+You can even close your JIRAs directly from test methods when you force the execution despite the fact it should be skipped. If this test method passes successfully, you can close related JIRA issue from test. Let’s see it in action:
+
+[listing,role="prettify",subs=verbatim]
+----
+@RunWith(Arquillian.class)
+public class TestCase
+{
+    @Test
+    @Jira("ARQ-1907")
+    public void test()
+    {
+        // this test will be run because ARQ-1907 is 'Done'
+        // so we assume that this test has to pass as well
+    }
+
+    @Test
+    @Jira("ARQ-5000")
+    public void test2()
+    {
+        // if this JIRA exists and its status is 'Unresolved' or 'Open'
+        // this test method will be skipped because you assume that
+        // if you run it, it would fail
+    }
+    
+    @Test
+    @Jira("ARQ-5000", force = true)
+    public void automaticClosingTest()
+    {
+        // when this JIRA exists and its status is 'Unresolved' / 'Open'
+        // and you have forced its execution and you set 'closePassed'
+        // property in arquillian.xml to 'true', if this test method succeeds,
+        // it automatically resolves respective JIRA issue as 'Done'
+    }
+
+}
+----
+
+[discrete]
+=== Arquillian Governor Skipper
+
+On the other hand, Arquillian Governor Skipper extension adds one annotation – pass:[<code>TestSpec</code>] – which describes your test method in more details. This information is reported to Arquillian Reporter and it is seamlessly integrated to Arquillian testing reports hence you have betteroverview about the state of your test suite.
+
+If pass:[<code>status</code>] is set to pass:[<code>Status.AUTOMATED</code>], test method will be run, if it is pass:[<code>Status.MANUAL</code>], it will be skipped.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Test
+@TestSpec(
+    author = "Stefan Miklosovic",
+    assertion = "this test should pass",
+    feature = "tests if true returns true",
+    issue = "ARQ-1",
+    prerequisites = "have java",
+    status = Status.AUTOMATED,
+    steps = "some steps in order to execute this test",
+    test = "what does this test do"
+    )
+public void someTest() {
+    Assert.assertTrue(true);
+}
+----
+
+How to use these extensions in depth is described in the exhaustive https://github.com/arquillian/arquillian-governor/blob/master/README.adoc[readme].

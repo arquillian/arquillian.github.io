@@ -1,0 +1,160 @@
+---
+title: "Arquillian Drone Extension 2.3.0 Released"
+link: "/blog/2017/07/13/arquillian-extension-drone-2-3-0/"
+date: "2017-07-13"
+author: "matousjobanek"
+tags: ["release", "extension", "drone"]
+disqus_identifier: "1d821cc5bc18184d95b1cabdddc26ba024e31eea"
+layout: "release"
+source_path: "blog/arquillian-extension-drone-2.3.0.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-drone-2.3.0.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-drone-2.3.0.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-drone-2.3.0.textile"
+---
+= Arquillian Drone Extension 2.3.0 Released
+:sectids!:
+
+image:/images/blog/drone_400.png[alt="",role="graphic pull-right"]
+
+Apart from several fixes and improvements, this release brings one new feature – after quite long time, Drone provides an extension for Appium. +
+I’d like to thank https://github.com/vmuzikar/[Václav Muzikář]. He’s our hero for this feature, as he implemented the whole extension!
+
+[discrete]
+=== Arquillian Drone Appium extension
+
+This extension enables you to use the Appium project with Drone and Graphene in your functional tests for mobile devices.
+
+[.info]
+This extension only provides the integration of Appium WebDrivers with Drone, i.e. it only instantiates an Appium Driver and passes pass:[<code>DesiredCapabilities</code>] to it. +
+For more instructions on how to install and configure Appium server and mobile physical and/or virtual devices please refer to: +
+https://github.com/appium/appium[appium/appium] +
+https://github.com/appium/java-client[appium/java-client] +
+http://appium.io/[appium.io]
+
+[discrete]
+==== How to use it
+
+*1)* First of all, you need to have this extension on your project’s classpath. Eg. as a Maven dependency:
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+    <groupId>org.jboss.arquillian.extension</groupId>
+    <artifactId>arquillian-drone-appium-extension</artifactId>
+    <version>${version.org.jboss.arquillian.drone}</version>
+</dependency>
+----
+
+[.info]
+Please keep in mind that this dependency doesn’t serve as a dependency chain – you also need to add the dependencies mentioned in http://arquillian.org/arquillian-extension-drone/#_getting_started[Drone getting started documentation]
+
+*2)* To use an Appium Driver you need to specify pass:[<code>appium</code>] as a pass:[<code>browser</code>] property:
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="webdriver">
+    <property name="browser">appium</property>
+    ...
+</extension>
+----
+
+*3)* You then need to specify the Desired Capabilities for the Appium server. Some of them are required given the specific platform. E.g.:
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="webdriver">
+    <property name="browser">appium</property>
+    <property name="platformName">android</property>
+    <property name="deviceName">Some Android emulator</property>
+    <property name="browserName">chrome</property>
+    <property name="avd">nexus</property>
+</extension>
+----
+
+For more info please see the complete https://github.com/appium/appium/blob/master/docs/en/writing-running-appium/caps.md[list of supported capabilities]
+
+[discrete]
+==== Using remote Appium server
+
+By default, Appium Driver starts the local Appium server by itself (or if running already), it connects to it. +
+To override this, you can also specify a remote address where is Appium server listening:
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="webdriver">
+    ...
+    <property name="remoteAddress">http://192.168.1.12:4723/wd/hub</property>
+    ...
+</extension>
+----
+
+[discrete]
+==== ChromeOptions
+
+In case of Android and Google Chrome browser, you can also specify pass:[<code>ChromeOptions</code>] the same way as with the standard ChromeDriver (using the '`chrome`' prefix). E.g.
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="webdriver">
+        ...
+        <property name="chromeArguments">--disable-translate</property>
+        ...
+    </extension>
+----
+
+[discrete]
+==== Instantiation timeout
+
+Since a mobile virtual device boot is typically performed when instantiating the driver, the pass:[<code>instantiationTimeoutInSeconds</code>] is set to 240 seconds (instead of the default 60) by this extension. +
+To override this you can simply use e.g.
+
+[listing,role="prettify",subs=verbatim]
+----
+<extension qualifier="drone">
+    <property name="instantiationTimeoutInSeconds">120</property>
+</extension>
+----
+
+[discrete]
+==== Appium Driver implementations
+
+Different driver implementations are instantiated by this extension based on the desired platform:
+
+* http://appium.github.io/java-client/io/appium/java_client/android/AndroidDriver.html[AndroidDriver]
+* http://appium.github.io/java-client/io/appium/java_client/ios/IOSDriver.html[IOSDriver]
+* http://appium.github.io/java-client/io/appium/java_client/windows/WindowsDriver.html[WindowsDriver]
+* http://appium.github.io/java-client/io/appium/java_client/AppiumDriver.html[Generic AppiumDriver]
+
+You can then type cast the driver object to a specific one, e.g.:
+
+[listing,role="prettify",subs=verbatim]
+----
+AndroidDriver androidDriver = (AndroidDriver) driver;
+androidDriver.openNotifications();
+----
+
+[discrete]
+==== Using different Appium Java Client version
+
+Since the Appium development is much more rapid than this extension, you can of course use a newer pass:[<code>java-client</code>] version (and therefore newer Appium Driver) in your project. +
+You can e.g. just exclude the pass:[<code>java-client</code>] dependency from this extension and use your desired version:
+
+[listing,role="prettify",subs=verbatim]
+----
+<dependency>
+    <groupId>io.appium</groupId>
+    <artifactId>java-client</artifactId>
+    <version>5.0.0-BETA9</version>
+</dependency>
+<dependency>
+    <groupId>org.jboss.arquillian.extension</groupId>
+    <artifactId>arquillian-drone-appium-extension</artifactId>
+    <version>${version.org.jboss.arquillian.drone}</version>
+    <exclusions>
+        <exclusion>
+            <groupId>io.appium</groupId>
+            <artifactId>java-client</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+----

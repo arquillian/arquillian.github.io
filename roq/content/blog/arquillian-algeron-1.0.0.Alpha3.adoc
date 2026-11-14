@@ -1,0 +1,162 @@
+---
+title: "Arquillian Algeron Extension 1.0.0.Alpha3 Released"
+link: "/blog/2016/11/03/arquillian-algeron-1-0-0-Alpha3/"
+date: "2016-11-03"
+author: "lordofthejars"
+tags: ["release", "extension", "algeron"]
+disqus_identifier: "60ad119e5b5069fffd8502439e40f0e764617a4a"
+layout: "release"
+source_path: "blog/arquillian-algeron-1.0.0.Alpha3.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-algeron-1.0.0.Alpha3.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-algeron-1.0.0.Alpha3.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-algeron-1.0.0.Alpha3.textile"
+---
+= Arquillian Algeron Extension 1.0.0.Alpha3 Released
+:sectids!:
+
+[.important]
+*_Important note_*: This extension was called *Arquillian Pact* before version pass:[<code>1.0.0.Alpha5</code>], so you should use this name when pulling dependencies from Maven Central.
+
+Arquillian Pact is an extension for writing contract-driven tests which provides integration with https://docs.pact.io/[Pact] framework.
+
+[discrete]
+=== What’s new
+
+pass:[<i class="icon-star">]pass:[</i>] *Skipping the deployment*
+
+In case of consumer driven contracts, there are two kinds of tests – consumer tests and provider tests. Usually in your CI environment you want to run provider tests against two different scenarios:
+
+Against a master branch of provider to detect if provider team has already implemented all the functionalities defined in your contracts.
+
+Against (pre)production. If you support deploying consumer independently of a provider, then you need to ensure that if you deploy new consumer with the new contracts to (pre)production everything will be still working and you haven’t introduced any regressions.
+
+In both cases, the test itself is exactly the same. There is only one slight difference in both cases which how you set up your test environments. In the first scenario, you want to deploy the latest provider code. One way of doing it is using Arquillian container control and pass:[<code>@Deployment</code>] method to create the package, start the container and deploy it. But in the latter case, when you want to run contract test against provider that is already deployed on (pre)production environment, you don’t need to deploy anything nor control the lifecycle of any container. For this reason we provided pass:[<code>skipDeployment</code>] flag.
+
+pass:[<code>skipDeployment</code>] default value by default is set to pass:[<code>false</code>], which means that the test will behave as it usually does, but when it is set to pass:[<code>true</code>], Arquillian is going to ignore anything related to container lifecycle. To use this strategy your test needs to be defined as ++`++@RunAsClient++`++. You can think of it as a dynamic way of converting an Arquillian container test into Arquillian standalone test.
+
+Let’s see an example:
+
+[listing,role="prettify",subs=verbatim]
+----
+@RunWith(Arquillian.class)
+@Provider("test_provider")
+@PactFolder("pacts")
+@RunAsClient
+public class MyServiceProviderTest {
+
+    @Deployment(testable = false)
+    public static WebArchive createDeployment() {
+        return ShrinkWrap.create(WebArchive.class).addClass(MyService.class);
+    }
+
+    @ArquillianResource
+    @Environment("myservice.url")
+    URL webapp;
+
+    @ArquillianResource
+    Target target;
+
+    @Test
+    public void should_provide_valid_answers() {
+        target.testInteraction(webapp);
+    }
+
+}
+----
+
+Given previous test, if pass:[<code>skipDeployment</code>] is pass:[<code>false</code>], this test will behave like:
+
+. Start chosen application server (Wildfly, TomEE, Tomcat, …​)
+. Package and Deploy MyService
+. Enrich webapp URL with the one provided by application server. pass:[<code>@Environment</code>] reference is ignored.
+. Executes contract test against deployed application.
+. Undeploy and stop everything.
+
+But if you set pass:[<code>skipDeployment</code>] to pass:[<code>true</code>], lifecycle is slightly different:
+
+. Enrich webapp URL with Java system property or environment variable named pass:[<code>myservice.url</code>] set in pass:[<code>@Environment</code>]. +
+++#++ Executes contract tests against URL provided by @Environment.
+
+There is no additional "`behind the scenes`" Arquillian magic involved. Notice that with a simple attribute you can enable/disable how Arquillian behaves regarding the deployment lifecycle, and how you can reuse same test (DRY) for different scenarios.
+
+You can read more about this feature in https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha3#skip-deployment[Pact documentation]
+
+pass:[<i class="icon-star">]pass:[</i>] *Provider states with parameters introduced in Version 3 of Pact Spec*
+
+You can also use parameters for defining _pact states_. This feature is introduced in version 3 of pact contract files.
+
+In consumer part you can add states with parameters doing:
+
+[listing,role="prettify",subs=verbatim]
+----
+Map<String, Object> stateParams = new HashMap<>();
+stateParams.put("name", "Alexandra");
+
+return builder
+        .given("test state", stateParams)
+        .uponReceiving("ConsumerTest test interaction")
+        .path("/")
+        .method("GET")
+        .willRespondWith()
+        .status(200)
+        .headers(header)
+        .body("{\"responsetest\": true, \"name\": \"harry\"}")
+        .toFragment();
+----
+
+Notice that you are using pass:[<code>given</code>] passing state name and parameters.
+
+Then in provider side:
+
+[listing,role="prettify",subs=verbatim]
+----
+ @State("test state")
+public void testStateMethod(Map<String, Object> params) {
+    assertThat(params).containsEntry("name", "Alexandra");
+}
+----
+
+pass:[<i class="icon-star">]pass:[</i>] *Pact Publisher mechanism*
+
+Arquillian Pact also offers additional ways to of publishing "`pact`" contract files comparing to what Pact itself is providing. With Pact you usually need to relay on the build tool to publish "`pact`" files. Pact offers a Maven and Gradle plugin for publishing contracts to Pact Broker, but if you want to use Git repository or sharing contracts through an arbitrary folder, then you’ll need to start hacking the build tool which is not always as easy as it should be :)
+
+In Arquillian Pact we have defined a Pact Publishing SPI so you can implement your own publisher. We currently support three different publishers – Folder, URL++[++POST method++]++ and Git.
+
+For example to use it with Folder Publisher, pass:[<code>arquillian.xml</code>] might look like:
+
+[listing,role="prettify",subs=verbatim]
+----
+<?xml version="1.0"?>
+<arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns="http://jboss.org/schema/arquillian"
+            xsi:schemaLocation="http://jboss.org/schema/arquillian
+    http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <extension qualifier="pact-consumer">
+        <property name="pactPublishConfiguration">
+            provider: folder
+            outputFolder: /mypacts
+        </property>
+    </extension>
+
+</arquillian>
+----
+
+With this configuration and setting pass:[<code>publishContracts</code>] to true, Arquillian Pact copies generated contracts to pass:[<code>outputFolder</code>].
+
+It is important to note that by default pass:[<code>publishContracts</code>] configuration attribute is pass:[<code>false</code>]. This means that when you run any consumer contract test, contracts are not published. pass:[<code>publishContracts</code>] configuration attribute should be only set to pass:[<code>true</code>] if and only if you are publishing a new version of a consumer, and this will be done by your CI/CD environment.
+
+You can set pass:[<code>outputFolder</code>] value using Java system property.
+
+You can read more about this feature in https://github.com/arquillian/arquillian-algeron/tree/1.0.0.Alpha3#pact-publisher[Pact documentation]
+
+[discrete]
+=== Bug fixing
+
+pass:[<i class="icon-star">]pass:[</i>] *GitPactLoader – password field as passphrase bug*
+
+pass:[<code>GitPactLoader</code>] was using password field as passphrase which is totally wrong since passphrase of a private key is not a password. https://github.com/arquillian/arquillian-algeron/issues/31[issue-31]
+
+pass:[<i class="icon-star">]pass:[</i>] *GitPactLoader – always using default key*
+
+pass:[<code>GitPactLoader</code>] was always using default key instead of the one in current user home directory.

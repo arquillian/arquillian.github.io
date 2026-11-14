@@ -1,0 +1,91 @@
+---
+title: "Arquillian Cube Extension 1.0.0.Alpha16 Released"
+link: "/blog/2017/01/10/arquillian-cube-1-0-0-Alpha16/"
+date: "2017-01-10"
+author: "lordofthejars"
+tags: ["release", "extension", "cube"]
+disqus_identifier: "98d603b67b75582a6cde9595fb1fa70c7c2bf845"
+layout: "release"
+source_path: "blog/arquillian-cube-1.0.0.Alpha16.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-cube-1.0.0.Alpha16.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-cube-1.0.0.Alpha16.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-cube-1.0.0.Alpha16.textile"
+---
+= Arquillian Cube Extension 1.0.0.Alpha16 Released
+:sectids!:
+
+New version of Arquillian Cube 1.0.0.Alpha16 has been released with quite a bunch of enhancements and bugfixes.
+
+[discrete]
+=== What’s new
+
+pass:[<i class="icon-star">]pass:[</i>] *RestAssured configuration done via pass:[<code>RequestSpecBuilder</code>]*
+
+In the previous version of Arquillian Cube, all parameters were set using internal pass:[<code>RestAssured</code>] static method. This approach made test methods unable to be ran in parallel. +
+To address this issue we provide injection of pass:[<code>RequestSpecBuilder</code>] class which lets you specify parameters such as host, port or HTTP headers on a test basis.
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+RequestSpecBuilder requestSpecBuilder;
+
+@Test
+public void should_receive_ok_message() {
+      RestAssured
+          .given()
+            .spec(requestSpecBuilder.build())
+          .when()
+            .get()
+          .then()
+            .assertThat().body("status", equalTo("OK"));
+}
+----
+
+pass:[<i class="icon-star">]pass:[</i>] *Arquillian Recorder/Reporter integration with Kubernetes*
+
+We have enhanced integration of https://github.com/arquillian/arquillian-recorder[Arquillian Recorder/Reporter] in Cube by providing Kubernetes module. By using it you can easily get access to all configuration parameters used for test execution, as well as the session status which include pass:[<code>Pods</code>], pass:[<code>Services</code>], pass:[<code>Replication Controllers</code>], pass:[<code>Namespaces</code>], …
+
+pass:[<i class="icon-star">]pass:[</i>] *Kubernetes namespace prefix are fully configurable*
+
+pass:[<code>namespace.prefix</code>] configuration parameter has been added to configure the namespace prefix.
+
+pass:[<i class="icon-star">]pass:[</i>] *Creates an AssertJ custom assertions for Docker*
+
+Now you can use pass:[<code>AssertJ</code>] custom assertions for validating Docker containers.
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+DockerClient docker;
+assertThat(docker).hasImage("myimage");
+assertThat(docker).container("myinstancename").hasExposedPorts(8080);
+assertThat(docker).container("myinstancename").hasBindPorts(8080)
+----
+
+pass:[<i class="icon-star">]pass:[</i>] *Creates stop/kill attribute*
+
+It may happen that certain docker image takes a lot of time to shutdown. For example shutting down selenium server in standalone debug mode might take ~10 seconds on the modern machine. These images are not really relavant for your test logic, they simply provide browsers to exercise our app against.
+
+At the end of the tests, you spend 10 seconds waiting that this instance is stopped without a real need. We can simply kill such an image and save time during the build.
+
+For this purpose boolean attribute pass:[<code>killContainer</code>] in pass:[<code>CUBE</code>] format has been added to set that an image should be killed. By default it is false which means that container is stopped normally.
+
+pass:[<i class="icon-star">]pass:[</i>] *Support for IP address management*
+
+Add support for adding pass:[<code>IPAM</code>] options in network section in pass:[<code>docker-compose</code>] files.
+
+pass:[<i class="icon-star">]pass:[</i>] *Add pass:[<code>cleanBuildImage</code>] attribute*
+
+Configuration boolean pass:[<code>cleanBuildImage</code>] parameter has been added so you can choose if all build images should be removed from docker host or not after finishing the build. By default build images are removed.
+
+pass:[<i class="icon-star">]pass:[</i>] *Reporting improvements*
+
+Arquillian Recorder Reporter now also displays information about containers like IO, Network or disk usage.
+
+pass:[<i class="icon-star">]pass:[</i>] *Port forwarding*
+
+Make possible to configure the port forwarder server bind address. This way you can run more than one instance of the port forwarder on the same machine.
+
+pass:[<i class="icon-star">]pass:[</i>] *UI videos in pass:[<code>MP4</code>] format*
+
+In the previous version of Cube, videos recorded during UI tests were stored in pass:[<code>flv</code>] format. As Flash is slowly disappearing we decided to switch to format supported by HTML5 pass:[<code>&lt;video&gt;</code>] tag.

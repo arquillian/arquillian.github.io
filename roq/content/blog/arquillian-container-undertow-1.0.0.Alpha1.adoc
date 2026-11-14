@@ -1,0 +1,118 @@
+---
+title: "Arquillian Container Undertow 1.0.0.Alpha1 Released"
+link: "/blog/2014/02/13/arquillian-container-undertow-1-0-0-Alpha1/"
+date: "2014-02-13"
+author: "lordofthejars"
+tags: ["release", "container-adapter", "undertow"]
+disqus_identifier: "feb5db2e8891b8f5ea6e3af37b16ddeb91167bc1"
+layout: "release"
+source_path: "blog/arquillian-container-undertow-1.0.0.Alpha1.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-container-undertow-1.0.0.Alpha1.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-container-undertow-1.0.0.Alpha1.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-container-undertow-1.0.0.Alpha1.textile"
+---
+= Arquillian Container Undertow 1.0.0.Alpha1 Released
+:sectids!:
+
+Aliens are conquering pass:[<code>Undertow</code>].
+
+pass:[<code>Undertow</code>] is a flexible performant web server written in java, providing both a blocking and a non-blocking API’s based on NIO.
+
+This extension enables us to write pass:[<code>Arquillian</code>] tests for pass:[<code>Undertow</code>].
+
+To simplify the development of tests on pass:[<code>Undertow</code>] we have created two pass:[<code>Shrinkwrap</code>] extensions:
+
+* Embedded Servlet Deployment
+* Non-blocking handler
+
+[discrete]
+=== Embedded Servlet Deployment
+
+When you want to deploy a servlet(s) inside pass:[<code>Undertow</code>], you need to create a _DeploymentInfo_ class and provide all the required information. For this, pass:[<code>Arquillian-Container-Undertow</code>] provide a pass:[<code>Shrinkwrap</code>] extension named pass:[<code>UndertowWebArchive</code>].
+
+[.filename]
+UndertowServletTest.java
+
+[listing,role="prettify",subs=verbatim]
+----
+@Deployment(testable = false)
+public static Archive<WebArchive> createDeployment() {
+	return ShrinkWrap.create(UndertowWebArchive.class).from(
+			deployment()
+			.setContextPath("/myapp")
+			.setDeploymentName("test.war")
+			.setClassLoader(
+					EmbeddedUndertowClientWebContainerTest.class
+							.getClassLoader())
+			.addServlet(
+					servlet("MessageServlet", MessageServlet.class)
+						.addInitParam("message", "Hello World")
+						.addMapping(SERVLET_MAPPING)));
+}
+
+@Test
+public void shouldBeAbleToInvokeServletInDeployedWebApp(
+		@ArquillianResource URL url) throws Exception {
+
+	String body = readAllAndClose(new URL(url, "myservlet").openStream());
+		
+	assertThat(body, is("Hello World"));
+}
+----
+
+[.info]
+We are creating the deployment using the Fluent-API provided by pass:[<code>Undertow</code>].
+
+[discrete]
+=== Non-blocking handler
+
+With pass:[<code>Undertow</code>] you can also write non-blocking handlers. For creating a non-blocking handler in pass:[<code>Undertow</code>] you create a class that implements the _HttpHandler_ interface and register it. For this, pass:[<code>Arquillian-Container-Undertow</code>] provide a pass:[<code>Shrinkwrap</code>] extension named _UndertowHttpHandlerArchive_.
+
+[.filename]
+UndertowNoneBlockTest.java
+
+[listing,role="prettify",subs=verbatim]
+----
+@Deployment(testable = false)
+public static Archive<JavaArchive> createDeployment() {
+	return ShrinkWrap.create(UndertowHttpHandlerArchive.class).from(new HttpHandler() {
+           @Override
+           public void handleRequest(final HttpServerExchange exchange) throws Exception {
+               exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+               exchange.getResponseSender().send("Hello World");
+           }
+       });
+}
+
+@Test
+public void shouldBeAbleToInvokeHandlers(@ArquillianResource URL url) throws Exception {
+
+	String body = readAllAndClose(url.openStream());
+
+	assertThat(body, is("Hello World"));
+}
+----
+
+[.info]
+We are using the pass:[<code>HttpHandler</code>] interface provided by pass:[<code>Undertow</code>].
+
+[discrete]
+=== Configuration
+
+You can configure the bind address and port of pass:[<code>Undertow</code>]. By default pass:[<code>Undertow</code>] is started on _localhost:8080_.
+
+[.filename]
+arquillian.xml
+
+[listing,role="prettify",subs=verbatim]
+----
+<container qualifier="undertow" default="true">
+	<configuration>
+		<property name="bindAddress">localhost</property>
+		<property name="bindHttpPort">9090</property> 
+	</configuration>
+</container>
+----
+
+[.info]
+If the pass:[<code>bindHttpPort</code>] is set to -1, a random port between 1024 and 49151 is used.

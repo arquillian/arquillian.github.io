@@ -1,0 +1,116 @@
+---
+title: "Arquillian Core 1.0.0.Alpha5 Released"
+link: "/blog/2011/03/18/arquillian-core-1-0-0-Alpha5/"
+date: "2011-03-18"
+author: "matousjobanek"
+tags: ["drone", "extension", "examples", "drone", "extension", "examples", "release", "platform", "core"]
+disqus_identifier: "02a90aa22045e26a6b3638836275b9ea9cc4e6a8"
+layout: "release"
+source_path: "blog/arquillian-core-1.0.0.Alpha5.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-core-1.0.0.Alpha5.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-core-1.0.0.Alpha5.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-core-1.0.0.Alpha5.textile"
+---
+= Arquillian Core 1.0.0.Alpha5 Released
+:sectids!:
+
+After a long wait we can finally give you some good news.
+
+*drum roll…*
+
+Arquillian 1.0.0.Alpha5 has been released!
+
+In the beginning of the cycle we came to the conclusion that the old Arquillian core just did not cut it in respect to where we were heading, so big parts of it has been rewritten…
+
+Some of the highlights in this release:
+
+* *DeploymentException assertion* – Verify that a pass:[<code>@Deployment</code>] throws the expected deployment exception using pass:[<code>@ShouldThrowException(Exception.class)</code>]
+
+[listing,role="prettify",subs=verbatim]
+----
+@Deployment @ShouldThrowException(WeldException.class)
+public static WebArchive createTestDeployment() { }
+----
+
+* *Multiple deployments* – Define as many pass:[<code>@Deployment</code>] methods as you may need. If you need them deployed in order, use pass:[<code>@Deployment.order</code>]. When dealing with multiple pass:[<code>@Deployments</code>] you have to specify which deployment context a pass:[<code>@Test</code>] method should run within by using the pass:[<code>@OperateOnDeployment(&quot;deploymentName&quot;)</code>]. The deploymentName is specified using pass:[<code>@Deployment.name</code>]. With this you can swap between in container testing in one deployment, pass:[<code>@RunAsClient</code>] in the context of another deployment and back incontainer in the third.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Deployment(order = 1, name = "dep1")
+public static WebArchive createTestDeployment() { }
+ 
+@Deployment(order = 2, name = "dep2")
+public static WebArchive createTestDeployment2() { }
+ 
+@Test @OperateOnDeployment("dep1")
+public void callActive1() throws Exception { }
+ 
+@Test @OperateOnDeployment("dep2")
+public void callActive1() throws Exception { }
+----
+
+* *Multiple containers* – Deploy multiple deployments to multiple containers in the same test class using pass:[<code>@TargetsContainer(&quot;containerName&quot;)</code>] on the pass:[<code>@Deployment</code>] methods. Combined with pass:[<code>@OperateOnDeployment(&quot;name&quot;)</code>] individual pass:[<code>@Test</code>] methods can now execute in different containers.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Deployment(name = "dep1") @TargetsContainer("node-1")
+public static WebArchive createTestDeployment() { }
+ 
+@Deployment(name = "dep2") @TargetsContainer("node-2")
+public static WebArchive createTestDeployment2() { }
+ 
+@Test @OperateOnDeployment("dep1")
+public void callActive1() throws Exception { }
+ 
+@Test @OperateOnDeployment("dep2")
+public void callActive1() throws Exception { }
+----
+
+* *Configurable protocol* – Previously the protocol was bound to the container you were running on. The container still has a default, but this can now be overwritten on a pr pass:[<code>@Deployment</code>] method level by using the annotation pass:[<code>@OverProtocol(&quot;protocolName&quot;)</code>].
+
+[listing,role="prettify",subs=verbatim]
+----
+@Deployment(name = "dep1") @TargetsContainer("node-1") @OverProtocol("Servlet 3.0")
+public static WebArchive createTestDeployment() { }
+ 
+@Deployment(name = "dep2") @TargetsContainer("node-2") @OverProtocol("EJB 3.1")
+public static WebArchive createTestDeployment2() { }
+ 
+@Test @OperateOnDeployment("dep1") // in container text execution is done over HTTP
+public void callActive1() throws Exception { }
+ 
+@Test @OperateOnDeployment("dep2") // in container text execution is done over RMI
+public void callActive1() throws Exception { }
+----
+
+* *Descriptor deployment* – Need to deploy a JMS Queue, or a DataSource? Use the Desciptor deployment. Works the same as a Archive deployment by defining a deployment method with return type Descriptor.
+
+[listing,role="prettify",subs=verbatim]
+----
+@Deployment
+public static Descriptor createTestDeployment() { }
+----
+
+* *Arquillian Drone* – A new extension for Web testing. Integrates Arquillian with Selenium, WebDriver and Arquillian Ajocado.
+
+[listing,role="prettify",subs=verbatim]
+----
+@RunWith(Arquillian.class)
+public class AjocadoTestCase {
+   // load ajocado driver
+   @Drone
+   AjaxSelenium driver;
+}
+----
+
+Some changes:
+
+* pass:[<code>@Run(AS_CLIENT)</code>] and pass:[<code>@Run(IN_CONTAINER)</code>] have been replaced by pass:[<code>@RunAsClient</code>]. pass:[<code>RunMode is default read from @</code>Deployment.testable@], but you can override the run mode for a in-container deployment using pass:[<code>@RunAsClient</code>] on the pass:[<code>@Test</code>] method.
+* New Configuration XML format
+* GlassFish 3.0 support was _replaced_ with 3.1 support.
+
+Big thanks to the https://community.jboss.org/en/arquillian[Arquillian] and https://community.jboss.org/en/shrinkwrap[ShrinkWrap] community for helping us with this release!
+
+A extra goes out to, https://community.jboss.org/people/kpiwko[Karel Piwko] for Arquillian Drone, https://community.jboss.org/people/lightguard[Jason Porter] for the GlassFish Remote 3.1 container and https://community.jboss.org/people/dallen6[David R Allen] for other random issues.
+
+++[++ https://issues.jboss.org/browse/ARQ[Issues] ++|++ Javadoc: http://docs.jboss.org/arquillian/api/1.0.0.Alpha5/[API], http://docs.jboss.org/arquillian/spi/1.0.0.Alpha5/[SPI] ++|++ http://docs.jboss.org/arquillian/reference/1.0.0.Alpha5/en-US/html_single[Reference Guide] ++|++ https://jira.jboss.org/jira/secure/ReleaseNote.jspa?projectId=12310885&styleName=Html&version=12316143[Release Notes] ++|++ https://repository.jboss.org/nexus/content/groups/public/org/jboss/arquillian/[Maven artifacts] ++]++

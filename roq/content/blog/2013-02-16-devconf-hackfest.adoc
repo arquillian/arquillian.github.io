@@ -1,0 +1,144 @@
+---
+title: "Hackfest: DevConf 2013, Czech Republic, Brno"
+link: "/blog/2013/02/16/devconf-hackfest/"
+date: "2013-02-16"
+author: "aslakknutsen"
+tags: ["hack-idea", "2013", "nonrelease"]
+disqus_identifier: "09e41ddf271f21aab78d2ef338f4b9802228db11"
+layout: "post"
+source_path: "blog/2013-02-16-devconf-hackfest.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/2013-02-16-devconf-hackfest.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/2013-02-16-devconf-hackfest.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/2013-02-16-devconf-hackfest.textile"
+published_order: 423
+---
+= Hackfest: DevConf 2013, Czech Republic, Brno
+:sectids!:
+
+// Historical interpolation #{site.definition} = Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application's behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment. from https://arquillian.org/blog/2013/02/16/devconf-hackfest/ (captured 2026-11-13).
+// Historical interpolation #{site.irc_channel} = arquillian from https://arquillian.org/blog/2013/02/16/devconf-hackfest/ (captured 2026-11-13).
+
+In about a weeks time DevConf 2013 in Brno, Czech Republic will kick of for the 5. year in a row. +
+This year, as last, we will take part in the HackFest spanning from Saturday 23. to Sunday 24. of February. And for the eager hackers even Monday 25. February.
+
+[discrete]
+=== Introducing the candidates
+
+Without any more fuzz, let’s jump straight into some of the ideas we have for this hackfest. Of course, you’re free to bring your own as well!
+
+[discrete]
+==== Gradle Container Controller
+
+One of the hacks that was started during the link:/blog/2012/11/15/devoxx-2012-hackergarten-overdrive/[Devoxx 2012 Hackergarten]: was the Arquillian Gradle integration. The basic idea is to leverage Arquillian’s Container support to control Containers and Deployments within the Gradle build system, much like we do for Maven via the Arquillian Maven Plugin. This in particular is a very interesting integration since it opens up Arquillian to a new type of usage, as a pure Container Controller.
+
+Why would Gradle use Arquillian for this? It’s a simple matter of focus. Gradle care about build systems and don’t have the resources to implement support for all the Containers. Arquillian on the other hand care very much of the Containers and already support much more than Gradle currently do in this area. Perfect combination of two tools with different capabilities.
+
+You can read up on some of the https://community.jboss.org/thread/213638[discussions] and see look at the early https://github.com/aslakknutsen/arquillian-gradle-plugin[prototype].
+
+The end goal would be to match as much as possible of the https://github.com/gradle/gradle/blob/master/design-docs/deploying-applications-for-testing.md[Gradle Design docs] and have Arquillian be the internal runner.
+
+[discrete]
+==== Arquillian Forge Plugin – Extensions
+
+http://forge.jboss.org/[JBoss Forge] is best described by them selves.
+
+[quote]
+____
+
+A core framework and next-generation shell for tooling and automation at a command line level; with APIs for integration in IDEs, extending built in functionality with plugins, and scripting for automating repetitive tasks, Forge is a tool every open-source developer should be looking at.
+
+____
+
+[quote]
+____
+
+A core framework for rapid-application development in a standards-based environment. Plugins / incremental project enhancement for Java EE, and more.
+
+____
+
+There exists already an https://github.com/forge/plugin-arquillian[Arquillian Plugin] for Forge which handles setup of Arquillian Core and Container dependencies, Container configuration and simple TestClass generation.
+
+But the missing bit is set up and support for the Arquillian Extensions. This hack should be able to answer, by using Forge, questions like:
+
+* How do I setup Drone, Persistence, Transactions?
+* How do I configure Drone?
+* Which configuration options does Persistence support?
+
+[discrete]
+==== Arquillian Warp
+
+https://github.com/arquillian/arquillian-extension-warp[Arquillian Warp] fills the void between client-side and server-side testing. Using Warp, you can initiate an HTTP request using a client-side testing tool such as WebDriver and, in the same request cycle, execute in-container server-side tests. This powerful combination lets you cover integration across client and server.
+
+[discrete]
+===== SeamTest
+
+Warp leverages any HTTP client (such as httpclient or WebDriver), to produce testable requests and provides server-side hooks which allows you to execute arbitrary logic in any part of the request lifecycle. However the fact that developer needs to provide HTTP request in order to test is limiting – sometimes you need to test using any request type: such as conversations. The goal is designing an API and implementation for testing sequence of requests without providing an HTTP client logic. (This extension should provide a migration layer for http://docs.jboss.org/seam/2.0.1.GA/reference/en/html/testing.html[SeamTest] )
+
+[discrete]
+===== CDI events
+
+Warp plays nicely with IoC principles – your test does not need to tightly couple with container, it will bring all the necessary dependencies to the test. In Java EE, Warp leverages CDI to inject user-defined beans into the test. Warp has the potential to use much more from the concepts brought by CDI: observe CDI events, produce beans or intercept calls to existing beans. The idea is to provide hooks which would make testing of client request interaction with CDI beans as easy as defining Warp’s lifecycle hooks.
+
+[discrete]
+==== Arquillian Google Web Toolkit
+
+The link:https://developers.google.com/web-toolkit/[Google Web Toolkit,title="GWT"] is a development tool for building complex browser-based applications written in pure Java. The new Arquillian GWT extension brings true integration testing to GWT. This means that GWT integration tests can break free and execute in the actual runtime container instead of being tied to GWT’s embedded Jetty server. Further it is now possible to combine GWT client-side and standard in-container tests in the same test class. This allows to test features without having to worry about the client-server bridge and should pave the way for future support of Arquillian Warp and Drone in GWT integration tests.
+
+[discrete]
+===== Remove the need for GwtArchive
+
+Currently the Arquillian GWT extension uses a custom utility (GwtArchive) to enrich WebArchives for GWT deployments. This causes the API for Arquillian GWT tests to deviate from standard Arquillian tests. It should be possible to automatically enhance the deployment archive to include all dependencies and configurations that are relevant to the GWT deployment, possibly by leveraging an Arquillian packaging SPI’s. As a result of this, GWT integration tests will use the same API as all other Arquillian tests.
+
+[discrete]
+===== Leverage Arquillian Warp in GWT integration tests
+
+Warp enables tests to assert on both client-side and server-side logic and is an extremely useful tool for writing compact integration tests. The focus will be on brainstorming to come up with a battle plan for how Warp could be integrated with Arquillian GWT.
+
+[discrete]
+==== Arquillian Distribution Extension
+
+This is probably the hardest and largest of them all. But even more interesting, right?. As Arquillian work today it will allow you to interact with local and remote Containers. But the big assumption with Remote Containers is that the Container is already up and running and we only need to connect to it. As we’re growing out to support more and more advanced use cases we’re starting to see the need for the ability to control and distribute infrastructure. Infrastructure being servers, containers or clouds.
+
+A very brief description of what this extension should do:
+
+* Install Container A on Server B (copy source and configure)
+* Install Container X on Server Y (copy source and configure)
+* Configure Arquillian to use Container A on Server B
+* Configure Arquillian to use Container X on Server Y
+
+From here on Arquillian Test takes over and run tests as described by the Test Suite. Next steps would be:
+
+* Uninstall Container X on Server Y
+* Uninstall Container A on Server B
+
+This is particularly useful for the upcoming Performance Extension to allow it to install a full environment, including clients and targets, for performance testing.
+
+[discrete]
+=== What is Arquillian?
+
+Arquillian is open source software that empowers you to test JVM-based applications more effectively. Created to defend the software galaxy from bugs, Arquillian brings your test to the runtime so you can focus on testing your application’s behavior rather than managing the runtime. Using Arquillian, you can develop a comprehensive suite of tests from the convenience of your IDE and run them in any IDE, build tool or continuous integration environment.
+
+[discrete]
+==== When and where are we hacking?
+
+We are going to use the free Hackfest at DevConf 2013 as an opportunity to put our heads together to make progress on these ideas. Here are the details:
+
+* When: Saturday February 23 12:30 – 18:30 CET, Sunday February 24 09:00 – 18:30 CET, Monday February 25 09:00 – 17:00 CET
+* Where: Hackfest at DevConf 2013 (Masaryk University, Faculty of Informatics, Brno, Czech Republic)
+* Conference URL: http://devconf.cz/[pass:[http://devconf.cz/]]
+* Hashtag: https://twitter.com/search/%23hackdevconf[++#++hackdevconf] and https://twitter.com/search/%23arquillian[++#++arquillian]
+* Lanyrd: http://lanyrd.com/2013/hackdevconf/[pass:[http://lanyrd.com/2013/hackdevconf/]]
+* IRC: ++#++arquillian on Freenode
+
+Of course, anyone is welcome to hack on these ideas at anytime from anywhere. This is open source!
+
+[discrete]
+==== Who will be there hacking?
+
+* https://github.com/kpiwko[Karel Piwko] (Arquillian Drone Lead)
+* https://github.com/lfryc[Lukáš Fryč] (Arquillian Warp & Graphene Lead)
+* https://github.com/mojavelinux[Dan Allen] (Arquillian team member)
+* http://github.com/aslakknutsen[Aslak Knutsen] (Arquillian Lead)
+* *You*
+
+*Happy hacking!*

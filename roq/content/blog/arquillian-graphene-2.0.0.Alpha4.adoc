@@ -1,0 +1,197 @@
+---
+title: "Graphene 2.0.0.Alpha4 Released"
+link: "/blog/2013/04/24/arquillian-graphene-2-0-0-Alpha4/"
+date: "2013-04-24"
+author: "lfryc"
+tags: ["release", "extension", "graphene"]
+disqus_identifier: "4e38d1f7218921c04607038d00c1a3e38a61aedb"
+layout: "release"
+source_path: "blog/arquillian-graphene-2.0.0.Alpha4.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-graphene-2.0.0.Alpha4.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-graphene-2.0.0.Alpha4.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-graphene-2.0.0.Alpha4.textile"
+---
+= Graphene 2.0.0.Alpha4 Released
+:sectids!:
+
+As we are on the way to a first Beta release, we identified a need for sharing some of the recent Graphene improvements:
+
+[discrete]
+=== Highlighted Changes
+
+pass:[<i class="icon-star">]pass:[</i>] Guard Improvements and Fixes::
++
+--
+Request Guards were polished, extended and hardened. (link:#guard-improvements-and-fixes[read more])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Creating Page Fragments Programatically::
++
+--
+Page Fragments can now be instantiated not only using dependency injection, but also programatically. (link:#creating-page-fragments-programatically[read more])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] PhantomJS Support::
++
+--
+You can now fully leverage awesomness of headless testing with PhantomJS.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Guarding Programatically Retrieved Elements::
++
+--
+Elements retrieved programatically using pass:[<code>WebElement#findElement(...)</code>] or pass:[<code>WebElement#findElements(...)</code>] are now guarded against pass:[<code>StaleElementReferenceException</code>].
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Automatic Inference of Locators::
++
+--
+You no longer need to define a locator in simple forms – you can leverage their automatic inference from a injection point name. (link:#automatic-inference-of-locators[read more])
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Dependency Injection of pass:[<code>SessionStorage</code>] and pass:[<code>LocalStorage</code>]::
++
+--
+These resources are now exposed directly via pass:[<code>@ArquillianResource</code>].
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Dependency Injection of Selenium Resource Parametrized by pass:[<code>WebElement</code>]::
++
+--
+Selenium resources which takes pass:[<code>WebElement</code>] as an argument in a constructor (e.g. http://selenium.googlecode.com/git/docs/api/java/org/openqa/selenium/support/ui/Select.html[pass:[<code>Select</code>]]) can be injected using pass:[<code>FindBy</code>].
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Support for pass:[<code>FindBys</code>] and pass:[<code>FindBy(How, String)</code>]::
++
+--
+
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Improved Integration with Drone::
++
+--
+Drone pass:[<code>1.2.0.Alpha2</code>]’s new https://github.com/arquillian/arquillian-extension-drone/blob/master/drone-spi/src/main/java/org/jboss/arquillian/drone/spi/Enhancer.java[pass:[<code>Enhancer</code>]] API allow us to integrate with Drone seamlessly.
+--
+
+[discrete]
+==== Deprecations
+
+pass:[<i class="icon-star">]pass:[</i>] Deprecation of Old Variant of Waiting Fluent API::
++
+--
+pass:[<code>Graphene.element(...)</code>] and pass:[<code>Graphene.attribute(...)</code>] are now deprecated and they will be removed in an upcoming releases.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Deprecated pass:[<code>guardXhr</code>] replaced by pass:[<code>guardAjax</code>]::
++
+--
+Not all of us are familiar with abbreviation XHR (XMLHttpRequest). In order to make the API more clear for most of Graphene users, we have deprecated pass:[<code>guardXhr</code>] and replaced it with pass:[<code>guardAjax</code>]. pass:[<code>guardXhr</code>] will be removed in upcoming releases.
+--
+
+[discrete,id="guard-improvements-and-fixes"]
+=== Guard Improvements and Fixes
+
+pass:[<i class="icon-star">]pass:[</i>] pass:[<code>waitForHttp</code>]::
++
+--
+When an Ajax request is followed by a relocation (HTTP request), pass:[<code>guardXhr</code>] or pass:[<code>guardHttp</code>] can’t deterministically wait for an end of a request – in these situations you can use pass:[<code>waitForHttp</code>] instead.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Testing delayed requests::
++
+--
+Guards now waits for a given time interval for a request to start and once the request is started, they wait the another interval for the request to finish.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Bug Fixes::
++
+--
+Guards had problems on Android with deterministic waiting for HTTP requests.
+--
+
+[discrete,id="creating-page-fragments-programatically"]
+=== Creating Page Fragments Programatically
+
+Till this release, the only option to create a page fragment was injecting it:
+
+[listing,role="prettify",subs=verbatim]
+----
+@FindBy(...)
+MyComponent component;
+----
+
+With Alpha4 we have added the possibility to create a page fragment programatically:
+
+[listing,role="prettify",subs=verbatim]
+----
+public <T> T getContent(Class<T> clazz) {
+    return PageFragmentEnricher.createPageFragment(clazz, root);
+}
+----
+
+[listing,role="prettify",subs=verbatim]
+----
+@Test
+public void testTabPanelSwitching() {
+    Panel tab3 = tabPanel.switchTo(2);
+    ContentOfTab content = tab3.getContent(ContentOfTab.class);
+    assertEquals("The tab panel was not switched to third tab correctly!", "Content of the tab 3", content.text.getText());
+    
+    Panel tab1 = tabPanel.switchTo(0);
+    content = tab1.getContent(ContentOfTab.class);
+    assertEquals("The tab panel was not switched to first tab correctly!", "Content of the tab 1", content.text.getText());
+}
+----
+
+You can find reference usage in this https://github.com/arquillian/arquillian-graphene/blob/7637bfd0d92fa78b75caa54bbf41bb393868d62a/graphene-webdriver/graphene-webdriver-ftest/src/test/java/org/jboss/arquillian/graphene/enricher/TestEnrichingContainerElement.java#L61[functional test] together with an implementation of https://github.com/arquillian/arquillian-graphene/blob/7637bfd0d92fa78b75caa54bbf41bb393868d62a/graphene-webdriver/graphene-webdriver-ftest/src/test/java/org/jboss/arquillian/graphene/enricher/page/fragment/Panel.java#L39[pass:[<code>#getContent(Class&lt;T&gt;)</code>]].
+
+[discrete,id="automatic-inference-of-locators"]
+=== Automatic Inference of Locators
+
+How many times you have written:
+
+[listing,role="prettify",subs=verbatim]
+----
+// look for input with a name 'firstname'
+@FindBy(name = "firstname")
+private WebElement firstname;
+----
+
+You can now simplify your tests to just
+
+[listing,role="prettify",subs=verbatim]
+----
+@FindBy
+private WebElement firstname;
+----
+
+Graphene will automatically use the strategy http://selenium.googlecode.com/git/docs/api/java/org/openqa/selenium/support/How.html#ID_OR_NAME[pass:[<code>How.ID_OR_NAME</code>]] to locate the element by its ID or name.
+
+Since this mechanism uses the strategy pattern, you can overwrite the default strategy for your test suite and therefore find elements by e.g. their class names or even JSF component IDs.
+
+[discrete]
+=== Roadmap
+
+This release is a maintanance release https://community.jboss.org/message/777443#777443[on the way to Beta1].

@@ -1,0 +1,80 @@
+---
+title: "Arquillian Drone Extension 2.1.0.Alpha1 Released"
+link: "/blog/2017/01/26/arquillian-extension-drone-2-1-0-Alpha1/"
+date: "2017-01-26"
+author: "matousjobanek"
+tags: ["release", "extension", "drone"]
+disqus_identifier: "a45b6f03b1bac05583213945d41cf88c85146d4d"
+layout: "release"
+source_path: "blog/arquillian-extension-drone-2.1.0.Alpha1.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-drone-2.1.0.Alpha1.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-drone-2.1.0.Alpha1.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-drone-2.1.0.Alpha1.textile"
+---
+= Arquillian Drone Extension 2.1.0.Alpha1 Released
+:sectids!:
+
+image:/images/blog/drone_400.png[alt="",role="graphic pull-right"]
+
+In this release, we bring you a new way of a managing binaries such as drivers or Selenium Server.
+
+Previously, when you wanted to use for example Chrome browser for your tests, you had to download the pass:[<code>chrome-driver</code>] binary first, then define the path to the binary in your pass:[<code>arquillian.xml</code>] file and then run the UI tests. +
+With the new binary management, the first two steps are not needed anymore. If you don’t specify the path in your pass:[<code>arquillian.xml</code>] file, Drone automatically downloads the latest version of the binary, set the necessary properties and use the binary in your UI tests.
+
+[discrete]
+== Automatic Download
+
+[discrete]
+=== How does it work?
+
+Let say that you want to use Firefox for UI tests. First of all, Drone checks if the path to the Gecko webdriver binary is already set. In this case, it would check a system property pass:[<code>webdriver.gecko.driver</code>]; if this is empty then it checks the pass:[<code>arquillian.xml</code>] property pass:[<code>firefoxDriverBinary</code>]. In case that both properties are empty, then the automatic download starts.
+
+Now, we have several options how to specify which binary should be downloaded (version, from URL, latest) and where it should be stored. For storage purposes cache directories pass:[<code>$HOME/.arquillian/drone/subdirectory_specific_to_binary</code>] are used so the binaries are not downloaded over and over again.
+
+[discrete]
+==== Version
+
+Using the property
+
+[listing,subs=verbatim]
+----
+<property name="firefoxDriverVersion">v0.14.0</property>
+----
+
+you can define which version of the Gecko webdriver should be downloaded. The binary is then cached in a directory pass:[<code>$HOME/.arquillian/drone/firefox/v0.14.0/</code>].
+
+[discrete]
+==== URL
+
+Using the property
+
+[listing,subs=verbatim]
+----
+<property name="firefoxDriverUrl">http://url/to/gecko/webdriver</property>
+----
+
+you can define which URL the Gecko webdriver should be downloaded from. The directory where it is stored depends if you also specify the version of this binary or not. In case you use also the before-mentioned property pass:[<code>firefoxDriverVersion</code>] then it is cached in corresponding directory pass:[<code>$HOME/.arquillian/drone/firefox/specified_version/</code>]. Otherwise it is downloaded into pass:[<code>$project.directory/target/drone/downloaded/</code>] so no cache is used.
+
+[discrete]
+==== Latest
+
+In case you don’t define any property then Drone finds the latest version of the given binary and downloads this one. The binary (in case of Gecko webdriver) is cached at pass:[<code>$HOME/.arquillian/drone/firefox/latest_version/</code>].
+
+Some additional information and list of supported binaries and properties can be found in the http://arquillian.org/arquillian-extension-drone/#_automatic_download[Drone documentation]
+
+[discrete]
+=== Selenium Server
+
+Apart from the fact that the Selenium Server binary is automatically downloaded, in the case of pass:[<code>RemoteWebDriver</code>] it is also automatically started with the correct parameters (path to the webdriver that should be used).
+
+So, if you use pass:[<code>RemoteWebDriver</code>] Drone checks the address specified using property pass:[<code>remoteAddress</code>] in arquillian.xml file (default is: pass:[<code>http://localhost:4444/wd/hub</code>]) and if the address is not accessible (there isn’t running anything) then it automatically starts selenium server instance on the given address.
+
+For example I’d like to use pass:[<code>RemoteWebDriver</code>] with the browser Firefox and without specifying any custom remote address, then the Selenium Server would be started using command:
+
+[listing,subs=verbatim]
+----
+java -Dwebdriver.gecko.driver=target/.../geckodriver
+     -jar target/.../selenium-server-standalone-3.3.1.jar -port 4444
+----
+
+We hope that you’ll enjoy our new stuff and look forward to hearing your feedback.

@@ -1,0 +1,63 @@
+---
+title: "Arquillian Extension Byteman 1.0.0.Alpha1 Released"
+link: "/blog/2012/01/19/arquillian-extension-byteman-1-0-0-Alpha1/"
+date: "2012-01-19"
+author: "matousjobanek"
+tags: ["release", "extension", "byteman"]
+disqus_identifier: "44b469098d916334376e99ddedb3f8745324b161"
+layout: "release"
+source_path: "blog/arquillian-extension-byteman-1.0.0.Alpha1.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-byteman-1.0.0.Alpha1.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-byteman-1.0.0.Alpha1.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-byteman-1.0.0.Alpha1.textile"
+---
+= Arquillian Extension Byteman 1.0.0.Alpha1 Released
+:sectids!:
+
+We’re happy to announce the first release of the Arquillian Byteman marriage.
+
+Byteman is a tool which simplifies tracing and testing of Java programs. Byteman allows you to insert extra Java code into your application, either as it is loaded during JVM startup or even after it has already started running. The injected code is allowed to access any of your data and call any application methods, including where they are private. You can inject code almost anywhere you want and there is no need to prepare the original source code in advance nor do you have to recompile, repackage or redeploy your application. In fact you can remove injected code and reinstall different code while the application continues to execute.
+
+When testing your application you can use Byteman to inject faults or synchronization code, causing your application to perform unusual or unexpected operations required to exercise a test scenario.
+
+In this release we added support the pass:[<code>@BMRule(s)</code>] annotation on pass:[<code>Class</code>] and pass:[<code>Method</code>] level.
+
+[listing,role="prettify",subs=verbatim]
+----
+@RunWith(Arquillian.class)
+@BMRules(
+        @BMRule(
+                name = "Throw exception on success",
+                targetClass = "StatelessManagerBean",
+                targetMethod = "success",
+                action = "throw new java.lang.RuntimeException()")
+)
+public class BytemanFaultInjectionTestCase {
+
+    @Deployment
+    public static Archive<?> createDeployment() {
+        return ShrinkWrap.create(WebArchive.class)
+                .addClasses(StatelessManager.class, StatelessManagerBean.class);
+    }
+...
+}
+----
+
+[listing,role="prettify",subs=verbatim]
+----
+@Test(expected = EJBException.class)
+@BMRule(
+        name = "Throw exception on success",
+        targetClass = "StatelessManagerBean",
+        targetMethod = "success",
+        action = "throw new java.lang.RuntimeException()")
+public void shouldBeAbleToInjectMethodLevelThrowRule()
+{
+    Assert.assertNotNull("Verify bean was injected", bean);
+    bean.success();
+}
+----
+
+See the http://www.jboss.org/byteman[Byteman Website] for more on how to write rules.
+
+Before we reach the final release we are planning to bring pass:[<code>@BMScript</code>] annotation and manual installment of rules during test execution.

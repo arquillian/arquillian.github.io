@@ -1,0 +1,87 @@
+---
+title: "Arquillian Persistence Extension 1.0.0.Alpha7 Released"
+link: "/blog/2014/05/12/arquillian-extension-persistence-1-0-0-Alpha7/"
+date: "2014-05-12"
+author: "matousjobanek"
+tags: ["release", "extension", "persistence"]
+disqus_identifier: "b5d6d1afd5735cee89cc247dce4f6c882950b784"
+layout: "release"
+source_path: "blog/arquillian-extension-persistence-1.0.0.Alpha7.textile"
+source_url: "https://github.com/arquillian/arquillian.github.io/blob/develop/blog/arquillian-extension-persistence-1.0.0.Alpha7.textile"
+edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/roq/content/blog/arquillian-extension-persistence-1.0.0.Alpha7.adoc"
+legacy_edit_url: "https://github.com/arquillian/arquillian.github.io/edit/develop/blog/arquillian-extension-persistence-1.0.0.Alpha7.textile"
+---
+= Arquillian Persistence Extension 1.0.0.Alpha7 Released
+:sectids!:
+
+// Historical interpolation #{site.project_space} = http://community.jboss.org/en/arquillian from https://arquillian.org/blog/2014/05/12/arquillian-extension-persistence-1-0-0-Alpha7/ (captured 2026-11-13).
+
+After quite a while we are happy to announce new version of Arquillian Persistence Extension with anticipated fixes and improvements.
+
+Big thanks go to https://github.com/sbodomerle[Sándor Bodó-Merle], https://github.com/mgraciano[Michel Graciano], https://github.com/masao-kunii[Masao Kunii], https://github.com/kumm[kumm] and https://github.com/jmnarloch[Jakub Narloch] for their contributions as well as all users who gave us feedback on the community forums.
+
+[discrete]
+=== Some of the highlights in this release
+
+pass:[<i class="icon-star">]pass:[</i>] SQL script handling improvements::
++
+--
+SQL script handling has been significantly improved. It not only has improved performance (namely for Oracle) but also let you provide your own implementation for parsing multi-line scripts through simple SPI pass:[<code>org.jboss.arquillian.persistence.spi.script.StatementSplitter</code>].
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Direct access to DBUnit::
++
+--
+Ability to inject DBUnit pass:[<code>DatabaseConnection</code>] making it possible to interact with DBUnit directly in the tests.
+
+[listing,role="prettify",subs=verbatim]
+----
+@ArquillianResource
+private DatabaseConnection databaseConnection;
+----
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] New SPI module::
++
+--
+Through newly introduce SPI module you can now register your own datasource providers. This can be leveraged by frameworks such as Spring which can now do their own lookups (from application context) instead of relying on JNDI.
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] New extension point::
++
+--
+We have also implemented extension point to define custom implementation of pass:[<code>org.dbunit.database.DatabaseSequenceFilter</code>] which is used to seed and clean database by DBUnit. Out of the box we provide sequence filter strategy for Oracle. You can register it in pass:[<code>arquillian.xml</code>] as part of _persistence-dbunit_
+
+[listing,role="prettify",subs=verbatim]
+----
+<property name="filterTables">true</property>
+<property name="customTableFilter">org.jboss.arquillian.persistence.dbunit.filter.OracleDatabaseSequenceFilterProvider</property>
+----
+--
+
+
+
+pass:[<i class="icon-star">]pass:[</i>] Custom filtering strategy::
++
+--
+You can also define column filtering strategy when comparing datasets through pass:[<code>@ShouldMatchDataSet</code>] annotation. By simply providing an implementation of pass:[<code>org.dbunit.dataset.filter.IColumnFilter</code>] and decorating your test with e.g. pass:[<code>@CustomColumnFilter({FirstNameColumnFilter.class, LastNameColumnFilter.class})</code>]. Filter classes are packaged automatically.
+--
+
+This version comes with latest DBUnit 2.5.0.
+
+We’ve also extended our test suite by adding Apache Tomee to our continuous integration pipeline.
+
+[.important]
+We are still shaping up the extension and its modularity hence we split modules in the following manner: +
+_persistence-api_ +
+_persistence-core_ +
+_persistence-dbunit_ – you can replace old _impl_ dependency by this one +
+_persistence-spi_ – SPI for future extensions
+
+We look forward to hearing your feedback about this release in the http://community.jboss.org/en/arquillian[community forums]!
