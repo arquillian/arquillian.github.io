@@ -1,0 +1,51 @@
+name: Roq build and preview
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Generate Roq site
+        uses: quarkiverse/quarkus-roq@v1
+        with:
+          java-version: '25'
+          java-distribution: temurin
+          maven-executable: ./mvnw
+          maven-build-args: -DskipTests
+          github-pages: false
+
+      - name: Test site
+        run: ./mvnw -B -ntp test
+
+      - name: Upload static site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arquillian-roq-site
+          path: target/roq/
+          if-no-files-found: error
+          include-hidden-files: true
+
+      - name: Publish Surge pull-request preview
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: afc163/surge-preview@v1
+        with:
+          surge_token: ${{ secrets.SURGE_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          dist: target/roq
+          build: echo "Roq site already generated"
+          failOnError: true
+          teardown: true
