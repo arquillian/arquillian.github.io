@@ -151,7 +151,11 @@ Confluence integrations default disabled; enable only a deliberately configured,
 working service. Enabled-source failures abort publication and preserve the
 previous catalog. Unreviewed enrichment candidates do not alter presentation.
 
-The artifact workflow compiles, tests, exports, checks hosting files and shared
-assets, and uploads `target/roq/` for review, including `.nojekyll`. It does not
-publish the site. The existing production deployment remains available during
-migration; deployment cutover requires separate approval.
+The artifact workflow compiles, tests, generates with the official Roq GitHub
+Action, checks hosting files and shared assets, and uploads `target/roq/` for
+review, including `.nojekyll`. Same-repository pull requests also publish a
+Surge preview and tear it down when the pull request closes. Configure a scoped
+`SURGE_TOKEN` Actions secret before using previews; fork pull requests skip the
+preview because GitHub does not expose repository secrets to them. The workflow
+does not publish production. The existing production deployment remains
+available during migration; deployment cutover requires separate approval.
