@@ -31,6 +31,7 @@ class RefreshCollectorsTest {
     private final Map<String, String> links = new HashMap<>();
     private final Map<String, Integer> statuses = new HashMap<>();
     private final Map<String, String> authorization = new HashMap<>();
+    private final Map<String, Integer> requests = new HashMap<>();
     private HttpServer server;
     private DataHttpClient client;
     @TempDir Path directory;
@@ -41,6 +42,7 @@ class RefreshCollectorsTest {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/", exchange -> {
             String path = exchange.getRequestURI().toString();
+            requests.merge(path, 1, Integer::sum);
             authorization.put(path, exchange.getRequestHeaders().getFirst("Authorization"));
             if (links.containsKey(path)) {
                 exchange.getResponseHeaders().set("Link", links.get(path));
@@ -105,6 +107,18 @@ class RefreshCollectorsTest {
                 .getMessage().contains("two MiB"));
         assertTrue(assertThrows(IOException.class, () -> client.text(client.endpoint("large-error")))
                 .getMessage().contains("two MiB"));
+    }
+
+    /** Reuses a successful cached response across clients without contacting the service again. */
+    @Test
+    void reusesCachedResponses() throws Exception {
+        bodies.put("/cached", "{\"value\":1}");
+        DataHttpClient cached = new DataHttpClient(client.endpoint(""), "fixture-token", Duration.ofSeconds(30), directory);
+        assertEquals(1, cached.json(cached.endpoint("cached")).path("value").asInt());
+        bodies.put("/cached", "{\"value\":2}");
+        DataHttpClient offline = new DataHttpClient(client.endpoint(""), null, Duration.ofSeconds(30), directory);
+        assertEquals(1, offline.json(offline.endpoint("cached")).path("value").asInt());
+        assertEquals(1, requests.get("/cached"));
     }
 
     /** Keeps GitHub release grouping and immutable milestone identity across repository renames. */

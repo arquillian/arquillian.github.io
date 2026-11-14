@@ -163,6 +163,15 @@ class RefreshCoordinatorTest {
         for (String[] arguments : List.of(new String[0], new String[] {"--config"}, new String[] {"--token", "secret"}, new String[] {"--dry-run", "--dry-run"})) {
             assertThrows(IOException.class, () -> RefreshCli.run(arguments, Map.of(), CLOCK));
         }
+        Path fallbackPath = Path.of("target/refresh.yml");
+        Files.deleteIfExists(fallbackPath);
+        RefreshConfig fallback = RefreshConfig.load(fallbackPath, Map.of("SITE_GITHUB_TOKEN", "fixture-secret"));
+        assertTrue(fallback.data().path("cache").asText().endsWith("roq/.cache/refresh"));
+        assertEquals("SITE_GITHUB_TOKEN", fallback.data().path("github").path("token_env").asText());
+        assertEquals(3, fallback.data().path("github").path("teams").size());
+        assertEquals(13, fallback.data().path("github").path("release_sources").size());
+        assertEquals(5, fallback.data().path("jira").path("release_sources").size());
+        assertFalse(Files.exists(fallbackPath));
         try (Fixture fixture = new Fixture(directory)) {
             assertThrows(IOException.class, () -> RefreshConfig.load(fixture.configuration, Map.of()));
             ObjectNode invalid = fixture.settings.deepCopy(); invalid.put("token", "must-not-log"); fixture.writeConfiguration(invalid);
@@ -317,6 +326,7 @@ class RefreshCoordinatorTest {
 
     /** Owns a local service and Git origin so tests exercise real collectors without production network/catalog effects. */
     private static final class Fixture implements AutoCloseable {
+        private final Path root;
         private final Path catalog;
         private final Path origin;
         private final Path configuration;
@@ -334,6 +344,7 @@ class RefreshCoordinatorTest {
 
         /** Creates deterministic local HTTP/Git inputs and a temporary published-schema snapshot copy. */
         private Fixture(Path directory) throws Exception {
+            root = directory;
             Files.createDirectories(directory);
             catalog = directory.resolve("catalog.json"); origin = directory.resolve("origin"); configuration = directory.resolve("refresh.json");
             git = Git.init().setInitialBranch("main").setDirectory(origin.toFile()).call();
@@ -372,7 +383,21 @@ class RefreshCoordinatorTest {
         }
 
         /** Publishes or previews only this fixture's temporary catalog using named environment credentials. */
-        private ObjectNode refresh(boolean dryRun) throws IOException { return new RefreshCoordinator(RefreshConfig.load(configuration, Map.of("SITE_TOKEN", "fixture-secret")), CLOCK).refresh(dryRun); }
+        private ObjectNode refresh(boolean dryRun) throws IOException {
+            clearHttpCache();
+            return new RefreshCoordinator(RefreshConfig.load(configuration, Map.of("SITE_TOKEN", "fixture-secret")), CLOCK).refresh(dryRun);
+        }
+
+        /** Removes only HTTP response entries so each fixture call observes its deliberately changed service payloads. */
+        private void clearHttpCache() throws IOException {
+            Path cache = root.resolve("cache");
+            if (!Files.isDirectory(cache)) return;
+            try (var paths = Files.walk(cache)) {
+                for (Path path : paths.filter(Files::isRegularFile).filter(value -> value.toString().endsWith(".body") || value.toString().endsWith(".headers")).toList()) {
+                    Files.deleteIfExists(path);
+                }
+            }
+        }
 
         /** Writes caller-selected valid/invalid configuration for trust-boundary regressions. */
         private void writeConfiguration(ObjectNode value) throws IOException { Files.writeString(configuration, MAPPER.writeValueAsString(value)); }

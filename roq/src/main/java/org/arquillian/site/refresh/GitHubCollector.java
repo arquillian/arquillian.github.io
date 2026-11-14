@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Locale;
 import java.util.Set;
 import org.jsoup.nodes.Element;
@@ -64,7 +65,7 @@ public final class GitHubCollector {
         String repositoryPath = repositoryPath(ownerAndRepository);
         URI milestones = client.endpoint("repos/" + repositoryPath + "/milestones?state=closed&per_page=100");
         ArrayNode result = JsonNodeFactory.instance.arrayNode();
-        for (JsonNode milestone : client.pages(milestones)) {
+        for (JsonNode milestone : client.pages(milestones, Duration.ofDays(1))) {
             String title = required(milestone, "title");
             URI issuesUri = client.endpoint("repos/" + repositoryPath + "/issues?milestone="
                     + encode(required(milestone, "number")) + "&state=closed&per_page=100");

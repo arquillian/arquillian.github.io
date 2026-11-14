@@ -4,18 +4,20 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Parses strict explicit-refresh configuration and resolves only named environment credentials without fetching sources. */
+    /** Parses strict refresh configuration and resolves named environment credentials without fetching sources. */
 public final class RefreshConfig {
     private final ObjectNode data;
     private final Path directory;
@@ -32,17 +34,25 @@ public final class RefreshConfig {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory()).enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
                 .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
         JsonNode parsed;
-        try { parsed = mapper.readTree(Files.readString(path)); }
-        catch (com.fasterxml.jackson.core.JsonProcessingException failure) { throw new IOException("Malformed refresh configuration"); }
+        try {
+            parsed = Files.notExists(path) && path.getFileName().toString().equals("refresh.yml")
+                    ? productionDefaults(path)
+                    : mapper.readTree(Files.readString(path));
+        }
+        catch (com.fasterxml.jackson.core.JsonProcessingException failure) {
+            throw new IOException("Malformed refresh configuration");
+        }
         if (!(parsed instanceof ObjectNode object)) throw new IOException("Refresh configuration must be an object");
-        keys(object, Set.of("catalog", "cache", "site_repository", "manual_identities", "github_mapping", "mappings", "github", "jira", "guides", "lanyrd", "gravatar", "community", "confluence"));
+        keys(object, Set.of("catalog", "cache", "site_repository", "manual_identities", "github_mapping",
+                "mappings", "github", "jira", "guides", "lanyrd", "gravatar", "community", "confluence"));
         for (String field : List.of("catalog", "cache", "site_repository")) CatalogAssembler.required(object, field);
         Map<String, String> tokens = new HashMap<>();
         for (String service : List.of("github", "jira", "lanyrd", "gravatar", "community", "confluence")) {
             if (!object.has(service)) continue;
             JsonNode options = object.path(service);
             Set<String> allowed = switch (service) {
-                case "github" -> Set.of("base_uri", "token_env", "organizations", "repositories", "users", "teams", "release_sources", "minimum_repositories");
+                case "github" -> Set.of("base_uri", "token_env", "organizations", "repositories", "users",
+                        "teams", "release_sources", "minimum_repositories");
                 case "jira" -> Set.of("base_uri", "token_env", "release_sources", "component_sources");
                 case "lanyrd" -> Set.of("enabled", "base_uri", "token_env", "query", "minimum");
                 case "confluence" -> Set.of("enabled", "base_uri", "token_env", "profiles");
@@ -50,7 +60,9 @@ public final class RefreshConfig {
             };
             keys(options, allowed);
             boolean optional = !List.of("github", "jira").contains(service);
-            if (options.has("enabled") && !options.path("enabled").isBoolean()) throw new IOException("Service enabled must be boolean");
+            if (options.has("enabled") && !options.path("enabled").isBoolean()) {
+                throw new IOException("Service enabled must be boolean");
+            }
             if (optional && !options.path("enabled").asBoolean()) {
                 if (options.has("token_env")) throw new IOException("Disabled service must not request credentials");
                 continue;
@@ -58,23 +70,33 @@ public final class RefreshConfig {
             String token = null;
             if (options.has("token_env")) {
                 String name = CatalogAssembler.required(options, "token_env");
-                if (!name.matches("[A-Za-z_][A-Za-z0-9_]*")) throw new IOException("Invalid token environment-variable name");
+                if (!name.matches("[A-Za-z_][A-Za-z0-9_]*")) {
+                    throw new IOException("Invalid token environment-variable name");
+                }
                 token = environment.get(name);
-                if (token == null || token.isBlank()) throw new IOException("Missing named token environment variable: " + name);
+                if (token == null || token.isBlank()) {
+                    throw new IOException("Missing named token environment variable: " + name);
+                }
                 tokens.put(service, token);
             }
             try { new DataHttpClient(URI.create(CatalogAssembler.required(options, "base_uri")), token); }
-            catch (IllegalArgumentException failure) { throw new IOException("Invalid service origin or token: " + service); }
+            catch (IllegalArgumentException failure) {
+                throw new IOException("Invalid service origin or token: " + service);
+            }
             if (service.equals("github")) {
                 strings(options, "organizations"); strings(options, "users");
-                objects(options, "repositories", Set.of("repository", "origin", "tracking_ref", "minimum_modules", "contributors"), List.of("repository"));
+                objects(options, "repositories", Set.of("repository", "origin", "tracking_ref", "minimum_modules",
+                        "contributors"), List.of("repository"));
                 objects(options, "teams", Set.of("id", "team"), List.of("id", "team"));
-                objects(options, "release_sources", Set.of("repository", "module_id", "prefix"), List.of("repository", "module_id"));
+                objects(options, "release_sources", Set.of("repository", "module_id", "prefix"),
+                        List.of("repository", "module_id"));
             } else if (service.equals("jira")) {
-                objects(options, "release_sources", Set.of("project", "module_id", "prefix"), List.of("project", "module_id"));
+                objects(options, "release_sources", Set.of("project", "module_id", "prefix"),
+                        List.of("project", "module_id"));
                 objects(options, "component_sources", Set.of("project", "components"), List.of("project"));
             } else if (service.equals("confluence")) {
-                objects(options, "profiles", Set.of("identity_id", "username", "profile_url"), List.of("identity_id", "username", "profile_url"));
+                objects(options, "profiles", Set.of("identity_id", "username", "profile_url"),
+                        List.of("identity_id", "username", "profile_url"));
             } else if (!service.equals("lanyrd")) strings(options, "identity_ids");
             if (service.equals("lanyrd")) CatalogAssembler.required(options, "query");
         }
@@ -86,8 +108,88 @@ public final class RefreshConfig {
         }
         if (object.has("mappings")) validateMappings(object.path("mappings"));
         RefreshConfig config = new RefreshConfig(object, path.getParent(), tokens);
-        if (config.cache().equals(config.siteRepository()) || config.cache().startsWith(config.siteRepository().resolve(".git"))) throw new IOException("Git cache must be dedicated and outside the source Git directory");
+        if (config.cache().equals(config.siteRepository())
+                || config.cache().startsWith(config.siteRepository().resolve(".git"))) {
+            throw new IOException("Git cache must be dedicated and outside the source Git directory");
+        }
         return config;
+    }
+
+    /** Builds cache-aware defaults from the legacy production pipeline without reading legacy credential files. */
+    private static ObjectNode productionDefaults(Path configuration) {
+        Path dataDirectory = configuration.getParent();
+        Path roqDirectory = dataDirectory.getParent();
+        Path siteRepository = roqDirectory.getParent();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode defaults = mapper.createObjectNode()
+                .put("catalog", roqDirectory.resolve("data/catalog.json").toString())
+                .put("cache", roqDirectory.resolve(".cache/refresh").toString())
+                .put("site_repository", siteRepository.toString());
+        ObjectNode github = defaults.putObject("github")
+                .put("base_uri", "https://api.github.com/")
+                .put("token_env", "SITE_GITHUB_TOKEN")
+                .put("minimum_repositories", 1);
+        github.putArray("organizations").add("arquillian");
+        github.putArray("users");
+        ArrayNode teams = github.putArray("teams");
+        team(teams, "146647", "speaker");
+        team(teams, "125938", "translator");
+        team(teams, "146643", "core");
+        ArrayNode releases = github.putArray("release_sources");
+        release(releases, "arquillian/arquillian-cube", "published:module:/modules/cube-extension/", "cube");
+        release(releases, "arquillian/arquillian-cube-q", "published:module:/modules/q-extension/", "q");
+        release(releases, "arquillian/arquillian-algeron", "published:module:/modules/algeron-extension/", "algeron");
+        release(releases, "arquillian/arquillian-container-chameleon",
+                "published:module:/modules/arquillian-container-chameleon-container-adapter/", "chameleon");
+        release(releases, "arquillian/arquillian-governor", "published:module:/modules/governor-extension/", "governor");
+        release(releases, "arquillian/arquillian-recorder", "published:module:/modules/recorder-extension/", "recorder");
+        release(releases, "arquillian/arquillian-universe-bom",
+                "published:module:/modules/arquillian-universe-bom-bom/", "bom");
+        release(releases, "arquillian/arquillian-extension-liferay",
+                "published:module:/modules/liferay-obsolete-extension/", "liferay");
+        release(releases, "arquillian/arquillian-container-wls",
+                "published:module:/modules/arquillian-wls-embedded-12.1-container-adapter/", "wls");
+        release(releases, "arquillian/arquillian-container-se",
+                "published:module:/modules/se-se-managed-container-adapter/", "se");
+        release(releases, "arquillian/smart-testing", "published:module:/modules/smart-testing-tool/", "testing");
+        release(releases, "arquillian/arquillian-extension-byteman",
+                "published:module:/modules/byteman-extension/", "byteman");
+        release(releases, "OpenLiberty/liberty-arquillian",
+                "published:module:/modules/arquillian-liberty-managed-container-adapter/", "liberty");
+        ObjectNode jira = defaults.putObject("jira").put("base_uri", "https://issues.jboss.org/");
+        ArrayNode jiraReleases = jira.putArray("release_sources");
+        jiraRelease(jiraReleases, "ARQ:12310885", "published:module:/modules/core-platform/", null);
+        jiraRelease(jiraReleases, "ARQGRA:12312222", "published:module:/modules/graphene-extension/", "graphene");
+        jiraRelease(jiraReleases, "SHRINKWRAP:12310884",
+                "published:module:/modules/shrinkwrap-shrinkwrap/", "shrinkwrap");
+        jiraRelease(jiraReleases, "SHRINKRES:12312120",
+                "published:module:/modules/resolver-shrinkwrap/", "resolver");
+        jiraRelease(jiraReleases, "SHRINKDESC:12311080",
+                "published:module:/modules/descriptors-shrinkwrap/", "descriptors");
+        defaults.putObject("guides").put("prefix", "guides").put("limit", 15).put("minimum", 1);
+        defaults.putObject("lanyrd").put("enabled", false);
+        defaults.putObject("gravatar").put("enabled", false);
+        defaults.putObject("community").put("enabled", false);
+        defaults.putObject("confluence").put("enabled", false);
+        defaults.putObject("mappings");
+        return defaults;
+    }
+
+    /** Adds one production GitHub team selector to the generated fallback. */
+    private static void team(ArrayNode teams, String id, String name) {
+        teams.addObject().put("id", id).put("team", name);
+    }
+
+    /** Adds one legacy release source while omitting a null prefix field. */
+    private static void release(ArrayNode sources, String repository, String moduleId, String prefix) {
+        ObjectNode source = sources.addObject().put("repository", repository).put("module_id", moduleId);
+        if (prefix != null) source.put("prefix", prefix);
+    }
+
+    /** Adds one legacy Jira release project while keeping the GitHub schema distinct. */
+    private static void jiraRelease(ArrayNode sources, String project, String moduleId, String prefix) {
+        ObjectNode source = sources.addObject().put("project", project).put("module_id", moduleId);
+        if (prefix != null) source.put("prefix", prefix);
     }
 
     /** Checks the public mapping seam without duplicating the domain assembler's renderability validation. */
@@ -132,7 +234,10 @@ public final class RefreshConfig {
 
     /** Creates one origin-protected collector client without resolving any additional environment values. */
     DataHttpClient client(String service) throws IOException {
-        try { return new DataHttpClient(URI.create(CatalogAssembler.required(data.path(service), "base_uri")), tokens.get(service)); }
+        try {
+            return new DataHttpClient(URI.create(CatalogAssembler.required(data.path(service), "base_uri")),
+                    tokens.get(service), Duration.ofSeconds(30), cache());
+        }
         catch (IllegalArgumentException failure) { throw new IOException("Invalid service origin: " + service); }
     }
 

@@ -13,9 +13,9 @@ cd roq
 ```
 
 The first build downloads Maven and Maven dependencies into the normal local
-cache. Rendering uses checked-in content and snapshots; it requires no external
-content-service credentials, content API requests, repository fetches, or
-separately installed Ruby, Pandoc, Python, or Node. The AsciiDoc renderer is an
+cache. Snapshot-only rendering requires no external content-service credentials,
+content API requests, repository fetches, or separately installed Ruby, Pandoc,
+Python, or Node. The AsciiDoc renderer is an
 embedded Maven dependency. [Web Bundler 3.0](https://docs.quarkiverse.io/quarkus-web-bundler/dev/index.html)
 uses Java bindings for Deno/esbuild and Maven web dependencies; it needs no
 manually installed Node runtime.
@@ -56,12 +56,21 @@ manual identity inputs to refresh. The root `images/`, `javascripts/`,
 `data/blogreleases.json`, and `data/blogarchives.json` from the catalog and
 native blog posts. Never edit those staging/index files or `target/` as source.
 
-## Explicit data refresh
+## Build-time data refresh
 
-Refresh runs separately from rendering. Create an operator-owned YAML file
-outside the checkout and a copy of `data/catalog.json` beside it. This complete,
-narrow example selects one existing repository; replace the absolute site path
-with this checkout's root. Relative paths resolve against the YAML file.
+The production build refreshes data before deriving pages. Create an
+operator-owned YAML file outside the checkout and a copy of `data/catalog.json`
+beside it. This complete, narrow example selects one existing repository; replace
+the absolute site path with this checkout's root. Relative paths resolve against
+the YAML file.
+
+If the default `data/refresh.yml` is absent, the build supplies an in-memory
+production fallback derived from the legacy pipeline: it uses
+`roq/data/catalog.json`, `roq/.cache/refresh`, the root repository, the legacy
+GitHub teams and release sources, the five Jira release projects, and guide
+history. It requires `SITE_GITHUB_TOKEN`; it never reads `.github-auth`. A
+present configuration file always takes precedence. Missing custom paths still
+fail rather than silently falling back.
 
 ```yaml
 catalog: ./catalog.copy.json
@@ -95,20 +104,23 @@ of configuration, command arguments and repository files. Raw-token options and
 URI credentials are rejected; legacy credential files are not read. Disabled
 optional services must omit `token_env` and neither fetch nor resolve secrets.
 
-Compile first, then run the exact CLI in a separate Maven invocation:
+Compile first, then validate the same refresh through the build hook:
 
 ```sh
 ./mvnw -B -ntp compile test-compile
-./mvnw -B -ntp exec:java \
-  -Dexec.mainClass=org.arquillian.site.refresh.RefreshCli \
-  -Dexec.args='--config /absolute/path/refresh.yml --dry-run'
+./mvnw -B -ntp -Dsite.refresh.skip=false \
+  -Dsite.refresh.config=/absolute/path/refresh.yml \
+  -DskipTests -Dquarkus.roq.generator.batch=true package quarkus:run
 ```
 
-The CLI accepts only `--config` and optional `--dry-run`. Keep compilation and
-`exec:java` separate: global `exec.args` also overrides the build's
-`generate-resources` executions. A dry run validates the complete staged result
-without changing the catalog; dedicated bare Git caches may be created or
-updated. To publish the configured snapshot after validation:
+The refresh hook runs in `generate-resources`, before generated pages and blog
+indexes. It accepts the same `--config` path and preserves the existing cache
+directory. A snapshot-only build leaves the hook skipped (the default used by
+tests). For a non-publishing validation, add `--dry-run` to the refresh CLI in a
+separate invocation; it validates the staged result without changing the
+catalog.
+
+To publish the configured snapshot without rendering, use the CLI explicitly:
 
 ```sh
 ./mvnw -B -ntp exec:java \
@@ -119,7 +131,7 @@ updated. To publish the configured snapshot after validation:
 Publication replaces only the configured catalog after all requested collectors
 and validation succeed. Start with the copied catalog, inspect its diff, and
 review changes before applying them to `data/catalog.json`. Run one refresh
-writer at a time. Rendering the site never invokes refresh.
+writer at a time. Qute rendering never invokes external services directly.
 
 This example is not an all-repository production configuration and has not been
 run against live services. Existing exact coordinates and canonical IDs bind

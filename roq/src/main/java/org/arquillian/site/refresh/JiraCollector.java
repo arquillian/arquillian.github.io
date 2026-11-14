@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
@@ -30,7 +31,7 @@ public final class JiraCollector {
     public ArrayNode releases(String projectKeyAndId, String prefix) throws IOException {
         String[] project = project(projectKeyAndId);
         URI uri = client.endpoint("rest/api/latest/project/" + encode(project[0]));
-        JsonNode versions = client.json(uri).path("versions");
+        JsonNode versions = client.json(uri, Duration.ofDays(1)).path("versions");
         if (!versions.isArray()) {
             throw new IOException("Missing Jira versions array");
         }

@@ -12,10 +12,16 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
@@ -33,30 +39,40 @@ public final class DataHttpClient {
     private final String token;
     private final Duration timeout;
     private final HttpClient client;
+    private final Path cacheDirectory;
 
     /** Uses a thirty-second timeout for an explicitly configured service and optional bearer token. */
     public DataHttpClient(URI baseUri, String token) {
-        this(baseUri, token, Duration.ofSeconds(30));
+        this(baseUri, token, Duration.ofSeconds(30), null);
     }
 
     /** Restricts insecure transport to loopback and rejects unbounded or invalid request settings. */
     public DataHttpClient(URI baseUri, String token, Duration timeout) {
+        this(baseUri, token, timeout, null);
+    }
+
+    /** Uses the legacy response cache while retaining the bounded request and credential rules. */
+    public DataHttpClient(URI baseUri, String token, Duration timeout, Path cacheDirectory) {
         if (baseUri == null || baseUri.getHost() == null || baseUri.getUserInfo() != null
                 || baseUri.getQuery() != null || baseUri.getFragment() != null
                 || !("https".equalsIgnoreCase(baseUri.getScheme()) || ("http".equalsIgnoreCase(baseUri.getScheme())
                 && Set.of("localhost", "127.0.0.1", "[::1]", "::1").contains(baseUri.getHost())))) {
             throw new IllegalArgumentException("Service base must use HTTPS or loopback HTTP without credentials");
         }
-        if (timeout == null || timeout.isNegative() || timeout.isZero() || timeout.compareTo(Duration.ofMinutes(2)) > 0) {
+        if (timeout == null || timeout.isNegative() || timeout.isZero()
+                || timeout.compareTo(Duration.ofMinutes(2)) > 0) {
             throw new IllegalArgumentException("Request timeout must be positive and at most two minutes");
         }
-        if (token != null && !token.isBlank() && token.strip().chars().anyMatch(character -> character < 33 || character > 126)) {
+        if (token != null && !token.isBlank()
+                && token.strip().chars().anyMatch(character -> character < 33 || character > 126)) {
             throw new IllegalArgumentException("Invalid bearer token");
         }
         this.base = URI.create(baseUri.toString().replaceAll("/+$", "") + "/");
         this.token = token == null || token.isBlank() ? null : token.strip();
         this.timeout = timeout;
-        this.client = HttpClient.newBuilder().connectTimeout(timeout).followRedirects(HttpClient.Redirect.NEVER).build();
+        this.client = HttpClient.newBuilder().connectTimeout(timeout)
+                .followRedirects(HttpClient.Redirect.NEVER).build();
+        this.cacheDirectory = cacheDirectory == null ? null : cacheDirectory.toAbsolutePath().normalize();
     }
 
     /** Resolves a service-relative path while retaining a configured deployment context path. */
@@ -73,14 +89,24 @@ public final class DataHttpClient {
         return parse(text(uri));
     }
 
+    /** Fetches JSON using an optional response freshness limit, matching legacy cache-expiry headers. */
+    public JsonNode json(URI uri, Duration cacheExpiry) throws IOException {
+        return parse(text(uri, cacheExpiry));
+    }
+
     /** Fetches at most two MiB of UTF-8 text from the configured origin and accepts successful statuses. */
     public String text(URI uri) throws IOException {
-        return new String(request(uri, ignored -> new BoundedBytes(), "application/json").body(), StandardCharsets.UTF_8);
+        return text(uri, null);
+    }
+
+    /** Fetches bounded UTF-8 text using an optional response freshness limit. */
+    public String text(URI uri, Duration cacheExpiry) throws IOException {
+        return new String(requestBytes(uri, "application/json", cacheExpiry).body(), StandardCharsets.UTF_8);
     }
 
     /** Fetches at most two MiB of image data using the same timed, authenticated origin restrictions as JSON. */
     public byte[] bytes(URI uri) throws IOException {
-        return request(uri, ignored -> new BoundedBytes(), "image/*").body();
+        return requestBytes(uri, "image/*", null).body();
     }
 
     /** Distinguishes an absent optional profile from an unavailable source without parsing error messages. */
@@ -99,6 +125,11 @@ public final class DataHttpClient {
 
     /** Collects bounded array pages through Link headers, refusing cycles, foreign origins and runaway pagination. */
     public ArrayNode pages(URI firstPage) throws IOException {
+        return pages(firstPage, null);
+    }
+
+    /** Collects bounded array pages using an optional response freshness limit. */
+    public ArrayNode pages(URI firstPage, Duration cacheExpiry) throws IOException {
         ArrayNode result = JsonNodeFactory.instance.arrayNode();
         Set<URI> visited = new HashSet<>();
         URI next = firstPage;
@@ -106,13 +137,13 @@ public final class DataHttpClient {
             if (visited.size() >= 1000 || !visited.add(next.normalize())) {
                 throw new IOException("Repeated or excessive pagination");
             }
-            HttpResponse<byte[]> response = request(next, ignored -> new BoundedBytes(), "application/json");
+            CachedResponse response = requestBytes(next, "application/json", cacheExpiry);
             JsonNode page = parse(new String(response.body(), StandardCharsets.UTF_8));
             if (!page.isArray()) {
                 throw new IOException("Expected a JSON array page");
             }
             result.addAll((ArrayNode) page);
-            next = nextPage(next, String.join(",", response.headers().allValues("Link")));
+            next = nextPage(next, response.link());
         }
         return result;
     }
@@ -150,29 +181,90 @@ public final class DataHttpClient {
     /** Validates discovered source links before either returning candidates or transmitting authenticated requests. */
     void validateOrigin(URI uri) throws IOException {
         if (uri == null || uri.getUserInfo() != null || uri.getFragment() != null
-                || !base.getScheme().equalsIgnoreCase(uri.getScheme()) || !base.getHost().equalsIgnoreCase(uri.getHost())
+                || !base.getScheme().equalsIgnoreCase(uri.getScheme())
+                || !base.getHost().equalsIgnoreCase(uri.getHost())
                 || effectivePort(base) != effectivePort(uri)) {
             throw new IOException("Request target is outside the configured service origin");
         }
     }
 
     /** Executes one timed request with redirects disabled, restoring interruption on cancellation. */
-    private <T> HttpResponse<T> request(URI uri, HttpResponse.BodyHandler<T> handler, String accept) throws IOException {
+    private CachedResponse requestBytes(URI uri, String accept, Duration cacheExpiry) throws IOException {
         validateOrigin(uri);
+        CachedResponse cached = readCache(uri, cacheExpiry);
+        if (cached != null) {
+            return cached;
+        }
         HttpRequest.Builder request = HttpRequest.newBuilder(uri).timeout(timeout).header("Accept", accept);
         if (token != null) {
             request.header("Authorization", "Bearer " + token);
         }
         try {
-            HttpResponse<T> response = client.send(request.GET().build(), handler);
+            HttpResponse<byte[]> response = client.send(request.GET().build(), ignored -> new BoundedBytes());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw new ServiceException(response.statusCode());
             }
-            return response;
+            CachedResponse result = new CachedResponse(response.body(),
+                    String.join(",", response.headers().allValues("Link")));
+            writeCache(uri, result);
+            return result;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new IOException("Refresh request interrupted", exception);
         }
+    }
+
+    /** Reads a successful cached response when it exists and has not exceeded the requested freshness window. */
+    private CachedResponse readCache(URI uri, Duration cacheExpiry) {
+        if (cacheDirectory == null) return null;
+        try {
+            Path body = cacheFile(uri, ".body");
+            Path headers = cacheFile(uri, ".headers");
+            if (!Files.isRegularFile(body) || !Files.isRegularFile(headers)) return null;
+            if (cacheExpiry != null && Files.getLastModifiedTime(body).toMillis()
+                    < System.currentTimeMillis() - cacheExpiry.toMillis()) return null;
+            byte[] bytes = Files.readAllBytes(body);
+            if (bytes.length > 2 * 1024 * 1024) return null;
+            return new CachedResponse(bytes, Files.readString(headers, StandardCharsets.UTF_8));
+        } catch (IOException failure) {
+            return null;
+        }
+    }
+
+    /** Writes only successful bounded response bodies and their pagination metadata. */
+    private void writeCache(URI uri, CachedResponse response) throws IOException {
+        if (cacheDirectory == null) return;
+        Files.createDirectories(cacheDirectory);
+        Path body = cacheFile(uri, ".body");
+        Path headers = cacheFile(uri, ".headers");
+        Path temporaryBody = Files.createTempFile(cacheDirectory, ".response-", ".body");
+        Path temporaryHeaders = Files.createTempFile(cacheDirectory, ".response-", ".headers");
+        try {
+            Files.write(temporaryBody, response.body());
+            Files.writeString(temporaryHeaders, response.link(), StandardCharsets.UTF_8);
+            Files.move(temporaryBody, body, StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
+            Files.move(temporaryHeaders, headers, StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(temporaryBody);
+            Files.deleteIfExists(temporaryHeaders);
+        }
+    }
+
+    /** Produces a stable cache filename without exposing URLs or credentials in the filesystem. */
+    private Path cacheFile(URI uri, String suffix) {
+        final byte[] digest;
+        try {
+            digest = MessageDigest.getInstance("SHA-256").digest(uri.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException failure) {
+            throw new IllegalStateException("SHA-256 is required by the JDK", failure);
+        }
+        return cacheDirectory.resolve(HexFormat.of().formatHex(digest) + suffix);
+    }
+
+    /** Retains the bounded body and Link metadata needed by paginated collectors. */
+    private record CachedResponse(byte[] body, String link) {
     }
 
     /** Cancels oversized bodies before forwarding their buffers to the JDK's byte-array accumulator. */
