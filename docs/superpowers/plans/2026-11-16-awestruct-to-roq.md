@@ -283,13 +283,16 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Move with `git mv`: `guides/**/*.textile` batches to `content/guides/**/*.adoc`
 - Move with `git mv`: remaining authored page-local `*.html.haml` files to `content/**/*.adoc`; keep shared layout and partial files as Qute templates
 - Modify: corresponding AsciiDoc files and route metadata
+- Defer to Phase 4 as generated/provider-backed inputs: `guides/generator.html.haml`, `invasion/team.html.haml`, `community/contributors.html.haml`, `community/_identity.html.haml`, and the retired `invasion/events.html.haml` provider route.
+- Retain the converted Qute pages for live external feeds: `invasion/buzz.html` and `invasion/videos.html`.
+- Retain `_templates/hack_idea_post.textile` only as an unused legacy authoring template; it is not a published route and is excluded from the migrated content inventory.
 
-- [ ] Convert no more than 50 source files per batch.
-- [ ] Configure the `guides` collection in `config/application.properties` with its page layout and future-content behavior so guide pages follow Roq’s collection model.
-- [ ] Preserve translated-guide routes and language metadata.
-- [ ] Convert every templated Haml/Textile page in these batches to AsciiDoc and Qute; copy only pages classified as pure HTML directly.
-- [ ] Preserve guide heading IDs, table of contents behavior, code blocks, admonitions, images, and chapter navigation.
-- [ ] Preserve community, invasion, API, verification, license, keybase, and root special-file routes.
+- [x] Convert no more than 50 source files per batch.
+- [x] Configure the `guides` collection in `config/application.properties` with its page layout and future-content behavior so guide pages follow Roq’s collection model.
+- [x] Preserve translated-guide routes and language metadata.
+- [x] Convert every static templated Haml/Textile page in these batches to AsciiDoc and Qute; leave only explicitly classified generated/provider-backed Haml inputs.
+- [x] Preserve guide heading IDs, table of contents behavior, code blocks, admonitions, images, and chapter navigation.
+- [x] Preserve community, invasion, API, verification, license, keybase, and root special-file routes.
 - [ ] Run `mvn compile test-compile` after every Java/build-file change.
 - [ ] Manually check one converted page from each content family.
 - [ ] Commit each batch after route and visual checks.
