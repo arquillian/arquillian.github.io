@@ -16,6 +16,8 @@
 - Provide a force-refresh option, standardized as `-Droq.refresh=true` and `ROQ_REFRESH=true`.
 - Use `git mv` for content, layout, template, and asset moves or renames before editing their contents.
 - Convert all authored Textile and Haml content to AsciiDoc.
+- Do not scrape or copy rendered production HTML and wrap it in a Roq template. Production HTML is only a visual comparison target.
+- Port every current templated page to AsciiDoc content plus Qute layouts/partials. Existing pure HTML pages may be copied directly into `content/`, then updated to use the new CSS, web assets, and Roq URL helpers.
 - Preserve production URL paths, redirects, asset paths, metadata, and responsive visual behavior.
 - If Roq changes a generated URL, configure the Roq aliases plugin to redirect the old production URL to the new URL; do not rely only on updating internal links.
 - Use Qute for presentation; do not put provider fetching or parsing logic in templates.
@@ -84,6 +86,7 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Read: `_layouts/*.html.haml`, `_partials/*.haml`
 
 - [ ] Enumerate every authored route and its source file.
+- [ ] Classify each authored page as templated Haml/Textile content or an existing pure HTML page; record the required migration treatment for each class.
 - [ ] Enumerate every generated route family and identify the Ruby extension that creates it.
 - [ ] Record redirects, pretty-URL transformations, feeds, `.ics` files, and special verification files.
 - [ ] Record the old production URL and proposed Roq URL for every route whose generated path may change, and mark each pair that requires a Roq alias.
@@ -210,6 +213,8 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Modify: `content/*.adoc` for the primary pages
 
 - [ ] Convert only the primary static routes in this batch; leave generated route families for Phase 4.
+- [ ] Port templated pages from their source content and layout files; do not use the production page HTML as migration input.
+- [ ] Copy existing pure HTML pages directly into `content/` with `git mv`, then update their CSS, asset, and Roq URL references without wrapping their rendered production output in a new template.
 - [ ] Preserve page-specific classes, headings, sidebars, guide navigation, code highlighting, and image dimensions.
 - [ ] Preserve front matter names needed by later generators: `layout`, `title`, `author`, `date`, `tags`, `guide_summary`, `guide_group`, and `guide_order`.
 - [ ] Add a Roq alias for every primary route whose generated URL differs from the production URL, and verify the old URL redirects to the new URL.
@@ -273,6 +278,7 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - [ ] Convert no more than 50 source files per batch.
 - [ ] Configure the `guides` collection in `config/application.properties` with its page layout and future-content behavior so guide pages follow Roq’s collection model.
 - [ ] Preserve translated-guide routes and language metadata.
+- [ ] Convert every templated Haml/Textile page in these batches to AsciiDoc and Qute; copy only pages classified as pure HTML directly.
 - [ ] Preserve guide heading IDs, table of contents behavior, code blocks, admonitions, images, and chapter navigation.
 - [ ] Preserve community, invasion, API, verification, license, keybase, and root special-file routes.
 - [ ] Run `mvn compile test-compile` after every Java/build-file change.
