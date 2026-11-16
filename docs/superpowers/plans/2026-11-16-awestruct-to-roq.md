@@ -443,15 +443,15 @@ The generated layouts pass route rendering with the curated fixture data. Depend
 - Delete after final verification: obsolete `_bin/` and `_scripts/` build/deploy files
 - Modify: `.travis.yml` if no longer used, or delete it after workflow replacement
 
-- [ ] Confirm no active Maven/Roq source references Ruby, Awestruct, Haml, Textile, Compass, or the old deployment scripts.
-- [ ] Remove Ruby and Compass dependencies only after the modern pinned Bootstrap/Sass migration is rendering the representative pages.
-- [ ] Remove only files proven obsolete by the route inventory and build search.
-- [ ] Use `git rm` for genuine deletions; retain moved history through the earlier `git mv` operations.
-- [ ] Run a clean checkout build with the old Ruby toolchain unavailable.
-- [ ] Run `mvn compile test-compile` and the complete generation command.
+- [x] Confirm no active Maven/Roq build source references Ruby, Awestruct, or the old deployment scripts; retain only explicitly deferred provider-backed Haml inputs and historical content text.
+- [x] Remove Ruby and Compass build dependencies after the pinned Bootstrap/Sass migration renders representative pages.
+- [x] Remove only files proven obsolete by the route inventory and build search; retain the unused authoring template and unresolved provider/static route inputs for their planned follow-up tasks.
+- [x] Use `git rm` for genuine deletions; retain moved history through the earlier `git mv` operations.
+- [x] Run a clean Maven package with the old Ruby toolchain unavailable.
+- [x] Run `mvn compile test-compile` and the complete Roq generation command.
 - [ ] Commit cleanup only after the generated output is verified.
 
-**Verification:** The website builds and deploys with Maven/Roq alone, and repository search finds no active Awestruct pipeline or Ruby build dependency.
+**Verification:** The website builds and deploys with Maven/Roq alone, and repository search finds no active Awestruct pipeline or Ruby build dependency. Deferred provider-backed Haml inputs and historical content references are tracked separately rather than silently deleted.
 
 ### Task 5.3: Perform the final manual production comparison
 
