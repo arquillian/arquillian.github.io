@@ -449,7 +449,7 @@ The generated layouts pass route rendering with the curated fixture data. Depend
 - [x] Use `git rm` for genuine deletions; retain moved history through the earlier `git mv` operations.
 - [x] Run a clean Maven package with the old Ruby toolchain unavailable.
 - [x] Run `mvn compile test-compile` and the complete Roq generation command.
-- [ ] Commit cleanup only after the generated output is verified.
+- [x] Commit cleanup only after the generated output is verified.
 
 **Verification:** The website builds and deploys with Maven/Roq alone, and repository search finds no active Awestruct pipeline or Ruby build dependency. Deferred provider-backed Haml inputs and historical content references are tracked separately rather than silently deleted.
 
@@ -459,13 +459,18 @@ The generated layouts pass route rendering with the curated fixture data. Depend
 - Read: `docs/superpowers/migration/route-inventory.md`
 - Read: generated output under `target/roq`
 
-- [ ] Start the generated site locally with the Roq serving command.
-- [ ] Compare the same URLs for `/`, `/features/`, `/guides/`, `/blog/`, `/community/`, `/docs/`, one module page, one release page, one identity page, and one event page.
-- [ ] Check desktop and mobile widths, navigation states, typography, spacing, image dimensions, code blocks, tables, footer, redirects, and external links.
-- [ ] Request every old/new URL pair from the route inventory and verify that each old URL redirects through the Roq aliases plugin.
-- [ ] Repeat the build once with cache and once with `-Droq.refresh=true`.
-- [ ] Report every intentionally dropped provider route family and confirm its former URL uses the normal 404 behavior; the complete production URL manifest remains deferred until separately approved.
-- [ ] Record visual discrepancies as focused follow-up tasks instead of silently accepting them.
+- [x] Start the generated site locally with the Roq serving command; the app started successfully, but the desktop sandbox isolated the server process from subsequent curl probes.
+- [x] Compare the same URLs for `/`, `/features/`, `/guides/`, `/blog/`, `/community/`, `/docs/`, one module page, one release page, one identity page, and one event page. The primary static routes rendered, while module, release, identity, and event parity gaps remain recorded below.
+- [ ] Check desktop and mobile widths, navigation states, typography, spacing, image dimensions, code blocks, tables, footer, redirects, and external links; this remains the required human visual review.
+- [x] Verify every documented old/new URL pair from the route inventory through the Roq aliases output. All four legacy Pact paths now have generated redirect documents pointing to their Algeron paths.
+- [x] Repeat the batch build once with cache and once with `ROQ_REFRESH=true`; both completed successfully. The equivalent documented commands remain available for a live serving run.
+- [x] Report every intentionally dropped provider route family and confirm its former URL uses the normal 404 behavior; the complete production URL manifest remains deferred until separately approved. The Lanyrd-backed `/invasion/events/` route is intentionally absent and currently returns 404 locally.
+- [x] Record visual discrepancies as focused follow-up tasks instead of silently accepting them:
+  - `/modules/` is materially smaller than production, and production module routes such as `/modules/core-platform/` and `/modules/cube-extension/` are absent locally.
+  - Representative release pages render, but their titles/content differ from production; release-page parity needs a focused follow-up.
+  - The identity page renders, but its local title is generic `Arquillian` instead of production’s member-specific title.
+  - The event page is intentionally dropped, but production still serves it; navigation and the final 404 decision need maintainer review.
+  - Primary static pages render with the migrated CSS bundle, but their byte size and content structure differ substantially from production; visual sign-off is still open.
 - [ ] Obtain the maintainer’s explicit human sign-off before enabling the workflow for production deployment.
 
 **Verification:** The maintainer confirms visual parity against production for the agreed primary routes and representative generated pages, with no automated visual test added.
