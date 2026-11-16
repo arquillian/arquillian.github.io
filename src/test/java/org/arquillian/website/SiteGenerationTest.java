@@ -19,7 +19,8 @@ class SiteGenerationTest {
     void homepageUsesAsciiDocAndPageLayout() throws Exception {
         assertTrue(Files.exists(Path.of("content/index.adoc")));
         assertTrue(Files.exists(Path.of("templates/layouts/page.html")));
-        String layout = Files.readString(Path.of("templates/layouts/page.html"));
-        assertTrue(layout.contains("<title>{=page.title}</title>"));
+        assertTrue(Files.exists(Path.of("templates/layouts/base.html")));
+        String layout = Files.readString(Path.of("templates/layouts/base.html"));
+        assertTrue(layout.contains("<title>{#if page.title??}"));
     }
 }
