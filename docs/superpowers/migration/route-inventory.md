@@ -83,14 +83,14 @@ The current generator ownership comes from `_ext/pipeline.rb` and the referenced
 | Output family | Current owner | Inputs/data | Roq port |
 | --- | --- | --- | --- |
 | Module index and module pages | `Awestruct::Extensions::Modules::Page`, `Awestruct::Extensions::Repository`, `_ext/arquillian.rb`, `modules/index.html.haml`, `modules/_module.html.haml` | GitHub repositories, cloned project POMs/Gradle files, tags, commits, contributors | Java repository/model services plus generated Roq pages and Qute module templates |
-| Identity index and identity pages | `Identities::Collect`, `Identities::Crawl`, `Identities::Page`, `Identities::Cache`, `community/_identity.html.haml` | GitHub teams/users, Gravatar, Confluence, JBoss Community, cached identity data | Java identity providers, normalized `data/` records or page extension models, Qute identity templates |
+| Identity index and identity pages | `Identities::Collect`, `Identities::Crawl`, `Identities::Page`, `Identities::Cache`, `community/_identity.html.haml` | GitHub teams/users, Gravatar, plus Confluence/JBoss Community crawlers whose viability must be probed | Java identity providers, gitignored generated data or deliberate `data/curated/` fallbacks, Qute identity templates; unavailable crawlers are retired rather than silently omitted |
 | Release blog pages | `Releases::Posts`, `_layouts/release.html.haml`, `_layouts/post.html.haml`, `_ext/arquillian.rb` | Repository tags/commits, existing release posts, JIRA/GitHub release notes, contributors | Java release model/page extension, `content/posts/`, Qute release/post layouts |
 | GitHub release notes | `_ext/github.rb` | GitHub milestones and closed issues for configured repositories | Cached Java GitHub client and typed release-note model |
 | JIRA release notes and leads | `_ext/jira.rb` | JIRA project/component/release endpoints and configured project IDs | Cached Java JIRA client and typed release-note/component models |
 | Blog collection | `Awestruct::Extensions::Posts`, `AutoTag`, `Paginator`, `Tagger`, `TagCloud`, `_layouts/blog.html.haml` | Converted posts and front matter | Roq `posts` collection, Qute layouts, pagination/tagging configuration |
 | Atom feed | `PatchedAtomizer` at `/blog/atom.xml` | Blog collection plus custom release/component fields | Roq feed/page extension preserving `/blog/atom.xml` |
 | Guide index | `Guide::Index.new('/guides', 15)`, `_ext/guide.rb`, `guides/index.html.haml` | Guide front matter and headings | Roq `guides` collection, Qute index/layout, preserved ordering and heading IDs |
-| Event pages and calendar | `Lanyrd::Search`, `Lanyrd::Export`, `_ext/lanyrd.rb`, `_ext/lanyrd.export.haml` | Lanyrd search/detail HTML, future sessions, speaker data | Isolated Java event provider and `.ics` page extension at `/invasion/events/arquillian.ics` |
+| Event pages and calendar | `Lanyrd::Search`, `Lanyrd::Export`, `_ext/lanyrd.rb`, `_ext/lanyrd.export.haml` | Historical Lanyrd search/detail HTML under `_backup/lanyrd/` | Lanyrd is retired: do not port a scraper or wrap the saved HTML; drop the event route family and let former URLs return normal 404s unless a separately approved replacement provider is found |
 | Redirects | `RedirectCreator`, `_ext/redirect.rb`, `_config/redirects.yml` | Four Pact-to-Algeron legacy mappings | Roq aliases plugin for every old/new URL pair, including any Roq-generated route changes |
 | Asset fingerprinting | `AssetFingerprinter`, `_ext/asset_fingerprinter.rb` | CSS/JS source mtime or Git SHA | Roq/web-bundler asset handling; preserve cache-busting behavior only if visual/deployment checks require it |
 | Interwiki links | `_ext/interwiki.rb` | `issue://`, `profile://`, and related link schemes | Qute/AsciiDoc link helper preserving issue and profile destinations |
@@ -114,13 +114,14 @@ Awestruct’s `Indexifier` currently turns page files into pretty URLs, with the
 
 ### Credentials and external services
 
-| Provider | Current credential/configuration | Current use |
-| --- | --- | --- |
-| GitHub | `.github-auth`; `github_organization: arquillian`; teams 146647, 125938, 146643 | Repositories, teams, releases, issues, contributors, avatars, repository metadata |
-| JBoss Confluence | `.jboss-auth` | Identity crawling against `https://docs.jboss.org/author` |
-| JIRA | Public/configured endpoint `https://issues.jboss.org`; project keys and IDs in `_ext/pipeline.rb` | Project data, component leads, release notes |
-| Lanyrd | No credential in current build | Event/session search and `.ics` export |
-| Maven/JBoss repositories | `_bin/settings-jboss-community.xml` | Artifact/POM/Javadoc metadata and published artifact links |
+| Provider | Current credential/configuration | Current use | Migration lifecycle |
+| --- | --- | --- | --- |
+| GitHub | `.github-auth`; `github_organization: arquillian`; teams 146647, 125938, 146643 | Repositories, teams, releases, issues, contributors, avatars, repository metadata | Probe and retain as `live` if reachable; otherwise record `retired` and drop dependent routes |
+| JBoss Confluence | `.jboss-auth` | Identity crawling against `https://docs.jboss.org/author` | Probe before porting; unavailable means `retired`, not a scraper or production-page fixture |
+| JBoss Community | No separate current credential listed | Identity enrichment and historical community links | Probe before porting; unavailable means `retired` |
+| JIRA | Public/configured endpoint `https://issues.jboss.org`; project keys and IDs in `_ext/pipeline.rb` | Project data, component leads, release notes | Probe before porting; retain only if reachable and record the exact endpoint decision |
+| Lanyrd | No credential in current build | Event/session search and `.ics` export | `retired`; saved HTML is historical evidence only |
+| Maven/JBoss repositories | `_bin/settings-jboss-community.xml` | Artifact/POM/Javadoc metadata and published artifact links | Probe each required endpoint; retain only live endpoints |
 
 No credentials are committed. The Roq build must read credentials from GitHub Actions secrets or local ignored files.
 
@@ -132,7 +133,7 @@ No credentials are committed. The Roq build must read credentials from GitHub Ac
 | Identity cache | `_tmp/datacache/identities.yml` | Normalize into typed Java data/cache records |
 | GitHub REST cache | `_tmp/restcache/github/` | Preserve cache keys and add freshness/conditional-request behavior |
 | JIRA cache | `_tmp/jira/` and documented `_tmp/jira/jira-ARQ.json` | Preserve provider-specific cache invalidation and add force-refresh |
-| Lanyrd HTML cache | `_tmp/lanyrd/` | Preserve cached search/detail inputs; isolate provider failure |
+| Lanyrd HTML cache | `_tmp/lanyrd/` and `_backup/lanyrd/` | Historical evidence only; do not use as a runtime provider fallback or wrap it in Roq pages |
 | Repository clones | `/tmp/arqrepos` from `_config/site.yml`, otherwise `_tmp/repos/` | Keep clones outside authored content and make refresh behavior explicit |
 | Ruby gems | `.gems/` and CI `$HOME/cache/.gems` | Remove after Maven/Roq workflow is verified |
 
