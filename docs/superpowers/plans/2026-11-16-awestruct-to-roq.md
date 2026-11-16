@@ -22,7 +22,7 @@
 - New Java types and methods require Javadoc describing what they do and why.
 - Run `mvn compile test-compile` after every Java or Maven build-file phase; fix every resulting error before advancing.
 - Visual validation is manual and ad hoc against the same production URLs; do not add screenshot assertions or visual unit tests.
-- Each implementation phase must touch no more than five files per batch; use parallel subagents for independent batches exceeding five files.
+- Each implementation phase may touch no more than 50 files per batch; use parallel subagents for independent work that exceeds 50 files or has no shared-state dependency.
 - Do not commit automatically; each completed task must leave a suggested commit boundary for the human maintainer.
 
 ## Repository facts and migration map
@@ -252,7 +252,7 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Modify: `templates/layouts/post.html`
 - Modify: `templates/partials/post.html`
 
-- [ ] Convert no more than five content files per batch.
+- [ ] Convert no more than 50 content files per batch.
 - [ ] Configure the default `posts` collection in `config/application.properties` and preserve each existing `/blog/` route through front matter or a Roq alias.
 - [ ] Preserve dates, titles, authors, tags, release metadata, image paths, links, code blocks, and comments behavior.
 - [ ] Use the existing post fixture test after each batch.
@@ -270,7 +270,7 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Move with `git mv`: remaining authored page-local `*.html.haml` files to `content/**/*.adoc`; keep shared layout and partial files as Qute templates
 - Modify: corresponding AsciiDoc files and route metadata
 
-- [ ] Convert no more than five source files per batch.
+- [ ] Convert no more than 50 source files per batch.
 - [ ] Configure the `guides` collection in `config/application.properties` with its page layout and future-content behavior so guide pages follow Roq’s collection model.
 - [ ] Preserve translated-guide routes and language metadata.
 - [ ] Preserve guide heading IDs, table of contents behavior, code blocks, admonitions, images, and chapter navigation.
