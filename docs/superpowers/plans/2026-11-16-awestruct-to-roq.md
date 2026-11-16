@@ -418,19 +418,19 @@ The generated layouts pass route rendering with the curated fixture data. Depend
 
 **Files:**
 - Modify: `README.adoc`
-- Modify: `Dockerfile` or remove it if the workflow fully replaces the container contract
+- Remove: `Dockerfile` because the Roq GitHub Action replaces the container contract
 - Modify: `.gitignore`
 - Modify: `.github/workflows/deploy.yml`
 
-- [ ] Document JDK, Maven, local Roq dev mode, batch generation, cache directory, credentials, and force-refresh usage.
-- [ ] Document the live-fetch default and cache-staleness behavior.
-- [ ] Document live, offline, and reduced-preview modes: fork pull requests use fixture-only reduced preview without secrets or network access.
-- [ ] Document that stale cached data is used with a visible warning when permitted, while a live provider with no usable cache fails with its provider and cache key.
-- [ ] Document the distinction between gitignored generated-data directories and committed `data/curated/` fallback records.
-- [ ] Document GitHub Action secrets and manual force-refresh workflow dispatch.
-- [ ] Remove instructions for Ruby, Bundler, Awestruct, JRuby, and obsolete Docker commands.
-- [ ] Run `mvn compile test-compile`.
-- [ ] Commit documentation and workflow cleanup separately.
+- [x] Document JDK, Maven, local Roq dev mode, batch generation, cache directory, credentials, and force-refresh usage.
+- [x] Document the live-fetch default and cache-staleness behavior.
+- [x] Document live, offline, and reduced-preview modes: pull requests use reduced preview without provider secrets.
+- [x] Document that stale cached data is used with a visible warning containing the provider URL and cache key when permitted, while a live provider with no usable cache fails with the same identifying details.
+- [x] Document the distinction between gitignored generated-data directories and committed `data/curated/` fallback records.
+- [x] Document GitHub Action secrets and manual force-refresh workflow dispatch.
+- [x] Remove instructions for Ruby, Bundler, Awestruct, JRuby, and obsolete Docker commands from the contributor documentation.
+- [x] Run `mvn compile test-compile`.
+- [x] Commit documentation and workflow cleanup separately.
 
 **Verification:** A new contributor can clone the repository, configure credentials, run the Maven build, preview the site, and trigger a forced-refresh deployment without reading historical Awestruct instructions.
 
