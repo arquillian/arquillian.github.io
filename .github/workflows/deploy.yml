@@ -1,0 +1,63 @@
+name: Roq Site Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_refresh:
+        description: Bypass provider caches for this build
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    env:
+      ROQ_REFRESH: ${{ inputs.force_refresh || 'false' }}
+      GITHUB_AUTH: ${{ secrets.ARQUILLIAN_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      JBOSS_AUTH: ${{ secrets.JBOSS_AUTH }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Restore Roq provider cache
+        uses: actions/cache@v5
+        with:
+          path: .roq-cache
+          key: roq-provider-cache-${{ runner.os }}-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            roq-provider-cache-${{ runner.os }}-${{ github.ref_name }}-
+            roq-provider-cache-${{ runner.os }}-
+
+      - name: Generate Roq site
+        uses: quarkiverse/quarkus-roq@v1.1
+        with:
+          java-version: '27'
+          maven-executable: mvn
+          maven-build-args: -DskipTests
+          github-pages: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
