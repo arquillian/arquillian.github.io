@@ -247,12 +247,12 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Modify: `src/test/java/org/arquillian/website/FrontMatterCompatibilityTest.java`
 - Read: `README.adoc` content-convention sections
 
-- [ ] Define the exact AsciiDoc attributes for titles, dates, authors, tags, layouts, summaries, guide groups, guide order, translations, and release metadata.
-- [ ] Define filename-to-route rules for blog posts, guides, translations, and release pages.
-- [ ] Define the alias entry format for any old production URL that differs from the Roq-generated URL.
-- [ ] Define how Textile custom tags, interwiki links, code blocks, notes, warnings, and image references translate to AsciiDoc.
-- [ ] Add fixture-based tests for one blog post, one guide, one translated guide, and one release note.
-- [ ] Run `mvn compile test-compile`.
+- [x] Define the exact AsciiDoc attributes for titles, dates, authors, tags, layouts, summaries, guide groups, guide order, translations, and release metadata.
+- [x] Define filename-to-route rules for blog posts, guides, translations, and release pages.
+- [x] Define the alias entry format for any old production URL that differs from the Roq-generated URL.
+- [x] Define how Textile custom tags, interwiki links, code blocks, notes, warnings, and image references translate to AsciiDoc.
+- [x] Add fixture-based tests for one blog post, one guide, one translated guide, and one release note.
+- [x] Run `mvn compile test-compile`.
 - [ ] Commit the contract and fixtures before converting the full corpus.
 
 **Verification:** A contributor can create a new AsciiDoc blog post or guide using the documented attributes, and the compatibility tests reject missing or malformed required metadata.
