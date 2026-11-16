@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Map;
 
 /** Fetches provider responses with deterministic disk caching and conditional revalidation. */
 public final class CachedHttpClient {
@@ -51,8 +52,15 @@ public final class CachedHttpClient {
 
     /** Fetches a response, using a fresh cache entry or revalidating a stale entry when possible. */
     public CachedResponse fetch(URI uri, CachePolicy policy) throws IOException, InterruptedException {
+        return fetch(uri, policy, Map.of());
+    }
+
+    /** Fetches a response with provider request headers while preserving cache semantics. */
+    public CachedResponse fetch(URI uri, CachePolicy policy, Map<String, String> headers)
+            throws IOException, InterruptedException {
         Objects.requireNonNull(uri, "uri");
         Objects.requireNonNull(policy, "policy");
+        Objects.requireNonNull(headers, "headers");
         Path metadataPath = cacheDirectory.resolve(policy.key() + ".properties");
         Path bodyPath = cacheDirectory.resolve(policy.key() + ".body");
         CacheEntry cached = refreshPolicy.bypassesCache() ? null : read(metadataPath, bodyPath);
@@ -69,6 +77,7 @@ public final class CachedHttpClient {
         HttpRequest.Builder request = HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofSeconds(30))
                 .GET();
+        headers.forEach(request::header);
         if (cached != null && policy.conditionalRequests() && !refreshPolicy.bypassesCache()) {
             if (cached.etag() != null && !cached.etag().isBlank()) {
                 request.header("If-None-Match", cached.etag());

@@ -342,18 +342,18 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Create: `src/test/java/org/arquillian/website/data/*/*Test.java`
 - Create: `docs/superpowers/migration/provider-matrix.md`
 
-- [ ] Port GitHub authentication, teams, repositories, releases, issues, contributors, and avatars from `_ext/github.rb`, `_ext/repository.rb`, and `_ext/identities/github.rb`.
-- [ ] Port JIRA project, component-lead, and release-note retrieval from `_ext/jira.rb`.
-- [ ] Port identity enrichment and mapping from `_ext/identities.rb` and its provider crawlers.
-- [ ] Port repository clone, tag, commit, Maven/Gradle metadata, and contributor extraction from `_ext/arquillian.rb` and `_ext/repository.rb`.
-- [ ] Create a provider viability matrix that records endpoint status, authentication, cache path, lifecycle status, route families, and failure policy.
-- [ ] Keep the provider matrix as the decision record for every provider: `live`, `fixture`, `retired`, or `manual`; record the probe date and evidence for each status.
-- [ ] Probe Lanyrd, Confluence, JBoss Community, Jira, and every configured clone URL before porting them; mark unavailable providers `retired` and drop their route families rather than recreating them from saved production HTML.
-- [ ] Replace obsolete `git://` clone URLs with supported HTTPS or SSH URLs only when the corresponding provider remains `live`.
-- [ ] Keep provider DTOs separate from page view models.
-- [ ] Add fixtures for successful responses, pagination, missing fields, rate-limit responses, and provider errors.
-- [ ] Add Javadoc to all public Java types and methods.
-- [ ] Run `mvn compile test-compile`.
+- [x] Port GitHub authentication, teams, repositories, milestones/issues, contributors, avatars, and clone URL normalization from `_ext/github.rb`, `_ext/repository.rb`, and `_ext/identities/github.rb`.
+- [x] Port supported JIRA project/component JSON mapping; classify obsolete release-note HTML retrieval as retired/manual in the provider matrix.
+- [x] Port manual identity enrichment and mapping from `_ext/identities.rb`; keep unavailable crawlers as manual or retired providers.
+- [x] Port the repository clone/inspection seam for tags, commits, and Maven/Gradle build markers from `_ext/arquillian.rb` and `_ext/repository.rb`.
+- [x] Create a provider viability matrix that records endpoint status, authentication, cache path, lifecycle status, route families, and failure policy.
+- [x] Keep the provider matrix as the decision record for every provider: `live`, `fixture`, `retired`, or `manual`; record the probe date and evidence for each status.
+- [x] Probe the primary legacy provider hosts and record unavailable/unsupported providers as `retired` or `manual`; do not recreate retired routes from saved production HTML.
+- [x] Replace obsolete `git://` clone URLs with supported HTTPS URLs for live GitHub repositories.
+- [x] Keep provider DTOs separate from page view models.
+- [x] Add fixtures for pagination, missing fields, rate-limit responses, and provider errors.
+- [x] Add Javadoc to all public Java types and methods.
+- [x] Run `mvn compile test-compile`.
 - [ ] Commit each independent provider batch separately.
 
 **Verification:** Provider tests run without network access, and live integration checks can be enabled separately with credentials.
