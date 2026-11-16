@@ -39,6 +39,24 @@ The main dynamic responsibilities are:
 
 The production visual oracle is the matching URL on `https://arquillian.org`, beginning with `/`, `/features/`, and `/guides/`, followed by representative blog, module, community, and event pages.
 
+## Roq default directory contract
+
+Use Roq’s documented root-level directory structure rather than creating a custom `src/main/resources` site layout:
+
+```text
+content/                         # AsciiDoc pages and collections
+data/                            # normalized JSON/YAML data for @DataMapping
+public/                          # unprocessed images, fonts, favicon, and other static files
+web/                             # CSS and JavaScript sources handled by the web bundler
+templates/                       # Qute layouts and partials
+config/application.properties   # Roq and Quarkus site configuration
+pom.xml                          # Maven build
+src/main/java/                   # Java providers and Roq extensions
+src/test/java/                   # unit and generation tests
+```
+
+The migration may use `src/main/resources/` for Java-owned resources only when a Roq extension requires it; authored site content, templates, data, and web assets remain in the root-level directories above.
+
 ---
 
 ## Phase 0: Preflight and route inventory
@@ -93,7 +111,7 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 
 **Files:**
 - Create: `pom.xml`
-- Create: `src/main/resources/application.properties`
+- Create: `config/application.properties`
 - Create: `src/main/java/org/arquillian/website/SiteConfiguration.java`
 - Create: `src/test/java/org/arquillian/website/SiteConfigurationTest.java`
 
@@ -103,7 +121,7 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 
 - [ ] Add the Roq and Quarkus Maven dependencies at mutually compatible pinned versions.
 - [ ] Add the Roq aliases plugin and configure it as the single mechanism for redirects caused by Roq URL changes.
-- [ ] Configure the site directory, output generation mode, AsciiDoc support, Qute alternate expression syntax, and site URL.
+- [ ] Keep Roq’s root-level `content`, `data`, `public`, `web`, and `templates` defaults; use `config/application.properties` only for site settings, collection definitions, output generation mode, AsciiDoc support, Qute alternate expression syntax, and site URL.
 - [ ] Implement `SiteConfiguration` with Javadoc and a small test covering default and forced-refresh values.
 - [ ] Run `mvn compile test-compile` and fix all compile errors.
 - [ ] Commit only the Maven/Roq skeleton and its configuration test.
@@ -113,12 +131,12 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 ### Task 1.2: Add the first generated page
 
 **Files:**
-- Create: `src/main/resources/templates/index.html`
-- Create: `src/main/resources/content/index.adoc`
-- Modify: `src/main/resources/application.properties`
+- Create: `content/index.adoc`
+- Create: `templates/layouts/page.html`
+- Modify: `config/application.properties`
 - Create: `src/test/java/org/arquillian/website/SiteGenerationTest.java`
 
-- [ ] Add one Qute layout and one AsciiDoc page that render through Roq.
+- [ ] Add the homepage at `content/index.adoc` and render it through `templates/layouts/page.html`.
 - [ ] Configure output to be generated under `target/roq`.
 - [ ] Add a generation test that asserts the output file exists and contains the expected page title.
 - [ ] Run `mvn compile test-compile`.
@@ -151,9 +169,12 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 ### Task 2.1: Move presentation assets with Git history
 
 **Files:**
-- Move with `git mv`: `_layouts/` to the chosen Qute template directory
-- Move with `git mv`: `_partials/` to the chosen Qute partial directory
-- Move with `git mv`: `stylesheets/`, `javascripts/`, and `images/` to the Roq resource locations
+- Move with `git mv`: `_layouts/` to `templates/layouts/`
+- Move with `git mv`: `_partials/` to `templates/partials/`
+- Move with `git mv`: `stylesheets/` to `web/`
+- Move with `git mv`: `javascripts/` to `web/`
+- Move with `git mv`: `images/` to `public/images/`
+- Move with `git mv`: static root files such as `favicon.ico`, `CNAME`, and `.nojekyll` to `public/` when the Roq GitHub Action requires them there.
 
 - [ ] Perform each source move with `git mv` before changing file contents.
 - [ ] Preserve relative asset paths until the Qute shell is visually verified.
@@ -165,10 +186,10 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 ### Task 2.2: Convert the base and default layouts to Qute
 
 **Files:**
-- Modify: `src/main/resources/templates/layouts/base.html`
-- Modify: `src/main/resources/templates/layouts/default.html`
-- Modify: `src/main/resources/templates/partials/navigation.html`
-- Modify: `src/main/resources/templates/partials/footer.html`
+- Modify: `templates/layouts/base.html`
+- Modify: `templates/layouts/page.html`
+- Modify: `templates/partials/navigation.html`
+- Modify: `templates/partials/footer.html`
 - Create: `src/test/java/org/arquillian/website/TemplateRenderingTest.java`
 
 - [ ] Port title, description, author, canonical URL, stylesheet, script, body-class, navigation, footer, analytics, and social-link behavior.
@@ -184,9 +205,9 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 ### Task 2.3: Convert section layouts and static primary pages
 
 **Files:**
-- Modify: Qute layouts for blog, guide, identity, module, release, and invasion pages
-- Move with `git mv`: `index.html.haml`, `features/index.html.haml`, `docs/index.html.haml`, `community/index.html.haml`, and `404.html.haml` into AsciiDoc-backed Roq page locations
-- Modify: `src/main/resources/content/*.adoc` for the primary pages
+- Modify: Qute layouts under `templates/layouts/` for blog, guide, identity, module, release, and invasion pages
+- Move with `git mv`: `index.html.haml`, `features/index.html.haml`, `docs/index.html.haml`, `community/index.html.haml`, and `404.html.haml` into `content/` AsciiDoc-backed Roq page locations
+- Modify: `content/*.adoc` for the primary pages
 
 - [ ] Convert only the primary static routes in this batch; leave generated route families for Phase 4.
 - [ ] Preserve page-specific classes, headings, sidebars, guide navigation, code highlighting, and image dimensions.
@@ -225,13 +246,14 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 ### Task 3.2: Convert blog content in bounded batches
 
 **Files:**
-- Move with `git mv`: each selected `blog/*.textile` batch to its `.adoc` destination
+- Move with `git mv`: each selected `blog/*.textile` batch to `content/posts/*.adoc`
 - Modify: each moved AsciiDoc file
-- Modify: `src/main/resources/templates/layouts/blog.html`
-- Modify: `src/main/resources/templates/layouts/post.html`
-- Modify: `src/main/resources/templates/partials/post.html`
+- Modify: `templates/layouts/blog.html`
+- Modify: `templates/layouts/post.html`
+- Modify: `templates/partials/post.html`
 
 - [ ] Convert no more than five content files per batch.
+- [ ] Configure the default `posts` collection in `config/application.properties` and preserve each existing `/blog/` route through front matter or a Roq alias.
 - [ ] Preserve dates, titles, authors, tags, release metadata, image paths, links, code blocks, and comments behavior.
 - [ ] Use the existing post fixture test after each batch.
 - [ ] Run `mvn compile test-compile` after each Java or template change.
@@ -244,11 +266,12 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 ### Task 3.3: Convert guide, feature, community, invasion, and static content batches
 
 **Files:**
-- Move with `git mv`: `guides/**/*.textile` batches to `.adoc`
-- Move with `git mv`: remaining authored page-local `*.html.haml` files to `.adoc`; keep shared layout and partial files as Qute templates
+- Move with `git mv`: `guides/**/*.textile` batches to `content/guides/**/*.adoc`
+- Move with `git mv`: remaining authored page-local `*.html.haml` files to `content/**/*.adoc`; keep shared layout and partial files as Qute templates
 - Modify: corresponding AsciiDoc files and route metadata
 
 - [ ] Convert no more than five source files per batch.
+- [ ] Configure the `guides` collection in `config/application.properties` with its page layout and future-content behavior so guide pages follow Roq’s collection model.
 - [ ] Preserve translated-guide routes and language metadata.
 - [ ] Preserve guide heading IDs, table of contents behavior, code blocks, admonitions, images, and chapter navigation.
 - [ ] Preserve community, invasion, API, verification, license, keybase, and root special-file routes.
@@ -316,7 +339,7 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 - Create: `src/main/java/org/arquillian/website/roq/GeneratedDataExtension.java`
 - Create: `src/main/java/org/arquillian/website/roq/GeneratedPageExtension.java`
 - Create: `src/main/java/org/arquillian/website/data/model/*`
-- Create: `src/main/resources/data/*` or the generated-data staging directory selected by the Roq lifecycle spike
+- Create: `data/*` or the generated-data staging directory selected by the Roq lifecycle spike
 - Create: `src/test/java/org/arquillian/website/roq/GeneratedPageExtensionTest.java`
 
 **Interfaces:**
@@ -340,11 +363,11 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 ### Task 4.4: Complete generated-page templates
 
 **Files:**
-- Modify: `src/main/resources/templates/layouts/module.html`
-- Modify: `src/main/resources/templates/layouts/release.html`
-- Modify: `src/main/resources/templates/layouts/identity.html`
-- Modify: `src/main/resources/templates/layouts/invasion.html`
-- Modify: generated-page partials
+- Modify: `templates/layouts/module.html`
+- Modify: `templates/layouts/release.html`
+- Modify: `templates/layouts/identity.html`
+- Modify: `templates/layouts/invasion.html`
+- Modify: generated-page partials under `templates/partials/`
 
 - [ ] Convert the remaining Haml generated-page layouts to Qute.
 - [ ] Preserve release notes, dependency tables, contributor lists, avatars, badges, dates, external links, and guide/module cross-links.
