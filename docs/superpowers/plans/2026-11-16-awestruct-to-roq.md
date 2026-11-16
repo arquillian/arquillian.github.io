@@ -17,6 +17,7 @@
 - Use `git mv` for content, layout, template, and asset moves or renames before editing their contents.
 - Convert all authored Textile and Haml content to AsciiDoc.
 - Preserve production URL paths, redirects, asset paths, metadata, and responsive visual behavior.
+- If Roq changes a generated URL, configure the Roq aliases plugin to redirect the old production URL to the new URL; do not rely only on updating internal links.
 - Use Qute for presentation; do not put provider fetching or parsing logic in templates.
 - New Java types and methods require Javadoc describing what they do and why.
 - Run `mvn compile test-compile` after every Java or Maven build-file phase; fix every resulting error before advancing.
@@ -67,6 +68,7 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 - [ ] Enumerate every authored route and its source file.
 - [ ] Enumerate every generated route family and identify the Ruby extension that creates it.
 - [ ] Record redirects, pretty-URL transformations, feeds, `.ics` files, and special verification files.
+- [ ] Record the old production URL and proposed Roq URL for every route whose generated path may change, and mark each pair that requires a Roq alias.
 - [ ] Record every CSS, JavaScript, image, font, and favicon path referenced by layouts or pages.
 - [ ] Mark the first manual visual-check set as `/`, `/features/`, `/guides/`, `/blog/`, and one representative page from `/community/`.
 
@@ -100,6 +102,7 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 - The configuration reads `ROQ_REFRESH` and `roq.refresh`, with the system property taking precedence.
 
 - [ ] Add the Roq and Quarkus Maven dependencies at mutually compatible pinned versions.
+- [ ] Add the Roq aliases plugin and configure it as the single mechanism for redirects caused by Roq URL changes.
 - [ ] Configure the site directory, output generation mode, AsciiDoc support, Qute alternate expression syntax, and site URL.
 - [ ] Implement `SiteConfiguration` with Javadoc and a small test covering default and forced-refresh values.
 - [ ] Run `mvn compile test-compile` and fix all compile errors.
@@ -188,6 +191,7 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 - [ ] Convert only the primary static routes in this batch; leave generated route families for Phase 4.
 - [ ] Preserve page-specific classes, headings, sidebars, guide navigation, code highlighting, and image dimensions.
 - [ ] Preserve front matter names needed by later generators: `layout`, `title`, `author`, `date`, `tags`, `guide_summary`, `guide_group`, and `guide_order`.
+- [ ] Add a Roq alias for every primary route whose generated URL differs from the production URL, and verify the old URL redirects to the new URL.
 - [ ] Use `git mv` before converting each page.
 - [ ] Run `mvn compile test-compile`.
 - [ ] Manually compare `/features/`, `/guides/`, `/docs/`, `/community/`, and `/404.html` with production.
@@ -210,6 +214,7 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 
 - [ ] Define the exact AsciiDoc attributes for titles, dates, authors, tags, layouts, summaries, guide groups, guide order, translations, and release metadata.
 - [ ] Define filename-to-route rules for blog posts, guides, translations, and release pages.
+- [ ] Define the alias entry format for any old production URL that differs from the Roq-generated URL.
 - [ ] Define how Textile custom tags, interwiki links, code blocks, notes, warnings, and image references translate to AsciiDoc.
 - [ ] Add fixture-based tests for one blog post, one guide, one translated guide, and one release note.
 - [ ] Run `mvn compile test-compile`.
@@ -324,6 +329,7 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 - [ ] Use a page extension with typed models when route creation or lifecycle timing requires it.
 - [ ] Port generated modules, identities, releases, release posts, and event `.ics` output.
 - [ ] Preserve indexification, pretty URLs, pagination, tag pages, Atom output, and redirects.
+- [ ] Register a Roq alias for every generated route whose Roq URL differs from its production URL, including old release, module, identity, and feed paths.
 - [ ] Port Lanyrd parsing into an isolated provider with explicit failure behavior; do not let unavailable events prevent unrelated primary pages from rendering unless the route requires event data.
 - [ ] Add tests for route names, page metadata, generated filenames, and `.ics` output.
 - [ ] Run `mvn compile test-compile`.
@@ -399,6 +405,7 @@ The production visual oracle is the matching URL on `https://arquillian.org`, be
 - [ ] Start the generated site locally with the Roq serving command.
 - [ ] Compare the same URLs for `/`, `/features/`, `/guides/`, `/blog/`, `/community/`, `/docs/`, one module page, one release page, one identity page, and one event page.
 - [ ] Check desktop and mobile widths, navigation states, typography, spacing, image dimensions, code blocks, tables, footer, redirects, and external links.
+- [ ] Request every old/new URL pair from the route inventory and verify that each old URL redirects through the Roq aliases plugin.
 - [ ] Repeat the build once with cache and once with `-Droq.refresh=true`.
 - [ ] Record visual discrepancies as focused follow-up tasks instead of silently accepting them.
 - [ ] Obtain the maintainer’s explicit human sign-off before enabling the workflow for production deployment.
