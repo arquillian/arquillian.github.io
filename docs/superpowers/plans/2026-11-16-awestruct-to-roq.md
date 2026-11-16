@@ -319,16 +319,16 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - `CachePolicy` contains the cache key, maximum age, and whether conditional requests are supported.
 - `RefreshPolicy` resolves normal, stale, and forced-refresh behavior from `roq.refresh`/`ROQ_REFRESH`.
 
-- [ ] Implement cache reads before network calls unless force-refresh is enabled.
-- [ ] Define live, offline, and reduced-preview provider modes; offline mode must perform no network calls and must not require credentials.
-- [ ] Keep all generated cache and normalized-data paths under gitignored directories, and add a build check that rejects generated provider files under tracked `data/` paths.
-- [ ] Store response body, fetched time, ETag, Last-Modified, status, and content type in a stable cache format.
-- [ ] Revalidate stale entries with conditional headers where supported.
-- [ ] Return the stale entry only when the provider explicitly permits stale fallback; otherwise fail with the provider URL and cache key.
-- [ ] Add tests for fresh hit, stale revalidation, forced refresh, missing cache, HTTP 304, and provider failure.
-- [ ] Add Javadoc to every new public type and method.
-- [ ] Run `mvn compile test-compile`.
-- [ ] Commit the cache contract independently.
+- [x] Implement cache reads before network calls unless force-refresh is enabled.
+- [x] Define live, offline, and reduced-preview provider modes; offline mode performs no network calls and requires no credentials.
+- [x] Keep all generated cache and normalized-data paths under gitignored directories, and reject cache paths under tracked `data/` paths.
+- [x] Store response body, fetched time, ETag, Last-Modified, status, and content type in a stable cache format.
+- [x] Revalidate stale entries with conditional headers where supported.
+- [x] Return the stale entry only when the provider explicitly permits stale fallback; otherwise fail with the provider URL and cache key.
+- [x] Add tests for fresh hit, stale revalidation, forced refresh, missing cache, HTTP 304, provider failure, and offline mode.
+- [x] Add Javadoc to every new public type and method.
+- [x] Run `mvn compile test-compile`.
+- [x] Commit the cache contract independently.
 
 **Verification:** Repeated builds avoid unnecessary network requests, stale entries are revalidated, and `-Droq.refresh=true` bypasses all cache reads.
 
