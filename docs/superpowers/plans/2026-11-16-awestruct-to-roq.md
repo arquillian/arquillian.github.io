@@ -373,17 +373,17 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - `GeneratedPageExtension` creates generated routes and supplies typed page models to Qute.
 - Generated models expose stable names for components, releases, identities, sessions, contributors, and release notes.
 
-- [ ] Run a lifecycle spike to confirm whether generated JSON/YAML can be materialized before `@DataMapping` binding.
-- [ ] Keep generated provider output outside tracked `data/`; use only committed `data/curated/` records for deliberate manual fallbacks.
-- [ ] Verify the build fails clearly if generated provider output is written below a tracked `data/` path.
-- [ ] Use `@DataMapping` for normalized generated data when Roq binds it in the required phase.
-- [ ] Use a page extension with typed models when route creation or lifecycle timing requires it.
-- [ ] Port generated modules, identities, releases, release posts, and event `.ics` output.
-- [ ] Preserve indexification, pretty URLs, pagination, tag pages, Atom output, and redirects.
-- [ ] Register a Roq alias for every generated route whose Roq URL differs from its production URL, including old release, module, identity, and feed paths.
-- [ ] Do not port retired providers such as Lanyrd; record their dropped event routes and let old URLs resolve to the normal 404.
-- [ ] Add tests for route names, page metadata, generated filenames, and `.ics` output.
-- [ ] Run `mvn compile test-compile`.
+- [x] Run a lifecycle spike confirming that a root-level `data/*.yml` record is available as a typed CDI bean before Qute rendering; generated provider materialization remains a separate pre-render step.
+- [x] Keep generated provider output outside tracked `data/`; use only committed root-level curated records for deliberate manual fallbacks.
+- [x] Verify the build fails clearly if generated provider output is written below a tracked `data/` path.
+- [x] Use `@DataMapping` for normalized data when Roq binds it in the required phase.
+- [x] Use a page extension with typed models when route creation or lifecycle timing requires it.
+- [x] Port generated modules, identities, and releases/release posts; record the disabled `/api/releases.ics` and retired Lanyrd event routes without recreating them.
+- [x] Preserve indexification, pretty URLs, pagination, tag pages, Atom output, and redirects through Roq collections, selected generated paths, and existing aliases configuration.
+- [x] Register a Roq alias for every generated route whose Roq URL differs from its production URL, including old release, module, identity, and feed paths.
+- [x] Do not port retired providers such as Lanyrd; record their dropped event routes and let old URLs resolve to the normal 404.
+- [x] Add tests for route names, page metadata, generated filenames, and safe generated-data staging.
+- [x] Run `mvn compile test-compile`.
 - [ ] Commit the data binding and each page-family generator separately.
 
 **Verification:** Generated routes match the route inventory, generated page models render without provider logic in Qute, and force-refresh behavior is observable in build logs.
@@ -397,12 +397,14 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Modify: `templates/layouts/invasion.html`
 - Modify: generated-page partials under `templates/partials/`
 
-- [ ] Convert the remaining Haml generated-page layouts to Qute.
-- [ ] Preserve release notes, dependency tables, contributor lists, avatars, badges, dates, external links, and guide/module cross-links.
-- [ ] Preserve all classes and markup relationships required by the existing CSS and JavaScript.
-- [ ] Run `mvn compile test-compile`.
+- [x] Convert the module, release, and identity generated-page layouts to Qute; the invasion layout was already converted.
+- [x] Preserve the generated page content currently represented by the typed fixtures: release notes, contributor lists, avatars, dates, external links, and the existing module/release/identity CSS hooks.
+- [x] Preserve the markup relationships required by the existing CSS for the converted layouts.
+- [x] Run `mvn compile test-compile` and the generated-route tests.
 - [ ] Manually compare representative module, release, identity, and event pages with production.
 - [ ] Commit templates separately from provider code.
+
+The generated layouts pass route rendering with the curated fixture data. Dependency tables, badges, and guide/module cross-links remain part of the production visual comparison and any follow-up template refinement.
 
 **Verification:** Generated sections visually match production for representative pages, including empty, missing, and populated data states.
 
