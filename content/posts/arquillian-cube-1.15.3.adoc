@@ -1,0 +1,51 @@
+---
+layout: post
+date: 2018-03-29
+author: dipak-pawar
+link: /blog/2018/03/29/arquillian-cube-1-15-3/
+title: Arquillian Cube 1 15 3
+tags: [announcement]
+---
+=== Highlights of this release
+
+Apart from several bug fixes, this release contains three awesome features.
+
+=== Fabric8 Maven Plugin integration
+
+From now you can use link:https://maven.fabric8.io/[fabric8-maven-plugin] to build images and generate k8s/openshift artifacts and let cube use it in your tests.
+
+However you have to configure `fabric8-maven-plugin` using `arquillian.xml` as per your need.
+
+Here's an example:
+
+[source]
+----
+<extension qualifier="openshift">
+    <property name="cube.fmp.build">true</property>
+</extension>
+----
+By enabling this property, cube will build images, generate resources using `fabric8-maven-plugin` when running test from `Maven` or `IDE`.
+
+p(info). %User can configure to run `fabric8-maven-plugin` only from `IDE` (not from maven build) by setting property `cube.fmp.build.disable.for.mvn` to `true`. Look link:http://arquillian.org/arquillian-cube/#_fabric8_maven_plugin_integration_with_cube[here] for more configuration options.%
+
+Look at complete example link:https://github.com/arquillian/arquillian-cube/tree/master/openshift/ftest-openshift-fabric8-maven-plugin.[here]
+
+=== Expression Resolver for @RouteUrl
+
+To resolve expression `RouteURL("${my.expression}")`, Arquillian Cube looks in hierarchy of system property → environment variable → properties defined in arquillian.xml.
+
+For Example if user is using `RouteURL("${route.name}")` with openshift extension configuration in `arquillian.xml` like
+
+[source]
+----
+<extension qualifier="openshift">
+    <property name="route.name">my-route</property>
+  </extension>
+----
+then `RouteURL("${route.name}")` resolves to `RouteURL("my-route")`. Look at link:https://github.com/arquillian/arquillian-cube/tree/master/openshift/ftest-openshift-resources-standalone[ftest] for complete example.
+
+=== Await Strategy - docker_health
+
+Docker has link:https://docs.docker.com/engine/reference/builder/#healthcheck[HEALTHCHECK] instruction to test a container is still working. We have added new Await strategy `docker_health` to wait for container to start working as per `HEALTHCHECK` instruction defined in `Dockerfile`.
+
+Many thanks to link:https://github.com/tjamet[Thibault Jamet] for providing implementation of `docker_health` Await strategy.

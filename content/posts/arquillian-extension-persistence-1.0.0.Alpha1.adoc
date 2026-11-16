@@ -1,0 +1,70 @@
+---
+layout: post
+date: 2011-12-19
+
+link: /blog/2011/12/19/arquillian-extension-persistence-1-0-0-Alpha1/
+title: Arquillian Extension Persistence 1 0 0 Alpha1
+author: Arquillian Project
+tags: [announcement]
+---
+=== Some of the highlights in this release
+
+Seeding database using `Data` annotation on either class or method level.
+
+Verifying database state after test execution using `Expected` annotation.
+
+[source]
+----
+@Test
+@Data("datasets/users.yml")
+@Expected("datasets/expected-users.yml")
+public void shouldChangeUserPassword() throws Exception {
+   // given
+   String expectedPassword = "LexLuthor";
+   UserAccount user = em.find(UserAccount.class, 2L);
+----
+   // when
+   user.setPassword("LexLuthor");
+   em.merge(user);
+
+   // then
+   assertThat(user.getPassword()).isEqualTo(expectedPassword);
+}
+
+users.yml
+
+[source]
+----
+useraccount:
+  - id: 1
+    firstname: John
+    lastname: Smith
+    username: doovde
+    password: password
+  - id: 2
+    firstname: Clark
+    lastname: Kent
+    username: superman
+    password: kryptonite
+----
+expected-users.yml
+
+[source]
+----
+useraccount:
+  - firstname: John
+    lastname: Smith
+    username: doovde
+    password: password
+  - firstname: Clark
+    lastname: Kent
+    username: superman
+    password: LexLuthor
+----
+Support for following formats as DBUnit data sets:
+
+* YAML
+
+* Flat XML
+
+* Excel

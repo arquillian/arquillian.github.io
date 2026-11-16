@@ -1,0 +1,97 @@
+---
+layout: post
+date: 2013-01-15
+author: lfryc
+link: /blog/2013/01/15/arquillian-graphene-2-0-0-Alpha3/
+title: Arquillian Graphene 2 0 0 Alpha3
+tags: [announcement]
+---
+=== Highlighted Features
+
+- <i class="icon-star"></i> jQuery Selectors :=
+Graphene gets its own `FindBy` annotation and `ByJQuery` selector in order to fully support _jQuery_ selectors. (link:#jquery-selectors)[read more] =:
+
+- <i class="icon-star"></i> Injecting Selenium Resources :=
+The interesting Selenium APIs (HTML5, Mobile, etc.) can be injected to the test or page fragments directly. (link:#injecting-selenium-resources)[read more] =:
+
+- <i class="icon-star"></i> Fluent API for Waiting :=
+Waiting conditions can now be defined in a nice fluent API. (link:#waiting-fluent-api)[read more]  =:
+
+- <i class="icon-star"></i> Injecting List of Page Fragments :=
+It's possible to inject a list of page fragments with `FindBy List<PageFragment>`. =:
+
+- <i class="icon-star"></i> Page Fragment Enrichment :=
+Any Arquillian resource available through `ArquillianResource` can be injected into page fragments. =:
+
+=== Important Bug Fixes
+
+- <i class="icon-star"></i> XHR Request Guards :=
+`guardXhr` wasn't waiting for the XHR request to fully complete. So we have improved it and now it not only waits for AJAX callback to completely finish, but it will wait for any asynchronous processing caused by that callback to finish. =:
+
+- <i class="icon-star"></i> Protecting against Stale Elements</tt> :=
+You are now completely protected against `StaleElementReferenceException` when using page fragments and elements injected by `FindBy`, because operations on those elements are evaluated lazily (at the time of usage) and they are re-evaluated when they get stale. =:
+
+- <i class="icon-star"></i> Refined Page Fragments :=
+Page Fragments have received a lot of bug fixes and improvements. =:
+
+h3(#jquery-selectors). jQuery Selectors
+
+This feature injects a <tt>link:http://jquery.com/</tt>[jQuery] script to a tested page and allows Graphene to find elements using the link:http://api.jquery.com/category/selectors/?rdfrom=http%3A%2F%2Fdocs.jquery.com%2Fmw%2Findex.php%3Ftitle%3DSelectors%26redirect%3Dno:[jQuery Selectors syntax]
+
+[source]
+----
+@FindBy(jquery = ":button:visible")
+WebElement firstVisibleButton;
+----
+p(info). %Note that Graphene injects jQuery in link:http://api.jquery.com/jQuery.noConflict/,[non-conflict way] so it does not affect your tested application.%
+
+h3(#injecting-selenium-resources). Injecting Selenium Resources
+
+Graphene leverages a long list of advanced Selenium features and their APIs to take full control of your browser:
+
+* *HTML5*
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/WebStorage.html[`WebStorage`]
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/DatabaseStorage.html[`DatabaseStorage`]
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/ApplicationCache.html[`ApplicationCache`]
+* *Mobile-specific*
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/TouchScreen.html[`TouchScreen`]
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Rotatable.html[`Rotatable`]
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/BrowserConnection.html[`BrowserConnection`]
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/html5/LocationContext.html[`LocationContext`]
+* *Advanced Browser Control*
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/interactions/Actions.html[`Actions`]
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Keyboard.html[`Keyboard`]
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Mouse.html[`Mouse`]
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/JavascriptExecutor.html[`JavascriptExecutor`]
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/TakesScreenshot.html[`TakesScreenshot`]
+** link:http://selenium.googlecode.com/svn/trunk/docs/api/java/org/openqa/selenium/Capabilities.html[`Capabilities`]
+
+You can inject those using `ArquillianResource` annotation:
+
+[source]
+----
+@ArquillianResource
+BrowserConnection connection;
+----
+@Test
+public void test() {
+    connection.setOnline(false);
+}
+
+h3(#waiting-fluent-api). Fluent API for Waiting
+
+The Alpha2 API allowed you to define a wait like this:
+
+[source]
+----
+waitAjax().until(element(button).isVisible());
+----
+In order to fully support code-completion, we have decided to deprecate this API in favor of a fluent API:
+
+[source]
+----
+waitAjax().until().element(button).is().visible();
+----
+=== Roadmap
+
+This release is a significant milestone link:https://community.jboss.org/message/777443#777443.[on the way to Beta1]
