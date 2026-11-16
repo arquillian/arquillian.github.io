@@ -6,7 +6,7 @@
 
 **Architecture:** Keep authored content, presentation, and build-time data generation separate. Convert Haml layouts to Qute templates, move authored content to AsciiDoc with `git mv`, and port dynamic providers into typed Java services consumed by Roq page extensions and `@DataMapping`-backed template data. Generate the site with Maven and deploy it through the Roq GitHub Action.
 
-**Tech Stack:** Maven, current compatible Roq release, Quarkus, JDK 27 unless compatibility verification requires the latest supported GA JDK, Qute, AsciiDoc/Asciidoctor, Java HTTP clients, GitHub Actions, and the existing CSS/JavaScript/image assets.
+**Tech Stack:** Maven, current compatible Roq release, Quarkus, JDK 27 unless compatibility verification requires the latest supported GA JDK, Qute, AsciiDoc/Asciidoctor, Java HTTP clients, GitHub Actions, the latest stable Bootstrap release pinned to an exact version, Bootstrap's JavaScript bundle with temporary jQuery compatibility, and the existing image assets.
 
 **Spec:** Approved migration design in the preceding conversation on 2026-11-16.
 
@@ -21,6 +21,12 @@
 - Preserve production URL paths, redirects, asset paths, metadata, and responsive visual behavior.
 - If Roq changes a generated URL, configure the Roq aliases plugin to redirect the old production URL to the new URL; do not rely only on updating internal links.
 - Use Qute for presentation; do not put provider fetching or parsing logic in templates.
+- Provider-generated responses, normalized models, cloned repositories, and Roq staging data must never be written under a tracked `data/` path. Use gitignored `.roq-cache/`, `target/roq-data/`, or another gitignored build path; reserve committed `data/curated/` for intentional human-maintained fallback records only.
+- Every provider must have an explicit lifecycle status: `live`, `fixture`, `retired`, or `manual`. Retired providers do not get recreated from production scraping or historical fixtures; their route families are explicitly dropped and old URLs use the normal Roq/GitHub Pages 404 unless a replacement is separately approved.
+- Live provider failures may use stale cached data with a visible warning. If no usable stale cache exists, the build fails with the provider and cache key named; it must not silently omit that provider's pages.
+- Fork pull requests without provider secrets use an offline, fixture-only reduced preview. Deployment builds use live fetching by default.
+- The Sass migration must not silently replace the legacy visual system with compiled CSS or an unpinned dependency. Rewrite the styles to the latest stable, exactly pinned Bootstrap release and use Bootstrap's current JavaScript bundle while retaining jQuery only for existing site-specific scripts during the transition.
+- A complete production URL manifest is intentionally deferred as a separate decision; route inventory and explicit dropped-route reporting remain required.
 - New Java types and methods require Javadoc describing what they do and why.
 - Run `mvn compile test-compile` after every Java or Maven build-file phase; fix every resulting error before advancing.
 - Visual validation is manual and ad hoc against the same production URLs; do not add screenshot assertions or visual unit tests.
@@ -181,6 +187,8 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 
 - [ ] Perform each source move with `git mv` before changing file contents.
 - [ ] Preserve relative asset paths until the Qute shell is visually verified.
+- [ ] Before moving Sass entry points, inventory all Ruby Sass dependencies and replace the Compass/Blueprint/Bootstrap mixin chain with the pinned modern Bootstrap implementation; do not commit generated CSS as the migration shortcut.
+- [ ] Add the exact pinned Bootstrap web dependency through Maven-managed web dependencies and import its JavaScript bundle; retain jQuery only where existing Arquillian scripts still require it.
 - [ ] Record any path that must change because Roq serves resources from a different root.
 - [ ] Do not delete the old location until the new build references every moved asset.
 
@@ -196,6 +204,7 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Create: `src/test/java/org/arquillian/website/TemplateRenderingTest.java`
 
 - [ ] Port title, description, author, canonical URL, stylesheet, script, body-class, navigation, footer, analytics, and social-link behavior.
+- [ ] Preserve the existing Arquillian selectors and semantic markup where practical while mapping changed Bootstrap components, breakpoints, navigation behavior, and utility classes.
 - [ ] Preserve menu labels, active-route behavior, footer text, external links, and production asset URLs.
 - [ ] Replace Ruby conditionals and loops with Qute expressions while keeping escaping explicit.
 - [ ] Add a rendering test for the root page with empty optional metadata and populated site metadata.
@@ -308,6 +317,8 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - `RefreshPolicy` resolves normal, stale, and forced-refresh behavior from `roq.refresh`/`ROQ_REFRESH`.
 
 - [ ] Implement cache reads before network calls unless force-refresh is enabled.
+- [ ] Define live, offline, and reduced-preview provider modes; offline mode must perform no network calls and must not require credentials.
+- [ ] Keep all generated cache and normalized-data paths under gitignored directories, and add a build check that rejects generated provider files under tracked `data/` paths.
 - [ ] Store response body, fetched time, ETag, Last-Modified, status, and content type in a stable cache format.
 - [ ] Revalidate stale entries with conditional headers where supported.
 - [ ] Return the stale entry only when the provider explicitly permits stale fallback; otherwise fail with the provider URL and cache key.
@@ -326,11 +337,16 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Create: `src/main/java/org/arquillian/website/data/identity/*`
 - Create: `src/main/java/org/arquillian/website/data/repository/*`
 - Create: `src/test/java/org/arquillian/website/data/*/*Test.java`
+- Create: `docs/superpowers/migration/provider-matrix.md`
 
 - [ ] Port GitHub authentication, teams, repositories, releases, issues, contributors, and avatars from `_ext/github.rb`, `_ext/repository.rb`, and `_ext/identities/github.rb`.
 - [ ] Port JIRA project, component-lead, and release-note retrieval from `_ext/jira.rb`.
 - [ ] Port identity enrichment and mapping from `_ext/identities.rb` and its provider crawlers.
 - [ ] Port repository clone, tag, commit, Maven/Gradle metadata, and contributor extraction from `_ext/arquillian.rb` and `_ext/repository.rb`.
+- [ ] Create a provider viability matrix that records endpoint status, authentication, cache path, lifecycle status, route families, and failure policy.
+- [ ] Keep the provider matrix as the decision record for every provider: `live`, `fixture`, `retired`, or `manual`; record the probe date and evidence for each status.
+- [ ] Probe Lanyrd, Confluence, JBoss Community, Jira, and every configured clone URL before porting them; mark unavailable providers `retired` and drop their route families rather than recreating them from saved production HTML.
+- [ ] Replace obsolete `git://` clone URLs with supported HTTPS or SSH URLs only when the corresponding provider remains `live`.
 - [ ] Keep provider DTOs separate from page view models.
 - [ ] Add fixtures for successful responses, pagination, missing fields, rate-limit responses, and provider errors.
 - [ ] Add Javadoc to all public Java types and methods.
@@ -345,7 +361,8 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Create: `src/main/java/org/arquillian/website/roq/GeneratedDataExtension.java`
 - Create: `src/main/java/org/arquillian/website/roq/GeneratedPageExtension.java`
 - Create: `src/main/java/org/arquillian/website/data/model/*`
-- Create: `data/*` or the generated-data staging directory selected by the Roq lifecycle spike
+- Create: `data/curated/*` only for intentionally human-maintained fallback records
+- Create: gitignored generated-data staging under `target/roq-data/` or the path selected by the Roq lifecycle spike
 - Create: `src/test/java/org/arquillian/website/roq/GeneratedPageExtensionTest.java`
 
 **Interfaces:**
@@ -354,12 +371,14 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Generated models expose stable names for components, releases, identities, sessions, contributors, and release notes.
 
 - [ ] Run a lifecycle spike to confirm whether generated JSON/YAML can be materialized before `@DataMapping` binding.
+- [ ] Keep generated provider output outside tracked `data/`; use only committed `data/curated/` records for deliberate manual fallbacks.
+- [ ] Verify the build fails clearly if generated provider output is written below a tracked `data/` path.
 - [ ] Use `@DataMapping` for normalized generated data when Roq binds it in the required phase.
 - [ ] Use a page extension with typed models when route creation or lifecycle timing requires it.
 - [ ] Port generated modules, identities, releases, release posts, and event `.ics` output.
 - [ ] Preserve indexification, pretty URLs, pagination, tag pages, Atom output, and redirects.
 - [ ] Register a Roq alias for every generated route whose Roq URL differs from its production URL, including old release, module, identity, and feed paths.
-- [ ] Port Lanyrd parsing into an isolated provider with explicit failure behavior; do not let unavailable events prevent unrelated primary pages from rendering unless the route requires event data.
+- [ ] Do not port retired providers such as Lanyrd; record their dropped event routes and let old URLs resolve to the normal 404.
 - [ ] Add tests for route names, page metadata, generated filenames, and `.ics` output.
 - [ ] Run `mvn compile test-compile`.
 - [ ] Commit the data binding and each page-family generator separately.
@@ -400,6 +419,9 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 
 - [ ] Document JDK, Maven, local Roq dev mode, batch generation, cache directory, credentials, and force-refresh usage.
 - [ ] Document the live-fetch default and cache-staleness behavior.
+- [ ] Document live, offline, and reduced-preview modes: fork pull requests use fixture-only reduced preview without secrets or network access.
+- [ ] Document that stale cached data is used with a visible warning when permitted, while a live provider with no usable cache fails with its provider and cache key.
+- [ ] Document the distinction between gitignored generated-data directories and committed `data/curated/` fallback records.
 - [ ] Document GitHub Action secrets and manual force-refresh workflow dispatch.
 - [ ] Remove instructions for Ruby, Bundler, Awestruct, JRuby, and obsolete Docker commands.
 - [ ] Run `mvn compile test-compile`.
@@ -417,6 +439,7 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - Modify: `.travis.yml` if no longer used, or delete it after workflow replacement
 
 - [ ] Confirm no active Maven/Roq source references Ruby, Awestruct, Haml, Textile, Compass, or the old deployment scripts.
+- [ ] Remove Ruby and Compass dependencies only after the modern pinned Bootstrap/Sass migration is rendering the representative pages.
 - [ ] Remove only files proven obsolete by the route inventory and build search.
 - [ ] Use `git rm` for genuine deletions; retain moved history through the earlier `git mv` operations.
 - [ ] Run a clean checkout build with the old Ruby toolchain unavailable.
@@ -436,6 +459,7 @@ The migration may use `src/main/resources/` for Java-owned resources only when a
 - [ ] Check desktop and mobile widths, navigation states, typography, spacing, image dimensions, code blocks, tables, footer, redirects, and external links.
 - [ ] Request every old/new URL pair from the route inventory and verify that each old URL redirects through the Roq aliases plugin.
 - [ ] Repeat the build once with cache and once with `-Droq.refresh=true`.
+- [ ] Report every intentionally dropped provider route family and confirm its former URL uses the normal 404 behavior; the complete production URL manifest remains deferred until separately approved.
 - [ ] Record visual discrepancies as focused follow-up tasks instead of silently accepting them.
 - [ ] Obtain the maintainer’s explicit human sign-off before enabling the workflow for production deployment.
 
