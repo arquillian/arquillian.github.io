@@ -64,9 +64,11 @@ public final class GeneratedModels {
     /** Describes one ordered news entry, including optional release details for full blog rendering. */
     public record NewsItem(String title, String url, String author, String authorUrl, String avatarUrl,
             String published, String summary, String intro, String descriptionHeading, String description,
-            String component, String version, String releaseDate,
-            List<String> compiledAgainst, List<String> artifacts, List<ReleaseNote> releaseNotes,
-            List<String> contributors, List<String> tags) {
+            String component, String componentUrl, String version, String versionUrl, String releaseDate,
+            String artifactGroup, String artifactPath, String releaseNoteCategory,
+            List<NewsDependency> compiledAgainst, List<String> artifacts, List<ReleaseNote> releaseNotes,
+            List<NewsContributor> contributors, List<String> tags,
+            String previousUrl, String previousTitle, int postNumber, int postTotal) {
         /** Creates an immutable news entry while allowing older curated records to remain summary-only. */
         public NewsItem {
             compiledAgainst = compiledAgainst == null ? List.of() : List.copyOf(compiledAgainst);
@@ -81,7 +83,15 @@ public final class GeneratedModels {
     public record ReleaseNote(int number, String title, String category, String url) {
     }
 
+    /** Describes one named dependency and its production module link. */
+    public record NewsDependency(String name, String version, String url) {
+    }
+
     /** Describes a contributor link shared by module and release pages. */
     public record Contributor(String name, String email, int commits, String url) {
+    }
+
+    /** Describes a contributor link embedded in a generated blog entry. */
+    public record NewsContributor(String name, String url) {
     }
 }

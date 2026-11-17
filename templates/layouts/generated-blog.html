@@ -7,36 +7,46 @@
             <article class="post">
                 <header class="header">
                     <h2 class="title"><a href="{=generated.url}">{=generated.title}</a></h2>
-                    <div class="meta">Posted by <a href="{=generated.model.authorUrl}">{=generated.model.author}</a> on {=generated.model.published}</div>
+                    <div class="byline">
+                        {#if generated.model.avatarUrl}<a href="{=generated.model.authorUrl}"><img class="avatar" src="{=generated.model.avatarUrl}" width="44" height="44" alt="Posted by {=generated.model.author} on {=generated.model.published}"></a>{/if}
+                        Posted by <a href="{=generated.model.authorUrl}">{=generated.model.author}</a> on {=generated.model.published} | <a class="comments" href="#disqus_thread">comments</a>
+                    </div>
                 </header>
                 <div class="body">
-                    <p>{=generated.model.intro}</p>
+                    <p>The Arquillian team is proud to announce the <em>{=generated.model.version}</em> release of the <em>{=generated.model.component}</em> component!</p>
                     <h3>{=generated.model.descriptionHeading}</h3>
                     <p>{=generated.model.description}</p>
                     <h3>Release details</h3>
                     <table class="table table-bordered table-striped"><tbody>
-                        <tr><th>Component</th><td>{=generated.model.component}</td></tr>
-                        <tr><th>Version</th><td>{=generated.model.version}</td></tr>
+                        <tr><th>Component</th><td><a href="{=generated.model.componentUrl}">{=generated.model.component}</a></td></tr>
+                        <tr><th>Version</th><td>{=generated.model.version} <a href="{=generated.model.versionUrl}">view tag</a></td></tr>
                         <tr><th>Release date</th><td>{=generated.model.releaseDate}</td></tr>
                         <tr><th>Released by</th><td>{=generated.model.author}</td></tr>
-                        <tr><th>Compiled against</th><td><ul>{#for dependency in generated.model.compiledAgainst}<li>{=dependency}</li>{/for}</ul></td></tr>
+                        <tr><th>Compiled against</th><td><ul>{#for dependency in generated.model.compiledAgainst}<li><a href="{=dependency.url}">{=dependency.name}</a> – {=dependency.version}</li>{/for}</ul></td></tr>
                     </tbody></table>
-                    <h3>Published artifacts</h3>
-                    <ul>{#for artifact in generated.model.artifacts}<li>{=artifact}</li>{/for}</ul>
+                    <h3>Published artifacts {=generated.model.artifactGroup}</h3>
+                    <ul>{#for artifact in generated.model.artifacts}<li>{=generated.model.artifactGroup} » {=artifact}
+                        {#if artifact != 'arquillian-cube-bom'}<a href="https://repo1.maven.org/maven2/{=generated.model.artifactPath}/{=artifact}/{=generated.model.version}/{=artifact}-{=generated.model.version}.jar">jar</a>
+                        <a href="https://repository.jboss.org/nexus/content/groups/public/{=generated.model.artifactPath}/{=artifact}/{=generated.model.version}/{=artifact}-{=generated.model.version}-javadoc.jar">javadoc</a>{/if}
+                        <a href="https://repo1.maven.org/maven2/{=generated.model.artifactPath}/{=artifact}/{=generated.model.version}/{=artifact}-{=generated.model.version}.pom">pom</a>
+                    </li>{/for}</ul>
                     {#if generated.model.releaseNotes}
-                    <h3>Release notes and resolved issues</h3>
-                    <ul>{#for note in generated.model.releaseNotes}<li><a href="{=note.url}">#{=note.number} {=note.title}</a></li>{/for}</ul>
+                    <h3>Release notes and resolved issues {=generated.model.releaseNotes.size}</h3>
+                    <dl><dt>{=generated.model.releaseNoteCategory}</dt><dd><ul>{#for note in generated.model.releaseNotes}<li><a href="{=note.url}">#{=note.number} {=note.title}</a></li>{/for}</ul></dd></dl>
                     {/if}
-                    {#if generated.model.contributors}<p>Thanks to the following list of contributors:</p><ul>{#for contributor in generated.model.contributors}<li>{=contributor}</li>{/for}</ul>{/if}
+                    {#if generated.model.contributors}<p>Thanks to the following list of contributors: {#for contributor in generated.model.contributors}{#if contributor_index > 0}, {/if}<a href="{=contributor.url}">{=contributor.name}</a>{/for}</p>{/if}
                 </div>
                 {#if generated.model.tags}
                 <ul class="tags">
                     {#for tag in generated.model.tags}<li><a href="/blog/?tag={=tag}">{=tag}</a></li>{/for}
                 </ul>
                 {/if}
-                <div class="footer"><a href="{=generated.url}">permalink</a></div>
+                <div class="footer"><a href="{=generated.url}">permalink</a> | tagged as
+                    {#for tag in generated.model.tags}<a href="/blog/?tag={=tag}">{=tag}</a>{/for}</div>
             </article>
-            <ul class="pager"><li class="pages">Arquillian Blog</li></ul>
+            {#if generated.model.previousUrl}
+            <ul class="pager"><li><a href="{=generated.model.previousUrl}">« Previous</a></li><li class="pages">Post {=generated.model.postNumber} of {=generated.model.postTotal}</li><li>Next »</li></ul>
+            {/if}
         </div>
         <aside id="sidebar" role="complementary">
             <div class="subscribe">
@@ -51,7 +61,8 @@
                     {/if}{/for}
                 </ul>
             </nav>
-            <nav class="tags"><h2>Tags</h2></nav>
+            <nav class="popular"><h2>Popular Posts</h2><p>No popular posts reported.</p></nav>
+            <nav class="tags"><h2>Tags</h2><ul>{#for tag in generated.model.tags}<li><a href="/blog/?tag={=tag}">{=tag}</a></li>{/for}</ul></nav>
         </aside>
     </div>
 </main>
