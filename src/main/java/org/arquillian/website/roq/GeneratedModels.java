@@ -9,17 +9,24 @@ public final class GeneratedModels {
     }
 
     /** Groups all generated page families loaded for one site build. */
-    public record SiteData(List<ModulePage> modules, List<ReleasePage> releases, List<IdentityPage> identities) {
+    public record SiteData(List<ModulePage> modules, List<ReleasePage> releases, List<IdentityPage> identities,
+            List<NewsItem> news) {
+        /** Creates generated page data without optional homepage news records. */
+        public SiteData(List<ModulePage> modules, List<ReleasePage> releases, List<IdentityPage> identities) {
+            this(modules, releases, identities, List.of());
+        }
+
         /** Creates an immutable generated-data aggregate. */
         public SiteData {
             modules = List.copyOf(modules);
             releases = List.copyOf(releases);
             identities = List.copyOf(identities);
+            news = news == null ? List.of() : List.copyOf(news);
         }
 
         /** Returns an empty generated-data aggregate. */
         public static SiteData empty() {
-            return new SiteData(List.of(), List.of(), List.of());
+            return new SiteData(List.of(), List.of(), List.of(), List.of());
         }
     }
 
@@ -52,6 +59,11 @@ public final class GeneratedModels {
         public IdentityPage {
             repositories = repositories == null ? List.of() : List.copyOf(repositories);
         }
+    }
+
+    /** Describes one ordered homepage news card, including its author and excerpt. */
+    public record NewsItem(String title, String url, String author, String authorUrl, String avatarUrl,
+            String published, String summary) {
     }
 
     /** Describes a release-note issue rendered on a release page. */
