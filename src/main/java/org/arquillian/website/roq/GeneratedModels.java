@@ -61,9 +61,20 @@ public final class GeneratedModels {
         }
     }
 
-    /** Describes one ordered homepage news card, including its author and excerpt. */
+    /** Describes one ordered news entry, including optional release details for full blog rendering. */
     public record NewsItem(String title, String url, String author, String authorUrl, String avatarUrl,
-            String published, String summary) {
+            String published, String summary, String intro, String descriptionHeading, String description,
+            String component, String version, String releaseDate,
+            List<String> compiledAgainst, List<String> artifacts, List<ReleaseNote> releaseNotes,
+            List<String> contributors, List<String> tags) {
+        /** Creates an immutable news entry while allowing older curated records to remain summary-only. */
+        public NewsItem {
+            compiledAgainst = compiledAgainst == null ? List.of() : List.copyOf(compiledAgainst);
+            artifacts = artifacts == null ? List.of() : List.copyOf(artifacts);
+            releaseNotes = releaseNotes == null ? List.of() : List.copyOf(releaseNotes);
+            contributors = contributors == null ? List.of() : List.copyOf(contributors);
+            tags = tags == null ? List.of() : List.copyOf(tags);
+        }
     }
 
     /** Describes a release-note issue rendered on a release page. */
