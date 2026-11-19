@@ -1,0 +1,44 @@
+---
+layout: post
+date: 2012-11-01
+
+link: /blog/2012/11/01/arquillian-extension-transaction-1-0-0-Alpha1/
+title: Arquillian Extension Transaction 1 0 0 Alpha1
+author: Arquillian Project
+tags: [announcement]
+---
+=== Motivation
+
+Until this point, the only special transaction support in Arquillian has come from the link:/modules/persistence-extension.[Arquillian Persistence Extension] But as the extension universe expand, the need for other extensions to interact with transactions expand as well. To avoid you having to deal with the individual extensions transaction support in different ways, different apis, we concluded it was time to make Transactions it's own top level extension.
+
+=== Usage
+
+The current API takes a declarative approach to configure the transactional behavior of the Test case. By annotating the TestClass or the TestMethod with `Transactional` you control how the transaction should be handled after TestMethod execution.
+Should Arquillian `COMMIT`, `ROLLBACK` or `DISABLE` the transaction for this method?
+
+Example:
+
+[source]
+----
+@RunWith(Arquillian.class)
+@Transactional
+public class GreeterTestClass {
+----
+    public void defaultTest() throws Exception {
+        // test code
+    }
+
+    @Transactional(TransactionMode.ROLLBACK)
+    public void rollbackTest() throws Exception {
+        // test code
+    }
+}
+
+
+=== SPI integration
+
+The extension itself does not come with any implementation for a concrete transaction API, the implementations will be provided by separate modules. During execution, the transactional handling is delegated to a `TransactionProvider` service implementation which is registered within Arquillian. The SPI defines a set of transaction lifecycle events (`(Before|After)Transaction(Started|Ended)`) and a separate transactional scope (`TransactionScope`) which is bound to the executing transaction.
+
+=== Implementations
+
+Besides the JTA implementation provided by the link:/modules/persistence-extension,[Arquillian Persistence Extension] the next extensions which will provide support is the Spring Extension. More details to come.

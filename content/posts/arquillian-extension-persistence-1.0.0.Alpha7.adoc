@@ -1,0 +1,56 @@
+---
+layout: post
+date: 2014-05-12
+
+link: /blog/2014/05/12/arquillian-extension-persistence-1-0-0-Alpha7/
+title: Arquillian Extension Persistence 1 0 0 Alpha7
+author: Arquillian Project
+tags: [announcement]
+---
+After quite a while we are happy to announce new version of Arquillian Persistence Extension with anticipated fixes and improvements.
+
+Big thanks go to link:https://github.com/sbodomerle,[Sándor Bodó-Merle] link:https://github.com/mgraciano,[Michel Graciano] link:https://github.com/masao-kunii,[Masao Kunii] link:https://github.com/kumm[kumm] and link:https://github.com/jmnarloch[Jakub Narloch] for their contributions as well as all users who gave us feedback on the community forums.
+
+=== Some of the highlights in this release
+
+- <i class="icon-star"></i> SQL script handling improvements :=
+SQL script handling has been significantly improved. It not only has improved performance (namely for Oracle) but also let you provide your own implementation for parsing multi-line scripts through simple SPI `org.jboss.arquillian.persistence.spi.script.StatementSplitter`.
+=:
+
+- <i class="icon-star"></i> Direct access to DBUnit :=
+Ability to inject DBUnit `DatabaseConnection` making it possible to interact with DBUnit directly in the tests.
+
+[source]
+----
+@ArquillianResource
+private DatabaseConnection databaseConnection;
+----
+=:
+
+- <i class="icon-star"></i> New SPI module :=
+Through newly introduce SPI module you can now register your own datasource providers. This can be leveraged by frameworks such as Spring which can now do their own lookups (from application context) instead of relying on JNDI. =:
+
+- <i class="icon-star"></i> New extension point :=
+We have also implemented extension point to define custom implementation of `org.dbunit.database.DatabaseSequenceFilter` which is used to seed and clean database by DBUnit. Out of the box we provide sequence filter strategy for Oracle. You can register it in `arquillian.xml` as part of _persistence-dbunit_
+
+[source]
+----
+<property name="filterTables">true</property>
+<property name="customTableFilter">org.jboss.arquillian.persistence.dbunit.filter.OracleDatabaseSequenceFilterProvider</property>
+----
+=:
+
+- <i class="icon-star"></i> Custom filtering strategy :=
+You can also define column filtering strategy when comparing datasets through `ShouldMatchDataSet` annotation. By simply providing an implementation of `org.dbunit.dataset.filter.IColumnFilter` and decorating your test with e.g. `CustomColumnFilter({FirstNameColumnFilter.class, LastNameColumnFilter.class})`. Filter classes are packaged automatically. =:
+
+This version comes with latest DBUnit 2.5.0.
+
+We've also extended our test suite by adding Apache Tomee to our continuous integration pipeline.
+
+p(important). %We are still shaping up the extension and its modularity hence we split modules in the following manner:
+_persistence-api_
+_persistence-core_
+_persistence-dbunit_ - you can replace old _impl_ dependency by this one
+_persistence-spi_ - SPI for future extensions%
+
+We look forward to hearing your feedback about this release in the link:#{site.project_space}![community forums]
